@@ -1,0 +1,8 @@
+.env
+data/history.json
+data/vt_usage.json
+data/report_log.json
+logi/*.jsonl
+__pycache__/
+*.pyc
+.venv/
