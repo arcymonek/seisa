@@ -6,6 +6,33 @@ const ALL_SERVICES = ["virustotal", "otx", "urlscan", "cloudflare_radar", "abuse
 let root;
 let enabledServices = new Set(ALL_SERVICES);
 let lastResult = null;
+let timerInterval = null;
+let timerStart = null;
+
+function formatElapsed(ms) {
+  return `Sprawdzanie: ${(ms / 1000).toFixed(1).replace(".", ",")} sekund`;
+}
+
+function startTimer() {
+  timerStart = performance.now();
+  root.querySelector("#lk-progress").textContent = "";
+  const timerEl = root.querySelector("#lk-timer");
+  timerEl.textContent = formatElapsed(0);
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerEl.textContent = formatElapsed(performance.now() - timerStart);
+  }, 100);
+}
+
+function stopTimer(prefix) {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  const elapsed = timerStart ? performance.now() - timerStart : 0;
+  root.querySelector("#lk-timer").textContent = "";
+  const duration = formatElapsed(elapsed);
+  root.querySelector("#lk-progress").textContent = prefix ? `${prefix} - ${duration}` : duration;
+  return elapsed;
+}
 
 export function initLookup(container) {
   root = container;
@@ -24,7 +51,8 @@ export function initLookup(container) {
     <label>Usługi</label>
     <div class="chip-row" id="lk-chips"></div>
 
-    <button class="primary" id="lk-submit">Sprawdź</button>
+    <button class="primary" id="lk-submit">Sprawdź</button><span class="inline-timer" id="lk-timer"></span>
+    <div class="muted" id="lk-batch-status"></div>
     <div class="muted" id="lk-progress"></div>
 
     <div id="lk-results"></div>
@@ -63,9 +91,10 @@ async function onSubmit() {
   const forceRefresh = root.querySelector("#lk-force").checked;
   const services = Array.from(enabledServices);
   const resultsEl = root.querySelector("#lk-results");
-  const progressEl = root.querySelector("#lk-progress");
+  const batchStatusEl = root.querySelector("#lk-batch-status");
   resultsEl.innerHTML = "";
-  progressEl.textContent = "";
+  batchStatusEl.textContent = "";
+  startTimer();
 
   if (batch) {
     const lines = root
@@ -73,35 +102,42 @@ async function onSubmit() {
       .value.split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
-    if (!lines.length) return;
+    if (!lines.length) {
+      stopTimer();
+      return;
+    }
     try {
       await api.lookupBatchStream({ indicators: lines, services, force_refresh: forceRefresh }, (evt) => {
         if (evt.type === "progress") {
-          progressEl.textContent = `${evt.completed}/${evt.total} — sprawdzam ${evt.current}`;
+          batchStatusEl.textContent = `${evt.completed}/${evt.total} - sprawdzam ${evt.current}`;
         } else if (evt.type === "wait") {
-          progressEl.textContent = `${evt.current}: ${evt.message}`;
+          batchStatusEl.textContent = `${evt.current}: ${evt.message}`;
         } else if (evt.type === "result") {
           resultsEl.appendChild(renderResult(evt.result));
-        } else if (evt.type === "done") {
-          progressEl.textContent = "gotowe";
         }
       });
+      batchStatusEl.textContent = "gotowe";
+      stopTimer("gotowe");
     } catch (err) {
-      progressEl.textContent = "błąd: " + err.message;
+      stopTimer();
+      root.querySelector("#lk-progress").textContent = "błąd: " + err.message;
     }
     return;
   }
 
   const indicator = root.querySelector("#lk-indicator").value.trim();
-  if (!indicator) return;
-  progressEl.textContent = "sprawdzam...";
+  if (!indicator) {
+    stopTimer();
+    return;
+  }
   try {
     const result = await api.lookup({ indicator, type: "auto", services, force_refresh: forceRefresh });
-    progressEl.textContent = "";
+    stopTimer();
     resultsEl.innerHTML = "";
     resultsEl.appendChild(renderResult(result));
   } catch (err) {
-    progressEl.textContent = "błąd: " + err.message;
+    stopTimer();
+    root.querySelector("#lk-progress").textContent = "błąd: " + err.message;
   }
 }
 
@@ -111,7 +147,7 @@ function renderResult(result) {
   wrap.className = "card";
 
   const badge = document.createElement("div");
-  badge.innerHTML = `<span class="badge ${result.risk_score.level}">${result.risk_score.level.toUpperCase()} — ${result.risk_score.score}/100</span>`;
+  badge.innerHTML = `<span class="badge ${result.risk_score.level}">${result.risk_score.level.toUpperCase()} - ${result.risk_score.score}/100</span>`;
   wrap.appendChild(badge);
 
   const signalsTable = document.createElement("table");
@@ -159,7 +195,7 @@ function renderResult(result) {
   if (result.indicator_type === "ip") {
     const reportBtn = document.createElement("button");
     reportBtn.className = "secondary";
-    reportBtn.textContent = "Zgłoś ten adres do AbuseIPDB";
+    reportBtn.textContent = "Zgłoś AbuseIPDB";
     reportBtn.onclick = () => window.arcyApp.goToReport(result.indicator, false);
     actions.appendChild(reportBtn);
   }

@@ -4,6 +4,7 @@ import httpx
 
 from backend.config import settings
 from backend.models import ServiceResult
+from backend.report_builder import ABUSEIPDB_CATEGORIES
 from backend.services.base import IntelService
 
 BASE_URL = "https://api.abuseipdb.com/api/v2"
@@ -33,10 +34,12 @@ class AbuseIpdbService(IntelService):
         if reports:
             r = reports[0]
             reporter_id = r.get("reporterId")
+            cat_ids = r.get("categories") or []
+            categories_label = ", ".join(f"{c} ({ABUSEIPDB_CATEGORIES.get(c, 'nieznana')})" for c in cat_ids)
             latest_report = {
                 "reportedAt": r.get("reportedAt"),
                 "comment": r.get("comment"),
-                "categories": r.get("categories"),
+                "categories": categories_label,
                 "reporter_country": r.get("reporterCountryName"),
                 "reporter_profile": f"https://www.abuseipdb.com/user/{reporter_id}" if reporter_id else None,
             }

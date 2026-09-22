@@ -9,12 +9,12 @@ from backend.models import ServiceResult
 
 
 def describe_exception(exc: BaseException) -> str:
-    """str(exc) bywa puste (np. httpx.ReadTimeout() bez argumentów) — wtedy
+    """str(exc) bywa puste (np. httpx.ReadTimeout() bez argumentów) - wtedy
     pokazujemy przynajmniej typ wyjątku, żeby log nie był pustą linią."""
     text = str(exc)
     if text:
         return f"{type(exc).__name__}: {text}"
-    return f"{type(exc).__name__} (brak treści błędu — prawdopodobnie timeout połączenia)"
+    return f"{type(exc).__name__} (brak treści błędu - prawdopodobnie timeout połączenia)"
 
 
 class IntelService(ABC):
@@ -50,7 +50,7 @@ class IntelService(ABC):
 
     async def fetch_json(self, method: str, url: str, **kwargs) -> tuple[dict | None, ServiceResult | None]:
         """Wspólny fetch+parse z bogatym komunikatem błędu (kod HTTP + treść
-        odpowiedzi serwera, nie tylko generyczny wyjątek) — żeby dało się
+        odpowiedzi serwera, nie tylko generyczny wyjątek) - żeby dało się
         zdiagnozować np. 401 bez zgadywania."""
         try:
             async with httpx.AsyncClient(timeout=20) as client:
@@ -61,7 +61,7 @@ class IntelService(ABC):
             body = exc.response.text[:300]
             return None, self.error_result(f"HTTP {exc.response.status_code}: {body}")
         except httpx.HTTPError as exc:
-            # httpx potrafi rzucić np. ReadTimeout() bez żadnej treści —
+            # httpx potrafi rzucić np. ReadTimeout() bez żadnej treści -
             # str(exc) bywa wtedy pustym stringiem, więc dokładamy typ wyjątku.
             return None, self.error_result(describe_exception(exc))
         except ValueError as exc:

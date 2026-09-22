@@ -35,16 +35,13 @@ ABUSEIPDB_CATEGORIES = {
 
 def build_comment(
     ip: str,
-    port: int | None,
     description: str,
     spoofing_confirmed: bool,
     attachments: list[dict],
     ransom: dict | None,
     message_id: str | None,
 ) -> str:
-    opening = f"Suspicious email delivered directly from IP {ip}"
-    opening += f" on port {port}." if port else "."
-    parts = [opening]
+    parts = [f"Suspicious email delivered directly from IP {ip}."]
 
     if description and description.strip():
         parts.append(description.strip())

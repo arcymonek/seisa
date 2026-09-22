@@ -41,7 +41,7 @@ async function load() {
       <td class="muted">${new Date(e.created_at).toLocaleString("pl-PL")}</td>
       <td>${e.type}</td>
       <td>${e.label}</td>
-      <td>${e.risk_summary ? `<span class="badge ${e.risk_summary.toLowerCase()}">${e.risk_summary}</span>` : "—"}</td>
+      <td>${e.risk_summary ? `<span class="badge ${e.risk_summary.toLowerCase()}">${e.risk_summary}</span>` : "-"}</td>
       <td><button class="secondary open-btn">Otwórz ponownie</button> <button class="secondary del-btn">Usuń</button></td>
     </tr>`
       )

@@ -61,7 +61,7 @@ async function load() {
     return;
   }
   if (!entries.length) {
-    listEl.innerHTML = '<div class="muted">Brak wpisów w wybranym zakresie — dobra wiadomość, nic nie zawiodło.</div>';
+    listEl.innerHTML = '<div class="muted">Brak wpisów w wybranym zakresie - dobra wiadomość, nic nie zawiodło.</div>';
     return;
   }
   listEl.innerHTML = "<table><thead><tr><th>Czas</th><th>Poziom</th><th>Usługa</th><th>Wiadomość</th></tr></thead><tbody>" +

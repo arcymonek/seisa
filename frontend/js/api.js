@@ -30,6 +30,7 @@ export const api = {
   analyzeEmail: (body) => request("/abuseipdb/email/analyze", { method: "POST", body: JSON.stringify(body) }),
   previewReport: (body) => request("/abuseipdb/report/preview", { method: "POST", body: JSON.stringify(body) }),
   submitReport: (body) => request("/abuseipdb/report/submit", { method: "POST", body: JSON.stringify(body) }),
+  assistReport: (body) => request("/abuseipdb/report/assist", { method: "POST", body: JSON.stringify(body) }),
 
   logs: (range, service) => request(`/logs?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`),
 };

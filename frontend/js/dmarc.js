@@ -55,7 +55,7 @@ function handleFiles(files) {
         parseXML(ev.target.result, file.name);
         fileList.appendChild(logLine("✓ " + file.name));
       } catch (err) {
-        const line = logLine("✗ " + file.name + " — błąd parsowania: " + err.message);
+        const line = logLine("✗ " + file.name + " - błąd parsowania: " + err.message);
         line.style.color = "var(--fail)";
         fileList.appendChild(line);
       }
@@ -162,7 +162,7 @@ function riskLevel(row) {
 }
 
 function fmtDate(d) {
-  if (!d) return "—";
+  if (!d) return "-";
   return d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
@@ -219,7 +219,7 @@ function render() {
 
   html += "<h3>Wgrane raporty</h3><table><thead><tr><th>Plik</th><th>Dostawca</th><th>Domena</th><th>Polityka</th><th>Okres</th></tr></thead><tbody>";
   reportMeta.forEach((m) => {
-    html += `<tr><td>${m.filename}</td><td>${m.org}</td><td>${m.domain}</td><td>${m.policy}</td><td>${fmtDate(m.begin)} – ${fmtDate(m.end)}</td></tr>`;
+    html += `<tr><td>${m.filename}</td><td>${m.org}</td><td>${m.domain}</td><td>${m.policy}</td><td>${fmtDate(m.begin)} - ${fmtDate(m.end)}</td></tr>`;
   });
   html += "</tbody></table>";
 
@@ -231,15 +231,15 @@ function render() {
       <td>${row.count}</td>
       <td>${row.spfPass ? `<span style="color:var(--pass)">✓${row.spfPass}</span> ` : ""}${row.spfFail ? `<span style="color:var(--fail)">✗${row.spfFail}</span>` : ""}</td>
       <td>${row.dkimPass ? `<span style="color:var(--pass)">✓${row.dkimPass}</span> ` : ""}${row.dkimFail ? `<span style="color:var(--fail)">✗${row.dkimFail}</span>` : ""}</td>
-      <td>${row.reject || "—"}</td>
-      <td>${row.quarantine || "—"}</td>
-      <td>${row.none || "—"}</td>
+      <td>${row.reject || "-"}</td>
+      <td>${row.quarantine || "-"}</td>
+      <td>${row.none || "-"}</td>
       <td class="muted">${fmtDate(row.earliestSeen)}</td>
       <td class="badge ${risk}">${risk.toUpperCase()}</td>
       <td>
         <button class="secondary geo-btn">geo/ASN</button>
-        <button class="secondary lookup-btn">Sprawdź szczegółowo</button>
-        <button class="secondary report-btn">Zgłoś do AbuseIPDB</button>
+        <button class="secondary lookup-btn">Szczegóły</button>
+        <button class="secondary report-btn">AbuseIPDB</button>
       </td>
     </tr>`;
   });
@@ -269,7 +269,7 @@ async function saveSummaryToHistory() {
   try {
     await api.historyCreate({
       type: "dmarc",
-      label: `${domains} — ${reportMeta.length} raport(y), ${totalMsgs} wiadomości`,
+      label: `${domains} - ${reportMeta.length} raport(y), ${totalMsgs} wiadomości`,
       risk_summary: agg.some((r) => riskLevel(r) === "high") ? "High" : null,
       data: { reportMeta, aggregate: agg },
     });

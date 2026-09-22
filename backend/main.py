@@ -18,7 +18,7 @@ app = FastAPI(title="arcyAnalizer")
 
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
-    """Narzędzie deweloperskie na jednego użytkownika — przeglądarka nie
+    """Narzędzie deweloperskie na jednego użytkownika - przeglądarka nie
     powinna sama trzymać starych wersji HTML/JS/CSS między naszymi zmianami."""
 
     async def dispatch(self, request: Request, call_next):

@@ -1,6 +1,6 @@
 # Zasady raportowania w AbuseIPDB
 
-Niniejszy plik określa zasady raportowania do serwisu AbuseIPDB — https://www.abuseipdb.com
+Niniejszy plik określa zasady raportowania do serwisu AbuseIPDB - https://www.abuseipdb.com
 
 ## Reporting Policy
 
@@ -31,17 +31,17 @@ Last Modified 2022-06-23
 | 2 | DNS Poisoning | Fałszowanie cache serwera DNS (cache poisoning). |
 | 3 | Fraud Orders | Fałszywe zamówienia. |
 | 4 | DDoS Attack | Udział w rozproszonym ataku typu denial-of-service (zwykle część botnetu). |
-| 5 | FTP Brute-Force | — |
+| 5 | FTP Brute-Force | - |
 | 6 | Ping of Death | Zbyt duży pakiet IP. |
 | 7 | Phishing | Strony phishingowe i/lub e-maile phishingowe. |
-| 8 | Fraud VoIP | — |
+| 8 | Fraud VoIP | - |
 | 9 | Open Proxy | Otwarty proxy, open relay lub węzeł wyjściowy Tor. |
 | 10 | Web Spam | Spam w komentarzach/forach, spam w nagłówku HTTP referer lub inny spam CMS. |
 | 11 | Email Spam | Spam w treści e-mail, zainfekowane załączniki i e-maile phishingowe. Uwaga: ograniczaj komentarze tylko do istotnych informacji (zamiast zrzutów logów) i usuwaj dane PII, jeśli chcesz zachować anonimowość. |
 | 12 | Blog Spam | Spam w komentarzach blogowych CMS. |
 | 13 | VPN IP | Kategoria łączna (koniunktywna). |
 | 14 | Port Scan | Skanowanie w poszukiwaniu otwartych portów i podatnych usług. |
-| 15 | Hacking | — |
+| 15 | Hacking | - |
 | 16 | SQL Injection | Próby wstrzyknięcia SQL. |
 | 17 | Spoofing | Podszywanie się pod nadawcę e-maila. |
 | 18 | Brute-Force | Ataki brute-force na dane logowania do stron internetowych i usług takich jak SSH, FTP, SIP, SMTP, RDP itp. Kategoria oddzielna od ataków DDoS. |
@@ -59,8 +59,9 @@ Last Modified 2022-06-23
 |---|---|
 | **IP** | `___________________` |
 | **Kategorie** | `___________________` (zobacz tabelę kategorii wyżej) |
-| **Timestamp ataku** | `___________________` *(osobne pole formularza — NIE wpisywać w treść komentarza)* |
-| **Port** | `___________________` |
+| **Timestamp ataku** | `___________________` *(osobne pole formularza - NIE wpisywać w treść komentarza)* |
+
+Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, wpisz go wprost w opisie mechanizmu ataku (np. "on port 587").
 
 ---
 
@@ -71,24 +72,24 @@ Last Modified 2022-06-23
 directly from IP [X.X.X.X] ([dodatkowy kontekst: brak rDNS / botnet /
 open proxy / itp., jeśli dotyczy]).
 
-[Opis mechanizmu ataku — co dokładnie się stało: spoofing, próba logowania,
+[Opis mechanizmu ataku - co dokładnie się stało: spoofing, próba logowania,
 skanowanie, injection, treść wiadomości itp. Konkretne dane: nagłówki,
-payloady, endpointy, komendy — bez zbędnego lania wody.]
+payloady, endpointy, komendy - bez zbędnego lania wody.]
 
-[Jeśli dotyczy — spoofing potwierdzony technicznie:]
+[Jeśli dotyczy - spoofing potwierdzony technicznie:]
 SPF/DMARC check failed for the spoofed sender domain, confirming the message
 did not originate from an authorized mail server for that domain.
 
-[Jeśli dotyczy — załącznik(i):]
+[Jeśli dotyczy - załącznik(i):]
 Attachment: [nazwa pliku], [rozmiar, np. 245 KB]
 Extension: displayed as [.pdf] / actual file type [.exe]
 [Powtórzyć blok dla każdego załącznika]
 
-[Jeśli dotyczy — żądanie okupu/płatności:]
+[Jeśli dotyczy - żądanie okupu/płatności:]
 Ransom/payment demand: [kwota + waluta]
 BTC/krypto wallet: [adres]
 
-[Jeśli dotyczy — identyfikatory do korelacji:]
+[Jeśli dotyczy - identyfikatory do korelacji:]
 Message-ID: [identyfikator]
 ```
 
@@ -97,12 +98,12 @@ Message-ID: [identyfikator]
 ## Checklist przed wysłaniem
 
 - [ ] Atak nie starszy niż 60 dni
-- [ ] Adres IP zweryfikowany z nagłówka `Received` (nie z `From`/treści — te można sfałszować)
+- [ ] Adres IP zweryfikowany z nagłówka `Received` (nie z `From`/treści - te można sfałszować)
 - [ ] Źródło nie jest spoofowane (SYN/UDP flood → NIE zgłaszać; TCP z domkniętym handshake → można)
 - [ ] Kategoria dopasowana do rzeczywistego mechanizmu ataku, nie "na wszelki wypadek"
 - [ ] Adres BTC/krypto podany w komentarzu, jeśli występuje w ataku
-- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC — dodane jedno zdanie potwierdzające
-- [ ] Jeśli są załączniki — podana nazwa, rozmiar oraz prawdziwe i fałszywe rozszerzenie
-- [ ] Timestamp **nie** w treści komentarza — tylko w osobnym polu formularza
+- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC - dodane jedno zdanie potwierdzające
+- [ ] Jeśli są załączniki - podana nazwa, rozmiar oraz prawdziwe i fałszywe rozszerzenie
+- [ ] Timestamp **nie** w treści komentarza - tylko w osobnym polu formularza
 - [ ] Własny adres e-mail/domena/inne PII zredagowane z treści komentarza (chyba że niezbędne do opisu mechanizmu ataku)
-- [ ] Opis wystarczająco szczegółowy: porty, nagłówki, mechanizm, kwoty, konkretne dane — nie ogólnik
+- [ ] Opis wystarczająco szczegółowy: porty, nagłówki, mechanizm, kwoty, konkretne dane - nie ogólnik

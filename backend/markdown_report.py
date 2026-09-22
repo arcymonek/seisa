@@ -69,7 +69,7 @@ def build_markdown(
     services: dict[str, ServiceResult],
 ) -> str:
     lines: list[str] = []
-    lines.append(f"# Raport reputacji — `{indicator}`")
+    lines.append(f"# Raport reputacji - `{indicator}`")
     lines.append("")
     lines.append(f"Typ: **{'adres IP' if indicator_type == 'ip' else 'domena'}**")
     lines.append("")
@@ -84,10 +84,7 @@ def build_markdown(
             lines.append(f"| {c.source} | {c.signal} | {c.value} | {c.weight} | {round(c.contribution, 1)} |")
         lines.append("")
     if risk_score.excluded_sources:
-        lines.append("### Wykluczone z wyniku")
-        lines.append("")
-        for ex in risk_score.excluded_sources:
-            lines.append(f"- {ex}")
+        lines.append(f'<div class="excluded-sources">Wykluczone z wyniku: {"; ".join(risk_score.excluded_sources)}</div>')
         lines.append("")
 
     for name, result in services.items():
@@ -107,7 +104,7 @@ def build_markdown(
                     lines.append(f"- **{key}**:")
                     lines.extend(_render_value_lines(value, indent=1))
                 elif isinstance(value, str) and "\n" in value:
-                    # wielolinijkowy tekst (np. surowy rekord WHOIS) — jedna linia
+                    # wielolinijkowy tekst (np. surowy rekord WHOIS) - jedna linia
                     # źródła = jeden punkt listy, żeby zwykła treść nie zlała się
                     # w jeden akapit ani nie wyglądała jak blok kodu
                     lines.append(f"- **{key}**:")

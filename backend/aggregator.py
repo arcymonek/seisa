@@ -172,7 +172,7 @@ def _compute_risk_score(results: dict[str, ServiceResult], indicator_type: Indic
     elif otx:
         excluded.append(f"otx ({otx.status})")
 
-    excluded.append("cloudflare_radar (dane sieciowe/kontekstowe, nie werdykt — poza wynikiem liczbowym)")
+    excluded.append("cloudflare_radar (dane sieciowe/kontekstowe, nie werdykt - poza wynikiem liczbowym)")
 
     total_weight = sum(c.weight for c in components)
     score = sum(c.contribution for c in components) / total_weight if total_weight else 0.0

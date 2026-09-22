@@ -12,7 +12,7 @@ const SERVICE_INFO = {
     url: "https://urlscan.io",
   },
   "Cloudflare Radar": {
-    description: "Dane sieciowe/kontekstowe — ASN, lokalizacja, routing. To nie jest werdykt reputacyjny.",
+    description: "Dane sieciowe/kontekstowe - ASN, lokalizacja, routing. To nie jest werdykt reputacyjny.",
     url: "https://radar.cloudflare.com",
   },
   "AbuseIPDB": {
@@ -24,7 +24,7 @@ const SERVICE_INFO = {
     url: "https://www.greynoise.io",
   },
   "WHOIS / rDNS": {
-    description: "Rekord WHOIS domeny lub odwrotny DNS (PTR) adresu IP — bezpośrednie zapytanie protokołowe, bez zewnętrznego konta ani jednej strony źródłowej.",
+    description: "Rekord WHOIS domeny lub odwrotny DNS (PTR) adresu IP - bezpośrednie zapytanie protokołowe, bez zewnętrznego konta ani jednej strony źródłowej.",
     url: null,
   },
 };

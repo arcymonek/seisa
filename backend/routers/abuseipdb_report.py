@@ -24,7 +24,6 @@ class EmailAnalyzeRequest(BaseModel):
 class ReportFields(BaseModel):
     ip: str
     categories: list[int]
-    port: int | None = None
     attack_timestamp: str | None = None
     description: str = ""
     spoofing_confirmed: bool = False
@@ -33,8 +32,27 @@ class ReportFields(BaseModel):
     message_id: str | None = None
 
 
-class SubmitRequest(ReportFields):
-    manual_confirmations: dict[str, bool] = {}
+class AssistRequest(BaseModel):
+    ip: str
+    categories: list[int] = []
+    description: str = ""
+    attachments: list[dict] = []
+    ransom: dict | None = None
+    facts: dict | None = None
+    prompt: str = ""
+
+
+async def _translated_description(description: str) -> tuple[str, bool]:
+    """Opis wpisywany jest po polsku, komentarz do AbuseIPDB musi być po angielsku.
+    Zwraca (tekst_do_komentarza, czy_faktycznie_przetlumaczono)."""
+    if not description or not description.strip():
+        return description, False
+    if not llm_analyzer.is_configured():
+        return description, False
+    translated = await llm_analyzer.translate_to_english(description)
+    if translated is None:
+        return description, False
+    return translated, True
 
 
 @router.post("/email/analyze")
@@ -56,45 +74,66 @@ async def analyze_email(req: EmailAnalyzeRequest):
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories, fields.description)
+    description_en, translated = await _translated_description(fields.description)
     comment = build_comment(
         fields.ip,
-        fields.port,
-        fields.description,
+        description_en,
         fields.spoofing_confirmed,
         fields.attachments,
         fields.ransom,
         fields.message_id,
     )
-    return {"comment": comment, "checks": checks}
+    return {
+        "comment": comment,
+        "checks": checks,
+        "translated": translated,
+        "llm_configured": llm_analyzer.is_configured(),
+    }
+
+
+@router.post("/report/assist")
+async def assist_report(req: AssistRequest):
+    if not llm_analyzer.is_configured():
+        return {"configured": False, "checklist": None, "answer": None}
+
+    context = {
+        "ip": req.ip,
+        "categories": [{"id": c, "name": ABUSEIPDB_CATEGORIES.get(c, "nieznana")} for c in req.categories],
+        "description_pl": req.description,
+        "attachments": req.attachments,
+        "ransom": req.ransom,
+        "facts_from_email": req.facts,
+    }
+    result = await llm_analyzer.assist_report(context, req.prompt)
+    if result is None:
+        return {"configured": False, "checklist": None, "answer": None}
+    if "error" in result:
+        return {"configured": True, "error": result["error"], "checklist": None, "answer": None}
+    return {"configured": True, **result}
 
 
 @router.post("/report/submit")
-async def submit_report(req: SubmitRequest):
-    checks = validate_hard_checks(req.ip, req.attack_timestamp, req.categories, req.description)
+async def submit_report(fields: ReportFields):
+    checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories, fields.description)
     if not checks["all_passed"]:
         raise HTTPException(status_code=400, detail={"message": "twarde sprawdzenia nie przeszły", "checks": checks})
-
-    required_manual = {"received_verified", "not_spoofed_source", "category_matches", "pii_redacted"}
-    if not required_manual.issubset(req.manual_confirmations.keys()) or not all(
-        req.manual_confirmations.get(k) for k in required_manual
-    ):
-        raise HTTPException(status_code=400, detail="brak potwierdzenia wszystkich pozycji checklisty")
 
     if not abuseipdb_service.is_configured():
         raise HTTPException(status_code=400, detail="brak klucza AbuseIPDB API")
 
+    description_en, _translated = await _translated_description(fields.description)
     comment = build_comment(
-        req.ip, req.port, req.description, req.spoofing_confirmed, req.attachments, req.ransom, req.message_id
+        fields.ip, description_en, fields.spoofing_confirmed, fields.attachments, fields.ransom, fields.message_id
     )
-    timestamp = req.attack_timestamp or datetime.now(timezone.utc).isoformat()
+    timestamp = fields.attack_timestamp or datetime.now(timezone.utc).isoformat()
 
     try:
-        result = await abuseipdb_service.submit_report(req.ip, req.categories, comment, timestamp)
+        result = await abuseipdb_service.submit_report(fields.ip, fields.categories, comment, timestamp)
     except Exception as exc:
         append_report_log(
             {
-                "ip": req.ip,
-                "categories": req.categories,
+                "ip": fields.ip,
+                "categories": fields.categories,
                 "comment": comment,
                 "submitted_at": datetime.now(timezone.utc).isoformat(),
                 "success": False,
@@ -105,8 +144,8 @@ async def submit_report(req: SubmitRequest):
 
     append_report_log(
         {
-            "ip": req.ip,
-            "categories": req.categories,
+            "ip": fields.ip,
+            "categories": fields.categories,
             "comment": comment,
             "submitted_at": datetime.now(timezone.utc).isoformat(),
             "success": True,
