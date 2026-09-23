@@ -37,6 +37,7 @@ export function initReportBuilder(container) {
 
       <h3>Krok 3 - checklist</h3>
       <div id="rb-checklist-hard"></div>
+      <div id="rb-checklist-blocking"></div>
       <div class="muted">Poniższe jest wyłącznie informacyjne - nie blokuje wysyłki. Zweryfikuj sam(a) przed kliknięciem "Wyślij".</div>
       <div id="rb-checklist-info"></div>
 
@@ -63,6 +64,9 @@ export function initReportBuilder(container) {
 
 export function prefillReport(ip, spoofingConfirmed) {
   if (!root) return;
+  // Dane z poprzednio analizowanego e-maila nie dotyczą IP przekazanego z innej zakładki.
+  lastFacts = null;
+  lastLlmAnalysis = null;
   root.querySelector("#rb-form").style.display = "block";
   ensureCategoriesRendered();
   root.querySelector("#rb-ip").value = ip;
@@ -259,18 +263,46 @@ function baselineChecklist() {
   const llm = lastLlmAnalysis;
   const noLlmNote = "Wymaga analizy AI - dodaj klucz OpenRouter w .env i użyj \"Analizuj\".";
   return {
-    received_verified: hasFacts && lastFacts.trusted_source_ip
-      ? { status: "pass", note: "Adres wyciągnięty z nagłówka Received." }
-      : { status: "unknown", note: "Brak wklejonego e-maila - zweryfikuj ręcznie." },
-    not_spoofed_source: hasFacts
-      ? { status: "pass", note: "E-mail dostarczony przez ustanowione połączenie SMTP/TCP." }
-      : { status: "unknown", note: "Brak wklejonego e-maila - nie da się ocenić automatycznie." },
+    received_verified: llm && llm.received_verified
+      ? llm.received_verified
+      : hasFacts && lastFacts.trusted_source_ip
+        ? { status: "pass", note: "Adres wyciągnięty z nagłówka Received." }
+        : { status: "unknown", note: "Brak wklejonego e-maila - zweryfikuj ręcznie." },
+    not_spoofed_source: llm && llm.not_spoofed_source
+      ? llm.not_spoofed_source
+      : hasFacts
+        ? { status: "pass", note: "E-mail dostarczony przez ustanowione połączenie SMTP/TCP." }
+        : { status: "unknown", note: "Brak wklejonego e-maila - nie da się ocenić automatycznie." },
     spoofing_confirmed: hasFacts
-      ? { status: lastFacts.spoofing_suspected ? "pass" : "fail", note: lastFacts.spoofing_suspected ? "SPF/DKIM/DMARC fail wykryty w nagłówkach." : "Brak wykrytego SPF/DMARC fail w nagłówkach." }
+      ? { status: lastFacts.spoofing_suspected ? "pass" : "fail", note: lastFacts.spoofing_suspected ? "SPF/DKIM/DMARC fail wykryty w nagłówkach." : noSpoofingNote(lastFacts) }
       : { status: "unknown", note: "Brak wklejonego e-maila." },
     category_matches: llm && llm.category_matches ? llm.category_matches : { status: "unknown", note: noLlmNote },
     pii_redacted: llm && llm.pii_redacted ? llm.pii_redacted : { status: "unknown", note: noLlmNote },
   };
+}
+
+function noSpoofingNote(facts) {
+  const spf = facts.spf, dmarc = facts.dmarc;
+  const state = `SPF: ${spf || "brak"}, DKIM: ${facts.dkim || "brak"}, DMARC: ${dmarc || "brak"}`;
+  let cause;
+  if (!spf && !facts.dkim && !dmarc) {
+    cause = "nagłówki nie zawierają Authentication-Results - serwer odbiorcy mógł ich nie dodać albo zostały usunięte/przy wklejaniu pominięte, więc nie da się ocenić spoofingu";
+  } else if (spf === "pass" || dmarc === "pass") {
+    cause = "nadawca przeszedł uwierzytelnianie - to zwykle domena kontrolowana przez atakującego (własne, poprawne SPF/DMARC), przejęte konto albo podszycie się pod podobną domenę (lookalike), a nie podrobienie cudzej domeny";
+  } else if (spf === "softfail" || spf === "neutral" || spf === "none" || dmarc === "none") {
+    cause = "domena nadawcy nie ma restrykcyjnej polityki (SPF ~all/?all, brak rekordu lub DMARC p=none), więc podrobiona wiadomość nie jest odrzucana ani oznaczana jako fail";
+  } else {
+    cause = "wynik uwierzytelniania jest niejednoznaczny (np. temperror/permerror) - możliwy problem DNS po stronie odbiorcy lub nadawcy";
+  }
+  return `Brak wykrytego SPF/DMARC fail w nagłówkach (${state}). Możliwa przyczyna: ${cause}. To nie musi wykluczać zgłoszenia - kategoria Spoofing wymaga jednak potwierdzenia.`;
+}
+
+const BLOCKING_KEYS = ["received_verified", "not_spoofed_source"];
+
+function llmBlockers() {
+  const llm = lastLlmAnalysis;
+  if (!llm) return [];
+  return BLOCKING_KEYS.filter((k) => llm[k] && llm[k].status === "fail");
 }
 
 function statusClass(status) {
@@ -279,14 +311,25 @@ function statusClass(status) {
   return "auto-pending";
 }
 
+function renderChecklistItem(key, item) {
+  return `<div class="checklist-item ${statusClass(item.status)}">${escapeHtml(CHECKLIST_LABELS[key] || key)}${item.note ? " - " + escapeHtml(item.note) : ""}</div>`;
+}
+
 function renderChecklist(informationalChecklist) {
   const el = root.querySelector("#rb-checklist-info");
+  renderBlockingChecks(informationalChecklist);
   el.innerHTML = Object.entries(informationalChecklist)
-    .map(
-      ([key, item]) =>
-        `<div class="checklist-item ${statusClass(item.status)}">${escapeHtml(CHECKLIST_LABELS[key] || key)}${item.note ? " - " + escapeHtml(item.note) : ""}</div>`
-    )
+    .filter(([key]) => !BLOCKING_KEYS.includes(key))
+    .map(([key, item]) => renderChecklistItem(key, item))
     .join("");
+}
+
+function renderBlockingChecks(checklist) {
+  const el = root.querySelector("#rb-checklist-blocking");
+  el.innerHTML = BLOCKING_KEYS.map((k) => renderChecklistItem(k, checklist[k])).join("") +
+    (llmBlockers().length
+      ? '<div class="banner warn">Analiza AI zakwestionowała powyższy punkt - wysyłka jest zablokowana. Sprawdź łańcuch Received i uruchom \"Analizuj\" ponownie po poprawieniu danych.</div>'
+      : "");
 }
 
 function renderHardChecks(checks) {
@@ -299,7 +342,7 @@ function renderHardChecks(checks) {
 }
 
 function updateSubmitState(checks) {
-  root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed);
+  root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed) || llmBlockers().length > 0;
   if (checks) renderHardChecks(checks);
 }
 

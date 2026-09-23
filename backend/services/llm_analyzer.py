@@ -1,12 +1,54 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import httpx
 
 from backend.config import ABUSEIPDB_POLICY_FILE, settings
+from backend.services.base import describe_exception
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# Nagłówki atrybucji OpenRouter - dzięki nim w panelu OR aplikacja widnieje jako
+# "arcyAnalizer" zamiast "Unknown". Opis aplikacji nie jest ustawiany przez API.
+OPENROUTER_APP_HEADERS = {
+    "HTTP-Referer": "https://arcyanalizer.local",
+    "X-Title": "arcyAnalizer",
+}
+
+logger = logging.getLogger("app")
+
+_OR_HTTP_HINTS = {
+    400: "nieprawidłowe zapytanie",
+    401: "nieprawidłowy klucz API OpenRouter",
+    402: "brak środków na koncie OpenRouter lub przekroczony limit kredytów",
+    403: "odmowa dostępu (moderacja treści lub brak uprawnień klucza)",
+    408: "przekroczony czas oczekiwania",
+    429: "osiągnięty limit zapytań (rate limit)",
+    502: "model lub dostawca niedostępny",
+    503: "brak dostępnego dostawcy dla modelu",
+}
+
+
+def _openrouter_error_text(status: int | None, body: object) -> str:
+    """Składa czytelny opis błędu z kodu HTTP i pola 'error' odpowiedzi OpenRouter
+    ({"error": {"code": ..., "message": ..., "metadata": {...}}})."""
+    message = ""
+    if isinstance(body, dict):
+        err = body.get("error")
+        if isinstance(err, dict):
+            message = str(err.get("message") or "")
+            meta = err.get("metadata")
+            if isinstance(meta, dict):
+                detail = meta.get("raw") or meta.get("reasons")
+                if detail:
+                    message += f" ({detail})"
+            status = status or err.get("code")
+        elif err:
+            message = str(err)
+    hint = _OR_HTTP_HINTS.get(status) if isinstance(status, int) else None
+    parts = [f"HTTP {status}" if status else "", hint or "", message]
+    return " - ".join(p for p in parts if p) or "nieznany błąd OpenRouter"
 
 SYSTEM_PROMPT = """Jesteś asystentem oceniającym, czy e-mail kwalifikuje się do zgłoszenia \
 na AbuseIPDB, zgodnie z dołączoną polityką. Twoja ocena jest WYŁĄCZNIE doradcza - twarde \
@@ -39,6 +81,14 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
     "suggested_ip": "adres IP" lub null jeśli agrees=true,
     "reasoning": "po polsku, dlaczego zgadzasz się lub nie - 1-2 zdania"
   },
+  "received_verified": {
+    "status": "pass"|"fail"|"unknown",
+    "note": "po polsku - czy adres IP do zgłoszenia pochodzi z nagłówka Received wpisanego przez zaufany serwer odbiorcy (a nie z From/treści/nagłówków podrabialnych przez nadawcę); 'fail' tylko gdy widzisz konkretny dowód, że tak nie jest"
+  },
+  "not_spoofed_source": {
+    "status": "pass"|"fail"|"unknown",
+    "note": "po polsku - czy źródłowe IP jest wiarygodne, tzn. wiadomość dotarła przez faktycznie ustanowione połączenie SMTP/TCP z tego adresu (a nie jest to adres podrobiony, wewnętrzny hop dostawcy albo niezweryfikowany); 'fail' tylko gdy widzisz konkretny dowód, że IP mogło zostać podrobione lub nie jest źródłem ataku"
+  },
   "category_matches": {
     "status": "pass"|"fail"|"unknown",
     "note": "po polsku - czy suggested_categories trafnie opisują mechanizm ataku"
@@ -63,6 +113,7 @@ class LlmAnalyzer:
         headers = {
             "Authorization": f"Bearer {settings.openrouter_api_key}",
             "Content-Type": "application/json",
+            **OPENROUTER_APP_HEADERS,
         }
         payload = {
             "model": settings.openrouter_model,
@@ -75,12 +126,40 @@ class LlmAnalyzer:
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            content = data["choices"][0]["message"]["content"]
-            return json.loads(content)
-        except (httpx.HTTPError, KeyError, IndexError, json.JSONDecodeError) as exc:
-            return {"error": str(exc)}
+        except httpx.HTTPError as exc:
+            text = describe_exception(exc)
+            logger.error(f"OpenRouter: błąd połączenia: {text}")
+            return {"error": text}
+
+        try:
+            body = resp.json()
+        except ValueError:
+            body = None
+
+        if resp.status_code >= 400:
+            text = _openrouter_error_text(resp.status_code, body)
+            logger.error(f"OpenRouter: {text}")
+            return {"error": text}
+
+        # OpenRouter potrafi zwrócić 200 z błędem w treści (np. błąd dostawcy w trakcie generowania).
+        if isinstance(body, dict) and body.get("error"):
+            text = _openrouter_error_text(None, body)
+            logger.error(f"OpenRouter: {text}")
+            return {"error": text}
+
+        try:
+            choice = body["choices"][0]
+            if choice.get("error"):
+                text = _openrouter_error_text(None, {"error": choice["error"]})
+                logger.error(f"OpenRouter: {text}")
+                return {"error": text}
+            if choice.get("finish_reason") == "length":
+                logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length), możliwy niepełny JSON")
+            return json.loads(choice["message"]["content"])
+        except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+            text = f"nieprawidłowa odpowiedź OpenRouter ({describe_exception(exc)})"
+            logger.warning(f"OpenRouter: {text}")
+            return {"error": text}
 
     async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "") -> dict | None:
         if not self.is_configured():

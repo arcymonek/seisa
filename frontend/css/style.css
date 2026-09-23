@@ -32,6 +32,10 @@ h1 span { color: var(--accent); }
 h1 small { color: var(--muted); font-size: 15px; font-weight: 400; }
 .subtitle { font-size: 15.5px; color: var(--muted); max-width: 640px; }
 
+.panel > .subtitle:first-child {
+  max-width: none; padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--hair);
+}
+
 .tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--hair); margin-bottom: 20px; }
 .tab-btn {
   background: none; border: none; color: var(--muted); font-family: var(--mono);
