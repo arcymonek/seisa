@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.email_parser import parse_email
+from backend.email_parser import extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
 from backend.services.abuseipdb import AbuseIpdbService
 from backend.services.llm_analyzer import llm_analyzer
@@ -61,7 +61,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
-        llm_analysis = await llm_analyzer.analyze_email(facts)
+        llm_analysis = await llm_analyzer.analyze_email(facts, extract_relevant_headers(req.raw_email))
 
     return {
         "facts": facts,

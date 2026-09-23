@@ -23,6 +23,34 @@ AbuseIPDB reserves the right to remove reports at its discretion. AbuseIPDB rese
 
 Last Modified 2022-06-23
 
+## Identyfikacja prawdziwego adresu IP w łańcuchu Received
+
+Nagłówki `Received` są dopisywane na górze przy każdym hopie - najnowszy (ostatnia dostawa)
+jest pierwszy w nagłówkach e-maila, najstarszy (pierwsze wejście do sieci) jest ostatni.
+W prostym przypadku (bezpośrednie połączenie SMTP na własny serwer) ostatni/najstarszy
+nagłówek Received to jedyny i wystarczający dowód - jest zapisany przez własną, niefałszowalną
+infrastrukturę odbiorcy.
+
+**Uwaga na łańcuchy wielohopowe dużych dostawców** (Microsoft 365/Outlook.com, Google
+Workspace i podobne): pierwsze kilka nagłówków Received od góry to zwykle transfery
+WEWNĘTRZNE między serwerami tego samego dostawcy. Mają adresy IP formalnie "publiczne"
+(nie prywatne/loopback), ale to NIE jest adres atakującego - to infrastruktura pocztowa
+samego dostawcy. Typowy, rozpoznawalny wzorzec granicy (miejsca, gdzie dostawca zapisuje
+faktyczny adres łączącego się nadawcy) to:
+
+```
+Received: from [127.0.0.1] (PRAWDZIWE_IP) by <bramka>.mail.protection.outlook.com
+  ... via Frontend Transport; ...
+```
+
+czyli host "from" to loopback-placeholder `[127.0.0.1]` (lub podobny), a rzeczywisty
+zewnętrzny adres jest zapisany w nawiasie obok. Zasada ogólna: idź od najnowszego
+nagłówka Received w dół i porównuj domenę hosta "from" z domeną hosta "by" pierwszego
+(najnowszego) hopu - dopóki się zgadzają, to hop wewnętrzny tego samego dostawcy. Pierwszy
+hop, w którym domena "from" już się nie zgadza (albo "from" to sam adres IP/loopback bez
+własnej domeny) - to hop graniczny, i to jego IP kwalifikuje się do zgłoszenia, nie IP z
+wcześniejszych (nowszych) hopów.
+
 ## Kategorie AbuseIPDB
 
 | ID | Nazwa | Opis |

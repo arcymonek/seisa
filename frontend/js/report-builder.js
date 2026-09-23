@@ -159,6 +159,22 @@ function collectAttachments() {
   }));
 }
 
+function renderReceivedChain(facts) {
+  const chain = facts.received_chain || [];
+  if (!chain.length) return "";
+  const rows = chain
+    .map((hop) => {
+      const boundaryMark = hop.is_boundary ? ' <strong>&larr; hop graniczny</strong>' : "";
+      return `<div class="hop-row${hop.is_boundary ? " hop-boundary" : ""}">from <strong>${hop.from_host || "?"}</strong> (${hop.ip || "brak IP"}) by ${hop.by_host || "?"}${boundaryMark}</div>`;
+    })
+    .join("");
+  return `<details class="hop-chain">
+    <summary>Łańcuch Received (${chain.length} ${chain.length === 1 ? "hop" : "hopy/hopów"}) - dlaczego to IP</summary>
+    <div class="muted" style="margin:6px 0">${facts.ip_reasoning || ""}</div>
+    ${rows}
+  </details>`;
+}
+
 async function analyze(useLlm) {
   const rawEmail = root.querySelector("#rb-email").value.trim();
   if (!rawEmail) return;
@@ -197,12 +213,22 @@ async function analyze(useLlm) {
     html += `<div class="banner warn">Analiza LLM nie powiodła się (${llm.error}) - pokazuję tylko wynik regułowy.</div>`;
   }
 
+  if (llm && !llm.error && llm.source_ip_check && llm.source_ip_check.agrees === false) {
+    html += `<div class="banner warn"><strong>AI sugeruje inny adres IP niż wykryty automatycznie.</strong><br>
+      Automatycznie wykryto: <strong>${facts.trusted_source_ip || "brak"}</strong> (pewność: ${facts.ip_confidence}).
+      AI sugeruje: <strong>${llm.source_ip_check.suggested_ip || "brak sugestii"}</strong>.<br>
+      ${llm.source_ip_check.reasoning || ""}<br>
+      To wyłącznie sugestia - zweryfikuj ręcznie w łańcuchu Received poniżej i popraw pole IP w Kroku 2, jeśli trzeba.</div>`;
+  }
+
   html += `<div class="card muted">
-    IP źródłowe: <strong>${facts.trusted_source_ip || "brak"}</strong> ·
+    IP źródłowe: <strong>${facts.trusted_source_ip || "brak"}</strong>
+    <span class="ip-confidence ip-confidence-${facts.ip_confidence || "low"}">(pewność: ${facts.ip_confidence || "?"})</span> ·
     wiek: ${facts.age_days ?? "?"} dni ·
     SPF: ${facts.spf || "?"} · DKIM: ${facts.dkim || "?"} · DMARC: ${facts.dmarc || "?"} ·
     załączniki: ${facts.attachments.length}
   </div>`;
+  html += renderReceivedChain(facts);
   analysisEl.innerHTML = html;
 
   root.querySelector("#rb-form").style.display = "block";

@@ -107,6 +107,19 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 .checklist-item.auto-pass::before { content: "✓"; color: var(--pass); font-weight: 700; }
 .checklist-item.auto-fail::before { content: "✗"; color: var(--fail); font-weight: 700; }
 
+.ip-confidence { font-size: 12.5px; }
+.ip-confidence-high { color: var(--pass); }
+.ip-confidence-medium { color: var(--warn); }
+.ip-confidence-low { color: var(--fail); }
+
+.hop-chain { margin: 10px 0; }
+.hop-chain summary { cursor: pointer; color: var(--accent); }
+.hop-row {
+  font-family: var(--mono); font-size: 12.5px; color: var(--muted);
+  padding: 5px 8px; border-left: 2px solid var(--hair); margin-top: 4px;
+}
+.hop-row.hop-boundary { border-left-color: var(--accent); color: var(--text); }
+
 .banner { border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; }
 .banner.warn { background: #3a3220; border: 1px solid var(--warn); }
 .banner.info { background: #1c2a30; border: 1px solid var(--accent); }
