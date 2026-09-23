@@ -1,38 +1,45 @@
 # arcyAnalizer
 
-Lokalne narzędzie do analizy reputacji adresów IP/domen, raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
+Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
 
 Autor: Arkadiusz Polak <kontakt@arkadiuszpolak.pl>
 
 ## Funkcje
 
-### Lookup
-Wpisujesz adres IP lub domenę, narzędzie odpytuje równolegle:
+### IP
+Wpisujesz adres IP (wyłącznie IP - analiza URL/domen jest w osobnej zakładce URLScan), narzędzie odpytuje równolegle:
 
 | Usługa | Co dostarcza |
 |---|---|
 | [VirusTotal](https://www.virustotal.com) | detekcje silników AV, reputacja, ASN, kategorie, tagi, WHOIS |
 | [AlienVault OTX](https://otx.alienvault.com) | pulsy threat-intel, geolokalizacja, ASN |
-| [urlscan.io](https://urlscan.io) | historia publicznych skanów tej domeny/IP |
 | [Cloudflare Radar](https://radar.cloudflare.com) | dane sieciowe/kontekstowe - ASN, lokalizacja, routing (nie werdykt) |
 | [AbuseIPDB](https://www.abuseipdb.com) | confidence score, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP |
 | [GreyNoise](https://www.greynoise.io) | czy IP to znany "szum internetowy" (skanery/boty) |
-| WHOIS / rDNS | rekord WHOIS domeny lub odwrotny DNS (PTR) - bez klucza API |
+| WHOIS / rDNS | odwrotny DNS (PTR) - bez klucza API |
 | Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
 Wynik to jeden **wynik zbiorczy** (ważona suma sygnałów z VirusTotal/AbuseIPDB/GreyNoise/OTX; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
 
-Obsługuje tryb wsadowy (wiele wskaźników naraz, z widocznym throttlem VirusTotal - 4 zapytania/min, 500/dzień) oraz cache w pamięci (15 min), z opcją wymuszenia odświeżenia.
+Obsługuje tryb wsadowy (wiele adresów IP naraz, z widocznym throttlem VirusTotal - 4 zapytania/min, 500/dzień) oraz cache w pamięci (15 min), z opcją wymuszenia odświeżenia.
 
 Raport można zapisać jako `.md` (natywne okno wyboru miejsca zapisu w przeglądarce) albo skopiować.
 
+### URLScan
+Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, potem odpytywanie `GET /api/v1/result/{uuid}/` co 5 sekund, aż wynik będzie gotowy - urlscan.io zwraca 404, dopóki skan trwa). Każdy skan jest zgłaszany z:
+
+- **widocznością `unlisted`** - nie trafia na stronę główną ani do publicznych wyników wyszukiwania urlscan.io, ale pozostaje widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro,
+- **domyślnym user-agentem** (bez `customagent`) i **automatycznym doborem kraju skanowania** (bez `country`) - oba pola celowo pominięte w zapytaniu.
+
+Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen, linki znalezione na stronie oraz linki do zrzutu ekranu i DOM. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
+
 ### DMARC
-Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail i poziom ryzyka. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka Lookup) albo do przygotowania zgłoszenia AbuseIPDB.
+Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail i poziom ryzyka. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
 
 ### AbuseIPDB (zgłaszanie)
 Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.):
 
-1. **Wklej surowy kod źródłowy podejrzanego e-maila** (nagłówki + treść) - opcjonalnie, można też zacząć od samego IP (przycisk "Zgłoś AbuseIPDB" w Lookup/DMARC).
+1. **Wklej surowy kod źródłowy podejrzanego e-maila** (nagłówki + treść) - opcjonalnie, można też zacząć od samego IP (przycisk "Zgłoś AbuseIPDB" w zakładce IP/DMARC).
 2. Backend deterministycznie wyciąga fakty: zaufany adres IP źródłowy (algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego hopu, którego host "from" nie należy już do tej samej domeny co host "by" najnowszego hopu - w łańcuchach wielohopowych dużych dostawców, np. Microsoft 365/Outlook.com, pierwsze kilka hopów to transfery wewnętrzne tego samego dostawcy i są pomijane, żeby nie wziąć ich adresu zamiast prawdziwego nadawcy), wraz z poziomem pewności (`ip_confidence`) i pełnym łańcuchem hopów do wglądu (rozwijana lista "Łańcuch Received - dlaczego to IP" w Kroku 1). Dodatkowo: wynik SPF/DKIM/DMARC, załączniki (z wykrywaniem podwójnych rozszerzeń typu `faktura.pdf.exe`), Message-ID, wzorce adresów BTC/żądań okupu. **Twarde sprawdzenia (wiek ataku, czy IP jest prywatne) są zawsze liczone w Pythonie, nigdy nie są delegowane do LLM.**
 3. Opcjonalnie (jeśli w `.env` jest `OPENROUTER_API_KEY`) model LLM przez **OpenRouter** ocenia, czy e-mail kwalifikuje się do zgłoszenia, niezależnie weryfikuje wybrany przez kod adres IP na podstawie surowych nagłówków (`source_ip_check` - jeśli się nie zgadza, w Kroku 1 pojawia się wyraźny baner ostrzegawczy z sugestią modelu, wyłącznie informacyjny), ocenia dopasowanie sugerowanych kategorii i ewentualne PII w komentarzu - i **pisze gotowy, szczegółowy komentarz zgłoszenia po angielsku**, na podstawie faktów, surowych nagłówków (w tym Subject/Reply-To/wskaźników spamu jeśli obecne) oraz fragmentu treści wiadomości (HTML zamienione na czysty tekst) - patrz punkt 4. Bez klucza narzędzie działa w trybie regułowym.
 4. **Komentarz zgłoszenia to edytowalne pole w Kroku 2, wypełnione tym, co napisał LLM** - `comment` jest polem opcjonalnym w API AbuseIPDB ([`/report`](https://docs.abuseipdb.com/#report-endpoint), wymagane jest tylko `ip` i `categories`), ale sama polityka AbuseIPDB oczekuje szczegółowego, technicznie uzasadnionego opisu - stąd komentarz pisze LLM (mechanizm ataku, znaczenie SPF/DKIM/DMARC, złośliwe załączniki z wykrytym podwójnym rozszerzeniem typu `faktura.pdf.exe`, żądanie okupu/BTC, wzorce masowej wysyłki), w granicach ok. 900 znaków. Bez LLM (lub gdy analiza zawiedzie) używany jest uboższy, deterministyczny fallback zbudowany wyłącznie z faktów. W obu przypadkach tekst jest w pełni edytowalny przed wysyłką, a backend i tak sanityzuje/przycina go do 1024 znaków tuż przed wysyłką. Numer portu, jeśli znany, dopisz ręcznie.
@@ -67,12 +74,13 @@ arcyanalizer/
 │   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP
+│   ├── urlscan_report.py     # budowa raportu Markdown z wyniku skanu urlscan.io
 │   ├── routers/               # endpointy /api/*
-│   └── services/               # klient dla każdej usługi (wspólny interfejs IntelService)
+│   └── services/               # klient dla każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - submit+poll, nie IntelService)
 ├── frontend/
 │   ├── index.html
 │   ├── css/style.css          # ciemny motyw
-│   ├── js/                    # moduły: app, lookup, dmarc, report-builder, history, logs
+│   ├── js/                    # moduły: app, lookup, urlscan, dmarc, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
 ├── data/                    # history.json, vt_usage.json, report_log.json (gitignored)
 ├── logi/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)

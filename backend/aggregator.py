@@ -13,14 +13,12 @@ from backend.services.base import describe_exception
 from backend.services.cloudflare_radar import CloudflareRadarService
 from backend.services.greynoise import GreyNoiseService
 from backend.services.otx import OtxService
-from backend.services.urlscan import UrlscanService
 from backend.services.virustotal import VirusTotalService
 from backend.services.whois_dns import WhoisDnsService
 
 SERVICE_REGISTRY = {
     "virustotal": VirusTotalService(),
     "otx": OtxService(),
-    "urlscan": UrlscanService(),
     "cloudflare_radar": CloudflareRadarService(),
     "abuseipdb": AbuseIpdbService(),
     "greynoise": GreyNoiseService(),

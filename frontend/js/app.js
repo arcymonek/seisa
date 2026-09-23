@@ -3,6 +3,7 @@ import { initDmarc } from "./dmarc.js";
 import { initReportBuilder, prefillReport } from "./report-builder.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
+import { initUrlscan } from "./urlscan.js";
 
 const panels = {
   lookup: document.getElementById("panel-lookup"),
@@ -10,6 +11,7 @@ const panels = {
   report: document.getElementById("panel-report"),
   history: document.getElementById("panel-history"),
   logs: document.getElementById("panel-logs"),
+  urlscan: document.getElementById("panel-urlscan"),
 };
 
 export function switchTab(name) {
@@ -45,3 +47,4 @@ initDmarc(panels.dmarc);
 initReportBuilder(panels.report);
 initHistory(panels.history);
 initLogs(panels.logs);
+initUrlscan(panels.urlscan);

@@ -7,7 +7,6 @@ from backend.models import IndicatorType, RiskScore, ServiceResult
 SERVICE_TITLES = {
     "virustotal": "VirusTotal",
     "otx": "AlienVault OTX",
-    "urlscan": "urlscan.io",
     "cloudflare_radar": "Cloudflare Radar",
     "abuseipdb": "AbuseIPDB",
     "greynoise": "GreyNoise",
@@ -55,7 +54,7 @@ def _render_value_lines(value, indent: int = 0) -> list[str]:
     return lines
 
 
-def _numbered_code_block(text: str, lang: str = "json") -> list[str]:
+def numbered_code_block(text: str, lang: str = "json") -> list[str]:
     src_lines = text.split("\n")
     width = len(str(len(src_lines)))
     numbered = [f"{str(i + 1).rjust(width)} | {line}" for i, line in enumerate(src_lines)]
@@ -124,7 +123,7 @@ def build_markdown(
             lines.append("<details><summary>Pełna odpowiedź API</summary>")
             lines.append("")
             raw_text = json.dumps(result.raw, ensure_ascii=False, indent=2, default=str)
-            lines.extend(_numbered_code_block(raw_text))
+            lines.extend(numbered_code_block(raw_text))
             lines.append("")
             lines.append("</details>")
             lines.append("")

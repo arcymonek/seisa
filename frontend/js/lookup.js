@@ -1,7 +1,7 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
 
-const ALL_SERVICES = ["virustotal", "otx", "urlscan", "cloudflare_radar", "abuseipdb", "greynoise", "whois_rdns"];
+const ALL_SERVICES = ["virustotal", "otx", "cloudflare_radar", "abuseipdb", "greynoise", "whois_rdns"];
 
 let root;
 let enabledServices = new Set(ALL_SERVICES);
@@ -37,12 +37,12 @@ function stopTimer(prefix) {
 export function initLookup(container) {
   root = container;
   root.innerHTML = `
-    <label>IP lub domena</label>
-    <input type="text" id="lk-indicator" placeholder="1.2.3.4 lub przyklad.pl">
+    <label>Adres IP</label>
+    <input type="text" id="lk-indicator" placeholder="1.2.3.4">
 
     <label><input type="checkbox" id="lk-batch"> Tryb wsadowy (batch)</label>
     <div id="lk-batch-area" style="display:none">
-      <label>Wklej IP/domeny, jedna na linię</label>
+      <label>Wklej adresy IP, jeden na linię</label>
       <textarea id="lk-batch-text"></textarea>
     </div>
 
@@ -131,7 +131,7 @@ async function onSubmit() {
     return;
   }
   try {
-    const result = await api.lookup({ indicator, type: "auto", services, force_refresh: forceRefresh });
+    const result = await api.lookup({ indicator, type: "ip", services, force_refresh: forceRefresh });
     stopTimer();
     resultsEl.innerHTML = "";
     resultsEl.appendChild(renderResult(result));

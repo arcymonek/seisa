@@ -7,10 +7,6 @@ const SERVICE_INFO = {
     description: "Liczba i nazwy pulsów threat-intel powiązanych z tym wskaźnikiem, geolokalizacja, ASN.",
     url: "https://otx.alienvault.com",
   },
-  "urlscan.io": {
-    description: "Historia publicznych skanów tej domeny/IP wykonanych przez innych użytkowników urlscan.io.",
-    url: "https://urlscan.io",
-  },
   "Cloudflare Radar": {
     description: "Dane sieciowe/kontekstowe - ASN, lokalizacja, routing. To nie jest werdykt reputacyjny.",
     url: "https://radar.cloudflare.com",

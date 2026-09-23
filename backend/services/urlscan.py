@@ -1,50 +1,71 @@
 from __future__ import annotations
 
+import logging
+
+import httpx
+
 from backend.config import settings
-from backend.models import ServiceResult
-from backend.services.base import IntelService
+from backend.services.base import describe_exception
 
-BASE_URL = "https://urlscan.io/api/v1/search/"
+logger = logging.getLogger("urlscan")
+
+SCAN_URL = "https://urlscan.io/api/v1/scan/"
+RESULT_URL = "https://urlscan.io/api/v1/result/{uuid}/"
 
 
-class UrlscanService(IntelService):
-    name = "urlscan"
+class UrlscanError(Exception):
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
-    def is_configured(self) -> bool:
-        return bool(settings.urlscan_api_key)
 
-    async def query_ip(self, ip: str) -> ServiceResult:
-        return await self._search(f"page.ip:{ip}")
+def is_configured() -> bool:
+    return bool(settings.urlscan_api_key)
 
-    async def query_domain(self, domain: str) -> ServiceResult:
-        return await self._search(f"domain:{domain}")
 
-    async def _search(self, query: str) -> ServiceResult:
-        if not self.is_configured():
-            return self.not_configured_result()
-        headers = {"API-Key": settings.urlscan_api_key}
-        params = {"q": query, "size": 100}
-        data, err = await self.fetch_json("GET", BASE_URL, headers=headers, params=params)
-        if err:
-            return err
+def _headers() -> dict:
+    return {"API-Key": settings.urlscan_api_key, "Content-Type": "application/json"}
 
-        results = data.get("results", [])
-        scans = [
-            {
-                "url": r.get("page", {}).get("url"),
-                "time": r.get("task", {}).get("time"),
-                "result_url": r.get("result"),
-                "country": r.get("page", {}).get("country"),
-                "server": r.get("page", {}).get("server"),
-                "asn": r.get("page", {}).get("asn"),
-                "asnname": r.get("page", {}).get("asnname"),
-            }
-            for r in results
-        ]
-        summary = {
-            "total_scans": data.get("total", len(results)),
-            "scans": scans,
-        }
-        if not scans:
-            summary["note"] = "Brak innych informacji"
-        return ServiceResult(service=self.name, status="ok", summary=summary, raw=data)
+
+async def submit_scan(url: str) -> dict:
+    """Zgłasza nowy skan - zawsze widoczność 'unlisted' (nie trafia na publiczną
+    stronę główną/wyszukiwarkę urlscan.io, ale jest dostępny po UUID i widoczny
+    dla zweryfikowanych badaczy w urlscan Pro). User-agent i kraj skanowania
+    celowo NIE są ustawiane (Default/Auto) - to po prostu pominięcie tych pól,
+    urlscan.io sam dobiera wartości domyślne."""
+    if not is_configured():
+        raise UrlscanError("brak klucza API (URLSCAN_API_KEY)")
+    payload = {"url": url, "visibility": "unlisted"}
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.post(SCAN_URL, headers=_headers(), json=payload)
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPStatusError as exc:
+        message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
+        logger.error(f"zgłoszenie skanu nie powiodło się: {message}")
+        raise UrlscanError(message) from exc
+    except httpx.HTTPError as exc:
+        message = describe_exception(exc)
+        logger.error(f"zgłoszenie skanu nie powiodło się: {message}")
+        raise UrlscanError(message) from exc
+
+
+async def fetch_result(uuid: str) -> dict | None:
+    """Zwraca None, jeśli skan jeszcze trwa (urlscan.io odpowiada 404, dopóki
+    wynik nie jest gotowy - to oczekiwane, nie błąd)."""
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(RESULT_URL.format(uuid=uuid), headers=_headers())
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPStatusError as exc:
+        message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
+        logger.error(f"pobranie wyniku skanu nie powiodło się: {message}")
+        raise UrlscanError(message) from exc
+    except httpx.HTTPError as exc:
+        message = describe_exception(exc)
+        logger.error(f"pobranie wyniku skanu nie powiodło się: {message}")
+        raise UrlscanError(message) from exc

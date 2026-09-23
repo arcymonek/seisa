@@ -3,18 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>arcyAnalizer 1.1.4</title>
+<title>arcyAnalizer 1.1.5</title>
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>arcy<span>Analizer</span> <small>1.1.4</small></h1>
-    <div class="subtitle">Lokalna analiza reputacji IP/domen, raportów DMARC i zgłoszeń AbuseIPDB</div>
+    <h1>arcy<span>Analizer</span> <small>1.1.5</small></h1>
+    <div class="subtitle">Lokalna analiza reputacji IP, skany URL (urlscan.io), raportów DMARC i zgłoszeń AbuseIPDB</div>
   </header>
 
   <nav class="tabs" id="tabs">
-    <button class="tab-btn active" data-tab="lookup">Lookup</button>
+    <button class="tab-btn active" data-tab="lookup">IP</button>
+    <button class="tab-btn" data-tab="urlscan">URLScan</button>
     <button class="tab-btn" data-tab="dmarc">DMARC</button>
     <button class="tab-btn" data-tab="report">AbuseIPDB</button>
     <button class="tab-btn" data-tab="history">Historia</button>
@@ -23,13 +24,14 @@
 
   <main id="panels">
     <section id="panel-lookup" class="panel active"></section>
+    <section id="panel-urlscan" class="panel"></section>
     <section id="panel-dmarc" class="panel"></section>
     <section id="panel-report" class="panel"></section>
     <section id="panel-history" class="panel"></section>
     <section id="panel-logs" class="panel"></section>
   </main>
 
-  <footer>arcyAnalizer 1.1.4 - Arkadiusz Polak &lt;kontakt@arkadiuszpolak.pl&gt;</footer>
+  <footer>arcyAnalizer 1.1.5 - Arkadiusz Polak &lt;kontakt@arkadiuszpolak.pl&gt;</footer>
 </div>
 
 <script src="/vendor/marked.min.js"></script>
