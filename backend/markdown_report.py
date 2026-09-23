@@ -13,6 +13,9 @@ SERVICE_TITLES = {
     "whois_rdns": "WHOIS / rDNS",
 }
 
+# Stała kolejność sekcji w raporcie, niezależnie od kolejności zakończenia zapytań.
+SERVICE_ORDER = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"]
+
 STATUS_LABELS = {
     "ok": "OK",
     "error": "błąd",
@@ -83,7 +86,8 @@ def build_markdown(
         lines.append(f'<div class="excluded-sources">Wykluczone z wyniku: {"; ".join(risk_score.excluded_sources)}</div>')
         lines.append("")
 
-    for name, result in services.items():
+    ordered = sorted(services.items(), key=lambda kv: SERVICE_ORDER.index(kv[0]) if kv[0] in SERVICE_ORDER else len(SERVICE_ORDER))
+    for name, result in ordered:
         title = SERVICE_TITLES.get(name, name)
         lines.append(f"## {title}")
         lines.append("")

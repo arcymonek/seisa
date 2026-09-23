@@ -17,12 +17,12 @@ from backend.services.virustotal import VirusTotalService
 from backend.services.whois_dns import WhoisDnsService
 
 SERVICE_REGISTRY = {
-    "virustotal": VirusTotalService(),
-    "otx": OtxService(),
-    "cloudflare_radar": CloudflareRadarService(),
-    "abuseipdb": AbuseIpdbService(),
-    "greynoise": GreyNoiseService(),
     "whois_rdns": WhoisDnsService(),
+    "cloudflare_radar": CloudflareRadarService(),
+    "otx": OtxService(),
+    "abuseipdb": AbuseIpdbService(),
+    "virustotal": VirusTotalService(),
+    "greynoise": GreyNoiseService(),
 }
 
 RISK_WEIGHTS = {

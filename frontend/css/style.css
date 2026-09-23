@@ -69,6 +69,15 @@ button.secondary {
 }
 button.secondary:hover { border-color: var(--accent); color: var(--accent); }
 
+/* Aktywne pole/przycisk: gruba biała obwódka zamiast domyślnej przeglądarkowej */
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid #fff; outline-offset: 0; border-color: #fff;
+}
+button:focus-visible, .chip:focus-visible, a:focus-visible, summary:focus-visible {
+  outline: 2px solid #fff; outline-offset: 2px;
+}
+input[type="checkbox"]:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
 .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .chip {
   font-family: var(--mono); font-size: 13.5px; padding: 4px 10px; border-radius: 12px;

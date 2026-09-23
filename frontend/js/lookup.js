@@ -1,7 +1,7 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
 
-const ALL_SERVICES = ["virustotal", "otx", "cloudflare_radar", "abuseipdb", "greynoise", "whois_rdns"];
+const ALL_SERVICES = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"];
 
 let root;
 let enabledServices = new Set(ALL_SERVICES);
@@ -150,15 +150,6 @@ function renderResult(result) {
   const badge = document.createElement("div");
   badge.innerHTML = `<span class="badge ${result.risk_score.level}">${result.risk_score.level.toUpperCase()} - ${result.risk_score.score}/100</span>`;
   wrap.appendChild(badge);
-
-  const signalsTable = document.createElement("table");
-  signalsTable.innerHTML =
-    "<thead><tr><th>Źródło</th><th>Sygnał</th><th>Wartość</th><th>Waga</th><th>Wkład</th></tr></thead><tbody>" +
-    result.risk_score.components
-      .map((c) => `<tr><td>${c.source}</td><td>${c.signal}</td><td>${c.value}</td><td>${c.weight}</td><td>${c.contribution.toFixed(1)}</td></tr>`)
-      .join("") +
-    "</tbody></table>";
-  wrap.appendChild(signalsTable);
 
   const mdContainer = document.createElement("div");
   renderMarkdown(mdContainer, result.markdown);

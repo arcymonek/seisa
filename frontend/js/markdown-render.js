@@ -30,6 +30,22 @@ export function renderMarkdown(container, markdownText) {
   container.innerHTML = window.marked.parse(markdownText || "");
   enhanceServiceHeadings(container);
   enhanceReportHeading(container);
+  linksToButtons(container);
+}
+
+// Linki "Otwórz w ..." z raportu markdown jako przyciski (jak pozostałe akcje).
+function linksToButtons(container) {
+  container.querySelectorAll("a").forEach((a) => {
+    if (!a.textContent.trim().startsWith("Otwórz w ")) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "secondary";
+    btn.textContent = a.textContent.trim();
+    btn.onclick = () => window.open(a.href, "_blank", "noopener");
+    const parent = a.parentElement;
+    a.replaceWith(btn);
+    if (parent && parent.tagName === "P") parent.style.margin = "0";
+  });
 }
 
 function enhanceReportHeading(container) {
