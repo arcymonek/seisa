@@ -10,6 +10,7 @@ let lastLlmAnalysis = null;
 export function initReportBuilder(container) {
   root = container;
   root.innerHTML = `
+    <div class="subtitle">Wklej surowy kod źródłowy podejrzanego e-maila, żeby przygotować i wysłać zgłoszenie nadużycia do AbuseIPDB - z automatyczną ekstrakcją faktów, opcjonalną analizą AI i pełną kontrolą nad treścią przed wysyłką.</div>
     <h3>Krok 1 - wklej e-mail</h3>
     <label>Kod źródłowy e-maila (z nagłówkami)</label>
     <textarea id="rb-email" placeholder="Received: ... From: ... Subject: ..."></textarea>

@@ -5,7 +5,8 @@ let root;
 
 export function initHistory(container) {
   root = container;
-  root.innerHTML = `<button class="secondary" id="hi-refresh">Odśwież</button>
+  root.innerHTML = `<div class="subtitle">Ostatnie wyszukiwania IP i wgrane raporty DMARC - możesz je otworzyć ponownie albo usunąć.</div>
+    <button class="secondary" id="hi-refresh">Odśwież</button>
     <button class="secondary" id="hi-clear">Wyczyść historię</button>
     <div id="hi-list"></div>
     <div id="hi-detail"></div>`;

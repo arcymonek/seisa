@@ -15,12 +15,13 @@ function escapeHtml(str) {
 }
 
 function formatElapsed(ms) {
-  return `${(ms / 1000).toFixed(0)} s`;
+  return `${(ms / 1000).toFixed(1).replace(".", ",")} sekund`;
 }
 
 export function initUrlscan(container) {
   root = container;
   root.innerHTML = `
+    <div class="subtitle">Zleć żywy skan podejrzanego adresu URL usłudze urlscan.io - zobaczysz szczegółowy raport z zawartości strony, ruchu sieciowego, wykrytych technologii i werdyktu, bez otwierania linku samodzielnie.</div>
     <label>Adres URL do zeskanowania</label>
     <input type="text" id="us-url" placeholder="https://przyklad.pl/podejrzany-link">
     <div class="banner info">
@@ -73,15 +74,28 @@ async function onSubmit() {
   }
 
   pollStarted = performance.now();
-  updateStatus(submitted.result_page_url, "Skan zgłoszony - oczekiwanie na wynik...");
-  elapsedTimer = setInterval(() => updateStatus(submitted.result_page_url, "Skan w toku..."), 1000);
+  renderStatus(submitted.result_page_url, "Skan zgłoszony - oczekiwanie na wynik...");
+  elapsedTimer = setInterval(() => updateStatusText("Skan w toku..."), 1000);
   pollTimer = setTimeout(() => poll(submitted.uuid, submitted.result_page_url), FIRST_POLL_DELAY_MS);
 }
 
-function updateStatus(resultPageUrl, message) {
+function renderStatus(resultPageUrl, message) {
   const statusEl = root.querySelector("#us-status");
-  const elapsed = pollStarted ? formatElapsed(performance.now() - pollStarted) : "0 s";
-  statusEl.innerHTML = `${message} (${elapsed}) - <a href="${escapeHtml(resultPageUrl)}" target="_blank" rel="noopener">otwórz w urlscan.io</a>`;
+  statusEl.innerHTML = '<span id="us-status-text"></span>';
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "secondary";
+  btn.textContent = "Otwórz w urlscan.io";
+  btn.onclick = () => window.open(resultPageUrl, "_blank", "noopener");
+  statusEl.appendChild(btn);
+  updateStatusText(message);
+}
+
+function updateStatusText(message) {
+  const textEl = root.querySelector("#us-status-text");
+  if (!textEl) return;
+  const elapsed = pollStarted ? formatElapsed(performance.now() - pollStarted) : formatElapsed(0);
+  textEl.textContent = `${message} (${elapsed}) `;
 }
 
 async function poll(uuid, resultPageUrl) {
@@ -100,7 +114,7 @@ async function poll(uuid, resultPageUrl) {
   if (data.status === "pending") {
     if (performance.now() - pollStarted > MAX_WAIT_MS) {
       stopTimers();
-      statusEl.innerHTML = `<div class="banner warn">Skan wciąż trwa po ${formatElapsed(MAX_WAIT_MS)} - sprawdź ręcznie: <a href="${escapeHtml(resultPageUrl)}" target="_blank" rel="noopener">${escapeHtml(resultPageUrl)}</a></div>`;
+      updateStatusText(`Skan wciąż trwa po ${formatElapsed(MAX_WAIT_MS)} - sprawdź ręcznie`);
       setBusy(false);
       return;
     }
@@ -110,7 +124,7 @@ async function poll(uuid, resultPageUrl) {
 
   stopTimers();
   setBusy(false);
-  statusEl.textContent = `Gotowe (${formatElapsed(performance.now() - pollStarted)}).`;
+  updateStatusText("Gotowe");
 
   const wrap = document.createElement("div");
   wrap.className = "card";

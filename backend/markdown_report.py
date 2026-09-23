@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from backend.models import IndicatorType, RiskScore, ServiceResult
+from backend.models import RiskScore, ServiceResult
 
 SERVICE_TITLES = {
     "virustotal": "VirusTotal",
@@ -63,14 +63,11 @@ def numbered_code_block(text: str, lang: str = "json") -> list[str]:
 
 def build_markdown(
     indicator: str,
-    indicator_type: IndicatorType,
     risk_score: RiskScore,
     services: dict[str, ServiceResult],
 ) -> str:
     lines: list[str] = []
     lines.append(f"# Raport reputacji - `{indicator}`")
-    lines.append("")
-    lines.append(f"Typ: **{'adres IP' if indicator_type == 'ip' else 'domena'}**")
     lines.append("")
     lines.append(f"## Wynik zbiorczy: {risk_score.level.upper()} ({risk_score.score}/100)")
     lines.append("")

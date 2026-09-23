@@ -86,7 +86,7 @@ async def run_lookup(
 
     risk_score = _compute_risk_score(results, indicator_type)
     talos_url = f"https://talosintelligence.com/reputation_center/lookup?search={quote(indicator)}"
-    markdown = build_markdown(indicator, indicator_type, risk_score, results)
+    markdown = build_markdown(indicator, risk_score, results)
 
     return LookupResult(
         indicator=indicator,
@@ -136,7 +136,20 @@ def _compute_risk_score(results: dict[str, ServiceResult], indicator_type: Indic
             excluded.append(f"abuseipdb ({abuse.status})")
 
         gn = results.get("greynoise")
-        if gn and gn.status == "ok":
+        if gn and gn.status == "ok" and not gn.summary.get("has_data", True):
+            # GreyNoise nie widziało tego IP w ogóle (ani jako szum, ani jako znana
+            # usługa) - to nie to samo co "unknown" (widziane, ale niesklasyfikowane).
+            # Brak jakiegokolwiek sygnału nie powinien sztucznie podbijać ryzyka.
+            components.append(
+                RiskComponent(
+                    source="greynoise",
+                    signal="has_data",
+                    value="brak informacji",
+                    weight=RISK_WEIGHTS["greynoise"],
+                    contribution=0.0,
+                )
+            )
+        elif gn and gn.status == "ok":
             classification = gn.summary.get("classification", "unknown")
             gn_value = {"malicious": 100, "unknown": 40, "benign": 0}.get(classification, 40)
             components.append(

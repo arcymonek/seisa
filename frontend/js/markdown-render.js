@@ -29,6 +29,20 @@ export function renderMarkdown(container, markdownText) {
   container.className = "md-render";
   container.innerHTML = window.marked.parse(markdownText || "");
   enhanceServiceHeadings(container);
+  enhanceReportHeading(container);
+}
+
+function enhanceReportHeading(container) {
+  const h1 = container.querySelector("h1");
+  const code = h1 && h1.querySelector("code");
+  if (!code) return;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "secondary";
+  btn.style.cssText = "margin-left:10px;padding:2px 10px;font-size:13px;vertical-align:middle;";
+  btn.textContent = "Kopiuj";
+  btn.onclick = () => navigator.clipboard.writeText(code.textContent);
+  code.insertAdjacentElement("afterend", btn);
 }
 
 function enhanceServiceHeadings(container) {

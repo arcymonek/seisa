@@ -15,8 +15,8 @@ Wpisujesz adres IP (wyłącznie IP - analiza URL/domen jest w osobnej zakładce 
 | [AlienVault OTX](https://otx.alienvault.com) | pulsy threat-intel, geolokalizacja, ASN |
 | [Cloudflare Radar](https://radar.cloudflare.com) | dane sieciowe/kontekstowe - ASN, lokalizacja, routing (nie werdykt) |
 | [AbuseIPDB](https://www.abuseipdb.com) | confidence score, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP |
-| [GreyNoise](https://www.greynoise.io) | czy IP to znany "szum internetowy" (skanery/boty) |
-| WHOIS / rDNS | odwrotny DNS (PTR) - bez klucza API |
+| [GreyNoise](https://www.greynoise.io) | pełny IP Lookup (`/v3/ip`) - aktor, tagi, VPN/Tor, metadane sieciowe; spada na darmowy endpoint community, jeśli klucz nie ma dostępu do pełnego API; "brak informacji w usłudze" liczone jako wkład 0.0, nie jako "unknown" |
+| WHOIS / rDNS | odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji - bez klucza API |
 | Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
 Wynik to jeden **wynik zbiorczy** (ważona suma sygnałów z VirusTotal/AbuseIPDB/GreyNoise/OTX; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
@@ -31,10 +31,10 @@ Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/d
 - **widocznością `unlisted`** - nie trafia na stronę główną ani do publicznych wyników wyszukiwania urlscan.io, ale pozostaje widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro,
 - **domyślnym user-agentem** (bez `customagent`) i **automatycznym doborem kraju skanowania** (bez `country`) - oba pola celowo pominięte w zapytaniu.
 
-Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen, linki znalezione na stronie oraz linki do zrzutu ekranu i DOM. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
+Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen oraz linki znalezione na stronie. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
 
 ### DMARC
-Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail i poziom ryzyka. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
+Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail, dopasowanie (alignment adkim/aspf) i politykę (p/sp/pct) z każdego raportu. Przycisk "Rekordy" przy każdym IP rozwija pełny szczegół każdego pojedynczego rekordu - header/envelope from, powód nadpisania polityki (`policy_evaluated > reason`), oraz surowy wynik `auth_results` (domena/selektor/wynik dla DKIM, domena/scope/wynik dla SPF) - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
 
 ### AbuseIPDB (zgłaszanie)
 Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.):

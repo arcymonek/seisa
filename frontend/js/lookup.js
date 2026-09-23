@@ -37,6 +37,7 @@ function stopTimer(prefix) {
 export function initLookup(container) {
   root = container;
   root.innerHTML = `
+    <div class="subtitle">Sprawdź reputację adresu IP jednocześnie w kilku niezależnych źródłach threat-intelligence (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS/rDNS) i zobacz jeden zbiorczy wynik ryzyka.</div>
     <label>Adres IP</label>
     <input type="text" id="lk-indicator" placeholder="1.2.3.4">
 

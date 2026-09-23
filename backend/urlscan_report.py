@@ -151,12 +151,6 @@ def build_urlscan_markdown(submitted_url: str, uuid: str, data: dict) -> str:
             lines.append(f"- <{href}>" + (f" - {text}" if text else ""))
         lines.append("")
 
-    lines.append("## Zrzut ekranu i DOM")
-    lines.append("")
-    lines.append(f"- [Zrzut ekranu](<https://urlscan.io/screenshots/{uuid}.png>)")
-    lines.append(f"- [DOM strony](<https://urlscan.io/dom/{uuid}/>)")
-    lines.append("")
-
     lines.append("<details><summary>Pełna odpowiedź API</summary>")
     lines.append("")
     raw_text = json.dumps(data, ensure_ascii=False, indent=2, default=str)
