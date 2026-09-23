@@ -74,16 +74,22 @@ def build_markdown(
     lines.append("")
     lines.append(f"## Wynik zbiorczy: {risk_score.level.upper()} ({risk_score.score}/100)")
     lines.append("")
+    if risk_score.sources_possible:
+        lines.append(f"Wynik oparty na {risk_score.sources_used} z {risk_score.sources_possible} źródeł.")
+        lines.append("")
+    for note in risk_score.notes:
+        lines.append(f"> {note}")
+        lines.append("")
     if risk_score.components:
         lines.append("### Sygnały składowe")
         lines.append("")
-        lines.append("| Źródło | Sygnał | Wartość | Waga | Wkład |")
+        lines.append("| Źródło | Sygnał | Wartość | Ryzyko źródła (0-100) | Wiarygodność |")
         lines.append("|---|---|---|---|---|")
         for c in risk_score.components:
-            lines.append(f"| {c.source} | {c.signal} | {c.value} | {c.weight} | {round(c.contribution, 1)} |")
+            lines.append(f"| {c.source} | {c.signal} | {c.value} | {c.risk} | {c.weight} |")
         lines.append("")
     if risk_score.excluded_sources:
-        lines.append(f'<div class="excluded-sources">Wykluczone z wyniku: {"; ".join(risk_score.excluded_sources)}</div>')
+        lines.append(f'<div class="excluded-sources">Poza wynikiem: {"; ".join(risk_score.excluded_sources)}</div>')
         lines.append("")
 
     ordered = sorted(services.items(), key=lambda kv: SERVICE_ORDER.index(kv[0]) if kv[0] in SERVICE_ORDER else len(SERVICE_ORDER))

@@ -96,6 +96,9 @@ input[type="checkbox"]:focus-visible { outline: 2px solid #fff; outline-offset: 
 .badge.medium { background: #3a3220; color: var(--warn); }
 .badge.low { background: #1f2e24; color: var(--pass); }
 
+.score-line { margin: 18px 0 12px; }
+.score-line .badge { font-size: 20px; padding: 5px 14px; }
+
 table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
 th { text-align: left; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--hair); }

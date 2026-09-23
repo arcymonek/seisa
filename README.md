@@ -19,7 +19,7 @@ Wpisujesz adres IP (wyłącznie IP - analiza URL/domen jest w osobnej zakładce 
 | WHOIS / rDNS | odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji - bez klucza API |
 | Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
-Wynik to jeden **wynik zbiorczy** (ważona suma sygnałów z VirusTotal/AbuseIPDB/GreyNoise/OTX; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
+Wynik to jeden **wynik zbiorczy** 0-100 (model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność; źródło bez danych nie głosuje, znane dobre IP obniża wynik do 15; progi: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logika w `backend/scoring.py`; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
 
 Obsługuje tryb wsadowy (wiele adresów IP naraz, z widocznym throttlem VirusTotal - 4 zapytania/min, 500/dzień) oraz cache w pamięci (15 min), z opcją wymuszenia odświeżenia.
 

@@ -30,6 +30,7 @@ export function renderMarkdown(container, markdownText) {
   container.innerHTML = window.marked.parse(markdownText || "");
   enhanceServiceHeadings(container);
   enhanceReportHeading(container);
+  scoreHeadingToBadge(container);
   linksToButtons(container);
 }
 
@@ -45,6 +46,21 @@ function linksToButtons(container) {
     const parent = a.parentElement;
     a.replaceWith(btn);
     if (parent && parent.tagName === "P") parent.style.margin = "0";
+  });
+}
+
+// "Wynik zbiorczy: LOW (7.4/100)" -> kolorowa plakietka "LOW - 7.4/100" (plik .md zostaje zwykłym tekstem).
+function scoreHeadingToBadge(container) {
+  container.querySelectorAll("h2").forEach((h2) => {
+    const m = h2.textContent.trim().match(/^Wynik zbiorczy: (LOW|MEDIUM|HIGH) \(([\d.]+)\/100\)$/);
+    if (!m) return;
+    const wrap = document.createElement("div");
+    wrap.className = "score-line";
+    const badge = document.createElement("span");
+    badge.className = `badge ${m[1].toLowerCase()}`;
+    badge.textContent = `${m[1]} - ${m[2]}/100`;
+    wrap.appendChild(badge);
+    h2.replaceWith(wrap);
   });
 }
 

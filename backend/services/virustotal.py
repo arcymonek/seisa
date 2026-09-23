@@ -42,7 +42,8 @@ class VirusTotalService(IntelService):
         stats = attrs.get("last_analysis_stats", {})
         malicious = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
-        total = sum(stats.values()) if stats else 0
+        # tylko silniki, które wydały werdykt (bez timeout/failure/type-unsupported)
+        total = sum(stats.get(k, 0) for k in ("malicious", "suspicious", "harmless", "undetected"))
         summary = {
             "detection_ratio": f"{malicious + suspicious}/{total}" if total else "brak danych",
             "malicious": malicious,

@@ -147,10 +147,6 @@ function renderResult(result) {
   const wrap = document.createElement("div");
   wrap.className = "card";
 
-  const badge = document.createElement("div");
-  badge.innerHTML = `<span class="badge ${result.risk_score.level}">${result.risk_score.level.toUpperCase()} - ${result.risk_score.score}/100</span>`;
-  wrap.appendChild(badge);
-
   const mdContainer = document.createElement("div");
   renderMarkdown(mdContainer, result.markdown);
   wrap.appendChild(mdContainer);

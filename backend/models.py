@@ -30,8 +30,9 @@ class RiskComponent(BaseModel):
     source: str
     signal: str
     value: str
-    weight: float
-    contribution: float
+    weight: float  # wiarygodność źródła (limit jego głosu)
+    contribution: float  # c * r - maks. "głos" źródła w modelu szum-OR
+    risk: float = 0.0  # ryzyko źródła 0-100
 
 
 class RiskScore(BaseModel):
@@ -39,6 +40,9 @@ class RiskScore(BaseModel):
     score: float
     components: list[RiskComponent] = Field(default_factory=list)
     excluded_sources: list[str] = Field(default_factory=list)
+    sources_used: int = 0
+    sources_possible: int = 0
+    notes: list[str] = Field(default_factory=list)
 
 
 class LookupResult(BaseModel):
