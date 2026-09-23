@@ -34,6 +34,7 @@ export const api = {
   logs: (range, service) => request(`/logs?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`),
 
   emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),
+  emailContinueStream: (id, onEvent, signal) => streamSSE(`${BASE}/email/analyses/${encodeURIComponent(id)}/continue`, {}, onEvent, signal),
   emailAnalyses: () => request("/email/analyses"),
   emailAnalysis: (id) => request(`/email/analyses/${encodeURIComponent(id)}`),
   emailAnalysisDelete: (id) => request(`/email/analyses/${encodeURIComponent(id)}`, { method: "DELETE" }),

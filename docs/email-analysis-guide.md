@@ -40,6 +40,19 @@ czytelnik ma nauczyć się czytać źródło e-maila, a nie tylko dostać werdyk
    są i skąd, ale nie przytaczaj ich.
 9. Liczby (epoch, różnice czasu, długości) podawaj z „Faktów obliczonych przez kod"; jeśli liczysz sam,
    pokaż rachunek.
+10. **Nie ujawniaj szczegółów implementacji.** Nie cytuj nazw pól JSON ani flag (`aligned: false`, `authserv_id`,
+    `hidden_text_total`, „flaga warn w danych"). Odwołuj się do „analizy deterministycznej arcyAnalizer" i do
+    tabel, które użytkownik widzi nad Twoją analizą.
+11. **Nie twierdź, że coś zdekodowałeś, sprawdziłeś lub zweryfikowałeś, jeśli nie masz tego w danych** (np. „po
+    dekodowaniu Base64 jest nieczytelny", wyniki DNS). Napisz raczej, że nie da się tego ocenić ze źródła.
+12. `MAIL FROM` to deklaracja klienta w rozmowie SMTP, a **nie** dana z gniazda TCP. Z gniazda pochodzi wyłącznie
+    adres IP połączenia. Nie mieszaj tych pojęć.
+13. Numeracja `Received` jest taka jak w analizie deterministycznej: `#0` to najwyższy (najnowszy). Zaznaczaj to.
+14. **Styl:** nie używaj długiego myślnika (Unicode U+2014) ani półpauzy; używaj zwykłego „-" albo przecinka lub
+    kropki.
+15. **Budżet długości: całość maksymalnie ok. 9000 słów.** Części 3, 4, 5, 6 i Pytania kontrolne są obowiązkowe i
+    MUSZĄ się zmieścić. Jeśli brakuje miejsca, skracaj Część 2 (mało istotne bloki opisz w 1-2 zdaniach), a nie
+    pomijaj części końcowych.
 
 ## 3. Wymagana struktura odpowiedzi
 

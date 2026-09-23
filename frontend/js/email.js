@@ -9,6 +9,12 @@ let renderTimer = null;
 let streamText = "";
 let currentRaw = "";
 let currentVerdict = null;
+let currentFacts = null;
+let currentUsage = null;
+let currentModel = null;
+let currentCreatedAt = null;
+let currentAnalysisId = null;
+let currentTruncated = false;
 
 const VERDICT_RE = /^\s*WERDYKT:\s*(legalna|phishing|spam|oszustwo|malware|niejednoznaczna)\s*\|\s*PEWNOSC:\s*(wysoka|srednia|niska)[^\n]*\n?/i;
 const VERDICT_LEVEL = { legalna: "low", niejednoznaczna: "medium" };
@@ -115,6 +121,12 @@ function clearOutput() {
   root.querySelector("#em-actions").innerHTML = "";
   streamText = "";
   currentVerdict = null;
+  currentFacts = null;
+  currentUsage = null;
+  currentModel = null;
+  currentCreatedAt = null;
+  currentAnalysisId = null;
+  currentTruncated = false;
 }
 
 async function analyze() {
@@ -135,6 +147,7 @@ async function analyze() {
       { raw_email: raw },
       (evt) => {
         if (evt.type === "facts") {
+          currentFacts = evt.facts;
           showFacts(evt.facts);
           if (evt.prep_notes && evt.prep_notes.length) {
             statusEl.textContent = "Przygotowanie źródła dla modelu: " + evt.prep_notes.join("; ") + ".";
@@ -205,18 +218,45 @@ function finishAnalysis(evt) {
   renderTimer = null;
   renderAnalysis();
   if (evt.llm === false) return;
-  showActions(evt.usage, evt.analysis_id);
+  currentUsage = evt.usage || null;
+  currentModel = evt.model || currentModel;
+  currentAnalysisId = evt.analysis_id || currentAnalysisId;
+  currentTruncated = !!evt.truncated;
+  if (!currentCreatedAt) currentCreatedAt = new Date().toISOString();
+  showActions();
   refreshSaved();
 }
 
 function analysisBody() {
   const m = streamText.match(VERDICT_RE);
-  return m ? streamText.slice(m[0].length) : streamText;
+  return (m ? streamText.slice(m[0].length) : streamText).trimStart();
 }
 
-function showActions(usage, analysisId) {
+function usageInfo() {
+  const info = [];
+  if (currentUsage && currentUsage.prompt_tokens != null) {
+    info.push(`tokeny: ${currentUsage.prompt_tokens} wejście / ${currentUsage.completion_tokens} wyjście`);
+  }
+  if (currentUsage && typeof currentUsage.cost === "number") info.push(`koszt ≈ $${currentUsage.cost.toFixed(3)}`);
+  return info;
+}
+
+function showActions() {
   const actions = root.querySelector("#em-actions");
   actions.innerHTML = "";
+  if (currentTruncated) {
+    const banner = document.createElement("div");
+    banner.className = "banner warn";
+    banner.textContent = "Analiza została ucięta przez limit długości odpowiedzi - brakuje jej końcowych części.";
+    actions.appendChild(banner);
+    if (currentAnalysisId) {
+      const contBtn = document.createElement("button");
+      contBtn.className = "action";
+      contBtn.textContent = "Dokończ analizę";
+      contBtn.onclick = continueAnalysis;
+      actions.appendChild(contBtn);
+    }
+  }
   // "Zgłoś AbuseIPDB" tylko dla wiadomości, które nie są legalne (brak werdyktu = pokaż, na wszelki wypadek)
   if (currentVerdict !== "legalna") {
     const reportBtn = document.createElement("button");
@@ -233,15 +273,11 @@ function showActions(usage, analysisId) {
   const copyBtn = document.createElement("button");
   copyBtn.className = "secondary";
   copyBtn.textContent = "Kopiuj Markdown";
-  copyBtn.onclick = () => navigator.clipboard.writeText(analysisBody());
+  copyBtn.onclick = () => navigator.clipboard.writeText(buildExport());
   actions.appendChild(copyBtn);
 
-  const info = [];
-  if (analysisId) info.push("zapisano w data/analizy");
-  if (usage && usage.prompt_tokens != null) {
-    info.push(`tokeny: ${usage.prompt_tokens} wejście / ${usage.completion_tokens} wyjście`);
-  }
-  if (usage && typeof usage.cost === "number") info.push(`koszt ≈ $${usage.cost.toFixed(3)}`);
+  const info = usageInfo();
+  if (currentAnalysisId) info.unshift("zapisano w data/analizy");
   if (info.length) {
     const div = document.createElement("div");
     div.className = "muted";
@@ -251,9 +287,162 @@ function showActions(usage, analysisId) {
   }
 }
 
+async function continueAnalysis() {
+  if (!currentAnalysisId) return;
+  const statusEl = root.querySelector("#em-status");
+  const actions = root.querySelector("#em-actions");
+  actions.innerHTML = '<div class="muted">Model dopisuje brakujące części...</div>';
+  abortController = new AbortController();
+  setBusy(true);
+  startTimer();
+  let finished = false;
+  try {
+    await api.emailContinueStream(
+      currentAnalysisId,
+      (evt) => {
+        if (evt.type === "delta") {
+          streamText += evt.text;
+          scheduleRender();
+        } else if (evt.type === "error") {
+          actions.innerHTML = `<div class="banner warn">Dokończenie nie powiodło się: ${escapeHtml(evt.message)}</div>`;
+        } else if (evt.type === "done") {
+          finished = true;
+          finishAnalysis(evt);
+        }
+      },
+      abortController.signal
+    );
+  } catch (err) {
+    statusEl.textContent = err.name === "AbortError" ? "Przerwano dokańczanie." : "Błąd: " + err.message;
+    if (!finished) showActions();
+  } finally {
+    stopTimer();
+    setBusy(false);
+    abortController = null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// eksport .md: metadane + analiza deterministyczna + analiza LLM
+// ---------------------------------------------------------------------------
+
+const mdCell = (v) => String(v ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+const mdCode = (v) => (v ? "`" + String(v).replace(/`/g, "'") + "`" : "-");
+
+function mdTable(headers, rows) {
+  if (!rows.length) return ["brak", ""];
+  return [
+    `| ${headers.join(" | ")} |`,
+    `|${headers.map(() => "---").join("|")}|`,
+    ...rows.map((r) => `| ${r.map(mdCell).join(" | ")} |`),
+    "",
+  ];
+}
+
+function factsToMarkdown(f) {
+  const L = [];
+  L.push("## Analiza deterministyczna", "", "Obliczona lokalnie przez arcyAnalizer, bez modelu językowego. Adresy URL są zdefangowane.", "");
+
+  L.push(`### Uwagi wykryte automatycznie (${f.flags.length})`, "");
+  if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? "UWAGA" : "info"}: ${x.text}`));
+  else L.push("Nie wykryto automatycznie żadnych anomalii (to nie znaczy, że ich nie ma).");
+  L.push("");
+
+  const o = f.overview;
+  L.push("### Przegląd", "", ...mdTable(["Pole", "Wartość"], [
+    ["Temat (zdekodowany)", o.subject], ["From", o.from], ["To", o.to], ["Date", `${o.date || ""}${o.date_utc ? ` (${o.date_utc})` : ""}`],
+    ["Message-ID", mdCode(o.message_id)], ["Nagłówków / Received", `${o.header_count} / ${o.received_count}`], ["Rozmiar źródła", `${o.source_chars} znaków`],
+  ].map(([k, v]) => [k, k === "Message-ID" ? v : mdCode(v)])));
+
+  L.push(`### Trasa wiadomości: nagłówki Received (${f.received.length}), od góry (najnowszy)`, "",
+    ...mdTable(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", "Czas UTC", "Rola / uwagi"],
+      f.received.map((r) => [r.index, mdCode(r.from_host), mdCode(r.ptr), mdCode(r.ip), mdCode(r.by_host),
+        `${r.with || ""} ${r.tls || ""}`.trim(), r.time_utc || "", [r.role, ...r.flags].filter(Boolean).join("; ")])));
+
+  L.push("### Uwierzytelnianie: SPF / DKIM / DMARC / ARC", "",
+    ...mdTable(["Nagłówek", "authserv-id", "Zgodny z odbiorcą?", "Wyniki", "Szczegóły"],
+      f.auth.map((a) => [a.header, mdCode(a.authserv_id), a.matches_receiver === true ? "tak" : a.matches_receiver === false ? "nie" : "-",
+        Object.entries(a.results).map(([k, v]) => `${k}=${v}`).join(" "), mdCode(Object.entries(a.details).map(([k, v]) => `${k}=${v}`).join(" "))])));
+  if (f.dkim.length) {
+    L.push("#### DKIM-Signature", "", ...mdTable(["d=", "s=", "a=", "bh (dł. → skrót)", "Podpisane nagłówki", "Niepodpisane ważne"],
+      f.dkim.map((d) => [mdCode(d.d), mdCode(d.s), mdCode(d.a), `${d.bh_len} → ${d.hash_hint}`, mdCode(d.signed_headers.join(":")), d.unsigned_important.join(", ")])));
+  }
+  if (f.arc.length) {
+    L.push("#### ARC-Seal", "", ...mdTable(["i=", "d=", "s=", "cv="], f.arc.map((a) => [a.i, mdCode(a.d), mdCode(a.s), a.cv])));
+  }
+
+  L.push("### Zgodność domen (względem From)", "",
+    ...mdTable(["Pole", "Wartość", "Domena", "Zgodna z From?"],
+      f.identity.map((r) => [r.field, mdCode(r.value), mdCode(r.domain), r.field === "From" ? "punkt odniesienia" : r.aligned === true ? "tak" : r.aligned === false ? "NIE" : "-"])));
+
+  L.push("### Oś czasu (UTC)", "", ...mdTable(["Zdarzenie", "Czas UTC", "Różnica od poprzedniego"], f.timeline.map((t) => [t.event, t.utc, fmtDelta(t.delta_s)])));
+  if (f.epochs.length) {
+    L.push("#### Znaczniki epoch", "", ...mdTable(["Gdzie", "Wartość", "Jednostka", "UTC", "Różnica vs Date"], f.epochs.map((x) => [x.where, mdCode(x.value), x.unit, x.utc, fmtDelta(x.diff_vs_date_s)])));
+  }
+
+  L.push(`### Struktura MIME (${f.mime.length} części)`, "",
+    ...mdTable(["Typ", "charset", "Content-Transfer-Encoding", "Nazwa pliku", "Rozmiar", "boundary"],
+      f.mime.map((m) => [`${"· ".repeat(m.depth)}${mdCode(m.content_type)}`, m.charset || "", m.cte ? `${m.cte}${m.cte_valid ? "" : " (niedozwolone)"}` : "", mdCode(m.filename), m.size != null ? `${m.size} B` : "", mdCode(m.boundary)])));
+  if (f.attachments.length) {
+    L.push("#### Załączniki", "", ...mdTable(["Plik", "Typ", "Rozmiar", "SHA-256", "Uwagi"],
+      f.attachments.map((a) => [mdCode(a.filename), a.content_type, `${a.size} B`, mdCode(a.sha256),
+        [a.double_extension_as ? `podwójne rozszerzenie (.${a.double_extension_as} → .${a.extension})` : "", a.risky_extension ? "ryzykowne rozszerzenie" : ""].filter(Boolean).join("; ")])));
+  }
+
+  if (f.html) {
+    const h = f.html;
+    L.push("### Treść HTML: linki, elementy zdalne, ukryta treść", "", ...mdTable(["Cecha", "Wartość"], [
+      ["Linki", h.links.length], ["Obrazy", h.images.length], ["Formularze / skrypty / iframe / object", `${h.forms} / ${h.scripts} / ${h.iframes} / ${h.objects}`],
+      ["Ukryte elementy (znaków tekstu)", `${h.hidden.length} (${h.hidden_text_total})`], ["Komentarze HTML (znaków)", `${h.comment_count} (${h.comment_chars})`],
+      ["Znaczniki o losowej wielkości liter", h.mixed_case_tags.join(", ")], ["Nieznane znaczniki", `${h.unknown_tag_count}${h.unknown_tags.length ? ": " + h.unknown_tags.join(", ") : ""}`],
+      ["Duża część treści opakowana w jeden link", h.wrapped_anchor ? "tak" : "nie"],
+    ]));
+    if (h.links.length) {
+      L.push("#### Linki (adresy zdefangowane)", "", ...mdTable(["Widoczny tekst", "href", "Uwagi"], h.links.map((l) => [
+        mdCode(l.text || "(brak tekstu)"), mdCode(defangUrl(l.href || "")),
+        [l.text_host_mismatch ? "tekst ≠ href" : "", l.scheme === "http" ? "http" : "", l.abused_host ? "usługa często nadużywana" : "", l.shortener ? "skracacz" : "", l.idn ? "IDN/punycode" : "", l.query_params >= 4 ? `${l.query_params} parametrów` : ""].filter(Boolean).join("; "),
+      ])));
+    }
+    if (h.hidden.length) {
+      L.push("#### Ukryta treść", "", ...mdTable(["Znacznik", "Techniki ukrywania", "Znaków", "Fragment"], h.hidden.map((x) => [mdCode(x.tag), x.techniques.join(", "), x.text_len, mdCode(x.sample)])));
+    }
+    if (h.comment_samples.length) L.push("#### Początki komentarzy HTML", "", ...h.comment_samples.map((c) => `- ${mdCode(c)}`), "");
+  }
+
+  const other = [];
+  if (f.duplicates.length) other.push(["Powtórzone nagłówki jednokrotne", f.duplicates.map((d) => `${d.name} ×${d.count}`).join(", ")]);
+  const casing = Object.values(f.casing_variants);
+  if (casing.length) other.push(["Różna wielkość liter w nazwach nagłówków", casing.map((v) => v.join(" / ")).join("; ")]);
+  if (f.encoded_words.length) other.push(["Encoded-words (RFC 2047)", f.encoded_words.map((w) => `${w.header}: ${mdCode(w.raw)} → ${w.decoded}`).join("; ")]);
+  if (f.placeholders.length) other.push(["Niepodstawione placeholdery", f.placeholders.map((p) => mdCode(p)).join(" ")]);
+  if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mdCode(defangUrl(u))).join(" ") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
+  if (f.urls_plain.length) other.push(["Adresy URL w części tekstowej", f.urls_plain.map((u) => mdCode(defangUrl(u))).join(" ")]);
+  if (f.ips.length) other.push(["Adresy IP w nagłówkach", f.ips.map((i) => `${mdCode(i.ip)} (${i.where})`).join("; ")]);
+  if (other.length) L.push("### Inne obserwacje", "", ...mdTable(["Co", "Wartość"], other));
+  return L;
+}
+
+function buildExport() {
+  const created = currentCreatedAt ? new Date(currentCreatedAt) : new Date();
+  const L = [`# Analiza e-maila: ${currentSubject || "(brak tematu)"}`, ""];
+  L.push(`- Data analizy: ${created.toLocaleString("pl-PL")}`);
+  if (currentVerdict) L.push(`- Werdykt: ${currentVerdict}`);
+  if (currentModel) L.push(`- Model: ${currentModel}`);
+  if (currentUsage && currentUsage.prompt_tokens != null) {
+    L.push(`- Tokeny: ${currentUsage.prompt_tokens} wejście / ${currentUsage.completion_tokens} wyjście` +
+      (currentUsage.total_tokens ? ` (razem ${currentUsage.total_tokens})` : ""));
+  }
+  if (currentUsage && typeof currentUsage.cost === "number") L.push(`- Koszt: ≈ $${currentUsage.cost.toFixed(3)}`);
+  if (currentTruncated) L.push("- Uwaga: analiza LLM została ucięta przez limit długości (brakuje części końcowych).");
+  L.push("");
+  if (currentFacts) L.push("---", "", ...factsToMarkdown(currentFacts));
+  L.push("---", "", analysisBody(), "");
+  return L.join("\n");
+}
+
 function saveMarkdown() {
   const filename = `analiza-${(currentSubject || "email").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 50) || "email"}.md`;
-  const blob = new Blob([analysisBody()], { type: "text/markdown" });
+  const blob = new Blob([buildExport()], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -420,7 +609,7 @@ async function refreshSaved() {
     row.className = "saved-row";
     const level = VERDICT_LEVEL[it.verdict] || "high";
     row.innerHTML = `<span class="muted">${new Date(it.created_at).toLocaleString("pl-PL")}</span>
-      ${it.verdict ? `<span class="badge ${level}">${e(it.verdict.toUpperCase())}</span>` : ""}
+      ${it.verdict ? `<span class="badge ${level}">${e(it.verdict.toUpperCase())}</span>` : ""}${it.truncated ? '<span class="badge medium">UCIĘTA</span>' : ""}
       <span class="grow"><strong>${e(it.subject || "(brak tematu)")}</strong><br><span class="muted">${e(it.from || "")}</span></span>`;
     const openBtn = document.createElement("button");
     openBtn.className = "secondary";
@@ -456,8 +645,14 @@ async function openSaved(id) {
   root.querySelector("#em-source").value = rec.raw_email;
   showFacts(rec.facts);
   streamText = rec.markdown;
+  currentFacts = rec.facts;
+  currentUsage = rec.usage || null;
+  currentModel = rec.model || null;
+  currentCreatedAt = rec.created_at;
+  currentAnalysisId = rec.id;
+  currentTruncated = !!rec.truncated;
   renderAnalysis();
-  showActions(rec.usage, rec.id);
+  showActions();
   statusEl.textContent = `Otwarto zapisaną analizę z ${new Date(rec.created_at).toLocaleString("pl-PL")}.`;
   root.querySelector("#em-facts").scrollIntoView({ behavior: "smooth", block: "start" });
 }

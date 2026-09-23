@@ -24,11 +24,7 @@ def _path(analysis_id: str):
     return ANALIZY_DIR / f"{analysis_id}.json"
 
 
-def save_analysis(record: dict[str, Any]) -> str:
-    now = datetime.now(timezone.utc)
-    digest = hashlib.sha256(record["raw_email"].encode("utf-8", errors="replace")).hexdigest()[:8]
-    analysis_id = f"{now:%Y%m%d-%H%M%S}-{digest}"
-    record = {"id": analysis_id, "created_at": now.isoformat(), **record}
+def _write(analysis_id: str, record: dict[str, Any]) -> None:
     ANALIZY_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     fd, tmp = tempfile.mkstemp(dir=ANALIZY_DIR, prefix=".analiza.", suffix=".tmp")
     try:
@@ -39,7 +35,22 @@ def save_analysis(record: dict[str, Any]) -> str:
     finally:
         if os.path.exists(tmp):
             os.remove(tmp)
+
+
+def save_analysis(record: dict[str, Any]) -> str:
+    now = datetime.now(timezone.utc)
+    digest = hashlib.sha256(record["raw_email"].encode("utf-8", errors="replace")).hexdigest()[:8]
+    analysis_id = f"{now:%Y%m%d-%H%M%S}-{digest}"
+    _write(analysis_id, {"id": analysis_id, "created_at": now.isoformat(), **record})
     return analysis_id
+
+
+def update_analysis(analysis_id: str, fields: dict[str, Any]) -> None:
+    record = load_analysis(analysis_id)
+    if record is None:
+        raise FileNotFoundError(analysis_id)
+    record.update(fields)
+    _write(analysis_id, record)
 
 
 def list_analyses() -> list[dict[str, Any]]:
@@ -51,7 +62,7 @@ def list_analyses() -> list[dict[str, Any]]:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence")})
+        items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence", "truncated")})
     return items
 
 

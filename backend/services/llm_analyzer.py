@@ -18,6 +18,9 @@ OPENROUTER_APP_HEADERS = {
 
 logger = logging.getLogger("app")
 
+# Pełna analiza edukacyjna (zakładka Email) potrafi mieć kilkanaście tysięcy tokenów; 16000 było za mało.
+STREAM_MAX_TOKENS = 32000
+
 _OR_HTTP_HINTS = {
     400: "nieprawidłowe zapytanie",
     401: "nieprawidłowy klucz API OpenRouter",
@@ -161,22 +164,34 @@ class LlmAnalyzer:
             logger.warning(f"OpenRouter: {text}")
             return {"error": text}
 
-    async def stream_chat(self, system_prompt: str, user_content: str, max_tokens: int = 16000):
+    async def stream_chat(
+        self,
+        system_prompt: str,
+        user_content: str,
+        max_tokens: int = STREAM_MAX_TOKENS,
+        partial: str | None = None,
+        continue_instruction: str | None = None,
+    ):
         """Strumieniowa odpowiedź tekstowa (markdown, nie JSON) - dla długich analiz w zakładce Email.
 
         Generator zdarzeń (rodzaj, dane): ("delta", tekst) | ("usage", dict) | ("warning", tekst) |
-        ("error", tekst). Błędy są logowane do usługi "app" tak samo jak w _chat_json."""
+        ("finish", finish_reason) | ("error", tekst). Błędy są logowane do usługi "app" tak samo jak w _chat_json.
+        `partial` + `continue_instruction` dokańczają wcześniej ucięty tekst (dodatkowa tura assistant + user)."""
         headers = {
             "Authorization": f"Bearer {settings.openrouter_api_key}",
             "Content-Type": "application/json",
             **OPENROUTER_APP_HEADERS,
         }
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+        if partial is not None:
+            messages.append({"role": "assistant", "content": partial})
+            messages.append({"role": "user", "content": continue_instruction or "Kontynuuj."})
         payload = {
             "model": settings.openrouter_model,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content},
-            ],
+            "messages": messages,
             "stream": True,
             "max_tokens": max_tokens,
             "usage": {"include": True},
@@ -224,9 +239,11 @@ class LlmAnalyzer:
                         delta = (choice.get("delta") or {}).get("content")
                         if delta:
                             yield "delta", delta
-                        if choice.get("finish_reason") == "length":
+                        finish = choice.get("finish_reason")
+                        if finish == "length":
                             logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length)")
-                            yield "warning", "Odpowiedź modelu została ucięta (limit długości) - analiza może być niepełna."
+                        if finish:
+                            yield "finish", finish
         except httpx.HTTPError as exc:
             text = describe_exception(exc)
             logger.error(f"OpenRouter: błąd połączenia: {text}")

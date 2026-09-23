@@ -8,9 +8,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.analizy import delete_analysis, list_analyses, load_analysis, save_analysis
+from backend.analizy import delete_analysis, list_analyses, load_analysis, save_analysis, update_analysis
 from backend.config import EMAIL_GUIDE_FILE
 from backend.email_forensics import compute_facts, normalize_source, prepare_for_llm
+from backend.config import settings
 from backend.services.llm_analyzer import llm_analyzer
 
 router = APIRouter()
@@ -45,6 +46,16 @@ def parse_verdict(text: str) -> tuple[str | None, str | None]:
     first_line = text.lstrip().split("\n", 1)[0]
     m = VERDICT_RE.match(first_line)
     return (m.group(1).lower(), m.group(2).lower()) if m else (None, None)
+
+
+CONTINUE_INSTRUCTION = (
+    "Twoja poprzednia odpowiedź została ucięta z powodu limitu długości. Kontynuuj DOKŁADNIE od miejsca przerwania: "
+    "nie powtarzaj już napisanych fragmentów, nie dodawaj wstępu ani nowej linii WERDYKT. Jeśli przerwanie nastąpiło "
+    "w środku zdania, tabeli lub bloku kodu, dokończ je. Dokończ WSZYSTKIE brakujące części struktury, zwięźlej niż "
+    "dotąd (Część 3, 4, 5, 6 i Pytania kontrolne są obowiązkowe)."
+)
+
+EM_DASH = "\u2014"  # w projekcie nie używamy długiego myślnika (patrz README, "Wersjonowanie i konwencje")
 
 
 def _guide() -> str:
@@ -96,12 +107,16 @@ async def analyze(req: EmailAnalysisRequest):
         chunks: list[str] = []
         usage = None
         failed = False
+        finish = None
         async for kind, payload in llm_analyzer.stream_chat(system_prompt, _user_message(facts, prepared, prep_notes)):
             if kind == "delta":
+                payload = payload.replace(EM_DASH, "-")
                 chunks.append(payload)
                 yield _sse({"type": "delta", "text": payload})
             elif kind == "usage":
                 usage = payload
+            elif kind == "finish":
+                finish = payload
             elif kind == "warning":
                 yield _sse({"type": "warning", "message": payload})
             elif kind == "error":
@@ -113,17 +128,82 @@ async def analyze(req: EmailAnalysisRequest):
 
         markdown = "".join(chunks)
         verdict, confidence = parse_verdict(markdown)
+        truncated = finish == "length"
         analysis_id = None
         try:
             analysis_id = save_analysis({
                 "subject": facts["overview"]["subject"], "from": facts["overview"]["from"],
                 "verdict": verdict, "confidence": confidence,
                 "raw_email": src, "facts": facts, "markdown": markdown, "usage": usage,
+                "truncated": truncated, "model": settings.openrouter_model,
             })
         except OSError as exc:
             logger.error(f"email: zapis analizy nie powiódł się: {exc}")
         yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id,
-                    "verdict": verdict, "confidence": confidence, "usage": usage})
+                    "verdict": verdict, "confidence": confidence, "usage": usage,
+                    "truncated": truncated, "model": settings.openrouter_model})
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+def _sum_usage(a: dict | None, b: dict | None) -> dict | None:
+    if not a or not b:
+        return a or b
+    out = dict(a)
+    for key in ("prompt_tokens", "completion_tokens", "total_tokens", "cost"):
+        if isinstance(a.get(key), (int, float)) and isinstance(b.get(key), (int, float)):
+            out[key] = a[key] + b[key]
+    return out
+
+
+@router.post("/analyses/{analysis_id}/continue")
+async def continue_analysis(analysis_id: str):
+    """Dokańcza analizę ucięta limitem długości: model dostaje dotychczasowy tekst i pisze dalszy ciąg."""
+    try:
+        record = load_analysis(analysis_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="nieprawidłowy identyfikator")
+    if record is None:
+        raise HTTPException(status_code=404, detail="nie znaleziono analizy")
+    if not record.get("truncated"):
+        raise HTTPException(status_code=400, detail="ta analiza nie jest ucięta")
+    if not llm_analyzer.is_configured():
+        raise HTTPException(status_code=400, detail="brak klucza OpenRouter")
+
+    async def stream():
+        prepared, prep_notes = prepare_for_llm(record["raw_email"])
+        chunks: list[str] = []
+        usage = None
+        finish = None
+        async for kind, payload in llm_analyzer.stream_chat(
+            SYSTEM_PREAMBLE + _guide(),
+            _user_message(record["facts"], prepared, prep_notes),
+            partial=record["markdown"],
+            continue_instruction=CONTINUE_INSTRUCTION,
+        ):
+            if kind == "delta":
+                payload = payload.replace(EM_DASH, "-")
+                chunks.append(payload)
+                yield _sse({"type": "delta", "text": payload})
+            elif kind == "usage":
+                usage = payload
+            elif kind == "finish":
+                finish = payload
+            elif kind == "error":
+                yield _sse({"type": "error", "message": payload, "phase": "llm"})
+                return
+        if not chunks:
+            return
+        markdown = record["markdown"] + "".join(chunks)
+        truncated = finish == "length"
+        total_usage = _sum_usage(record.get("usage"), usage)
+        try:
+            update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage})
+        except OSError as exc:
+            logger.error(f"email: zapis dokończonej analizy nie powiódł się: {exc}")
+        yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id, "verdict": record.get("verdict"),
+                    "confidence": record.get("confidence"), "usage": total_usage, "truncated": truncated,
+                    "model": record.get("model")})
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 
