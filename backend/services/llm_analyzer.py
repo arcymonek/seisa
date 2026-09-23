@@ -161,6 +161,77 @@ class LlmAnalyzer:
             logger.warning(f"OpenRouter: {text}")
             return {"error": text}
 
+    async def stream_chat(self, system_prompt: str, user_content: str, max_tokens: int = 16000):
+        """Strumieniowa odpowiedź tekstowa (markdown, nie JSON) - dla długich analiz w zakładce Email.
+
+        Generator zdarzeń (rodzaj, dane): ("delta", tekst) | ("usage", dict) | ("warning", tekst) |
+        ("error", tekst). Błędy są logowane do usługi "app" tak samo jak w _chat_json."""
+        headers = {
+            "Authorization": f"Bearer {settings.openrouter_api_key}",
+            "Content-Type": "application/json",
+            **OPENROUTER_APP_HEADERS,
+        }
+        payload = {
+            "model": settings.openrouter_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ],
+            "stream": True,
+            "max_tokens": max_tokens,
+            "usage": {"include": True},
+        }
+        timeout = httpx.Timeout(30.0, read=120.0)
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                async with client.stream("POST", OPENROUTER_URL, headers=headers, json=payload) as resp:
+                    if resp.status_code >= 400:
+                        raw = await resp.aread()
+                        try:
+                            body = json.loads(raw)
+                        except ValueError:
+                            body = None
+                        text = _openrouter_error_text(resp.status_code, body)
+                        logger.error(f"OpenRouter: {text}")
+                        yield "error", text
+                        return
+                    async for line in resp.aiter_lines():
+                        if not line or line.startswith(":") or not line.startswith("data:"):
+                            continue  # puste linie i keep-alive (": OPENROUTER PROCESSING")
+                        data = line[5:].strip()
+                        if data == "[DONE]":
+                            break
+                        try:
+                            obj = json.loads(data)
+                        except ValueError:
+                            continue
+                        if obj.get("error"):
+                            text = _openrouter_error_text(None, obj)
+                            logger.error(f"OpenRouter: {text}")
+                            yield "error", text
+                            return
+                        if obj.get("usage"):
+                            yield "usage", obj["usage"]
+                        choices = obj.get("choices") or []
+                        if not choices:
+                            continue
+                        choice = choices[0]
+                        if choice.get("error"):
+                            text = _openrouter_error_text(None, {"error": choice["error"]})
+                            logger.error(f"OpenRouter: {text}")
+                            yield "error", text
+                            return
+                        delta = (choice.get("delta") or {}).get("content")
+                        if delta:
+                            yield "delta", delta
+                        if choice.get("finish_reason") == "length":
+                            logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length)")
+                            yield "warning", "Odpowiedź modelu została ucięta (limit długości) - analiza może być niepełna."
+        except httpx.HTTPError as exc:
+            text = describe_exception(exc)
+            logger.error(f"OpenRouter: błąd połączenia: {text}")
+            yield "error", text
+
     async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "") -> dict | None:
         if not self.is_configured():
             return None

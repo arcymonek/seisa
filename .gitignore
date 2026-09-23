@@ -2,6 +2,7 @@
 data/history.json
 data/vt_usage.json
 data/report_log.json
+data/analizy/
 logi/*.jsonl
 __pycache__/
 *.pyc

@@ -64,6 +64,52 @@ function scoreHeadingToBadge(container) {
   });
 }
 
+// --- Bezpieczne renderowanie (zakładka Email): treść pochodzi z analizy LLM cytującej niezaufany e-mail ---
+const SAFE_TAGS = new Set([
+  "H1", "H2", "H3", "H4", "H5", "H6", "P", "UL", "OL", "LI", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD",
+  "CODE", "PRE", "STRONG", "EM", "B", "I", "BLOCKQUOTE", "DETAILS", "SUMMARY", "HR", "BR", "DEL",
+]);
+
+export function defangUrl(url) {
+  return String(url).replace(/^http/i, "hxxp").replace(/\./g, "[.]");
+}
+
+function sanitizeNode(node) {
+  Array.from(node.childNodes).forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) return;
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      child.remove();
+      return;
+    }
+    if (child.tagName === "A") {
+      // linki z e-maila nie mogą być klikalne: pokazujemy tekst + zdefangowany adres
+      const href = child.getAttribute("href") || "";
+      const label = child.textContent || "";
+      const span = document.createElement("span");
+      span.textContent = href && href !== label ? `${label} (${defangUrl(href)})` : defangUrl(label);
+      child.replaceWith(span);
+      return;
+    }
+    if (!SAFE_TAGS.has(child.tagName)) {
+      // niedozwolony znacznik (img, script, object, ...) -> widoczny, nieaktywny tekst
+      child.replaceWith(document.createTextNode(child.outerHTML));
+      return;
+    }
+    Array.from(child.attributes).forEach((attr) => child.removeAttribute(attr.name));
+    sanitizeNode(child);
+  });
+}
+
+// Markdown -> HTML przez inertny DOMParser (nic się nie ładuje ani nie wykonuje), potem lista dozwolonych znaczników
+// bez atrybutów. Surowy HTML z e-maila i linki są neutralizowane.
+export function renderMarkdownSafe(container, markdownText) {
+  container.className = "md-render";
+  const html = window.marked.parse(markdownText || "");
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  sanitizeNode(doc.body);
+  container.innerHTML = doc.body.innerHTML;
+}
+
 function enhanceReportHeading(container) {
   const h1 = container.querySelector("h1");
   const code = h1 && h1.querySelector("code");

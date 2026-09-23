@@ -1,0 +1,73 @@
+"""Zapis analiz e-maili (zakładka "Email") w osobnym podkatalogu data/analizy/.
+
+Jeden plik JSON na analizę, razem z surowym e-mailem (zawiera dane osobowe, dlatego pliki 0600, katalog 0700
+i wpis w .gitignore). Identyfikator jest walidowany, żeby nie dało się wyjść poza katalog.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import tempfile
+from datetime import datetime, timezone
+from typing import Any
+
+from backend.config import ANALIZY_DIR
+
+_ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{8}$")
+
+
+def _path(analysis_id: str):
+    if not _ID_RE.match(analysis_id):
+        raise ValueError("nieprawidłowy identyfikator analizy")
+    return ANALIZY_DIR / f"{analysis_id}.json"
+
+
+def save_analysis(record: dict[str, Any]) -> str:
+    now = datetime.now(timezone.utc)
+    digest = hashlib.sha256(record["raw_email"].encode("utf-8", errors="replace")).hexdigest()[:8]
+    analysis_id = f"{now:%Y%m%d-%H%M%S}-{digest}"
+    record = {"id": analysis_id, "created_at": now.isoformat(), **record}
+    ANALIZY_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd, tmp = tempfile.mkstemp(dir=ANALIZY_DIR, prefix=".analiza.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(record, f, ensure_ascii=False, indent=2)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, _path(analysis_id))
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+    return analysis_id
+
+
+def list_analyses() -> list[dict[str, Any]]:
+    if not ANALIZY_DIR.exists():
+        return []
+    items = []
+    for path in sorted(ANALIZY_DIR.glob("*.json"), reverse=True):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence")})
+    return items
+
+
+def load_analysis(analysis_id: str) -> dict[str, Any] | None:
+    path = _path(analysis_id)
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def delete_analysis(analysis_id: str) -> bool:
+    path = _path(analysis_id)
+    if not path.exists():
+        return False
+    path.unlink()
+    return True

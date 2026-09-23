@@ -1,6 +1,7 @@
 import { initLookup, prefillLookup } from "./lookup.js";
 import { initDmarc } from "./dmarc.js";
-import { initReportBuilder, prefillReport } from "./report-builder.js";
+import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-builder.js";
+import { initEmail } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
 import { initUrlscan } from "./urlscan.js";
@@ -8,6 +9,7 @@ import { initUrlscan } from "./urlscan.js";
 const panels = {
   lookup: document.getElementById("panel-lookup"),
   dmarc: document.getElementById("panel-dmarc"),
+  email: document.getElementById("panel-email"),
   report: document.getElementById("panel-report"),
   history: document.getElementById("panel-history"),
   logs: document.getElementById("panel-logs"),
@@ -36,6 +38,10 @@ window.arcyApp = {
     switchTab("lookup");
     prefillLookup(indicator);
   },
+  goToReportWithEmail: (rawEmail) => {
+    switchTab("report");
+    prefillReportEmail(rawEmail);
+  },
   goToReport: (ip, spoofingConfirmed) => {
     switchTab("report");
     prefillReport(ip, spoofingConfirmed);
@@ -44,6 +50,7 @@ window.arcyApp = {
 
 initLookup(panels.lookup);
 initDmarc(panels.dmarc);
+initEmail(panels.email);
 initReportBuilder(panels.report);
 initHistory(panels.history);
 initLogs(panels.logs);

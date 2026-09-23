@@ -155,3 +155,24 @@ a:hover { color: var(--accent); }
 .inline-timer { font-size: 13px; color: var(--muted); margin-left: 4px; }
 
 .checklist-item.auto-pending::before { content: "?"; color: var(--muted); font-weight: 700; }
+
+/* --- zakładka Email --- */
+.section-sep { border-bottom: 1px solid var(--hair); margin: 24px 0 20px; }
+.fact-flag { display: flex; gap: 8px; padding: 3px 0; font-size: 15px; }
+.fact-flag::before { flex: none; width: 1.2em; }
+.fact-flag.warn::before { content: "⚠"; color: var(--warn); }
+.fact-flag.info::before { content: "ℹ"; color: var(--accent); }
+.fact-flag code, .fact-table code { font-family: var(--mono); background: #14171a; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+.fact-block { margin: 12px 0; }
+.fact-block > summary { cursor: pointer; color: var(--accent); font-size: 16.5px; }
+.table-wrap { overflow-x: auto; }
+.fact-table td, .fact-table th { font-size: 14px; }
+.fact-table .mono { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
+.fact-table .ok, .ok { color: var(--pass); }
+.fact-table .bad, .bad { color: var(--fail); }
+.fact-table .warnc { color: var(--warn); }
+.verdict-line { margin: 4px 0 14px; }
+.verdict-line .badge { font-size: 18px; padding: 5px 14px; }
+.verdict-line .muted { margin-left: 10px; }
+.saved-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #2a2c30; font-size: 14.5px; }
+.saved-row .grow { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }

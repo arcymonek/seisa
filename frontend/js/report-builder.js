@@ -62,6 +62,12 @@ export function initReportBuilder(container) {
   renderChecklist(baselineChecklist());
 }
 
+export function prefillReportEmail(rawEmail) {
+  if (!root) return;
+  root.querySelector("#rb-email").value = rawEmail;
+  root.querySelector("#rb-email").scrollTop = 0;
+}
+
 export function prefillReport(ip, spoofingConfirmed) {
   if (!root) return;
   // Dane z poprzednio analizowanego e-maila nie dotyczą IP przekazanego z innej zakładki.

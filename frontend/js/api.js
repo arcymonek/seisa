@@ -33,16 +33,23 @@ export const api = {
 
   logs: (range, service) => request(`/logs?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`),
 
+  emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),
+  emailAnalyses: () => request("/email/analyses"),
+  emailAnalysis: (id) => request(`/email/analyses/${encodeURIComponent(id)}`),
+  emailAnalysisDelete: (id) => request(`/email/analyses/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
   urlscanSubmit: (url) => request("/urlscan/scan", { method: "POST", body: JSON.stringify({ url }) }),
   urlscanResult: (uuid) => request(`/urlscan/result/${encodeURIComponent(uuid)}`),
 };
 
-async function streamSSE(url, body, onEvent) {
+async function streamSSE(url, body, onEvent, signal) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal,
   });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

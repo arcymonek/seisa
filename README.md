@@ -36,6 +36,15 @@ Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako
 ### DMARC
 Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail, dopasowanie (alignment adkim/aspf) i politykę (p/sp/pct) z każdego raportu. Przycisk "Rekordy" przy każdym IP rozwija pełny szczegół każdego pojedynczego rekordu - header/envelope from, powód nadpisania polityki (`policy_evaluated > reason`), oraz surowy wynik `auth_results` (domena/selektor/wynik dla DKIM, domena/scope/wynik dla SPF) - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
 
+### Email
+Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + treść) albo wczytaj plik `.eml` (UTF-8 lub windows-1252, koperta mbox i zakończenia linii są normalizowane; binarne załączniki base64 nie idą do modelu, zostaje ich rozmiar i sha256, a tekstowe części base64 są dekodowane).
+
+- **Analiza deterministyczna (od razu, lokalnie, bez LLM)**: uwagi o anomaliach, trasa Received z rolą w łańcuchu zaufania, uwierzytelnianie (SPF/DKIM/DMARC/ARC, authserv-id, podpisane i niepodpisane nagłówki, długość `bh=`), zgodność domen względem `From`, oś czasu w UTC, konwersje epoch, drzewo MIME, załączniki (sha256, podwójne rozszerzenia), linki (tekst vs `href`), ukryta treść, komentarze HTML, placeholdery szablonu. Logika w `backend/email_forensics.py`, nic z wiadomości nie jest otwierane ani pobierane.
+- Pod linią rozdzielającą: **szczegółowa analiza LLM** (OpenRouter, ten sam klucz i model co w AbuseIPDB), streamowana na żywo, według przewodnika `docs/email-analysis-guide.md` (model mentalny, analiza linijka po linijce zarówno elementów dobrych, jak i złych, lista kontrolna, pułapki, ocena, pytania kontrolne z odpowiedziami w zwijanych sekcjach). Pierwsza linia odpowiedzi to werdykt (`legalna`/`phishing`/`spam`/`oszustwo`/`malware`/`niejednoznaczna`) z pewnością.
+- Wynik LLM jest renderowany bezpiecznie: surowy HTML z e-maila i linki są neutralizowane (linki pokazywane jako nieklikalny, zdefangowany tekst).
+- Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legalna`) wkleja oryginalny kod do Kroku 1 zakładki AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
+- Każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analizy/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń) jest na dole zakładki.
+
 ### AbuseIPDB (zgłaszanie)
 Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.):
 
@@ -71,7 +80,10 @@ arcyanalizer/
 │   ├── cache.py              # cache wyników w pamięci
 │   ├── storage.py            # atomowy zapis historii (JSON)
 │   ├── logging_config.py     # logi WARNING+ do logi/*.jsonl
-│   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila
+│   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila (zakładka AbuseIPDB)
+│   ├── email_forensics.py    # analiza deterministyczna źródła e-maila (zakładka Email)
+│   ├── analizy.py            # zapis analiz e-maili w data/analizy/
+│   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP
 │   ├── urlscan_report.py     # budowa raportu Markdown z wyniku skanu urlscan.io
@@ -80,12 +92,13 @@ arcyanalizer/
 ├── frontend/
 │   ├── index.html
 │   ├── css/style.css          # ciemny motyw
-│   ├── js/                    # moduły: app, lookup, urlscan, dmarc, report-builder, history, logs
+│   ├── js/                    # moduły: app, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
-├── data/                    # history.json, vt_usage.json, report_log.json (gitignored)
+├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
 ├── logi/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
 └── docs/
-    └── abuseipdb-reporting-policy.md   # pełna polityka + tabela kategorii AbuseIPDB
+    ├── abuseipdb-reporting-policy.md   # pełna polityka + tabela kategorii AbuseIPDB
+    └── email-analysis-guide.md         # przewodnik analizy e-maila wczytywany do promptu LLM (zakładka Email)
 ```
 
 Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 10 wpisów, licznik dziennego limitu VirusTotal) i logi w `logi/`.
@@ -142,7 +155,8 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Parsowanie DMARC XML dzieje się w całości w przeglądarce.
 - Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
 - Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria, opis) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa.
-- Historia i logi zostają wyłącznie lokalnie w `data/` i `logi/` (oba katalogi gitignored).
+- Zakładka Email wysyła do OpenRouter cały kod źródłowy wiadomości (z danymi osobowymi) po kliknięciu "Analizuj"; jest to świadoma decyzja (analizowane są głównie podejrzane wiadomości).
+- Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logi/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.
 
 ## Wersjonowanie i konwencje
 
