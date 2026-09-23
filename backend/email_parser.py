@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html as html_module
 import ipaddress
 import re
 from datetime import datetime, timezone
@@ -13,9 +14,25 @@ _FROM_BY_RE = re.compile(r"from\s+(?P<from>.+?)\s+by\s+(?P<by>\S+)", re.IGNORECA
 _PAREN_RE = re.compile(r"\(([^)]+)\)")
 _BRACKET_RE = re.compile(r"\[([^\]]+)\]")
 _HEADER_START_RE = re.compile(r"^[A-Za-z][A-Za-z0-9-]*:")
-_INDENTED_HEADER_START_RE = re.compile(r"^\s+([A-Za-z][A-Za-z0-9-]*:\s)")
+_INDENTED_HEADER_START_RE = re.compile(r"^\s+[A-Za-z][A-Za-z0-9-]*:(\s|$)")
+_HTML_SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+_HTML_BLOCK_CLOSE_RE = re.compile(r"</(p|div|tr|li|h[1-6]|table)>|<br\s*/?>", re.IGNORECASE)
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_BLANK_LINES_RE = re.compile(r"\n{3,}")
 
 AGE_LIMIT_DAYS = 60
+
+
+def _html_to_text(html: str) -> str:
+    """Zamienia HTML na czytelny tekst bez zależności zewnętrznych - usuwa
+    script/style, zamienia zamykające tagi blokowe na nowe linie, usuwa resztę
+    znaczników, dekoduje encje HTML i zwija nadmiar pustych linii."""
+    text = _HTML_SCRIPT_STYLE_RE.sub(" ", html)
+    text = _HTML_BLOCK_CLOSE_RE.sub("\n", text)
+    text = _HTML_TAG_RE.sub("", text)
+    text = html_module.unescape(text)
+    text = _BLANK_LINES_RE.sub("\n\n", text)
+    return text.strip()
 
 
 def _refold_headers(raw_email: str) -> str:
@@ -204,36 +221,80 @@ def _extract_attachments(msg: Message) -> list[dict]:
     return attachments
 
 
-def _extract_body_text(msg: Message) -> str:
-    if msg.is_multipart():
-        parts = []
-        for part in msg.walk():
-            if part.get_content_type() == "text/plain" and not part.get_filename():
-                try:
-                    parts.append(part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", errors="ignore"))
-                except Exception:
-                    continue
-        return "\n".join(parts)
+def _decode_part(part: Message) -> str:
     try:
-        return msg.get_payload(decode=True).decode(msg.get_content_charset() or "utf-8", errors="ignore")
+        return part.get_payload(decode=True).decode(part.get_content_charset() or "utf-8", errors="ignore")
     except Exception:
         return ""
 
 
-_LLM_RELEVANT_HEADERS = ("Received", "Received-SPF", "Authentication-Results", "Date", "From", "Message-ID")
+def _extract_body_text(msg: Message) -> str:
+    """Wiele phishingowych e-maili to czyste HTML bez części text/plain (tak było w
+    prawdziwym incydencie z tej sesji) - bez fallbacku na HTML treść wiadomości nigdy
+    nie trafiała do analizy (ani do wykrywania BTC/okupu, ani do promptu LLM)."""
+    if msg.is_multipart():
+        plain_parts, html_parts = [], []
+        for part in msg.walk():
+            if part.get_filename():
+                continue
+            if part.get_content_type() == "text/plain":
+                plain_parts.append(_decode_part(part))
+            elif part.get_content_type() == "text/html":
+                html_parts.append(_decode_part(part))
+        if plain_parts:
+            return "\n".join(plain_parts)
+        if html_parts:
+            return "\n".join(_html_to_text(p) for p in html_parts)
+        return ""
+
+    raw = _decode_part(msg)
+    if msg.get_content_type() == "text/html":
+        return _html_to_text(raw)
+    return raw
+
+
+_LLM_RELEVANT_HEADERS = (
+    "Received", "Received-SPF", "Authentication-Results", "Date", "From", "To",
+    "Subject", "Message-ID", "Reply-To", "Return-Path", "List-Unsubscribe", "X-Mailer",
+)
+_LLM_EXTRA_HEADER_NAME_RE = re.compile(r"spam|X-MS-Exchange-Organization-SCL", re.IGNORECASE)
+_MAX_EXTRA_HEADER_VALUE = 200
 
 
 def extract_relevant_headers(raw_email: str) -> str:
-    """Zwięzły blok nagłówków istotnych do weryfikacji łańcucha dostawy (Received i
-    uwierzytelnianie) - bez treści e-maila i bez szumu w postaci wielkich, nieistotnych
-    bloków (np. base64 X-Microsoft-Antispam-Message-Info). Używane jako dowód wysyłany
-    opcjonalnej warstwie LLM do niezależnej weryfikacji hopu granicznego."""
+    """Blok nagłówków istotnych do analizy - łańcuch Received/uwierzytelnianie (do
+    weryfikacji hopu granicznego) plus podstawowe nagłówki tożsamości/dostarczenia
+    (Subject, Reply-To, Return-Path, List-Unsubscribe, X-Mailer - przydatne np. do
+    rozpoznania masowej wysyłki) oraz - jeśli obecne - nagłówki z wynikiem filtra
+    antyspamowego (nazwa zawiera "spam" albo to Microsoftowy X-MS-Exchange-Organization-SCL,
+    wartość ucięta do bezpiecznej długości). Celowo pomija wielkie, nieistotne bloby
+    (np. base64 X-Microsoft-Antispam-Message-Info, DKIM-Signature) - nie są wymienione
+    z nazwy, więc nie trafiają do promptu."""
     msg = message_from_string(_refold_headers(raw_email))
+    allowlist_lower = {h.lower() for h in _LLM_RELEVANT_HEADERS}
     lines = []
     for name in _LLM_RELEVANT_HEADERS:
         for value in msg.get_all(name) or []:
             lines.append(f"{name}: " + re.sub(r"\s+", " ", value).strip())
+    for name, value in msg.items():
+        if name.lower() in allowlist_lower or not _LLM_EXTRA_HEADER_NAME_RE.search(name):
+            continue
+        clean = re.sub(r"\s+", " ", value).strip()
+        if len(clean) > _MAX_EXTRA_HEADER_VALUE:
+            clean = clean[:_MAX_EXTRA_HEADER_VALUE] + "...(obcięte)"
+        lines.append(f"{name}: {clean}")
     return "\n".join(lines)
+
+
+def extract_body_excerpt(raw_email: str, limit: int = 2000) -> str:
+    """Czysty tekst treści e-maila (HTML zamienione na tekst przez `_extract_body_text`),
+    przycięty do `limit` znaków - dowód dla LLM, żeby rozumiał faktyczny mechanizm ataku
+    (co wiadomość mówi), a nie tylko nagłówki. Nie trafia do `facts`/odpowiedzi API."""
+    msg = message_from_string(_refold_headers(raw_email))
+    body = _extract_body_text(msg).strip()
+    if len(body) > limit:
+        body = body[:limit] + "...(obcięte)"
+    return body
 
 
 def parse_email(raw_email: str) -> dict:

@@ -2,10 +2,10 @@ import { api } from "./api.js";
 
 let root;
 let categoriesMap = {};
-let previewDebounce = null;
-let lastPreview = null;
+let checksDebounce = null;
+let lastChecks = null;
 let lastFacts = null;
-let computedSpoofing = false;
+let lastLlmAnalysis = null;
 
 export function initReportBuilder(container) {
   root = container;
@@ -30,32 +30,14 @@ export function initReportBuilder(container) {
       <label>Timestamp ataku</label>
       <input type="datetime-local" id="rb-timestamp">
 
-      <label><input type="checkbox" id="rb-ransom-check"> Żądanie okupu/płatności</label>
-      <div id="rb-ransom-fields" style="display:none">
-        <label>Kwota i waluta</label>
-        <input type="text" id="rb-ransom-amount" placeholder="500 USD">
-        <label>Adres portfela</label>
-        <input type="text" id="rb-ransom-wallet">
-      </div>
-
-      <label>Message-ID</label>
-      <input type="text" id="rb-message-id">
-
-      <h3>Podgląd komentarza (po angielsku)</h3>
-      <div class="card"><pre id="rb-preview" style="white-space:pre-wrap;font-family:var(--mono);font-size:14.5px"></pre></div>
+      <label>Komentarz zgłoszenia (po angielsku, wygenerowany przez AI - edytowalny)</label>
+      <textarea id="rb-comment" style="min-height:160px"></textarea>
       <div class="muted" id="rb-char-count"></div>
 
       <h3>Krok 3 - checklist</h3>
       <div id="rb-checklist-hard"></div>
       <div class="muted">Poniższe jest wyłącznie informacyjne - nie blokuje wysyłki. Zweryfikuj sam(a) przed kliknięciem "Wyślij".</div>
       <div id="rb-checklist-info"></div>
-
-      <h3>Krok 4 - Asystent AI (opcjonalny)</h3>
-      <div class="muted">Ocenia checklistę powyżej na podstawie dostępnych danych i odpowiada na dodatkowe pytania. Wymaga klucza OpenRouter. Nic z tej oceny nie wysyła ani nie blokuje niczego automatycznie.</div>
-      <label>Pytanie do AI (opcjonalnie)</label>
-      <textarea id="rb-ai-prompt" placeholder="np. czy kategoria 7 jest tu odpowiednia? czego jeszcze brakuje w opisie?"></textarea>
-      <button class="action" id="rb-ai-ask">Zapytaj AI</button>
-      <div id="rb-ai-answer"></div>
 
       <button class="primary" id="rb-submit" disabled>Wyślij przez AbuseIPDB API</button>
       <button class="secondary" id="rb-copy">Kopiuj komentarz</button>
@@ -65,18 +47,14 @@ export function initReportBuilder(container) {
 
   root.querySelector("#rb-analyze").addEventListener("click", () => analyze(true));
   root.querySelector("#rb-analyze-no-llm").addEventListener("click", () => analyze(false));
-  root.querySelector("#rb-ransom-check").addEventListener("change", (e) => {
-    root.querySelector("#rb-ransom-fields").style.display = e.target.checked ? "block" : "none";
-    schedulePreview();
-  });
   root.querySelector("#rb-copy").addEventListener("click", () => {
-    if (lastPreview) navigator.clipboard.writeText(lastPreview.comment);
+    navigator.clipboard.writeText(root.querySelector("#rb-comment").value);
   });
   root.querySelector("#rb-submit").addEventListener("click", submit);
-  root.querySelector("#rb-ai-ask").addEventListener("click", askAi);
+  root.querySelector("#rb-comment").addEventListener("input", updateCharCount);
 
-  ["rb-ip", "rb-timestamp", "rb-ransom-amount", "rb-ransom-wallet", "rb-message-id"].forEach((id) =>
-    root.querySelector("#" + id).addEventListener("input", schedulePreview)
+  ["rb-ip", "rb-timestamp"].forEach((id) =>
+    root.querySelector("#" + id).addEventListener("input", scheduleChecks)
   );
 
   renderChecklist(baselineChecklist());
@@ -87,9 +65,8 @@ export function prefillReport(ip, spoofingConfirmed) {
   root.querySelector("#rb-form").style.display = "block";
   ensureCategoriesRendered();
   root.querySelector("#rb-ip").value = ip;
-  computedSpoofing = !!spoofingConfirmed;
   renderChecklist(baselineChecklist());
-  schedulePreview();
+  scheduleChecks();
 }
 
 function ensureCategoriesRendered() {
@@ -113,7 +90,7 @@ function renderCategoryChips(selected) {
   container.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       chip.classList.toggle("on");
-      schedulePreview();
+      scheduleChecks();
     });
   });
 }
@@ -138,7 +115,7 @@ function renderAttachmentsList(facts) {
     })
     .join("");
   return `<details class="hop-chain">
-    <summary>Wykryte załączniki (${atts.length}) - dołączone do komentarza zgłoszenia</summary>
+    <summary>Wykryte załączniki (${atts.length}) - uwzględnione przez AI w komentarzu zgłoszenia</summary>
     ${rows}
   </details>`;
 }
@@ -176,6 +153,7 @@ async function analyze(useLlm) {
   const facts = data.facts;
   lastFacts = facts;
   const llm = data.llm_analysis;
+  lastLlmAnalysis = llm && !llm.error ? llm : null;
   const hardOk = facts.ip_ok && facts.age_ok;
   const qualifies = llm && !llm.error ? llm.qualifies : hardOk;
 
@@ -205,10 +183,6 @@ async function analyze(useLlm) {
       To wyłącznie sugestia - zweryfikuj ręcznie w łańcuchu Received poniżej i popraw pole IP w Kroku 2, jeśli trzeba.</div>`;
   }
 
-  if (llm && !llm.error && llm.draft_description) {
-    html += `<div class="card muted"><strong>Szkic opisu ataku (informacyjnie, po polsku - nie jest wysyłany do AbuseIPDB):</strong><br>${escapeHtml(llm.draft_description).replace(/\n/g, "<br>")}</div>`;
-  }
-
   html += `<div class="card muted">
     IP źródłowe: <strong>${escapeHtml(facts.trusted_source_ip || "brak")}</strong>
     <span class="ip-confidence ip-confidence-${facts.ip_confidence || "low"}">(pewność: ${escapeHtml(facts.ip_confidence || "?")})</span> ·
@@ -222,63 +196,50 @@ async function analyze(useLlm) {
 
   root.querySelector("#rb-form").style.display = "block";
   root.querySelector("#rb-ip").value = facts.trusted_source_ip || "";
-  computedSpoofing = !!facts.spoofing_suspected;
-  root.querySelector("#rb-message-id").value = facts.message_id || "";
   if (facts.date_parsed) {
     root.querySelector("#rb-timestamp").value = facts.date_parsed.slice(0, 16);
   }
-
-  if (facts.btc_addresses_found.length || facts.ransom_keywords_found) {
-    root.querySelector("#rb-ransom-check").checked = true;
-    root.querySelector("#rb-ransom-fields").style.display = "block";
-    if (facts.btc_addresses_found.length) {
-      root.querySelector("#rb-ransom-wallet").value = facts.btc_addresses_found[0];
-    }
-  }
+  root.querySelector("#rb-comment").value = data.report_comment || "";
+  updateCharCount();
 
   renderCategoryChips((llm && !llm.error && llm.suggested_categories) || []);
   renderChecklist(baselineChecklist());
-  schedulePreview();
+  scheduleChecks();
 }
 
-function schedulePreview() {
-  clearTimeout(previewDebounce);
-  previewDebounce = setTimeout(runPreview, 400);
+function scheduleChecks() {
+  clearTimeout(checksDebounce);
+  checksDebounce = setTimeout(runChecks, 400);
+}
+
+function updateCharCount() {
+  const len = root.querySelector("#rb-comment").value.length;
+  const countEl = root.querySelector("#rb-char-count");
+  countEl.textContent = `${len} / 1024 znaków`;
+  countEl.style.color = len >= 1024 ? "var(--warn)" : "var(--muted)";
 }
 
 function buildFields() {
-  const ransomChecked = root.querySelector("#rb-ransom-check").checked;
   return {
     ip: root.querySelector("#rb-ip").value.trim(),
     categories: selectedCategories(),
     attack_timestamp: root.querySelector("#rb-timestamp").value
       ? new Date(root.querySelector("#rb-timestamp").value).toISOString()
       : null,
-    spoofing_confirmed: computedSpoofing,
-    attachments: (lastFacts && lastFacts.attachments) || [],
-    ransom: ransomChecked
-      ? { amount: root.querySelector("#rb-ransom-amount").value, wallet: root.querySelector("#rb-ransom-wallet").value }
-      : null,
-    message_id: root.querySelector("#rb-message-id").value || null,
+    comment: root.querySelector("#rb-comment").value,
   };
 }
 
-async function runPreview() {
+async function runChecks() {
   const fields = buildFields();
   if (!fields.ip) return;
   try {
-    lastPreview = await api.previewReport(fields);
+    lastChecks = (await api.previewReport(fields)).checks;
   } catch (err) {
-    root.querySelector("#rb-preview").textContent = "błąd podglądu: " + err.message;
+    lastChecks = null;
     return;
   }
-  root.querySelector("#rb-preview").textContent = lastPreview.comment;
-  const len = lastPreview.comment.length;
-  const countEl = root.querySelector("#rb-char-count");
-  countEl.textContent = `${len} / 1024 znaków`;
-  countEl.style.color = len >= 1024 ? "var(--warn)" : "var(--muted)";
-
-  updateSubmitState(lastPreview.checks);
+  updateSubmitState(lastChecks);
 }
 
 const CHECKLIST_LABELS = {
@@ -289,11 +250,13 @@ const CHECKLIST_LABELS = {
   not_spoofed_source: "Źródło jest wiarygodne (ustanowione połączenie TCP/SMTP)",
   spoofing_confirmed: "Spoofing potwierdzony SPF/DMARC fail",
   category_matches: "Kategoria dopasowana do rzeczywistego mechanizmu",
-  pii_redacted: "PII zredagowane z komentarza/załączników",
+  pii_redacted: "PII zredagowane z komentarza",
 };
 
 function baselineChecklist() {
   const hasFacts = !!lastFacts;
+  const llm = lastLlmAnalysis;
+  const noLlmNote = "Wymaga analizy AI - dodaj klucz OpenRouter w .env i użyj \"Analizuj\".";
   return {
     received_verified: hasFacts && lastFacts.trusted_source_ip
       ? { status: "pass", note: "Adres wyciągnięty z nagłówka Received." }
@@ -304,8 +267,8 @@ function baselineChecklist() {
     spoofing_confirmed: hasFacts
       ? { status: lastFacts.spoofing_suspected ? "pass" : "fail", note: lastFacts.spoofing_suspected ? "SPF/DKIM/DMARC fail wykryty w nagłówkach." : "Brak wykrytego SPF/DMARC fail w nagłówkach." }
       : { status: "unknown", note: "Brak wklejonego e-maila." },
-    category_matches: { status: "unknown", note: "Użyj Asystenta AI (Krok 4), żeby ocenić dopasowanie kategorii." },
-    pii_redacted: { status: "unknown", note: "Użyj Asystenta AI (Krok 4), żeby sprawdzić komentarz i nazwy załączników pod kątem PII." },
+    category_matches: llm && llm.category_matches ? llm.category_matches : { status: "unknown", note: noLlmNote },
+    pii_redacted: llm && llm.pii_redacted ? llm.pii_redacted : { status: "unknown", note: noLlmNote },
   };
 }
 
@@ -337,41 +300,6 @@ function renderHardChecks(checks) {
 function updateSubmitState(checks) {
   root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed);
   if (checks) renderHardChecks(checks);
-}
-
-async function askAi() {
-  const answerEl = root.querySelector("#rb-ai-answer");
-  answerEl.innerHTML = '<div class="muted">Pytam AI...</div>';
-  const fields = buildFields();
-  try {
-    const res = await api.assistReport({
-      ip: fields.ip,
-      categories: fields.categories,
-      attachments: fields.attachments,
-      ransom: fields.ransom,
-      facts: lastFacts,
-      prompt: root.querySelector("#rb-ai-prompt").value.trim(),
-    });
-    if (!res.configured) {
-      answerEl.innerHTML = '<div class="banner warn">Brak klucza OpenRouter - dodaj OPENROUTER_API_KEY do .env, żeby włączyć Asystenta AI.</div>';
-      return;
-    }
-    if (res.error) {
-      answerEl.innerHTML = `<div class="banner warn">Błąd Asystenta AI: ${escapeHtml(res.error)}</div>`;
-      return;
-    }
-    if (res.checklist) {
-      if (res.checklist.spoofing_confirmed) {
-        computedSpoofing = res.checklist.spoofing_confirmed.status === "pass";
-        schedulePreview();
-      }
-      renderChecklist(res.checklist);
-      if (lastPreview) updateSubmitState(lastPreview.checks);
-    }
-    answerEl.innerHTML = `<div class="card">${escapeHtml(res.answer || "").replace(/\n/g, "<br>")}</div>`;
-  } catch (err) {
-    answerEl.innerHTML = `<div class="banner warn">Błąd: ${err.message}</div>`;
-  }
 }
 
 async function submit() {

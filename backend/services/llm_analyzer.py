@@ -23,39 +23,30 @@ adresem atakującego. Przeanalizuj samodzielnie surowe nagłówki i sprawdź, cz
 wyborem kodu - jeśli widzisz inny, bardziej prawdopodobny adres graniczny, zgłoś to w \
 `source_ip_check`. To również WYŁĄCZNIE doradcze - nic nie zmienia automatycznie w formularzu.
 
+Dostajesz też fragment treści e-maila (oczyszczony z HTML) - użyj go, żeby opisać rzeczywisty \
+mechanizm ataku (pod co się podszywa, jaki jest pretekst/przynęta, jaki jest CTA), a nie tylko \
+nagłówki.
+
 Odpowiedz WYŁĄCZNIE w formacie JSON:
 {
   "qualifies": bool,
   "reasoning": "uzasadnienie po polsku, 2-4 zdania",
   "suggested_categories": [int, ...],
-  "draft_description": "opis mechanizmu ataku PO POLSKU - WYŁĄCZNIE informacyjny, do przeczytania przez użytkownika w oknie analizy; NIE jest wysyłany do AbuseIPDB (komentarz do zgłoszenia budowany jest osobno, z faktów). NIE wspominaj SPF/DKIM/DMARC fail ani Message-ID - te są już widoczne gdzie indziej w analizie",
+  "report_comment": "SZCZEGÓŁOWY komentarz PO ANGIELSKU, gotowy do wysłania jako 'comment' w zgłoszeniu AbuseIPDB - opisz mechanizm ataku (co udaje, jaki pretekst) i konkretne dowody techniczne WYŁĄCZNIE na podstawie dostarczonych faktów/nagłówków/treści (np. potwierdzone połączenie SMTP/TLS, co oznacza wynik SPF/DKIM/DMARC, ślady spoofingu, złośliwy załącznik z wykrytym podwójnym rozszerzeniem, żądanie okupu/adres BTC, wzorzec masowej wysyłki jeśli widoczny w nagłówkach typu List-Unsubscribe/X-Mailer). NIE zmyślaj faktów spoza dostarczonych danych. Zmieść się w maksymalnie ok. 900 znakach (twardy limit API to 1024, zostaw margines na sanityzację) - bez zbędnego PII (własny adres e-mail odbiorcy pomijaj, chyba że kluczowy dla opisu mechanizmu)",
   "alternatives": "sugestie po polsku gdy qualifies=false, inaczej pusty string",
   "source_ip_check": {
     "agrees": bool,
     "suggested_ip": "adres IP" lub null jeśli agrees=true,
     "reasoning": "po polsku, dlaczego zgadzasz się lub nie - 1-2 zdania"
-  }
-}"""
-
-ASSIST_SYSTEM_PROMPT = """Jesteś asystentem pomagającym przygotować zgłoszenie do AbuseIPDB. \
-Dostajesz kontekst zgłoszenia (adres IP, kategorie, załączniki, dane o ewentualnym okupie, \
-fakty wyciągnięte z e-maila jeśli dostępne) oraz fragment polityki AbuseIPDB. Twoja ocena \
-checklisty jest WYŁĄCZNIE doradcza/informacyjna - użytkownik i tak sam decyduje, czy wysłać \
-zgłoszenie, klikając przycisk; nic z Twojej oceny nie blokuje ani nie wysyła niczego \
-automatycznie. Oceń każdy punkt checklisty na podstawie DOSTĘPNYCH danych - jeśli czegoś nie \
-da się ustalić (np. brak wklejonego e-maila), ustaw status "unknown" i napisz dlaczego, \
-zamiast zgadywać. Jeśli użytkownik podał własne pytanie/prompt, odpowiedz na nie w polu \
-"answer" po polsku; jeśli nie podał, w "answer" daj krótkie podsumowanie oceny.
-Odpowiedz WYŁĄCZNIE w formacie JSON:
-{
-  "checklist": {
-    "received_verified": {"status": "pass"|"fail"|"unknown", "note": "po polsku"},
-    "not_spoofed_source": {"status": "pass"|"fail"|"unknown", "note": "po polsku"},
-    "spoofing_confirmed": {"status": "pass"|"fail"|"unknown", "note": "po polsku"},
-    "category_matches": {"status": "pass"|"fail"|"unknown", "note": "po polsku"},
-    "pii_redacted": {"status": "pass"|"fail"|"unknown", "note": "po polsku"}
   },
-  "answer": "odpowiedź po polsku"
+  "category_matches": {
+    "status": "pass"|"fail"|"unknown",
+    "note": "po polsku - czy suggested_categories trafnie opisują mechanizm ataku"
+  },
+  "pii_redacted": {
+    "status": "pass"|"fail"|"unknown",
+    "note": "po polsku - czy report_comment zawiera zbędne dane osobowe do usunięcia"
+  }
 }"""
 
 
@@ -91,32 +82,22 @@ class LlmAnalyzer:
         except (httpx.HTTPError, KeyError, IndexError, json.JSONDecodeError) as exc:
             return {"error": str(exc)}
 
-    async def analyze_email(self, facts: dict, relevant_headers: str = "") -> dict | None:
+    async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "") -> dict | None:
         if not self.is_configured():
             return None
         user_content = (
             "Wyekstrahowane fakty z e-maila (w tym wybór kodu co do hopu granicznego - "
             "'trusted_source_ip', 'ip_confidence', 'ip_reasoning', 'received_chain'):\n"
             f"{json.dumps(facts, ensure_ascii=False, indent=2)}\n\n"
-            "Surowe nagłówki Received/Authentication-Results (dowód do niezależnej weryfikacji "
-            "powyższego wyboru):\n"
+            "Surowe nagłówki (dowód do niezależnej weryfikacji hopu granicznego i do opisania "
+            "mechanizmu ataku):\n"
             f"{relevant_headers or '(brak)'}\n\n"
+            "Treść wiadomości (fragment, HTML zamienione na tekst):\n"
+            f"{body_excerpt or '(brak)'}\n\n"
             "Fragment polityki i kategorii AbuseIPDB:\n"
             f"{self._policy_excerpt()}"
         )
         return await self._chat_json(SYSTEM_PROMPT, user_content)
-
-    async def assist_report(self, context: dict, prompt: str) -> dict | None:
-        if not self.is_configured():
-            return None
-        user_content = (
-            "Kontekst zgłoszenia:\n"
-            f"{json.dumps(context, ensure_ascii=False, indent=2)}\n\n"
-            f"Pytanie/prompt użytkownika (może być puste): {prompt or '(brak)'}\n\n"
-            "Fragment polityki i kategorii AbuseIPDB:\n"
-            f"{self._policy_excerpt()}"
-        )
-        return await self._chat_json(ASSIST_SYSTEM_PROMPT, user_content)
 
 
 llm_analyzer = LlmAnalyzer()

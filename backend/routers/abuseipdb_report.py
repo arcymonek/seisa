@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.email_parser import extract_relevant_headers, parse_email
+from backend.email_parser import extract_body_excerpt, extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
+from backend.report_utils import sanitize_comment, truncate_chars
 from backend.services.abuseipdb import AbuseIpdbService
 from backend.services.llm_analyzer import llm_analyzer
 from backend.storage import append_report_log
@@ -25,19 +26,24 @@ class ReportFields(BaseModel):
     ip: str
     categories: list[int]
     attack_timestamp: str | None = None
-    spoofing_confirmed: bool = False
-    attachments: list[dict] = []
-    ransom: dict | None = None
-    message_id: str | None = None
+    comment: str = ""
 
 
-class AssistRequest(BaseModel):
-    ip: str
-    categories: list[int] = []
-    attachments: list[dict] = []
-    ransom: dict | None = None
-    facts: dict | None = None
-    prompt: str = ""
+def _fallback_comment(facts: dict) -> str:
+    """Deterministyczny komentarz używany tylko gdy LLM jest niedostępny/zawiedzie -
+    budowany wprost z faktów wyekstrahowanych z e-maila, nie z pól formularza."""
+    ransom = None
+    if facts.get("btc_addresses_found"):
+        ransom = {"wallet": facts["btc_addresses_found"][0]}
+    elif facts.get("ransom_keywords_found"):
+        ransom = {"amount": None}
+    return build_comment(
+        facts.get("trusted_source_ip") or "?",
+        facts.get("spoofing_suspected", False),
+        facts.get("attachments") or [],
+        ransom,
+        facts.get("message_id"),
+    )
 
 
 @router.post("/email/analyze")
@@ -46,47 +52,32 @@ async def analyze_email(req: EmailAnalyzeRequest):
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
-        llm_analysis = await llm_analyzer.analyze_email(facts, extract_relevant_headers(req.raw_email))
+        llm_analysis = await llm_analyzer.analyze_email(
+            facts,
+            extract_relevant_headers(req.raw_email),
+            extract_body_excerpt(req.raw_email),
+        )
+
+    report_comment = None
+    if llm_analysis and not llm_analysis.get("error") and llm_analysis.get("report_comment"):
+        report_comment = llm_analysis["report_comment"]
+    if not report_comment:
+        report_comment = _fallback_comment(facts)
+    report_comment = truncate_chars(sanitize_comment(report_comment))
 
     return {
         "facts": facts,
         "categories": ABUSEIPDB_CATEGORIES,
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
+        "report_comment": report_comment,
     }
 
 
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
-    comment = build_comment(
-        fields.ip,
-        fields.spoofing_confirmed,
-        fields.attachments,
-        fields.ransom,
-        fields.message_id,
-    )
-    return {"comment": comment, "checks": checks}
-
-
-@router.post("/report/assist")
-async def assist_report(req: AssistRequest):
-    if not llm_analyzer.is_configured():
-        return {"configured": False, "checklist": None, "answer": None}
-
-    context = {
-        "ip": req.ip,
-        "categories": [{"id": c, "name": ABUSEIPDB_CATEGORIES.get(c, "nieznana")} for c in req.categories],
-        "attachments": req.attachments,
-        "ransom": req.ransom,
-        "facts_from_email": req.facts,
-    }
-    result = await llm_analyzer.assist_report(context, req.prompt)
-    if result is None:
-        return {"configured": False, "checklist": None, "answer": None}
-    if "error" in result:
-        return {"configured": True, "error": result["error"], "checklist": None, "answer": None}
-    return {"configured": True, **result}
+    return {"checks": checks}
 
 
 @router.post("/report/submit")
@@ -98,9 +89,7 @@ async def submit_report(fields: ReportFields):
     if not abuseipdb_service.is_configured():
         raise HTTPException(status_code=400, detail="brak klucza AbuseIPDB API")
 
-    comment = build_comment(
-        fields.ip, fields.spoofing_confirmed, fields.attachments, fields.ransom, fields.message_id
-    )
+    comment = truncate_chars(sanitize_comment(fields.comment))
     timestamp = fields.attack_timestamp or datetime.now(timezone.utc).isoformat()
 
     try:

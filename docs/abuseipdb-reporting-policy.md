@@ -88,15 +88,19 @@ wcześniejszych (nowszych) hopów.
 | **ip** | tak | adres IP (Krok 2) |
 | **categories** | tak, min. 1 | zaznaczone kategorie (Krok 2) |
 | **timestamp** | nie (domyślnie "teraz") | Timestamp ataku - osobne pole, NIE trafia do treści komentarza |
-| **comment** | nie | budowany automatycznie z faktów, patrz niżej - nie ma osobnego, ręcznie edytowalnego pola opisu |
+| **comment** | nie (ale AbuseIPDB rekomenduje szczegółowy opis - patrz "Reporting Policy" wyżej) | pisany przez LLM w Kroku 1, edytowalny w Kroku 2 - patrz niżej |
 
-Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, dopisz go ręcznie do komentarza przed wysyłką (przycisk "Kopiuj komentarz" pozwala wkleić i doedytować tekst poza narzędziem).
+Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, dopisz go ręcznie do komentarza przed wysyłką.
 
 ---
 
-## Treść komentarza - budowana automatycznie z faktów
+## Treść komentarza - pisana przez LLM, z deterministycznym fallbackiem
 
-`comment` jest polem opcjonalnym w API AbuseIPDB, więc arcyAnalizer nie wymaga ręcznie wpisanego opisu ataku - komentarz składa się deterministycznie z tego, co już wiadomo:
+Mimo że `comment` jest polem opcjonalnym w API AbuseIPDB, sama polityka AbuseIPDB (wyżej) wprost oczekuje szczegółowego, technicznie uzasadnionego opisu ataku. arcyAnalizer realizuje to inaczej niż przez ręcznie wypełniane pole formularza: gdy skonfigurowany jest `OPENROUTER_API_KEY`, model podczas analizy w Kroku 1 (`analyze_email`) dostaje fakty wyekstrahowane z e-maila, surowe nagłówki (Received/uwierzytelnianie/Subject/Reply-To/wskaźniki spamu jeśli obecne) oraz fragment treści wiadomości (HTML zamienione na czysty tekst) - i na tej podstawie pisze gotowy, szczegółowy komentarz po angielsku (pole `report_comment`), uwzględniający mechanizm ataku, znaczenie SPF/DKIM/DMARC, złośliwe załączniki (z wykrytym podwójnym rozszerzeniem), żądanie okupu/BTC, wzorce masowej wysyłki - cokolwiek istotne widoczne w dostarczonych danych, w granicach ok. 900 znaków (twardy limit API to 1024).
+
+Ten tekst trafia od razu do edytowalnego pola "Komentarz zgłoszenia" w Kroku 2 - użytkownik może go swobodnie poprawić przed wysyłką (np. dopisać numer portu). Backend i tak sanityzuje/przycina ostateczny tekst tuż przed wysyłką (`sanitize_comment`/`truncate_chars` - ASCII, ochrona przed wstrzyknięciem formuły, twardy limit 1024 znaków), niezależnie od tego, kto go napisał.
+
+**Bez klucza OpenRouter (lub gdy analiza LLM zawiedzie)** - komentarz budowany jest deterministycznie, wyłącznie z faktów wyekstrahowanych z nagłówków/MIME (bez LLM):
 
 ```
 Suspicious email delivered directly from IP [X.X.X.X].
@@ -117,7 +121,7 @@ BTC/crypto wallet: [adres]
 Message-ID: [identyfikator]
 ```
 
-Szkic opisu ataku po polsku, który opcjonalnie generuje LLM (`draft_description`), pokazuje się w oknie analizy wyłącznie do przeczytania - nie jest częścią wysyłanego komentarza. Kategorie (Krok 2) niosą informację o typie ataku zamiast wolnego tekstu.
+Ten tekst też jest edytowalny - to tylko rzadszy, uboższy punkt startowy, gdy LLM jest niedostępny.
 
 ---
 
