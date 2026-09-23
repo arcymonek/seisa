@@ -81,45 +81,43 @@ wcześniejszych (nowszych) hopów.
 
 ## Szablon raportu AbuseIPDB
 
-### Dane do zgłoszenia (formularz na stronie)
+### Dane do zgłoszenia (pola wysyłane do `/report`)
 
-| Pole formularza | Wartość |
-|---|---|
-| **IP** | `___________________` |
-| **Kategorie** | `___________________` (zobacz tabelę kategorii wyżej) |
-| **Timestamp ataku** | `___________________` *(osobne pole formularza - NIE wpisywać w treść komentarza)* |
+| Pole API | Wymagane? | Wartość w arcyAnalizer |
+|---|---|---|
+| **ip** | tak | adres IP (Krok 2) |
+| **categories** | tak, min. 1 | zaznaczone kategorie (Krok 2) |
+| **timestamp** | nie (domyślnie "teraz") | Timestamp ataku - osobne pole, NIE trafia do treści komentarza |
+| **comment** | nie | budowany automatycznie z faktów, patrz niżej - nie ma osobnego, ręcznie edytowalnego pola opisu |
 
-Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, wpisz go wprost w opisie mechanizmu ataku (np. "on port 587").
+Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, dopisz go ręcznie do komentarza przed wysyłką (przycisk "Kopiuj komentarz" pozwala wkleić i doedytować tekst poza narzędziem).
 
 ---
 
-## Treść komentarza w języku angielskim (do wklejenia w pole komentarza)
+## Treść komentarza - budowana automatycznie z faktów
+
+`comment` jest polem opcjonalnym w API AbuseIPDB, więc arcyAnalizer nie wymaga ręcznie wpisanego opisu ataku - komentarz składa się deterministycznie z tego, co już wiadomo:
 
 ```
-[Typ ataku] delivered/attempted via [mechanizm/protokół] on port [XX],
-directly from IP [X.X.X.X] ([dodatkowy kontekst: brak rDNS / botnet /
-open proxy / itp., jeśli dotyczy]).
-
-[Opis mechanizmu ataku - co dokładnie się stało: spoofing, próba logowania,
-skanowanie, injection, treść wiadomości itp. Konkretne dane: nagłówki,
-payloady, endpointy, komendy - bez zbędnego lania wody.]
+Suspicious email delivered directly from IP [X.X.X.X].
 
 [Jeśli dotyczy - spoofing potwierdzony technicznie:]
 SPF/DMARC check failed for the spoofed sender domain, confirming the message
 did not originate from an authorized mail server for that domain.
 
-[Jeśli dotyczy - załącznik(i):]
-Attachment: [nazwa pliku], [rozmiar, np. 245 KB]
-Extension: displayed as [.pdf] / actual file type [.exe]
-[Powtórzyć blok dla każdego załącznika]
+[Jeśli są załączniki - jeden blok na załącznik, wykryte automatycznie z MIME:]
+Attachment: [nazwa pliku], [rozmiar w bajtach], Content-Type: [typ].
+Filename displays as .[pozorne rozszerzenie] but actual extension is .[prawdziwe rozszerzenie] (double extension).
 
 [Jeśli dotyczy - żądanie okupu/płatności:]
 Ransom/payment demand: [kwota + waluta]
-BTC/krypto wallet: [adres]
+BTC/crypto wallet: [adres]
 
 [Jeśli dotyczy - identyfikatory do korelacji:]
 Message-ID: [identyfikator]
 ```
+
+Szkic opisu ataku po polsku, który opcjonalnie generuje LLM (`draft_description`), pokazuje się w oknie analizy wyłącznie do przeczytania - nie jest częścią wysyłanego komentarza. Kategorie (Krok 2) niosą informację o typie ataku zamiast wolnego tekstu.
 
 ---
 
@@ -129,9 +127,6 @@ Message-ID: [identyfikator]
 - [ ] Adres IP zweryfikowany z nagłówka `Received` (nie z `From`/treści - te można sfałszować)
 - [ ] Źródło nie jest spoofowane (SYN/UDP flood → NIE zgłaszać; TCP z domkniętym handshake → można)
 - [ ] Kategoria dopasowana do rzeczywistego mechanizmu ataku, nie "na wszelki wypadek"
-- [ ] Adres BTC/krypto podany w komentarzu, jeśli występuje w ataku
-- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC - dodane jedno zdanie potwierdzające
-- [ ] Jeśli są załączniki - podana nazwa, rozmiar oraz prawdziwe i fałszywe rozszerzenie
+- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC - dodane jedno zdanie potwierdzające (arcyAnalizer robi to automatycznie)
 - [ ] Timestamp **nie** w treści komentarza - tylko w osobnym polu formularza
-- [ ] Własny adres e-mail/domena/inne PII zredagowane z treści komentarza (chyba że niezbędne do opisu mechanizmu ataku)
-- [ ] Opis wystarczająco szczegółowy: porty, nagłówki, mechanizm, kwoty, konkretne dane - nie ogólnik
+- [ ] Komentarz (podgląd w Kroku 2) nie zawiera własnego adresu e-mail/domeny/innego PII poza tym, co niezbędne do opisu mechanizmu ataku

@@ -168,20 +168,37 @@ def _parse_auth_results(header_value: str) -> dict[str, str]:
     return out
 
 
+_COMMON_DISPLAY_EXTENSIONS = {
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
+    "jpg", "jpeg", "png", "gif", "bmp", "zip", "rar",
+}
+
+
 def _extract_attachments(msg: Message) -> list[dict]:
+    """`declared_extension` to prawdziwe (ostatnie) rozszerzenie pliku. `apparent_extension`
+    wykrywa klasyczny trik phishingowy z podwójnym rozszerzeniem (np. "faktura.pdf.exe") -
+    ustawiane tylko gdy przedostatni segment nazwy wygląda jak popularne, "niewinne"
+    rozszerzenie dokumentu/obrazu, inne niż to prawdziwe."""
     attachments = []
     for part in msg.walk():
         filename = part.get_filename()
         if not filename:
             continue
         payload = part.get_payload(decode=True) or b""
-        declared_ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+        segments = filename.split(".")
+        declared_ext = segments[-1].lower() if len(segments) > 1 else ""
+        apparent_ext = None
+        if len(segments) > 2:
+            candidate = segments[-2].lower()
+            if candidate in _COMMON_DISPLAY_EXTENSIONS and candidate != declared_ext:
+                apparent_ext = candidate
         attachments.append(
             {
                 "filename": filename,
                 "size_bytes": len(payload),
                 "content_type": part.get_content_type(),
                 "declared_extension": declared_ext,
+                "apparent_extension": apparent_ext,
             }
         )
     return attachments

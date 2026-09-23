@@ -35,16 +35,12 @@ ABUSEIPDB_CATEGORIES = {
 
 def build_comment(
     ip: str,
-    description: str,
     spoofing_confirmed: bool,
     attachments: list[dict],
     ransom: dict | None,
     message_id: str | None,
 ) -> str:
     parts = [f"Suspicious email delivered directly from IP {ip}."]
-
-    if description and description.strip():
-        parts.append(description.strip())
 
     if spoofing_confirmed:
         parts.append(
@@ -53,12 +49,12 @@ def build_comment(
         )
 
     for a in attachments or []:
-        displayed = a.get("displayed_extension") or a.get("declared_extension") or "?"
-        actual = a.get("actual_extension") or "unknown"
-        parts.append(
-            f"Attachment: {a.get('filename', '?')}, {a.get('size_bytes', '?')} bytes. "
-            f"Extension: displayed as .{displayed} / actual file type .{actual}"
-        )
+        line = f"Attachment: {a.get('filename', '?')}, {a.get('size_bytes', '?')} bytes, Content-Type: {a.get('content_type') or 'unknown'}."
+        apparent = a.get("apparent_extension")
+        declared = a.get("declared_extension")
+        if apparent and declared and apparent != declared:
+            line += f" Filename displays as .{apparent} but actual extension is .{declared} (double extension)."
+        parts.append(line)
 
     if ransom and (ransom.get("amount") or ransom.get("wallet")):
         if ransom.get("amount"):
@@ -74,7 +70,11 @@ def build_comment(
     return truncate_chars(comment)
 
 
-def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list[int], description: str) -> dict:
+def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list[int]) -> dict:
+    """Twarde sprawdzenia odzwierciedlają dokładnie to, czego wymaga AbuseIPDB /report -
+    ip i categories są wymagane, timestamp i comment są opcjonalne (patrz
+    https://docs.abuseipdb.com/#report-endpoint) - dlatego wymagany jest tylko wiek ataku
+    (polityka AbuseIPDB: nie starszy niż 60 dni) i wybór kategorii, nie treść komentarza."""
     ip_ok, ip_reason = is_reportable_ip(ip)
 
     age_ok = False
@@ -91,7 +91,6 @@ def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list
             age_reason = "nieprawidłowy format daty"
 
     category_ok = bool(categories) and all(c in ABUSEIPDB_CATEGORIES for c in categories)
-    description_ok = bool(description and description.strip())
 
     return {
         "ip_ok": ip_ok,
@@ -99,6 +98,5 @@ def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list
         "age_ok": age_ok,
         "age_reason": age_reason,
         "category_ok": category_ok,
-        "description_ok": description_ok,
-        "all_passed": ip_ok and age_ok and category_ok and description_ok,
+        "all_passed": ip_ok and age_ok and category_ok,
     }

@@ -25,7 +25,6 @@ class ReportFields(BaseModel):
     ip: str
     categories: list[int]
     attack_timestamp: str | None = None
-    description: str = ""
     spoofing_confirmed: bool = False
     attachments: list[dict] = []
     ransom: dict | None = None
@@ -35,24 +34,10 @@ class ReportFields(BaseModel):
 class AssistRequest(BaseModel):
     ip: str
     categories: list[int] = []
-    description: str = ""
     attachments: list[dict] = []
     ransom: dict | None = None
     facts: dict | None = None
     prompt: str = ""
-
-
-async def _translated_description(description: str) -> tuple[str, bool]:
-    """Opis wpisywany jest po polsku, komentarz do AbuseIPDB musi być po angielsku.
-    Zwraca (tekst_do_komentarza, czy_faktycznie_przetlumaczono)."""
-    if not description or not description.strip():
-        return description, False
-    if not llm_analyzer.is_configured():
-        return description, False
-    translated = await llm_analyzer.translate_to_english(description)
-    if translated is None:
-        return description, False
-    return translated, True
 
 
 @router.post("/email/analyze")
@@ -73,22 +58,15 @@ async def analyze_email(req: EmailAnalyzeRequest):
 
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
-    checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories, fields.description)
-    description_en, translated = await _translated_description(fields.description)
+    checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
     comment = build_comment(
         fields.ip,
-        description_en,
         fields.spoofing_confirmed,
         fields.attachments,
         fields.ransom,
         fields.message_id,
     )
-    return {
-        "comment": comment,
-        "checks": checks,
-        "translated": translated,
-        "llm_configured": llm_analyzer.is_configured(),
-    }
+    return {"comment": comment, "checks": checks}
 
 
 @router.post("/report/assist")
@@ -99,7 +77,6 @@ async def assist_report(req: AssistRequest):
     context = {
         "ip": req.ip,
         "categories": [{"id": c, "name": ABUSEIPDB_CATEGORIES.get(c, "nieznana")} for c in req.categories],
-        "description_pl": req.description,
         "attachments": req.attachments,
         "ransom": req.ransom,
         "facts_from_email": req.facts,
@@ -114,16 +91,15 @@ async def assist_report(req: AssistRequest):
 
 @router.post("/report/submit")
 async def submit_report(fields: ReportFields):
-    checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories, fields.description)
+    checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
     if not checks["all_passed"]:
         raise HTTPException(status_code=400, detail={"message": "twarde sprawdzenia nie przeszły", "checks": checks})
 
     if not abuseipdb_service.is_configured():
         raise HTTPException(status_code=400, detail="brak klucza AbuseIPDB API")
 
-    description_en, _translated = await _translated_description(fields.description)
     comment = build_comment(
-        fields.ip, description_en, fields.spoofing_confirmed, fields.attachments, fields.ransom, fields.message_id
+        fields.ip, fields.spoofing_confirmed, fields.attachments, fields.ransom, fields.message_id
     )
     timestamp = fields.attack_timestamp or datetime.now(timezone.utc).isoformat()
 

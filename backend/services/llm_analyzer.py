@@ -28,7 +28,7 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
   "qualifies": bool,
   "reasoning": "uzasadnienie po polsku, 2-4 zdania",
   "suggested_categories": [int, ...],
-  "draft_description": "opis mechanizmu ataku PO POLSKU, gotowy do edycji przez użytkownika (zostanie przetłumaczony na angielski przed wysyłką), bez timestampu. NIE wspominaj SPF/DKIM/DMARC fail ani Message-ID - te trafiają do komentarza osobno, z innych pól formularza; powtórzenie ich tutaj zduplikuje treść",
+  "draft_description": "opis mechanizmu ataku PO POLSKU - WYŁĄCZNIE informacyjny, do przeczytania przez użytkownika w oknie analizy; NIE jest wysyłany do AbuseIPDB (komentarz do zgłoszenia budowany jest osobno, z faktów). NIE wspominaj SPF/DKIM/DMARC fail ani Message-ID - te są już widoczne gdzie indziej w analizie",
   "alternatives": "sugestie po polsku gdy qualifies=false, inaczej pusty string",
   "source_ip_check": {
     "agrees": bool,
@@ -37,20 +37,15 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
   }
 }"""
 
-TRANSLATE_SYSTEM_PROMPT = """Przetłumacz podany polski opis ataku (phishing/spam e-mail) na \
-zwięzły, naturalny angielski, odpowiedni do zgłoszenia nadużycia na AbuseIPDB. Zachowaj \
-wszystkie konkretne dane (adresy, kwoty, nazwy plików, identyfikatory) bez zmian. Odpowiedz \
-WYŁĄCZNIE przetłumaczonym tekstem, bez cudzysłowów, bez komentarza."""
-
 ASSIST_SYSTEM_PROMPT = """Jesteś asystentem pomagającym przygotować zgłoszenie do AbuseIPDB. \
-Dostajesz kontekst zgłoszenia (adres IP, kategorie, opis ataku po polsku, załączniki, dane \
-o ewentualnym okupie, fakty wyciągnięte z e-maila jeśli dostępne) oraz fragment polityki \
-AbuseIPDB. Twoja ocena checklisty jest WYŁĄCZNIE doradcza/informacyjna - użytkownik i tak \
-sam decyduje, czy wysłać zgłoszenie, klikając przycisk; nic z Twojej oceny nie blokuje ani \
-nie wysyła niczego automatycznie. Oceń każdy punkt checklisty na podstawie DOSTĘPNYCH danych \
-- jeśli czegoś nie da się ustalić (np. brak wklejonego e-maila), ustaw status "unknown" i \
-napisz dlaczego, zamiast zgadywać. Jeśli użytkownik podał własne pytanie/prompt, odpowiedz na \
-nie w polu "answer" po polsku; jeśli nie podał, w "answer" daj krótkie podsumowanie oceny.
+Dostajesz kontekst zgłoszenia (adres IP, kategorie, załączniki, dane o ewentualnym okupie, \
+fakty wyciągnięte z e-maila jeśli dostępne) oraz fragment polityki AbuseIPDB. Twoja ocena \
+checklisty jest WYŁĄCZNIE doradcza/informacyjna - użytkownik i tak sam decyduje, czy wysłać \
+zgłoszenie, klikając przycisk; nic z Twojej oceny nie blokuje ani nie wysyła niczego \
+automatycznie. Oceń każdy punkt checklisty na podstawie DOSTĘPNYCH danych - jeśli czegoś nie \
+da się ustalić (np. brak wklejonego e-maila), ustaw status "unknown" i napisz dlaczego, \
+zamiast zgadywać. Jeśli użytkownik podał własne pytanie/prompt, odpowiedz na nie w polu \
+"answer" po polsku; jeśli nie podał, w "answer" daj krótkie podsumowanie oceny.
 Odpowiedz WYŁĄCZNIE w formacie JSON:
 {
   "checklist": {
@@ -65,9 +60,6 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
 
 
 class LlmAnalyzer:
-    def __init__(self) -> None:
-        self._translation_cache: dict[str, str] = {}
-
     def is_configured(self) -> bool:
         return bool(settings.openrouter_api_key)
 
@@ -113,40 +105,6 @@ class LlmAnalyzer:
             f"{self._policy_excerpt()}"
         )
         return await self._chat_json(SYSTEM_PROMPT, user_content)
-
-    async def translate_to_english(self, text: str) -> str | None:
-        if not text or not text.strip():
-            return text
-        if not self.is_configured():
-            return None
-        cached = self._translation_cache.get(text)
-        if cached is not None:
-            return cached
-
-        headers = {
-            "Authorization": f"Bearer {settings.openrouter_api_key}",
-            "Content-Type": "application/json",
-        }
-        payload = {
-            "model": settings.openrouter_model,
-            "messages": [
-                {"role": "system", "content": TRANSLATE_SYSTEM_PROMPT},
-                {"role": "user", "content": text},
-            ],
-        }
-        try:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
-            resp.raise_for_status()
-            data = resp.json()
-            translated = data["choices"][0]["message"]["content"].strip()
-        except (httpx.HTTPError, KeyError, IndexError):
-            return None
-
-        if len(self._translation_cache) > 200:
-            self._translation_cache.clear()
-        self._translation_cache[text] = translated
-        return translated
 
     async def assist_report(self, context: dict, prompt: str) -> dict | None:
         if not self.is_configured():
