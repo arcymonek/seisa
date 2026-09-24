@@ -359,6 +359,8 @@ function factsToMarkdown(f) {
       f.received.map((r) => [r.index, mdCode(r.from_host), mdCode(r.ptr), mdCode(r.ip), mdCode(r.by_host),
         `${r.with || ""} ${r.tls || ""}`.trim(), r.time_utc || "", [r.role, ...r.flags].filter(Boolean).join("; ")])));
 
+  if (f.trust_note) L.push(`> ${f.trust_note}`, "");
+
   L.push("### Uwierzytelnianie: SPF / DKIM / DMARC / ARC", "",
     ...mdTable(["Nagłówek", "authserv-id", "Zgodny z odbiorcą?", "Wyniki", "Szczegóły"],
       f.auth.map((a) => [a.header, mdCode(a.authserv_id), a.matches_receiver === true ? "tak" : a.matches_receiver === false ? "nie" : "-",
@@ -369,6 +371,14 @@ function factsToMarkdown(f) {
   }
   if (f.arc.length) {
     L.push("#### ARC-Seal", "", ...mdTable(["i=", "d=", "s=", "cv="], f.arc.map((a) => [a.i, mdCode(a.d), mdCode(a.s), a.cv])));
+  }
+
+  const fRowsMd = filterRows(f.filters);
+  const senderSetMd = (f.filters && f.filters.sender_set) || [];
+  if (fRowsMd.length || senderSetMd.length) {
+    L.push("### Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę", "");
+    if (fRowsMd.length) L.push(...mdTable(["Nagłówek / pole", "Wartość"], fRowsMd.map(([k, v]) => [k, mdCode(String(v))])));
+    if (senderSetMd.length) L.push("#### Flagi ustawione przez nadawcę", "", ...mdTable(["Nagłówek", "Wartość", "Znaczenie"], senderSetMd.map((s) => [mdCode(s.header), mdCode(s.value), s.note])));
   }
 
   L.push("### Zgodność domen (względem From)", "",
@@ -478,6 +488,28 @@ function fmtDelta(s) {
   return `${sign}${Math.floor(a / 3600)} h ${Math.round((a % 3600) / 60)} min`;
 }
 
+function filterRows(fl) {
+  const rows = [];
+  const ms = fl && fl.microsoft;
+  if (ms) {
+    const scl = Object.entries(ms.scl || {}).map(([k, v]) => `${k}: ${v}`).join("; ");
+    if (scl) rows.push(["SCL (Spam Confidence Level)", scl]);
+    if (ms.bcl != null) rows.push(["BCL (Bulk Complaint Level)", ms.bcl]);
+    const md = ms.mailbox_delivery || {};
+    if (Object.keys(md).length) rows.push(["Nagłówek dostarczenia do skrzynki", Object.entries(md).map(([k, v]) => `${k}:${v}`).join("; ")]);
+    if (ms.folder) rows.push(["Folder docelowy", ms.folder]);
+    if (ms.auth_as) rows.push(["AuthAs (tożsamość nadawcy w tenancie)", ms.auth_as]);
+    if (ms.auth_source) rows.push(["AuthSource", ms.auth_source]);
+    if (ms.sid_result || ms.sid_pra) rows.push(["Sender ID (SID-Result / SID-PRA)", `${ms.sid_result || "-"} / ${ms.sid_pra || "-"}`]);
+    const ff = Object.entries(ms.forefront || {}).map(([k, v]) => `${k}:${v}`).join("; ");
+    if (ff) rows.push(["X-Forefront-Antispam-Report", ff]);
+    if (ms.message_delivery_decoded) rows.push(["X-Message-Delivery (zdekodowany z Base64)", ms.message_delivery_decoded]);
+    if (ms.opaque_headers && ms.opaque_headers.length) rows.push(["Nagłówki nieczytelne dla człowieka (wewnętrzne bloby Microsoftu)", ms.opaque_headers.join(", ")]);
+  }
+  ((fl && fl.other) || []).forEach((o) => rows.push([o.header, o.value]));
+  return rows;
+}
+
 function block(title, inner, open = false) {
   return `<details class="fact-block"${open ? " open" : ""}><summary>${e(title)}</summary>${inner}</details>`;
 }
@@ -504,7 +536,8 @@ function showFacts(f) {
   ]), true));
 
   parts.push(block(`Trasa wiadomości: nagłówki Received (${f.received.length}), od góry (najnowszy)`,
-    '<div class="muted">Granica zaufania: wiarygodny jest tylko Received dopisany przez serwer odbiorcy (zwykle najwyższy). Role poniżej to heurystyka kodu, ostateczną ocenę robi analiza.</div>' +
+    '<div class="muted">Granica zaufania: wiarygodny jest tylko Received dopisany przez serwer odbiorcy. Role poniżej to heurystyka kodu, ostateczną ocenę robi analiza.</div>' +
+    (f.trust_note ? `<div class="banner info">${e(f.trust_note)}</div>` : "") +
     table(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", "Czas UTC", "Rola / uwagi"],
       f.received.map((r) => [
         r.index, mono(r.from_host), mono(r.ptr), mono(r.ip), mono(r.by_host),
@@ -526,6 +559,15 @@ function showFacts(f) {
       f.dkim.map((d) => [mono(d.d), mono(d.s), mono(d.a) + (d.legacy_sha1 ? ' <span class="bad">SHA-1</span>' : ""),
         `${d.bh_len} → ${e(d.hash_hint)}`, `<span class="mono">${e(d.signed_headers.join(":"))}</span>`, e(d.unsigned_important.join(", "))])) : "") +
     (f.arc.length ? "<h4>ARC-Seal</h4>" + table(["i=", "d=", "s=", "cv="], f.arc.map((a) => [e(a.i), mono(a.d), mono(a.s), e(a.cv)])) : ""), true));
+
+  const fRows = filterRows(f.filters);
+  const senderSet = (f.filters && f.filters.sender_set) || [];
+  if (fRows.length || senderSet.length) {
+    parts.push(block("Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę",
+      '<div class="muted">Nagłówki filtrów napisał serwer odbiorcy (mają wagę dowodową). Flagi nadawcy to jego deklaracje - nie dowód, tylko element presji lub śledzenia.</div>' +
+      (fRows.length ? table(["Nagłówek / pole", "Wartość"], fRows.map(([k, v]) => [e(k), mono(String(v))])) : "") +
+      (senderSet.length ? "<h4>Flagi ustawione przez nadawcę</h4>" + table(["Nagłówek", "Wartość", "Znaczenie"], senderSet.map((s) => [mono(s.header), e(s.value), e(s.note)])) : ""), true));
+  }
 
   parts.push(block("Zgodność domen (alignment względem From)",
     table(["Pole", "Wartość", "Domena", "Zgodna z From?"], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? '<span class="muted">punkt odniesienia</span>' : tick(r.aligned)])), true));

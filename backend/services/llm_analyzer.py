@@ -18,8 +18,10 @@ OPENROUTER_APP_HEADERS = {
 
 logger = logging.getLogger("app")
 
-# Pełna analiza edukacyjna (zakładka Email) potrafi mieć kilkanaście tysięcy tokenów; 16000 było za mało.
-STREAM_MAX_TOKENS = 32000
+# Limit wyjścia liczy się RAZEM z ukrytym rozumowaniem modelu (w praktyce ok. 45% - patrz
+# completion_tokens_details.reasoning_tokens w zapisanych analizach). To tylko sufit: płaci się za tokeny
+# faktycznie wygenerowane. Model dopuszcza do 128000; 64000 zostawia duży zapas dla złożonych e-maili.
+STREAM_MAX_TOKENS = 64000
 
 _OR_HTTP_HINTS = {
     400: "nieprawidłowe zapytanie",

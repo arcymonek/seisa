@@ -213,6 +213,26 @@ def registrable_domain(host: str | None) -> str | None:
     return ".".join(labels[-2:])
 
 
+# Rodziny domen jednego operatora poczty: Received/Authentication-Results tego samego operatora bywają pod różnymi domenami.
+PROVIDER_FAMILIES = {
+    "microsoft": {"microsoft.com", "outlook.com", "office365.com", "office.com", "hotmail.com", "live.com", "msn.com"},
+    "google": {"google.com", "gmail.com", "googlemail.com"},
+    "yahoo": {"yahoo.com", "yahoodns.net", "yahoo.co.jp"},
+    "apple": {"icloud.com", "me.com", "apple.com"},
+    "proton": {"proton.me", "protonmail.ch", "protonmail.com"},
+}
+
+
+def family(domain: str | None) -> str | None:
+    """Klucz rodziny operatora dla domeny (nieznana domena = sama sobie rodziną)."""
+    if not domain:
+        return None
+    for key, members in PROVIDER_FAMILIES.items():
+        if domain in members:
+            return key
+    return domain
+
+
 def _addr_domain(value: str | None) -> tuple[str | None, str | None]:
     if not value:
         return None, None
@@ -407,6 +427,107 @@ def _audit_html(html: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę
+# ---------------------------------------------------------------------------
+
+SENDER_SET_HEADERS = {
+    "x-message-flag": "flaga wiadomości ustawiana przez nadawcę (Outlook pokaże ją przy wiadomości) - technika przyciągania uwagi",
+    "importance": "ważność deklarowana przez nadawcę (wpływa tylko na wyświetlanie w kliencie)",
+    "x-priority": "priorytet deklarowany przez nadawcę (1 = najwyższy)",
+    "priority": "priorytet deklarowany przez nadawcę",
+    "x-msmail-priority": "priorytet deklarowany przez nadawcę",
+    "return-receipt-to": "żądanie potwierdzenia odbioru (śledzenie: potwierdza, że skrzynka żyje)",
+    "disposition-notification-to": "żądanie potwierdzenia odczytu (śledzenie: potwierdza, że wiadomość otwarto)",
+}
+PHISH_CATEGORIES = {"PHSH": "phishing", "HPHSH": "phishing o wysokiej pewności", "MALW": "malware", "SPM": "spam", "HSPM": "spam o wysokiej pewności", "BULK": "masowa"}
+
+
+def _kv(value: str) -> dict[str, str]:
+    """Nagłówki filtrów Microsoftu 'KLUCZ:wartość;KLUCZ:wartość' -> dict (klucze wielkimi literami)."""
+    out: dict[str, str] = {}
+    for part in value.split(";"):
+        if ":" in part:
+            k, v = part.split(":", 1)
+            out.setdefault(k.strip().upper(), v.strip())
+    return out
+
+
+def _decode_b64_ascii(value: str) -> str | None:
+    try:
+        raw = base64.b64decode(value.strip() + "=" * (-len(value.strip()) % 4), validate=True)
+        text = raw.decode("ascii")
+    except (binascii.Error, ValueError, UnicodeDecodeError):
+        return None
+    return text if text and all(32 <= ord(c) < 127 for c in text) else None
+
+
+def _extract_filters(headers: list[tuple[str, str]], flag) -> dict:
+    hd = {}
+    for n, v in headers:
+        hd.setdefault(n.lower(), v)
+
+    ms: dict = {}
+    scl: dict[str, str] = {}
+    if "x-ms-exchange-organization-scl" in hd:
+        scl["X-MS-Exchange-Organization-SCL"] = hd["x-ms-exchange-organization-scl"].strip()
+    forefront = _kv(hd["x-forefront-antispam-report"]) if "x-forefront-antispam-report" in hd else {}
+    if forefront.get("SCL"):
+        scl["X-Forefront-Antispam-Report"] = forefront["SCL"]
+    delivery_decoded = _decode_b64_ascii(hd["x-message-delivery"]) if "x-message-delivery" in hd else None
+    if delivery_decoded:
+        m = re.search(r"SCL=(-?\d+)", delivery_decoded)
+        if m:
+            scl["X-Message-Delivery (zdekodowany)"] = m.group(1)
+    antispam = _kv(hd["x-microsoft-antispam"]) if "x-microsoft-antispam" in hd else {}
+    mailbox = _kv(hd["x-microsoft-antispam-mailbox-delivery"]) if "x-microsoft-antispam-mailbox-delivery" in hd else {}
+
+    if scl or forefront or antispam or mailbox or "x-ms-exchange-organization-authas" in hd:
+        junk = "junk" in mailbox.get("RF", "").lower() or mailbox.get("DEST", "").upper() == "J"
+        ms = {
+            "scl": scl,
+            "bcl": antispam.get("BCL"),
+            "folder": "Wiadomości-śmieci (Junk)" if junk else None,
+            "mailbox_delivery": {k: mailbox[k] for k in ("DEST", "RF", "OFR") if k in mailbox},
+            "auth_as": hd.get("x-ms-exchange-organization-authas"),
+            "auth_source": hd.get("x-ms-exchange-organization-authsource"),
+            "sid_result": hd.get("x-sid-result"),
+            "sid_pra": hd.get("x-sid-pra"),
+            "forefront": {k: forefront[k] for k in ("CAT", "SFV", "IPV", "DIR", "CTRY", "LANG", "H", "PTR") if forefront.get(k)},
+            "message_delivery_decoded": delivery_decoded,
+            "opaque_headers": [n for n, _ in headers if n.lower() in ("x-microsoft-antispam-message-info", "x-ms-exchange-antispam-messagedata-0")],
+        }
+        nums = [int(x) for x in scl.values() if re.fullmatch(r"-?\d+", x)]
+        if nums and max(nums) >= 5:
+            flag("warn", f"Filtr odbiorcy (Microsoft): SCL={max(nums)} (0-1 czysta, 5-6 spam, 9 najwyższa pewność spamu).")
+        if junk:
+            flag("warn", "Wiadomość została dostarczona do folderu Wiadomości-śmieci (znaczniki RF:JunkEmail / dest:J w nagłówku dostarczenia filtra).")
+        cat = forefront.get("CAT", "")
+        for code in [c for c in re.split(r"[+,\s]+", cat) if c in PHISH_CATEGORIES]:
+            flag("warn", f"Kategoria filtra Microsoftu: {code} ({PHISH_CATEGORIES[code]}).")
+        if (ms["auth_as"] or "").lower() == "anonymous":
+            flag("info", "Wiadomość weszła do tenanta anonimowo (AuthAs: Anonymous), bez uwierzytelnionej tożsamości nadawcy.")
+
+    other = []
+    for name in ("x-spam-flag", "x-spam-status", "x-spam-score", "x-spam-level", "x-rspamd-score", "x-spam-report"):
+        if name in hd:
+            other.append({"header": name, "value": hd[name][:200]})
+    if hd.get("x-spam-flag", "").strip().upper() == "YES":
+        flag("warn", "Filtr antyspamowy odbiorcy oznaczył wiadomość jako spam (X-Spam-Flag: YES).")
+
+    sender_set = []
+    for name, note in SENDER_SET_HEADERS.items():
+        if name in hd:
+            sender_set.append({"header": name, "value": hd[name].strip()[:120], "note": note})
+    for item in sender_set:
+        if item["header"] in ("return-receipt-to", "disposition-notification-to", "x-message-flag"):
+            flag("warn", f"Nadawca ustawił `{item['header']}: {item['value']}` - {item['note']}.")
+        elif item["header"] == "importance" and item["value"].lower() == "high" or item["header"] == "x-priority" and item["value"][:1] in ("1", "2"):
+            flag("info", f"Nadawca deklaruje wysoki priorytet (`{item['header']}: {item['value']}`) - element presji.")
+
+    return {"microsoft": ms or None, "other": other, "sender_set": sender_set}
+
+
+# ---------------------------------------------------------------------------
 # główna funkcja
 # ---------------------------------------------------------------------------
 
@@ -545,20 +666,43 @@ def compute_facts(src: str) -> dict:
         received.append({
             "index": idx, "from_host": hop["from_host"], "ip": hop["ip"], "by_host": hop["by_host"],
             "helo": m_helo.group(1) if m_helo else None, "ptr": m_ptr.group(1) if m_ptr else None, "with": m_with.group(1) if m_with else None,
-            "tls": (m_tls.group(0)[:60] if m_tls else None), "time_utc": _fmt_utc(ts), "_ts": ts,
+            "tls": (m_tls.group(0)[:160] if m_tls else None), "time_utc": _fmt_utc(ts), "_ts": ts,
             "flags": hop_flags, "raw": hop["raw"][:400],
         })
         for f in hop_flags:
-            flag("warn", f"Received #{idx} (od góry): {f}.")
+            # przy bezpośrednim przyjęciu przez dużego operatora identyczny czas jest normalny - tylko informacja
+            level = "info" if f.startswith("czas najstarszego Received") else "warn"
+            flag(level, f"Received #{idx} (od góry): {f}.")
+    single_operator = None
+    trust_note = None
+    trust_index = 0
     if received:
-        received[0]["role"] = "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)"
-        for r in received[1:]:
-            r["role"] = "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora"
+        by_fams = {family(registrable_domain((r["by_host"] or "").strip("[]"))) for r in received}
+        by_fams.discard(None)
+        if len(received) > 1 and len(by_fams) == 1:
+            single_operator = next(iter(by_fams))
+            trust_index = len(received) - 1
+            for r in received:
+                r["role"] = (
+                    "najstarszy wpis operatora odbiorcy - pierwszy zapis połączenia, IP z gniazda TCP (granica zaufania)"
+                    if r["index"] == trust_index
+                    else "wewnętrzny skok tego samego operatora (po granicy zaufania)"
+                )
+            trust_note = (
+                f"Cały łańcuch Received należy do jednego operatora ({single_operator}) - to infrastruktura odbiorcy. "
+                f"Granicą zaufania jest najstarszy wpis (#{trust_index}): to on zapisał adres IP połączenia; "
+                "wyższe wpisy to wewnętrzne skoki tego samego operatora."
+            )
+            flag("info", trust_note)
+        else:
+            received[0]["role"] = "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)"
+            for r in received[1:]:
+                r["role"] = "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora"
 
     # --- uwierzytelnianie ---
-    top_by_domains = set()
-    for r in received[:3]:
-        d = registrable_domain((r["by_host"] or "").strip("[]"))
+    top_by_domains = set()  # rodziny operatorów, które zapisały Received po stronie odbiorcy
+    for r in received:
+        d = family(registrable_domain((r["by_host"] or "").strip("[]")))
         if d:
             top_by_domains.add(d)
     auth = []
@@ -579,7 +723,7 @@ def compute_facts(src: str) -> dict:
             body = re.sub(r"^\s*i\s*=\s*\d+\s*;\s*", "", v)
             authserv = body.split(";", 1)[0].strip().split()[0] if body.strip() else None
             entry["authserv_id"] = authserv
-            ad = registrable_domain((authserv or "").lower()) if authserv else None
+            ad = family(registrable_domain((authserv or "").lower())) if authserv else None
             entry["matches_receiver"] = (ad in top_by_domains) if (ad and top_by_domains) else None
             for m in re.finditer(r"\b(spf|dkim|dmarc|arc|dkim-atps|compauth)\s*=\s*([a-z]+)", body, re.IGNORECASE):
                 entry["results"].setdefault(m.group(1).lower(), m.group(2).lower())
@@ -641,9 +785,13 @@ def compute_facts(src: str) -> dict:
     unsub_hdr = first("list-unsubscribe") or ""
     unsub_urls = re.findall(r"<([^>]+)>", unsub_hdr)
     for u in unsub_urls[:3]:
-        host = _url_host(u) if re.match(r"(?i)https?://", u) else (u.rsplit("@", 1)[-1].lower() if "@" in u else None)
+        if re.match(r"(?i)https?://", u):
+            host = _url_host(u)
+        else:
+            bare = re.sub(r"(?i)^mailto:", "", u).split("?")[0]
+            host = bare.rsplit("@", 1)[-1].lower() if "@" in bare else None
         add_identity("List-Unsubscribe", u[:100], host)
-    misaligned = [r for r in identity_rows if r["aligned"] is False]
+    misaligned = [r for r in identity_rows if r["aligned"] is False and r["field"] != "Message-ID"]
     if misaligned and from_reg:
         flag("warn", "Domeny niezgodne z domeną `From` (" + str(from_reg) + "): " + ", ".join(sorted({f"{r['field']}={r['domain']}" for r in misaligned})[:6]) + ".")
     if rt and _addr_domain(rt)[1] and registrable_domain(_addr_domain(rt)[1]) != from_reg:
@@ -785,6 +933,8 @@ def compute_facts(src: str) -> dict:
     if unsub_hdr and not first("list-unsubscribe-post"):
         flag("info", "`List-Unsubscribe` bez `List-Unsubscribe-Post` (brak one-click RFC 8058).")
 
+    filters = _extract_filters(headers, flag)
+
     # --- IP ---
     ips = []
     for r in received:
@@ -811,6 +961,9 @@ def compute_facts(src: str) -> dict:
         "overview": overview,
         "flags": flags,
         "received": received,
+        "trust_note": trust_note,
+        "single_operator": single_operator,
+        "filters": filters,
         "auth": auth,
         "dkim": dkim,
         "arc": arc,

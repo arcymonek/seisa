@@ -81,6 +81,10 @@ Następnie markdown w tej kolejności (wszystkie części zawsze, także **Czę�
   mieć nic wspólnego z `MAIL FROM` (na tym opiera się spoofing).
 - Granica zaufania i analogia z `X-Forwarded-For`. Kolejność czytania `Received`: od dołu do góry (dół = początek
   drogi, góra = serwer odbiorcy).
+- **Cały łańcuch u jednego operatora.** Jeśli analiza deterministyczna zaznacza, że wszystkie `Received` należą do
+  jednego operatora odbiorcy (np. Microsoft dla skrzynki outlook.com, Google dla Gmaila), to granicą zaufania jest
+  **najstarszy** wpis (ten, który zapisał adres IP połączenia z zewnątrz), a wyższe wpisy to wewnętrzne skoki. Wyjaśnij,
+  że wewnętrzna trasa nie dowodzi wiarygodności nadawcy, tylko tego, kto jest dostawcą skrzynki odbiorcy.
 - **Trasa tej wiadomości** w bloku kodu (strzałki `->`), z zaznaczeniem, które skoki są pod kontrolą odbiorcy.
 - Tylko te skróty, które faktycznie wystąpią (MTA, MUA, MDA/LDA, LMTP, ESMTP, TLS).
 
@@ -105,8 +109,27 @@ temu ufać**, **na co patrzeć**, **jak wyglądałoby w phishingu / w legalnej w
   `@`, epoch w milisekundach), `Subject`. **Oś czasu** w tabeli, z przeliczeniem do UTC i opóźnieniami.
 - **F. Struktura i automatyzacja**: `Content-Type`, `MIME-Version`, `X-*`, `Auto-Submitted`, `Precedence`,
   `List-Unsubscribe` (+ `-Post`, RFC 8058). Nagłówki `X-` to dowolny tekst.
-- **G. Nagłówki filtrów** (`X-Spam-*`, `X-MS-*`, `X-Forefront-*`, `SCL`, `BCL`, `CAT`, `IPV`, encoded-words RFC 2047):
-  kto je napisał i ile są warte.
+- **G. Nagłówki filtrów i flagi nadawcy** (`X-Spam-*`, `X-MS-*`, `X-Forefront-*`, `SCL`, `BCL`, `CAT`, `IPV`,
+  `SFV`, encoded-words RFC 2047). Dla każdego ustal **kto go napisał** (filtr odbiorcy = ma wagę dowodową;
+  nadawca = tylko deklaracja) i ile jest wart. **Obowiązkowo omów wszystko, co analiza deterministyczna pokazuje w
+  sekcji „Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę"**, w szczególności:
+  - **Folder docelowy.** Jeśli filtr dostarczył wiadomość do Wiadomości-śmieci (`RF:JunkEmail`, `dest:J` w
+    `X-Microsoft-Antispam-Mailbox-Delivery`), to jest mocny, niezależny dowód. Wspomnij o nim także w
+    streszczeniu i w werdykcie. Nie pisz, że wiadomość „dotarła do skrzynki odbiorczej", jeśli trafiła do Junk.
+  - **SCL / BCL / CAT / SFV / IPV.** Wyjaśnij skalę (SCL: 0-1 czysta, 5-6 spam, 9 najwyższa pewność; BCL: skargi na
+    masową wysyłkę; CAT: kategoria, np. PHSH = phishing). Jeśli SCL ma **różne wartości w różnych nagłówkach**
+    (np. `X-MS-Exchange-Organization-SCL` i zdekodowany `X-Message-Delivery`), wskaż to i wyjaśnij ostrożnie jako
+    `[Interpretacja]` (różne etapy przetwarzania), bez pewności co do przyczyny.
+  - **`AuthAs` / `AuthSource`.** `Anonymous` = wiadomość weszła bez uwierzytelnionej tożsamości nadawcy.
+  - **`X-Message-Delivery`** to Base64 z parametrami dostarczenia (analiza pokazuje wersję zdekodowaną przez kod).
+  - **Flagi ustawione przez nadawcę:** `X-Message-Flag` (wymusza flagę „Follow up" w Outlooku, czyli przyciąga
+    uwagę), `Importance` i `X-Priority` (presja czasu), `Return-Receipt-To` / `Disposition-Notification-To`
+    (żądanie potwierdzenia odbioru: śledzenie). To deklaracje nadawcy, nie ocena filtra: pokaż tę różnicę.
+  - Bloby, których nie da się zinterpretować (`X-Microsoft-Antispam-Message-Info`, `X-MS-Exchange-AntiSpam-
+    MessageData-*`), nazwij nieczytelnymi i nie twierdź, że coś w nich odczytałeś.
+  - **Encoded-words w `Subject`/`From` z polskimi, portugalskimi itp. literami to norma** (RFC 2047 służy
+    kodowaniu znaków spoza ASCII), a nie technika omijania filtrów. Za technikę uznawaj dopiero kodowanie
+    zbędne (np. Base64 dla czysto ASCII-owego tekstu) albo kodowanie ukrywające słowa kluczowe.
 - **H. Struktura MIME i treść**: drzewo (`mixed`/`alternative`/`digest`), `Content-Transfer-Encoding` (dozwolone:
   7bit, 8bit, binary, quoted-printable, base64), boundary, załączniki (nazwy, podwójne rozszerzenia), linki
   (`href` vs tekst, `http`, parametry śledzące, nadużywane usługi chmurowe), elementy zdalne (`<img>`,
