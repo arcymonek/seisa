@@ -4,7 +4,7 @@ let root;
 
 const SERVICES = [
   "virustotal", "otx", "urlscan", "cloudflare_radar", "abuseipdb",
-  "greynoise", "whois_rdns", "llm_analyzer", "app",
+  "greynoise", "whois_rdns", "open_router", "app",
 ];
 
 const LEVEL_COLOR = { ERROR: "var(--fail)", WARNING: "var(--warn)" };

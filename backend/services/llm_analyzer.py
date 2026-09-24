@@ -16,7 +16,8 @@ OPENROUTER_APP_HEADERS = {
     "X-Title": "arcyAnalizer",
 }
 
-logger = logging.getLogger("app")
+# Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB) trafiają do jednej usługi logów.
+logger = logging.getLogger("open_router")
 
 # Limit wyjścia liczy się RAZEM z ukrytym rozumowaniem modelu (w praktyce ok. 45% - patrz
 # completion_tokens_details.reasoning_tokens w zapisanych analizach). To tylko sufit: płaci się za tokeny

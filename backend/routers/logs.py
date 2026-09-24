@@ -13,6 +13,15 @@ RANGE_DAYS_BACK = {"today": 0, "3d": 2, "week": 6, "month": 29}
 MAX_ENTRIES = 500
 
 
+def _normalize_legacy_service(entry: dict) -> dict:
+    """Starsze wpisy błędów OpenRouter miały usługę "app" (albo "llm_analyzer"); od teraz jest to "open_router"."""
+    if entry.get("service") == "llm_analyzer" or (
+        entry.get("service") == "app" and str(entry.get("message", "")).startswith("OpenRouter:")
+    ):
+        return {**entry, "service": "open_router"}
+    return entry
+
+
 @router.get("/logs")
 async def get_logs(log_range: str = Query("today", alias="range"), service: str = "all"):
     today = datetime.now().astimezone().date()
@@ -39,6 +48,7 @@ async def get_logs(log_range: str = Query("today", alias="range"), service: str 
                     entry = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                entry = _normalize_legacy_service(entry)
                 if service != "all" and entry.get("service") != service:
                     continue
                 entries.append(entry)

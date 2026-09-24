@@ -596,8 +596,9 @@ function filterRows(fl) {
   return rows;
 }
 
-function block(title, inner, open = false) {
-  return `<details class="fact-block"${open ? " open" : ""}><summary>${e(title)}</summary>${inner}</details>`;
+// Wszystkie sekcje analizy deterministycznej są domyślnie zwinięte (użytkownik rozwija tylko to, czego potrzebuje).
+function block(title, inner) {
+  return `<details class="fact-block"><summary>${e(title)}</summary>${inner}</details>`;
 }
 
 function showFacts(f) {
@@ -611,7 +612,7 @@ function showFacts(f) {
   const flags = f.flags.length
     ? f.flags.map((x) => `<div class="fact-flag ${x.level}"><span>${e(x.text).replace(/`([^`]+)`/g, "<code>$1</code>")}</span></div>`).join("")
     : '<div class="muted">Nie wykryto automatycznie żadnych anomalii (to nie znaczy, że ich nie ma).</div>';
-  parts.push(block(`Uwagi wykryte automatycznie (${f.flags.length})`, flags, true));
+  parts.push(block(`Uwagi wykryte automatycznie (${f.flags.length})`, flags));
 
   const o = f.overview;
   parts.push(block("Przegląd", table(["Pole", "Wartość"], [
@@ -619,7 +620,7 @@ function showFacts(f) {
     ["Date", `${e(o.date || "")} ${o.date_utc ? `<span class="muted">(${e(o.date_utc)})</span>` : ""}`],
     ["Message-ID", mono(o.message_id)],
     ["Nagłówków / Received", `${o.header_count} / ${o.received_count}`], ["Rozmiar źródła", `${o.source_chars} znaków`],
-  ]), true));
+  ])));
 
   parts.push(block(`Trasa wiadomości: nagłówki Received (${f.received.length}), od góry (najnowszy)`,
     '<div class="muted">Granica zaufania: wiarygodny jest tylko Received dopisany przez serwer odbiorcy. Role poniżej to heurystyka kodu, ostateczną ocenę robi analiza.</div>' +
@@ -630,7 +631,7 @@ function showFacts(f) {
         `${e(r.with || "")} ${r.tls ? `<span class="muted">${e(r.tls)}</span>` : ""}`,
         e(r.time_utc || ""),
         `<span class="muted">${e(r.role || "")}</span>` + r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join(""),
-      ])), true));
+      ]))));
 
   parts.push(block(`Uwierzytelnianie: SPF / DKIM / DMARC / ARC (${f.auth.length} nagłówków wyników)`,
     '<div class="muted">Liczy się tylko Authentication-Results napisany przez serwer odbiorcy (authserv-id). Wynik napisany przez kogoś innego to jego deklaracja.</div>' +
@@ -644,7 +645,7 @@ function showFacts(f) {
     (f.dkim.length ? "<h4>DKIM-Signature</h4>" + table(["d=", "s=", "a=", "bh (dł. → skrót)", "Podpisane nagłówki (h=)", "Niepodpisane ważne"],
       f.dkim.map((d) => [mono(d.d), mono(d.s), mono(d.a) + (d.legacy_sha1 ? ' <span class="bad">SHA-1</span>' : ""),
         `${d.bh_len} → ${e(d.hash_hint)}`, `<span class="mono">${e(d.signed_headers.join(":"))}</span>`, e(d.unsigned_important.join(", "))])) : "") +
-    (f.arc.length ? "<h4>ARC-Seal</h4>" + table(["i=", "d=", "s=", "cv="], f.arc.map((a) => [e(a.i), mono(a.d), mono(a.s), e(a.cv)])) : ""), true));
+    (f.arc.length ? "<h4>ARC-Seal</h4>" + table(["i=", "d=", "s=", "cv="], f.arc.map((a) => [e(a.i), mono(a.d), mono(a.s), e(a.cv)])) : "")));
 
   const fRows = filterRows(f.filters);
   const senderSet = (f.filters && f.filters.sender_set) || [];
@@ -652,11 +653,11 @@ function showFacts(f) {
     parts.push(block("Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę",
       '<div class="muted">Nagłówki filtrów napisał serwer odbiorcy (mają wagę dowodową). Flagi nadawcy to jego deklaracje - nie dowód, tylko element presji lub śledzenia.</div>' +
       (fRows.length ? table(["Nagłówek / pole", "Wartość"], fRows.map(([k, v]) => [e(k), mono(String(v))])) : "") +
-      (senderSet.length ? "<h4>Flagi ustawione przez nadawcę</h4>" + table(["Nagłówek", "Wartość", "Znaczenie"], senderSet.map((s) => [mono(s.header), e(s.value), e(s.note)])) : ""), true));
+      (senderSet.length ? "<h4>Flagi ustawione przez nadawcę</h4>" + table(["Nagłówek", "Wartość", "Znaczenie"], senderSet.map((s) => [mono(s.header), e(s.value), e(s.note)])) : "")));
   }
 
   parts.push(block("Zgodność domen (alignment względem From)",
-    table(["Pole", "Wartość", "Domena", "Zgodna z From?"], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? '<span class="muted">punkt odniesienia</span>' : tick(r.aligned)])), true));
+    table(["Pole", "Wartość", "Domena", "Zgodna z From?"], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? '<span class="muted">punkt odniesienia</span>' : tick(r.aligned)]))));
 
   parts.push(block("Oś czasu (UTC)",
     table(["Zdarzenie", "Czas UTC", "Różnica od poprzedniego"], f.timeline.map((t) => [e(t.event), e(t.utc), e(fmtDelta(t.delta_s))])) +

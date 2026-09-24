@@ -65,7 +65,7 @@ Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-po
 Ostatnie 10 wyszukiwań (lookup + import DMARC), z możliwością ponownego otwarcia lub usunięcia.
 
 ### Logi
-Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie) i po usłudze.
+Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie) i po usłudze. Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
 ## Architektura
 
