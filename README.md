@@ -1,3 +1,5 @@
+<p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
+
 # Seisa
 
 Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
@@ -99,6 +101,7 @@ seisa/
 ├── frontend/
 │   ├── index.html
 │   ├── favicon.ico            # ikona: kanji 精 (16/32/48/64 px)
+│   ├── logo.png               # okrągłe logo (nagłówek strony i README)
 │   ├── css/style.css          # ciemny motyw
 │   ├── js/                    # moduły: app, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
