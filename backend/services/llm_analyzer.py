@@ -128,6 +128,7 @@ class LlmAnalyzer:
                 {"role": "user", "content": user_content},
             ],
             "response_format": {"type": "json_object"},
+            "usage": {"include": True},
         }
         try:
             async with httpx.AsyncClient(timeout=60) as client:
@@ -161,7 +162,10 @@ class LlmAnalyzer:
                 return {"error": text}
             if choice.get("finish_reason") == "length":
                 logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length), możliwy niepełny JSON")
-            return json.loads(choice["message"]["content"])
+            result = json.loads(choice["message"]["content"])
+            if isinstance(result, dict) and isinstance(body.get("usage"), dict):
+                result["_usage"] = body["usage"]
+            return result
         except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
             text = f"nieprawidłowa odpowiedź OpenRouter ({describe_exception(exc)})"
             logger.warning(f"OpenRouter: {text}")

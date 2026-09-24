@@ -159,6 +159,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Klucze API trzymane tylko w `.env` (gitignored), nigdy w kodzie frontendu.
 - Parsowanie DMARC XML dzieje się w całości w przeglądarce.
 - Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
+- Zakładka AbuseIPDB: przycisk "Wczytaj plik .eml" (także przeciągnięcie pliku na pole), licznik czasu analizy LLM oraz tokeny i koszt po analizie "Analizuj".
 - Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria, opis) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa.
 - Zakładka Email wysyła do OpenRouter cały kod źródłowy wiadomości (z danymi osobowymi) po kliknięciu "Analizuj"; jest to świadoma decyzja (analizowane są głównie podejrzane wiadomości).
 - Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logi/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.

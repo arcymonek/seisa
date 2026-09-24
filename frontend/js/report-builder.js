@@ -6,6 +6,51 @@ let checksDebounce = null;
 let lastChecks = null;
 let lastFacts = null;
 let lastLlmAnalysis = null;
+let timerInterval = null;
+let timerStart = null;
+
+function formatElapsed(ms) {
+  return `Analiza: ${(ms / 1000).toFixed(1).replace(".", ",")} sekund`;
+}
+
+function startTimer() {
+  timerStart = performance.now();
+  const el = root.querySelector("#rb-timer");
+  el.textContent = formatElapsed(0);
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    el.textContent = formatElapsed(performance.now() - timerStart);
+  }, 100);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  root.querySelector("#rb-timer").textContent = formatElapsed(performance.now() - timerStart);
+}
+
+function usageText(usage) {
+  if (!usage || usage.prompt_tokens == null) return "";
+  const parts = [`tokeny: ${usage.prompt_tokens} wejście / ${usage.completion_tokens} wyjście`];
+  if (typeof usage.cost === "number") parts.push(`koszt ≈ $${usage.cost.toFixed(3)}`);
+  return parts.join(", ");
+}
+
+async function loadFile(file) {
+  const buf = await file.arrayBuffer();
+  let text;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
+  } catch {
+    text = new TextDecoder("windows-1252").decode(buf);
+  }
+  // BOM i zakończenia linii (koperta mbox i reszta normalizacji dzieje się po stronie serwera)
+  text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
+  const textarea = root.querySelector("#rb-email");
+  textarea.value = text;
+  textarea.scrollTop = 0;
+  root.querySelector("#rb-status").textContent = `Wczytano plik ${file.name} (${(file.size / 1024).toFixed(1).replace(".", ",")} KB).`;
+}
 
 export function initReportBuilder(container) {
   root = container;
@@ -17,6 +62,11 @@ export function initReportBuilder(container) {
     <div class="banner info">Treść zostanie wysłana do OpenRouter/Claude Sonnet w celu analizy tylko po kliknięciu "Analizuj". "Analizuj bez LLM" nic nie wysyła poza tym komputerem.</div>
     <button class="action" id="rb-analyze">Analizuj</button>
     <button class="secondary" id="rb-analyze-no-llm">Analizuj bez LLM</button>
+    <button class="secondary" id="rb-file-btn">Wczytaj plik .eml</button>
+    <input type="file" id="rb-file" accept=".eml,.txt,message/rfc822" style="display:none">
+    <span class="inline-timer" id="rb-timer"></span>
+    <span class="inline-timer" id="rb-usage"></span>
+    <div class="muted" id="rb-status"></div>
 
     <div id="rb-analysis"></div>
 
@@ -49,6 +99,21 @@ export function initReportBuilder(container) {
 
   root.querySelector("#rb-analyze").addEventListener("click", () => analyze(true));
   root.querySelector("#rb-analyze-no-llm").addEventListener("click", () => analyze(false));
+  root.querySelector("#rb-file-btn").addEventListener("click", () => root.querySelector("#rb-file").click());
+  root.querySelector("#rb-file").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) loadFile(file);
+    e.target.value = "";
+  });
+  const emailArea = root.querySelector("#rb-email");
+  emailArea.addEventListener("dragover", (e) => e.preventDefault());
+  emailArea.addEventListener("drop", (e) => {
+    const file = e.dataTransfer && e.dataTransfer.files[0];
+    if (file) {
+      e.preventDefault();
+      loadFile(file);
+    }
+  });
   root.querySelector("#rb-copy").addEventListener("click", () => {
     navigator.clipboard.writeText(root.querySelector("#rb-comment").value);
   });
@@ -152,14 +217,22 @@ async function analyze(useLlm) {
   if (!rawEmail) return;
   const analysisEl = root.querySelector("#rb-analysis");
   analysisEl.innerHTML = '<div class="muted">Analizuję...</div>';
+  const timerEl = root.querySelector("#rb-timer");
+  const usageEl = root.querySelector("#rb-usage");
+  usageEl.textContent = "";
+  timerEl.textContent = "";
+  if (useLlm) startTimer();
   let data;
   try {
     data = await api.analyzeEmail({ raw_email: rawEmail, use_llm: useLlm });
   } catch (err) {
+    if (useLlm) stopTimer();
     analysisEl.innerHTML = `<div class="banner warn">Błąd analizy: ${err.message}</div>`;
     return;
   }
 
+  if (useLlm) stopTimer();
+  usageEl.textContent = usageText(data.usage);
   categoriesMap = data.categories;
   const facts = data.facts;
   lastFacts = facts;

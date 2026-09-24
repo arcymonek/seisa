@@ -58,6 +58,8 @@ async def analyze_email(req: EmailAnalyzeRequest):
             extract_body_excerpt(req.raw_email),
         )
 
+    usage = llm_analysis.pop("_usage", None) if isinstance(llm_analysis, dict) else None
+
     report_comment = None
     if llm_analysis and not llm_analysis.get("error") and llm_analysis.get("report_comment"):
         report_comment = llm_analysis["report_comment"]
@@ -70,6 +72,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         "categories": ABUSEIPDB_CATEGORIES,
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
+        "usage": usage,
         "report_comment": report_comment,
     }
 
