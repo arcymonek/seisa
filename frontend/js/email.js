@@ -760,6 +760,10 @@ async function refreshSaved() {
   });
 }
 
+export function openSavedAnalysis(id) {
+  return openSaved(id);
+}
+
 async function openSaved(id) {
   const statusEl = root.querySelector("#em-status");
   let rec;

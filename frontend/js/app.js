@@ -1,7 +1,7 @@
 import { initLookup, prefillLookup } from "./lookup.js";
 import { initDmarc } from "./dmarc.js";
 import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-builder.js";
-import { initEmail } from "./email.js";
+import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
 import { initUrlscan } from "./urlscan.js";
@@ -37,6 +37,10 @@ window.arcyApp = {
   goToLookup: (indicator) => {
     switchTab("lookup");
     prefillLookup(indicator);
+  },
+  goToEmailAnalysis: (id) => {
+    switchTab("email");
+    openSavedAnalysis(id);
   },
   goToReportWithEmail: (rawEmail) => {
     switchTab("report");

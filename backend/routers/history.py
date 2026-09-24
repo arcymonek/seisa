@@ -3,6 +3,8 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from backend.analizy import list_analyses
+from backend.config import HISTORY_MAX_ENTRIES
 from backend.models import HistoryEntry
 from backend.storage import (
     append_history,
@@ -22,10 +24,24 @@ class HistoryCreateRequest(BaseModel):
     data: dict
 
 
+EMAIL_VERDICT_RISK = {"legalna": "Low", "niejednoznaczna": "Medium"}
+
+
+def _email_entry(item: dict) -> dict:
+    """Zapisana analiza z zakładki Email pokazana jako wpis historii (dane zostają w data/analizy/)."""
+    verdict = item.get("verdict")
+    return {
+        "id": item["id"],
+        "type": "email",
+        "created_at": item["created_at"],
+        "label": f"{item.get('subject') or '(brak tematu)'} - {item.get('from') or '?'}",
+        "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
+    }
+
+
 @router.get("/history")
 async def list_history():
-    entries = load_history()
-    return [
+    items = [
         {
             "id": e.id,
             "type": e.type,
@@ -33,8 +49,11 @@ async def list_history():
             "label": e.label,
             "risk_summary": e.risk_summary,
         }
-        for e in entries
+        for e in load_history()
     ]
+    items += [_email_entry(a) for a in list_analyses() if a.get("id") and a.get("created_at")]
+    items.sort(key=lambda i: i["created_at"], reverse=True)
+    return items[:HISTORY_MAX_ENTRIES]
 
 
 @router.get("/history/{entry_id}")

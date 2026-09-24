@@ -3,9 +3,15 @@ import { renderMarkdown } from "./markdown-render.js";
 
 let root;
 
+const TYPE_LABEL = { lookup: "IP", dmarc: "DMARC", email: "Email" };
+
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 export function initHistory(container) {
   root = container;
-  root.innerHTML = `<div class="subtitle">Ostatnie wyszukiwania IP i wgrane raporty DMARC - możesz je otworzyć ponownie albo usunąć.</div>
+  root.innerHTML = `<div class="subtitle">Ostatnie 25 działań: wyszukiwania IP, wgrane raporty DMARC i zapisane analizy e-maili - możesz je otworzyć ponownie albo usunąć. "Wyczyść historię" usuwa tylko wyszukiwania IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwasz pojedynczo.</div>
     <button class="secondary" id="hi-refresh">Odśwież</button>
     <button class="secondary" id="hi-clear">Wyczyść historię</button>
     <div id="hi-list"></div>
@@ -38,10 +44,10 @@ async function load() {
   listEl.innerHTML = "<table><thead><tr><th>Data</th><th>Typ</th><th>Etykieta</th><th>Ryzyko</th><th></th></tr></thead><tbody>" +
     entries
       .map(
-        (e) => `<tr data-id="${e.id}">
+        (e) => `<tr data-id="${e.id}" data-type="${e.type}">
       <td class="muted">${new Date(e.created_at).toLocaleString("pl-PL")}</td>
-      <td>${e.type}</td>
-      <td>${e.label}</td>
+      <td>${TYPE_LABEL[e.type] || e.type}</td>
+      <td>${escapeHtml(e.label)}</td>
       <td>${e.risk_summary ? `<span class="badge ${e.risk_summary.toLowerCase()}">${e.risk_summary}</span>` : "-"}</td>
       <td><button class="secondary open-btn">Otwórz ponownie</button> <button class="secondary del-btn">Usuń</button></td>
     </tr>`
@@ -50,11 +56,21 @@ async function load() {
     "</tbody></table>";
 
   listEl.querySelectorAll(".open-btn").forEach((btn) => {
-    btn.addEventListener("click", () => openEntry(btn.closest("tr").dataset.id));
+    btn.addEventListener("click", () => {
+      const row = btn.closest("tr");
+      if (row.dataset.type === "email") window.arcyApp.goToEmailAnalysis(row.dataset.id);
+      else openEntry(row.dataset.id);
+    });
   });
   listEl.querySelectorAll(".del-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      await api.historyDelete(btn.closest("tr").dataset.id);
+      const row = btn.closest("tr");
+      if (row.dataset.type === "email") {
+        if (!confirm("Usunąć tę analizę razem z zapisanym e-mailem?")) return;
+        await api.emailAnalysisDelete(row.dataset.id);
+      } else {
+        await api.historyDelete(row.dataset.id);
+      }
       load();
     });
   });

@@ -15,7 +15,7 @@ REPORT_LOG_FILE = DATA_DIR / "report_log.json"
 ABUSEIPDB_POLICY_FILE = DOCS_DIR / "abuseipdb-reporting-policy.md"
 EMAIL_GUIDE_FILE = DOCS_DIR / "email-analysis-guide.md"
 
-HISTORY_MAX_ENTRIES = 10
+HISTORY_MAX_ENTRIES = 25
 
 
 class Settings(BaseSettings):

@@ -62,7 +62,7 @@ Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-po
 7. Wysyłka przez API AbuseIPDB (backend waliduje twarde sprawdzenia od nowa, niezależnie od stanu formularza w przeglądarce) **albo** skopiowanie komentarza do ręcznego wklejenia na stronie.
 
 ### Historia
-Ostatnie 10 wyszukiwań (lookup + import DMARC), z możliwością ponownego otwarcia lub usunięcia.
+Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili (otwierane z powrotem w zakładce Email), z możliwością ponownego otwarcia lub usunięcia. "Wyczyść historię" usuwa tylko wpisy IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo.
 
 ### Logi
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie) i po usłudze. Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
