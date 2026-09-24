@@ -115,6 +115,48 @@ def _registrable_domain(host: str | None) -> str | None:
     return ".".join(labels[-2:]) if len(labels) >= 2 else host.lower()
 
 
+# Współdzielone przekaźniki dużych dostawców: ich IP nie jest adresem nadawcy i nie należy go zgłaszać.
+_SHARED_PROVIDER_DOMAINS = {
+    "outlook.com", "office365.com", "office.com", "microsoft.com", "hotmail.com", "live.com",
+    "google.com", "googlemail.com",
+}
+
+
+def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
+    """Hop graniczny bywa tylko przekaźnikiem operatora (np. Microsoft Exchange Online przekazuje pocztę
+    do odbiorcy), a faktyczny nadawca połączył się z tym operatorem wcześniej. Jeśli starszy hop ma jako "by" domenę
+    operatora ("from" hopu granicznego), to przechodzimy przez wewnętrzne hopy operatora do pierwszego, w którym
+    "from" jest już spoza niego - tam operator zapisał adres łączącego się klienta.
+    Zwraca (indeks hopu, opis przejścia, czy wiadomość powstała wewnątrz współdzielonego operatora)."""
+    cur = start
+    visited = []
+    origin_inside_provider = False
+    while True:
+        relay = _registrable_domain(hops[cur]["from_host"])
+        nxt = cur + 1
+        if not relay or nxt >= len(hops) or _registrable_domain(hops[nxt]["by_host"]) != relay:
+            break
+        j = nxt
+        while j < len(hops) and _registrable_domain(hops[j]["from_host"]) == relay:
+            j += 1
+        if j >= len(hops):
+            origin_inside_provider = relay in _SHARED_PROVIDER_DOMAINS
+            break
+        found_ip = hops[j]["ip"]
+        if not found_ip or _is_special_ip(found_ip):
+            break  # starszy hop to wewnętrzna sieć operatora (adres prywatny) - zostajemy przy obecnym
+        visited.append(relay)
+        cur = j
+    note = ""
+    if visited:
+        note = (
+            f" Pierwszy hop spoza domeny odbiorcy to przekaźnik operatora '{visited[0]}', a nie nadawca, "
+            f"więc przeszedłem dalej łańcuchem ({' -> '.join(visited)}) do hopu, w którym operator zapisał "
+            "adres faktycznie łączącego się nadawcy."
+        )
+    return cur, note, origin_inside_provider
+
+
 def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[dict], str, str]:
     """Nagłówki Received są dopisywane na górze przy każdym hopie, więc `received_headers[0]`
     to najnowszy (ostatnia dostawa), a najstarszy (pierwsze wejście do sieci) jest na końcu listy.
@@ -130,15 +172,24 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     if not hops:
         return None, [], "low", "Brak nagłówków Received w e-mailu."
 
-    trusted_suffix = _registrable_domain(hops[0]["by_host"])
+    # Zaufana domena = "by" najnowszego hopu, który ją podaje (pierwszy nagłówek Gmaila to "by <id> with SMTP"
+    # bez hosta, więc bierzemy pierwszy hop z rozpoznawalnym "by").
+    trusted_suffix = next((d for d in (_registrable_domain(h["by_host"]) for h in hops) if d), None)
     boundary_index = len(hops) - 1
     left_trusted_domain = False
     for i, hop in enumerate(hops):
+        if hop["from_host"] is None and hop["ip"] is None:
+            continue  # hop bez "from" (wpis własny odbiorcy) - nic z niego nie wynika o nadawcy
         if trusted_suffix and _registrable_domain(hop["from_host"]) == trusted_suffix:
             continue
         boundary_index = i
         left_trusted_domain = True
         break
+
+    relay_note = ""
+    origin_inside_provider = False
+    if left_trusted_domain:
+        boundary_index, relay_note, origin_inside_provider = _walk_through_relays(hops, boundary_index)
 
     # Hop graniczny może nie mieć rozpoznanego IP (np. nietypowy format nagłówka) - w takim
     # przypadku szukamy dalej w stronę najstarszych hopów, gdzie IP jednak się pojawi.
@@ -147,6 +198,13 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
         ip_index += 1
     if ip_index == len(hops):
         ip_index = boundary_index
+
+    if origin_inside_provider:
+        return None, hops, "low", (
+            "Wiadomość powstała wewnątrz współdzielonego dostawcy poczty (np. poczta webowa lub konto Microsoft/Google) - "
+            "w łańcuchu Received nie ma publicznego adresu IP nadawcy, są tylko adresy przekaźników dostawcy, "
+            "których nie należy zgłaszać do AbuseIPDB. Nadużycie zgłoś do działu abuse dostawcy."
+        )
 
     hops[ip_index]["is_boundary"] = True
     boundary = hops[ip_index]
@@ -160,7 +218,7 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
             f"Hop graniczny: 'from {boundary['from_host']}' nie należy już do zaufanej domeny "
             f"'{trusted_suffix}' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze "
             "miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie "
-            "łączącego się nadawcy."
+            "łączącego się nadawcy." + relay_note
         )
     elif trusted_suffix is None:
         confidence = "medium"
@@ -286,7 +344,16 @@ def extract_relevant_headers(raw_email: str) -> str:
     return "\n".join(lines)
 
 
-def extract_body_excerpt(raw_email: str, limit: int = 2000) -> str:
+BODY_EXCERPT_LIMIT = 2000
+
+
+def body_text_length(raw_email: str) -> int:
+    """Długość czystego tekstu treści (przed przycięciem) - do informacji dla użytkownika, ile zobaczył model."""
+    msg = message_from_string(_refold_headers(raw_email))
+    return len(_extract_body_text(msg).strip())
+
+
+def extract_body_excerpt(raw_email: str, limit: int = BODY_EXCERPT_LIMIT) -> str:
     """Czysty tekst treści e-maila (HTML zamienione na tekst przez `_extract_body_text`),
     przycięty do `limit` znaków - dowód dla LLM, żeby rozumiał faktyczny mechanizm ataku
     (co wiadomość mówi), a nie tylko nagłówki. Nie trafia do `facts`/odpowiedzi API."""
@@ -304,7 +371,13 @@ def parse_email(raw_email: str) -> dict:
     boundary_hop, hop_chain, ip_confidence, ip_reasoning = _find_boundary_hop(received_headers)
     trusted_ip = boundary_hop["ip"] if boundary_hop else None
 
-    auth_header = msg.get("Authentication-Results", "")
+    # Serwery bez własnego Authentication-Results (np. Exim) zostawiają wyniki tylko w nagłówkach Microsoftu/ARC.
+    auth_header = (
+        msg.get("Authentication-Results")
+        or msg.get("X-MS-Exchange-Authentication-Results")
+        or msg.get("ARC-Authentication-Results")
+        or ""
+    )
     auth_results = _parse_auth_results(auth_header)
 
     date_header = msg.get("Date")

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.email_parser import extract_body_excerpt, extract_relevant_headers, parse_email
+from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
 from backend.report_utils import sanitize_comment, truncate_chars
 from backend.services.abuseipdb import AbuseIpdbService
@@ -49,6 +49,7 @@ def _fallback_comment(facts: dict) -> str:
 @router.post("/email/analyze")
 async def analyze_email(req: EmailAnalyzeRequest):
     facts = parse_email(req.raw_email)
+    body_chars = body_text_length(req.raw_email)
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
@@ -73,6 +74,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
         "usage": usage,
+        "llm_input": {"body_chars": body_chars, "body_limit": BODY_EXCERPT_LIMIT},
         "report_comment": report_comment,
     }
 

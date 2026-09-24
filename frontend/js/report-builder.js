@@ -196,6 +196,14 @@ function renderAttachmentsList(facts) {
   </details>`;
 }
 
+function renderLlmInputNote(useLlm, info) {
+  if (!useLlm || !info) return "";
+  if (info.body_chars > info.body_limit) {
+    return `<div class="banner warn"><strong>Model widział tylko początek treści:</strong> pierwsze ${info.body_limit} z ${info.body_chars} znaków (plus wybrane nagłówki, nie całe źródło). Linki i treść dalej w wiadomości nie zostały przez niego ocenione - zweryfikuj je sam(a) przed wysyłką zgłoszenia.</div>`;
+  }
+  return `<div class="muted" style="margin:6px 0">Model widział wybrane nagłówki i całą treść wiadomości (${info.body_chars} znaków), nie całe źródło.</div>`;
+}
+
 function renderReceivedChain(facts) {
   const chain = facts.received_chain || [];
   if (!chain.length) return "";
@@ -239,7 +247,8 @@ async function analyze(useLlm) {
   const llm = data.llm_analysis;
   lastLlmAnalysis = llm && !llm.error ? llm : null;
   const hardOk = facts.ip_ok && facts.age_ok;
-  const qualifies = llm && !llm.error ? llm.qualifies : hardOk;
+  // twarde sprawdzenia (IP, wiek) mają pierwszeństwo - opinia modelu nie może ich przebić
+  const qualifies = hardOk && (llm && !llm.error ? llm.qualifies : true);
 
   let html = "";
   if (!qualifies) {
@@ -274,6 +283,7 @@ async function analyze(useLlm) {
     SPF: ${escapeHtml(facts.spf || "?")} · DKIM: ${escapeHtml(facts.dkim || "?")} · DMARC: ${escapeHtml(facts.dmarc || "?")} ·
     załączniki: ${facts.attachments.length}
   </div>`;
+  html += renderLlmInputNote(useLlm, data.llm_input);
   html += renderReceivedChain(facts);
   html += renderAttachmentsList(facts);
   analysisEl.innerHTML = html;
