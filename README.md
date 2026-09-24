@@ -98,6 +98,7 @@ seisa/
 │   └── services/               # klient dla każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - submit+poll, nie IntelService)
 ├── frontend/
 │   ├── index.html
+│   ├── favicon.ico            # ikona: kanji 精 (16/32/48/64 px)
 │   ├── css/style.css          # ciemny motyw
 │   ├── js/                    # moduły: app, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
