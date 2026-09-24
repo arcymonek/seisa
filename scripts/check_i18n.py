@@ -49,9 +49,11 @@ def check_pair(name: str, dir_: Path) -> dict[str, dict[str, str]]:
     if not cats["pl"] and not cats["en"]:
         return cats
     pl, en = cats["pl"], cats["en"]
-    for key in sorted(set(pl) - set(en)):
+    # plural forms differ per language (pl has few/many), so parity is checked on the base key
+    pl_keys, en_keys = {base_key(k) for k in pl}, {base_key(k) for k in en}
+    for key in sorted(pl_keys - en_keys):
         errors.append(f"[{name}] key missing in en.json: {key}")
-    for key in sorted(set(en) - set(pl)):
+    for key in sorted(en_keys - pl_keys):
         errors.append(f"[{name}] key missing in pl.json: {key}")
     for key in sorted(set(pl) & set(en)):
         if set(PLACEHOLDER.findall(pl[key])) != set(PLACEHOLDER.findall(en[key])):
@@ -81,6 +83,7 @@ ALLOW_MARKUP: set[str] = set()
 
 FRONT_USE = re.compile(r"""\bt[n]?\(\s*["'`]([\w.]+)["'`]""")
 FRONT_DYN = re.compile(r"""\bt[n]?\(\s*["'`]([\w.]+\.)["'`]\s*\+|\bt[n]?\(\s*`([\w.]+\.)\$\{""")
+QUOTED_KEY = re.compile(r"""["'`]([a-z][a-z0-9_]*(?:\.[a-z0-9_]+)+)["'`]""")
 BACK_USE = re.compile(r"""\b(?:t|tn|T)\(\s*["']([\w.]+)["']""")
 BACK_DYN = re.compile(r"""\b(?:t|tn|T)\(\s*f["']([\w.]+\.)\{""")
 
@@ -105,6 +108,8 @@ def check_usage(name: str, cat: dict[str, str], files: list[Path], use_re: re.Pa
                 errors.append(f"[{name}] key used but not defined: {key} ({f.relative_to(ROOT)})")
         for m in dyn_re.finditer(text):
             prefixes.add(m.group(1) or m.group(2))
+        if name == "frontend":  # keys kept as data (e.g. {desc: "md.service.otx"}) count as used
+            used.update(k for k in QUOTED_KEY.findall(text) if k in cat or any(f"{k}{sfx}" in cat for sfx in PLURAL_SUFFIXES))
     if name == "frontend":  # static markup: data-i18n="key" and data-i18n-attr="attr:key;attr:key"
         for html in (ROOT / "frontend").glob("*.html"):
             text = html.read_text(encoding="utf-8")
@@ -138,6 +143,8 @@ def check_hardcoded_python() -> None:
 def check_hardcoded_js() -> None:
     for f in source_files("frontend/js", (".js",)):
         for n, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            if "i18n-ok" in line:
+                continue
             code = line.split("//", 1)[0]
             if DIACRITICS.search(code):
                 errors.append(f"[strict] Polish text in {f.relative_to(ROOT)}:{n}: {line.strip()[:70]}")

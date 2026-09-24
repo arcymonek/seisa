@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, compareText } from "./i18n.js";
 
 let root;
 let allRecords = [];
@@ -11,11 +12,11 @@ const expandedIps = new Set();
 export function initDmarc(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Wgraj zbiorcze raporty DMARC (XML) od dostawców poczty, żeby zobaczyć które serwery wysyłają wiadomości w imieniu Twojej domeny, czy przechodzą SPF/DKIM i ich dopasowanie (alignment), oraz które adresy IP wyglądają podejrzanie.</div>
+    <div class="subtitle">${escapeHtml(t("dmarc.subtitle"))}</div>
     <div class="dropzone" id="dm-dropzone">
       <div class="muted">.xml</div>
-      <p><strong>Kliknij, aby wybrać pliki</strong> albo przeciągnij je tutaj</p>
-      <p class="muted">Można wgrać kilka raportów naraz</p>
+      <p><strong>${escapeHtml(t("dmarc.drop_click"))}</strong> ${escapeHtml(t("dmarc.drop_or_drag"))}</p>
+      <p class="muted">${escapeHtml(t("dmarc.drop_multiple"))}</p>
       <input type="file" id="dm-file-input" accept=".xml" multiple style="display:none">
       <div class="muted" id="dm-file-list"></div>
     </div>
@@ -58,7 +59,7 @@ function handleFiles(files) {
         parseXML(ev.target.result, file.name);
         fileList.appendChild(logLine("✓ " + file.name));
       } catch (err) {
-        const line = logLine("✗ " + file.name + " - błąd parsowania: " + err.message);
+        const line = logLine("✗ " + t("dmarc.parse_error", { file: file.name, message: err.message }));
         line.style.color = "var(--fail)";
         fileList.appendChild(line);
       }
@@ -89,9 +90,9 @@ function escapeHtml(str) {
 
 function parseXML(xmlString, filename) {
   const doc = new DOMParser().parseFromString(xmlString, "text/xml");
-  if (doc.querySelector("parsererror")) throw new Error("nieprawidłowy XML");
+  if (doc.querySelector("parsererror")) throw new Error(t("dmarc.invalid_xml"));
 
-  const org = txt(doc, "report_metadata > org_name") || "nieznany";
+  const org = txt(doc, "report_metadata > org_name") || t("dmarc.unknown");
   const email = txt(doc, "report_metadata > email");
   const reportId = txt(doc, "report_metadata > report_id");
   const begin = txt(doc, "report_metadata > date_range > begin");
@@ -205,13 +206,11 @@ function riskLevel(row) {
 }
 
 function fmtDate(d) {
-  if (!d) return "-";
-  return d.toLocaleDateString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d ? i18nDate(d) : "-";
 }
 
 function fmtDateTime(d) {
-  if (!d) return "-";
-  return d.toLocaleString("pl-PL");
+  return d ? i18nDateTime(d) : "-";
 }
 
 async function lookupGeo(ip, btn) {
@@ -236,9 +235,9 @@ function showGeo(ip, btn) {
     container.appendChild(info);
   }
   if (!data || data.success === false) {
-    info.textContent = "nie udało się pobrać danych";
+    info.textContent = t("dmarc.geo_failed");
   } else {
-    const org = (data.connection && (data.connection.org || data.connection.isp)) || "nieznany operator";
+    const org = (data.connection && (data.connection.org || data.connection.isp)) || t("dmarc.unknown_operator");
     info.textContent = `${data.country || "?"} · ${org} · ASN ${data.connection ? data.connection.asn : "?"}`;
   }
   btn.remove();
@@ -249,29 +248,29 @@ function renderRecordDetail(row) {
     .map((r, i) => {
       const spfLines = r.spfResults.length
         ? r.spfResults.map((s) => `domain=${escapeHtml(s.domain || "?")} scope=${escapeHtml(s.scope || "?")} result=${escapeHtml(s.result || "?")}`).join("<br>")
-        : "brak danych auth_results/spf w tym rekordzie";
+        : escapeHtml(t("dmarc.no_auth_data", { section: "spf" }));
       const dkimLines = r.dkimResults.length
         ? r.dkimResults.map((d) => `domain=${escapeHtml(d.domain || "?")} selector=${escapeHtml(d.selector || "?")} result=${escapeHtml(d.result || "?")}`).join("<br>")
-        : "brak danych auth_results/dkim w tym rekordzie";
+        : escapeHtml(t("dmarc.no_auth_data", { section: "dkim" }));
       const reasonLines = r.reasons.length
         ? r.reasons.map((rs) => `${escapeHtml(rs.type || "?")}${rs.comment ? " - " + escapeHtml(rs.comment) : ""}`).join("<br>")
         : null;
       return `<div class="hop-row" style="font-family:var(--sans)">
-        <strong>Rekord ${i + 1}</strong> (${r.count} wiad., plik: ${escapeHtml(r.filename)}, okres: ${fmtDateTime(r.begin)} - ${fmtDateTime(r.end)})<br>
+        <strong>${escapeHtml(t("dmarc.record", { n: i + 1 }))}</strong> (${escapeHtml(t("dmarc.record_meta", { count: r.count, file: r.filename, from: fmtDateTime(r.begin), to: fmtDateTime(r.end) }))})<br>
         <strong>Header From</strong>: ${escapeHtml(r.headerFrom || "?")}${r.envelopeFrom ? ` · <strong>Envelope From</strong>: ${escapeHtml(r.envelopeFrom)}` : ""}${r.envelopeTo ? ` · <strong>Envelope To</strong>: ${escapeHtml(r.envelopeTo)}` : ""}<br>
-        <strong>Decyzja polityki</strong>: ${escapeHtml(r.disposition)}${reasonLines ? ` (powód override: ${reasonLines})` : ""}<br>
+        <strong>${escapeHtml(t("dmarc.policy_decision"))}</strong>: ${escapeHtml(r.disposition)}${reasonLines ? ` (${escapeHtml(t("dmarc.override_reason"))}: ${reasonLines})` : ""}<br>
         <strong>SPF (policy_evaluated)</strong>: ${escapeHtml(r.spfEval)} · <strong>auth_results/spf</strong>: ${spfLines}<br>
         <strong>DKIM (policy_evaluated)</strong>: ${escapeHtml(r.dkimEval)} · <strong>auth_results/dkim</strong>: ${dkimLines}
       </div>`;
     })
     .join("");
-  return `<details class="hop-chain" open><summary>Szczegóły rekordów (${row.records.length})</summary>${rows}</details>`;
+  return `<details class="hop-chain" open><summary>${escapeHtml(t("dmarc.record_details", { n: row.records.length }))}</summary>${rows}</details>`;
 }
 
 function render() {
   const resultsEl = root.querySelector("#dm-results");
   if (!allRecords.length) {
-    resultsEl.innerHTML = '<div class="muted">Brak rekordów do wyświetlenia w wybranych plikach.</div>';
+    resultsEl.innerHTML = `<div class="muted">${escapeHtml(t("dmarc.no_records"))}</div>`;
     return;
   }
 
@@ -279,7 +278,7 @@ function render() {
   agg.sort((a, b) => {
     const va = a[sortKey];
     const vb = b[sortKey];
-    if (typeof va === "string") return sortDir * va.localeCompare(vb);
+    if (typeof va === "string") return sortDir * compareText(va, vb);
     return sortDir * ((va || 0) - (vb || 0));
   });
 
@@ -287,9 +286,9 @@ function render() {
   const uniqueIps = agg.length;
   const spoofAttempts = agg.filter((r) => riskLevel(r) !== "low").length;
 
-  let html = `<div class="card"><strong>${totalMsgs}</strong> wiadomości · <strong>${uniqueIps}</strong> unikalnych IP · <strong>${spoofAttempts}</strong> podejrzanych</div>`;
+  let html = `<div class="card"><strong>${totalMsgs}</strong> ${escapeHtml(tn("dmarc.word_messages", totalMsgs))} · <strong>${uniqueIps}</strong> ${escapeHtml(tn("dmarc.word_ips", uniqueIps))} · <strong>${spoofAttempts}</strong> ${escapeHtml(tn("dmarc.word_suspicious", spoofAttempts))}</div>`;
 
-  html += "<h3>Wgrane raporty</h3><table><thead><tr><th>Plik</th><th>Dostawca</th><th>Kontakt / ID zgłoszenia</th><th>Domena</th><th>Polityka (p/sp/pct)</th><th>Alignment (DKIM/SPF)</th><th>Okres</th></tr></thead><tbody>";
+  html += `<h3>${escapeHtml(t("dmarc.h_reports"))}</h3><table><thead><tr><th>${escapeHtml(t("dmarc.col_file"))}</th><th>${escapeHtml(t("dmarc.col_provider"))}</th><th>${escapeHtml(t("dmarc.col_contact"))}</th><th>${escapeHtml(t("dmarc.col_domain"))}</th><th>${escapeHtml(t("dmarc.col_policy"))}</th><th>${escapeHtml(t("dmarc.col_alignment"))}</th><th>${escapeHtml(t("dmarc.col_period"))}</th></tr></thead><tbody>`;
   reportMeta.forEach((m) => {
     const contact = [m.email, m.reportId].filter(Boolean).join(" · ") || "-";
     const policy = [m.policy, m.subdomainPolicy || m.policy, m.pct ? `${m.pct}%` : null].filter(Boolean).join(" / ");
@@ -297,9 +296,9 @@ function render() {
     html += `<tr><td>${escapeHtml(m.filename)}</td><td>${escapeHtml(m.org)}</td><td class="muted">${escapeHtml(contact)}</td><td>${escapeHtml(m.domain)}</td><td>${escapeHtml(policy)}</td><td>${escapeHtml(align)}</td><td>${fmtDate(m.begin)} - ${fmtDate(m.end)}</td></tr>`;
   });
   html += "</tbody></table>";
-  html += '<div class="muted">Alignment: "r" = relaxed (dopuszcza poddomeny), "s" = strict (domena musi się zgadzać dokładnie). Polityka p/sp: none/quarantine/reject dla domeny głównej / poddomen, pct = procent wiadomości objętych polityką.</div>';
+  html += `<div class="muted">${escapeHtml(t("dmarc.alignment_help"))}</div>`;
 
-  html += '<h3>Źródła IP</h3><table id="dm-ip-table"><thead><tr><th>IP</th><th>Wiadomości</th><th>SPF</th><th>DKIM</th><th>Reject</th><th>Quarantine</th><th>None</th><th>Widziano</th><th>Ryzyko</th><th>Akcje</th></tr></thead><tbody>';
+  html += `<h3>${escapeHtml(t("dmarc.h_sources"))}</h3><table id="dm-ip-table"><thead><tr><th>IP</th><th>${escapeHtml(t("dmarc.col_messages"))}</th><th>SPF</th><th>DKIM</th><th>Reject</th><th>Quarantine</th><th>None</th><th>${escapeHtml(t("dmarc.col_seen"))}</th><th>${escapeHtml(t("dmarc.col_risk"))}</th><th>${escapeHtml(t("dmarc.col_actions"))}</th></tr></thead><tbody>`;
   agg.forEach((row) => {
     const risk = riskLevel(row);
     html += `<tr data-ip="${row.sourceIp}" data-spf-fail="${row.spfFail > 0}" data-dkim-fail="${row.dkimFail > 0}">
@@ -311,11 +310,11 @@ function render() {
       <td>${row.quarantine || "-"}</td>
       <td>${row.none || "-"}</td>
       <td class="muted">${fmtDate(row.earliestSeen)}</td>
-      <td class="badge ${risk}">${risk.toUpperCase()}</td>
+      <td class="badge ${risk}">${escapeHtml(t("risk." + risk).toUpperCase())}</td>
       <td>
         <button class="secondary geo-btn">geo/ASN</button>
-        <button class="secondary detail-btn">Rekordy</button>
-        <button class="secondary lookup-btn">Szczegóły</button>
+        <button class="secondary detail-btn">${escapeHtml(t("dmarc.btn_records"))}</button>
+        <button class="secondary lookup-btn">${escapeHtml(t("dmarc.btn_details"))}</button>
         <button class="secondary report-btn">AbuseIPDB</button>
       </td>
     </tr>
@@ -357,11 +356,11 @@ async function saveSummaryToHistory() {
   try {
     await api.historyCreate({
       type: "dmarc",
-      label: `${domains} - ${reportMeta.length} raport(y), ${totalMsgs} wiadomości`,
+      label: `${domains} - ${tn("dmarc.reports", reportMeta.length)}, ${tn("dmarc.messages", totalMsgs)}`,
       risk_summary: agg.some((r) => riskLevel(r) === "high") ? "High" : null,
       data: { reportMeta, aggregate: agg },
     });
   } catch {
-    /* brak historii nie blokuje analizy */
+    /* a missing history entry must not block the analysis */
   }
 }

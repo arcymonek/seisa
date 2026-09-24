@@ -1,26 +1,29 @@
+import { t } from "./i18n.js";
+
+// Display-only metadata per service; the descriptions live in the i18n catalog (md.service.<id>).
 const SERVICE_INFO = {
   "VirusTotal": {
-    description: "Wskaźnik detekcji wg silników antywirusowych, reputacja, ASN, kategorie, tagi i WHOIS.",
+    desc: "md.service.virustotal",
     url: "https://www.virustotal.com",
   },
   "AlienVault OTX": {
-    description: "Liczba i nazwy pulsów threat-intel powiązanych z tym wskaźnikiem, geolokalizacja, ASN.",
+    desc: "md.service.otx",
     url: "https://otx.alienvault.com",
   },
   "Cloudflare Radar": {
-    description: "Dane sieciowe/kontekstowe - ASN, lokalizacja, routing. To nie jest werdykt reputacyjny.",
+    desc: "md.service.cloudflare",
     url: "https://radar.cloudflare.com",
   },
   "AbuseIPDB": {
-    description: "Confidence score nadużyć, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP, typ użycia.",
+    desc: "md.service.abuseipdb",
     url: "https://www.abuseipdb.com",
   },
   "GreyNoise": {
-    description: "Czy adres to znany 'szum internetowy' (masowe skanery/boty) czy coś nietypowego.",
+    desc: "md.service.greynoise",
     url: "https://www.greynoise.io",
   },
   "WHOIS / rDNS": {
-    description: "Rekord WHOIS domeny lub odwrotny DNS (PTR) adresu IP - bezpośrednie zapytanie protokołowe, bez zewnętrznego konta ani jednej strony źródłowej.",
+    desc: "md.service.whois",
     url: null,
   },
 };
@@ -34,10 +37,15 @@ export function renderMarkdown(container, markdownText) {
   linksToButtons(container);
 }
 
-// Linki "Otwórz w ..." z raportu markdown jako przyciski (jak pozostałe akcje).
+// Server-built reports are stored in the language they were created in, so the markers below are matched in every
+// supported language (protocol constants of the report format, not UI text).
+const OPEN_LINK_PREFIXES = ["Otwórz w ", "Open in "]; // i18n-ok
+const SCORE_HEADING_RE = /^(?:Wynik zbiorczy|Aggregate score): (LOW|MEDIUM|HIGH) \(([\d.]+)\/100\)$/; // i18n-ok
+
+// "Open in ..." links of the markdown report become buttons (like the other actions).
 function linksToButtons(container) {
   container.querySelectorAll("a").forEach((a) => {
-    if (!a.textContent.trim().startsWith("Otwórz w ")) return;
+    if (!OPEN_LINK_PREFIXES.some((p) => a.textContent.trim().startsWith(p))) return;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "secondary";
@@ -49,22 +57,22 @@ function linksToButtons(container) {
   });
 }
 
-// "Wynik zbiorczy: LOW (7.4/100)" -> kolorowa plakietka "LOW - 7.4/100" (plik .md zostaje zwykłym tekstem).
+// "Aggregate score: LOW (7.4/100)" -> coloured badge (the .md file itself stays plain text).
 function scoreHeadingToBadge(container) {
   container.querySelectorAll("h2").forEach((h2) => {
-    const m = h2.textContent.trim().match(/^Wynik zbiorczy: (LOW|MEDIUM|HIGH) \(([\d.]+)\/100\)$/);
+    const m = h2.textContent.trim().match(SCORE_HEADING_RE);
     if (!m) return;
     const wrap = document.createElement("div");
     wrap.className = "score-line";
     const badge = document.createElement("span");
     badge.className = `badge ${m[1].toLowerCase()}`;
-    badge.textContent = `${m[1]} - ${m[2]}/100`;
+    badge.textContent = `${t("risk." + m[1].toLowerCase()).toUpperCase()} - ${m[2]}/100`;
     wrap.appendChild(badge);
     h2.replaceWith(wrap);
   });
 }
 
-// --- Bezpieczne renderowanie (zakładka Email): treść pochodzi z analizy LLM cytującej niezaufany e-mail ---
+// --- Safe rendering (Email tab): the content is LLM output quoting an untrusted e-mail ---
 const SAFE_TAGS = new Set([
   "H1", "H2", "H3", "H4", "H5", "H6", "P", "UL", "OL", "LI", "TABLE", "THEAD", "TBODY", "TR", "TH", "TD",
   "CODE", "PRE", "STRONG", "EM", "B", "I", "BLOCKQUOTE", "DETAILS", "SUMMARY", "HR", "BR", "DEL",
@@ -82,7 +90,7 @@ function sanitizeNode(node) {
       return;
     }
     if (child.tagName === "A") {
-      // linki z e-maila nie mogą być klikalne: pokazujemy tekst + zdefangowany adres
+      // links from the e-mail must not be clickable: show the text plus a defanged address
       const href = child.getAttribute("href") || "";
       const label = child.textContent || "";
       const span = document.createElement("span");
@@ -91,7 +99,7 @@ function sanitizeNode(node) {
       return;
     }
     if (!SAFE_TAGS.has(child.tagName)) {
-      // niedozwolony znacznik (img, script, object, ...) -> widoczny, nieaktywny tekst
+      // disallowed tag (img, script, object, ...) -> visible, inert text
       child.replaceWith(document.createTextNode(child.outerHTML));
       return;
     }
@@ -100,8 +108,8 @@ function sanitizeNode(node) {
   });
 }
 
-// Markdown -> HTML przez inertny DOMParser (nic się nie ładuje ani nie wykonuje), potem lista dozwolonych znaczników
-// bez atrybutów. Surowy HTML z e-maila i linki są neutralizowane.
+// Markdown -> HTML through an inert DOMParser (nothing loads or executes), then an allow-list of tags without
+// attributes. Raw HTML from the e-mail and links are neutralised.
 export function renderMarkdownSafe(container, markdownText) {
   container.className = "md-render";
   const html = window.marked.parse(markdownText || "");
@@ -118,7 +126,7 @@ function enhanceReportHeading(container) {
   btn.type = "button";
   btn.className = "secondary";
   btn.style.cssText = "margin-left:10px;padding:2px 10px;font-size:13px;vertical-align:middle;";
-  btn.textContent = "Kopiuj";
+  btn.textContent = t("common.copy");
   btn.onclick = () => navigator.clipboard.writeText(code.textContent);
   code.insertAdjacentElement("afterend", btn);
 }
@@ -131,14 +139,14 @@ function enhanceServiceHeadings(container) {
     const desc = document.createElement("div");
     desc.className = "muted";
     desc.style.margin = "-6px 0 10px";
-    desc.textContent = info.description;
+    desc.textContent = t(info.desc);
     h2.insertAdjacentElement("afterend", desc);
 
     if (info.url) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "secondary";
-      btn.textContent = `Otwórz ${h2.textContent.trim()}`;
+      btn.textContent = t("md.open_service", { name: h2.textContent.trim() });
       btn.onclick = () => window.open(info.url, "_blank", "noopener");
       desc.insertAdjacentElement("afterend", btn);
     }

@@ -68,6 +68,10 @@ export function fmtDateTime(value) {
   return new Date(value).toLocaleString(getLocale());
 }
 
+export function fmtSeconds(ms) {
+  return (ms / 1000).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
 export function fmtDate(value) {
   return new Date(value).toLocaleDateString(getLocale(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }

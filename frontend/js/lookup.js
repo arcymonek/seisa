@@ -1,7 +1,12 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
+import { t, fmtSeconds } from "./i18n.js";
 
 const ALL_SERVICES = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"];
+
+function escapeHtml(str) {
+  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
 
 let root;
 let enabledServices = new Set(ALL_SERVICES);
@@ -10,7 +15,7 @@ let timerInterval = null;
 let timerStart = null;
 
 function formatElapsed(ms) {
-  return `Sprawdzanie: ${(ms / 1000).toFixed(1).replace(".", ",")} sekund`;
+  return t("lookup.checking", { time: fmtSeconds(ms) });
 }
 
 function startTimer() {
@@ -37,22 +42,22 @@ function stopTimer(prefix) {
 export function initLookup(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Sprawdź reputację adresu IP jednocześnie w kilku niezależnych źródłach threat-intelligence (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS/rDNS) i zobacz jeden zbiorczy wynik ryzyka.</div>
-    <label>Adres IP</label>
+    <div class="subtitle">${escapeHtml(t("lookup.subtitle"))}</div>
+    <label>${escapeHtml(t("lookup.ip_address"))}</label>
     <input type="text" id="lk-indicator" placeholder="1.2.3.4">
 
-    <label><input type="checkbox" id="lk-batch"> Tryb wsadowy (batch)</label>
+    <label><input type="checkbox" id="lk-batch"> ${escapeHtml(t("lookup.batch_mode"))}</label>
     <div id="lk-batch-area" style="display:none">
-      <label>Wklej adresy IP, jeden na linię</label>
+      <label>${escapeHtml(t("lookup.batch_hint"))}</label>
       <textarea id="lk-batch-text"></textarea>
     </div>
 
-    <label><input type="checkbox" id="lk-force"> Wymuś odświeżenie (pomiń cache)</label>
+    <label><input type="checkbox" id="lk-force"> ${escapeHtml(t("lookup.force_refresh"))}</label>
 
-    <label>Usługi</label>
+    <label>${escapeHtml(t("lookup.services"))}</label>
     <div class="chip-row" id="lk-chips"></div>
 
-    <button class="primary" id="lk-submit">Sprawdź</button><span class="inline-timer" id="lk-timer"></span>
+    <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button><span class="inline-timer" id="lk-timer"></span>
     <div class="muted" id="lk-batch-status"></div>
     <div class="muted" id="lk-progress"></div>
 
@@ -110,18 +115,18 @@ async function onSubmit() {
     try {
       await api.lookupBatchStream({ indicators: lines, services, force_refresh: forceRefresh }, (evt) => {
         if (evt.type === "progress") {
-          batchStatusEl.textContent = `${evt.completed}/${evt.total} - sprawdzam ${evt.current}`;
+          batchStatusEl.textContent = t("lookup.batch_progress", { completed: evt.completed, total: evt.total, current: evt.current });
         } else if (evt.type === "wait") {
           batchStatusEl.textContent = `${evt.current}: ${evt.message}`;
         } else if (evt.type === "result") {
           resultsEl.appendChild(renderResult(evt.result));
         }
       });
-      batchStatusEl.textContent = "gotowe";
-      stopTimer("gotowe");
+      batchStatusEl.textContent = t("lookup.done");
+      stopTimer(t("lookup.done"));
     } catch (err) {
       stopTimer();
-      root.querySelector("#lk-progress").textContent = "błąd: " + err.message;
+      root.querySelector("#lk-progress").textContent = t("common.error", { message: err.message });
     }
     return;
   }
@@ -138,7 +143,7 @@ async function onSubmit() {
     resultsEl.appendChild(renderResult(result));
   } catch (err) {
     stopTimer();
-    root.querySelector("#lk-progress").textContent = "błąd: " + err.message;
+    root.querySelector("#lk-progress").textContent = t("common.error", { message: err.message });
   }
 }
 
@@ -155,25 +160,25 @@ function renderResult(result) {
   const talosBtn = document.createElement("button");
   talosBtn.type = "button";
   talosBtn.className = "secondary";
-  talosBtn.textContent = "Otwórz w Talos";
+  talosBtn.textContent = t("lookup.open_talos");
   talosBtn.onclick = () => window.open(result.talos_url, "_blank", "noopener");
   actions.appendChild(talosBtn);
 
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
-  saveBtn.textContent = "Zapisz .md";
+  saveBtn.textContent = t("common.save_md");
   saveBtn.onclick = () => saveMarkdown(result);
   actions.appendChild(saveBtn);
 
   const copyBtn = document.createElement("button");
   copyBtn.className = "secondary";
-  copyBtn.textContent = "Kopiuj Markdown";
+  copyBtn.textContent = t("common.copy_markdown");
   copyBtn.onclick = () => navigator.clipboard.writeText(result.markdown);
   actions.appendChild(copyBtn);
 
   const refreshBtn = document.createElement("button");
   refreshBtn.className = "secondary";
-  refreshBtn.textContent = "Odśwież";
+  refreshBtn.textContent = t("common.refresh");
   refreshBtn.onclick = async () => {
     const fresh = await api.lookup({ indicator: result.indicator, type: result.indicator_type, force_refresh: true });
     wrap.replaceWith(renderResult(fresh));
@@ -183,7 +188,7 @@ function renderResult(result) {
   if (result.indicator_type === "ip") {
     const reportBtn = document.createElement("button");
     reportBtn.className = "secondary";
-    reportBtn.textContent = "Zgłoś AbuseIPDB";
+    reportBtn.textContent = t("lookup.report_abuseipdb");
     reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator, false);
     actions.appendChild(reportBtn);
   }
