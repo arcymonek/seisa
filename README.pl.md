@@ -1,0 +1,210 @@
+<p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
+
+# Seisa
+
+[English](README.md) | **Polski**
+
+Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
+
+**Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
+
+Autor: Arkadiusz Polak <kontakt@arkadiuszpolak.pl>
+
+## Funkcje
+
+### IP
+Wpisujesz adres IP (wyłącznie IP - analiza URL/domen jest w osobnej zakładce URLScan), narzędzie odpytuje równolegle:
+
+| Usługa | Co dostarcza |
+|---|---|
+| [VirusTotal](https://www.virustotal.com) | detekcje silników AV, reputacja, ASN, kategorie, tagi, WHOIS |
+| [AlienVault OTX](https://otx.alienvault.com) | pulsy threat-intel, geolokalizacja, ASN |
+| [Cloudflare Radar](https://radar.cloudflare.com) | dane sieciowe/kontekstowe - ASN, lokalizacja, routing (nie werdykt) |
+| [AbuseIPDB](https://www.abuseipdb.com) | confidence score, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP |
+| [GreyNoise](https://www.greynoise.io) | pełny IP Lookup (`/v3/ip`) - aktor, tagi, VPN/Tor, metadane sieciowe; spada na darmowy endpoint community, jeśli klucz nie ma dostępu do pełnego API; "brak informacji w usłudze" liczone jako wkład 0.0, nie jako "unknown" |
+| WHOIS / rDNS | odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji - bez klucza API |
+| Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
+
+Wynik to jeden **wynik zbiorczy** 0-100 (model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność; źródło bez danych nie głosuje, znane dobre IP obniża wynik do 15; progi: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logika w `backend/scoring.py`; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
+
+Obsługuje tryb wsadowy (wiele adresów IP naraz, z widocznym throttlem VirusTotal - 4 zapytania/min, 500/dzień) oraz cache w pamięci (15 min), z opcją wymuszenia odświeżenia.
+
+Raport można zapisać jako `.md` (natywne okno wyboru miejsca zapisu w przeglądarce) albo skopiować.
+
+### URLScan
+Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, potem odpytywanie `GET /api/v1/result/{uuid}/` co 5 sekund, aż wynik będzie gotowy - urlscan.io zwraca 404, dopóki skan trwa). Każdy skan jest zgłaszany z:
+
+- **widocznością `unlisted`** - nie trafia na stronę główną ani do publicznych wyników wyszukiwania urlscan.io, ale pozostaje widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro,
+- **domyślnym user-agentem** (bez `customagent`) i **automatycznym doborem kraju skanowania** (bez `country`) - oba pola celowo pominięte w zapytaniu.
+
+Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen oraz linki znalezione na stronie. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
+
+### DMARC
+Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail, dopasowanie (alignment adkim/aspf) i politykę (p/sp/pct) z każdego raportu. Przycisk "Rekordy" przy każdym IP rozwija pełny szczegół każdego pojedynczego rekordu - header/envelope from, powód nadpisania polityki (`policy_evaluated > reason`), oraz surowy wynik `auth_results` (domena/selektor/wynik dla DKIM, domena/scope/wynik dla SPF) - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
+
+### Email
+Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + treść) albo wczytaj plik `.eml` (UTF-8 lub windows-1252, koperta mbox i zakończenia linii są normalizowane; binarne załączniki base64 nie idą do modelu, zostaje ich rozmiar i sha256, a tekstowe części base64 są dekodowane).
+
+- **Analiza deterministyczna (od razu, lokalnie, bez LLM)**: uwagi o anomaliach, trasa Received z rolą w łańcuchu zaufania, uwierzytelnianie (SPF/DKIM/DMARC/ARC, authserv-id, podpisane i niepodpisane nagłówki, długość `bh=`), zgodność domen względem `From`, oś czasu w UTC, konwersje epoch, drzewo MIME, załączniki (sha256, podwójne rozszerzenia), linki (tekst vs `href`), ukryta treść, komentarze HTML, placeholdery szablonu, filtry antyspamowe odbiorcy (SCL/BCL/CAT, folder docelowy Junk, AuthAs, zdekodowany X-Message-Delivery) i flagi ustawione przez nadawcę (X-Message-Flag, Importance, żądania potwierdzenia odbioru). Gdy cały łańcuch Received należy do jednego operatora (np. Microsoft), tabela wskazuje granicę zaufania na najstarszym wpisie. Logika w `backend/email_forensics.py`, nic z wiadomości nie jest otwierane ani pobierane.
+- Pod linią rozdzielającą: **szczegółowa analiza LLM** (OpenRouter, ten sam klucz i model co w AbuseIPDB), streamowana na żywo, według przewodnika `docs/email-analysis-guide.md` (model mentalny, analiza linijka po linijce zarówno elementów dobrych, jak i złych, lista kontrolna, pułapki, ocena, pytania kontrolne z odpowiedziami w zwijanych sekcjach). Pierwsza linia odpowiedzi to werdykt (`legalna`/`phishing`/`spam`/`oszustwo`/`malware`/`niejednoznaczna`) z pewnością.
+- Limit odpowiedzi modelu to 64000 tokenów (liczony razem z ukrytym rozumowaniem modelu, ok. 45% wyjścia; to sufit, płaci się za tokeny faktycznie wygenerowane). Jeśli analiza mimo to zostanie ucięta, zakładka pokazuje ostrzeżenie i przycisk **"Dokończ analizę"** (model dostaje dotychczasowy tekst i dopisuje brakujące części; zużycie tokenów i koszt sumują się w zapisanej analizie).
+- **"Zapisz .md"** i **"Kopiuj Markdown"** (etykiety eksportu w języku interfejsu z chwili eksportu, treść analizy LLM w języku, w którym powstała) eksportują komplet: metadane (data, werdykt, model, tokeny wejścia/wyjścia, koszt), całą analizę deterministyczną (tabele) i analizę LLM.
+- **Wykrywanie duplikatów:** przed płatną analizą Seisa sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analizy/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
+- **Kontrola cytatów (lokalna, bez kosztu):** po analizie kod sprawdza, czy adresy IP, cytowane w blokach kodu linie nagłówków, cytaty `Nagłówek: wartość`, liczby SCL/BCL i identyfikatory podane przez model występują w źródle lub w analizie deterministycznej (`backend/citation_check.py`). Rozbieżności są wypisane pod analizą i w eksporcie `.md`; to informacja, a nie dowód błędu (przykład lub parafraza też mogą zostać oznaczone). Nie sprawdza domen ani zapisów typu `spf=pass`, bo analiza omawia też przykłady wiadomości legalnej.
+- Analiza LLM nie odtwarza tabel widocznych w analizie deterministycznej (oś czasu, linki, Received itd.), tylko je interpretuje, żeby nie płacić za powtórki; komplet jest w eksporcie.
+- Wynik LLM jest renderowany bezpiecznie: surowy HTML z e-maila i linki są neutralizowane (linki pokazywane jako nieklikalny, zdefangowany tekst).
+- **Język analizy:** analiza powstaje w języku interfejsu (dyrektywa w prompcie plus tabela dosłownych nagłówków i tagów `[Fakt]`/`[Fact]` w obu językach w `docs/email-analysis-guide.md`); język zapisuje się w rekordzie (`lang`; starsze rekordy = polski). „Dokończ analizę" używa języka zapisanego rekordu, a nie bieżącego języka interfejsu. Zapisana analiza w innym języku niż interfejs jest oznaczona plakietką PL/EN, a przy jej otwarciu pojawia się baner z płatnym przyciskiem ponownej analizy (koszt poprzedniej podany orientacyjnie); fakty i tekst zostają w języku powstania, etykiety i eksport .md w języku interfejsu. Wykrywanie duplikatów (sha256 źródła) nie zależy od języka: baner pokazuje język istniejącej analizy.
+- **Protokół werdyktu:** pierwsza linia odpowiedzi modelu ma postać `VERDICT: <legit|phishing|spam|scam|malware|inconclusive> | CONFIDENCE: <high|medium|low>` i zawsze używa tych kanonicznych kodów, niezależnie od języka analizy (`backend/verdict.py`); interfejs mapuje je na etykiety w wybranym języku. Analizy zapisane wcześniej z polskimi tokenami (`WERDYKT`/`PEWNOSC`) są odczytywane bez migracji plików.
+- Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legit`, czyli legalna) wkleja oryginalny kod do Kroku 1 zakładki AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
+- Każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analizy/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń) jest na dole zakładki.
+
+### AbuseIPDB (zgłaszanie)
+Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.):
+
+1. **Wklej surowy kod źródłowy podejrzanego e-maila** (nagłówki + treść) - opcjonalnie, można też zacząć od samego IP (przycisk "Zgłoś AbuseIPDB" w zakładce IP/DMARC).
+2. Backend deterministycznie wyciąga fakty: zaufany adres IP źródłowy (algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego hopu, którego host "from" nie należy już do tej samej domeny co host "by" najnowszego hopu - w łańcuchach wielohopowych dużych dostawców, np. Microsoft 365/Outlook.com, pierwsze kilka hopów to transfery wewnętrzne tego samego dostawcy i są pomijane, żeby nie wziąć ich adresu zamiast prawdziwego nadawcy), wraz z poziomem pewności (`ip_confidence`) i pełnym łańcuchem hopów do wglądu (rozwijana lista "Łańcuch Received - dlaczego to IP" w Kroku 1). Dodatkowo: wynik SPF/DKIM/DMARC, załączniki (z wykrywaniem podwójnych rozszerzeń typu `faktura.pdf.exe`), Message-ID, wzorce adresów BTC/żądań okupu. **Twarde sprawdzenia (wiek ataku, czy IP jest prywatne) są zawsze liczone w Pythonie, nigdy nie są delegowane do LLM.**
+3. Opcjonalnie (jeśli w `.env` jest `OPENROUTER_API_KEY`) model LLM przez **OpenRouter** ocenia, czy e-mail kwalifikuje się do zgłoszenia, niezależnie weryfikuje wybrany przez kod adres IP na podstawie surowych nagłówków (`source_ip_check` - jeśli się nie zgadza, w Kroku 1 pojawia się wyraźny baner ostrzegawczy z sugestią modelu, wyłącznie informacyjny), ocenia dopasowanie sugerowanych kategorii i ewentualne PII w komentarzu - i **pisze gotowy, szczegółowy komentarz zgłoszenia po angielsku**, na podstawie faktów, surowych nagłówków (w tym Subject/Reply-To/wskaźników spamu jeśli obecne) oraz fragmentu treści wiadomości (HTML zamienione na czysty tekst) - patrz punkt 4. Bez klucza narzędzie działa w trybie regułowym.
+4. **Komentarz zgłoszenia to edytowalne pole w Kroku 2, wypełnione tym, co napisał LLM** - `comment` jest polem opcjonalnym w API AbuseIPDB ([`/report`](https://docs.abuseipdb.com/#report-endpoint), wymagane jest tylko `ip` i `categories`), ale sama polityka AbuseIPDB oczekuje szczegółowego, technicznie uzasadnionego opisu - stąd komentarz pisze LLM (mechanizm ataku, znaczenie SPF/DKIM/DMARC, złośliwe załączniki z wykrytym podwójnym rozszerzeniem typu `faktura.pdf.exe`, żądanie okupu/BTC, wzorce masowej wysyłki), w granicach ok. 900 znaków. Bez LLM (lub gdy analiza zawiedzie) używany jest uboższy, deterministyczny fallback zbudowany wyłącznie z faktów. W obu przypadkach tekst jest w pełni edytowalny przed wysyłką, a backend i tak sanityzuje/przycina go do 1024 znaków tuż przed wysyłką. Numer portu, jeśli znany, dopisz ręcznie.
+5. Formularz z licznikiem znaków (limit 1024) liczonym lokalnie, bez wywołań backendu przy każdej edycji komentarza.
+6. **Checklist jest wyłącznie informacyjna**, nie blokuje wysyłki - trzy twarde sprawdzenia (wiek, IP, kategoria - dokładnie to, czego wymaga API) liczy zawsze kod Pythona i tylko one gate'ują przycisk "Wyślij"; pięć dalszych pozycji (Received, brak spoofingu sieciowego, SPF/DMARC fail, dopasowanie kategorii, redakcja PII) to podpowiedź do przeczytania przed wysłaniem - pierwsze trzy wypełniane automatycznie z faktów e-maila, dwie ostatnie (dopasowanie kategorii, PII) z tej samej analizy LLM z Kroku 1 (bez LLM zostają jako "wymaga analizy AI").
+7. Wysyłka przez API AbuseIPDB (backend waliduje twarde sprawdzenia od nowa, niezależnie od stanu formularza w przeglądarce) **albo** skopiowanie komentarza do ręcznego wklejenia na stronie.
+
+### Historia
+Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili (otwierane z powrotem w zakładce Email), z możliwością ponownego otwarcia lub usunięcia. "Wyczyść historię" usuwa tylko wpisy IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo.
+
+### Logi
+Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie) i po usłudze. Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
+
+### Język interfejsu (PL/EN)
+Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Frontend wysyła wybrany język w nagłówku `X-Seisa-Lang` (tylko do własnego backendu), a backend tłumaczy po swojej stronie komunikaty błędów, analizę deterministyczną e-maila, uwagi punktacji IP i raporty Markdown (katalogi `backend/locales/pl.json` i `en.json`, moduł `backend/i18n.py`). Zapisane wcześniej analizy i wpisy historii zachowują język, w którym powstały. Logi (zakładka Logi) są po angielsku niezależnie od języka interfejsu. Odpowiedzi LLM (zakładki Email i AbuseIPDB) powstają w języku interfejsu z chwili zapytania; prompty i przewodniki są jedne, po angielsku, a język odpowiedzi ustawia jawna dyrektywa (komentarz zgłoszenia do AbuseIPDB jest zawsze po angielsku - wymóg polityki AbuseIPDB). Koszt zapytań zależy od modelu, a angielski prompt jest zwykle nieco krótszy (w teście A/B na syntetycznej wiadomości ok. 8% mniej tokenów wejściowych niż wcześniej).
+
+## Architektura
+
+Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statyczny frontend (`frontend/` - czysty JavaScript, ES modules, bez frameworka i bez kroku budowania) na `127.0.0.1:54321`.
+
+```
+seisa/
+├── .env                    # klucze API (gitignored, patrz .env.example)
+├── seisa.sh                 # skrypt startowy (alias `seisa` w ~/.zshrc)
+├── README.md / README.pl.md  # ta dokumentacja po angielsku (główna na GitHubie) i po polsku
+├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
+├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
+├── backend/
+│   ├── main.py               # FastAPI, routing, middleware no-cache, obsługa błędów
+│   ├── config.py             # ścieżki, ustawienia z .env
+│   ├── models.py             # modele Pydantic
+│   ├── aggregator.py         # fan-out do usług, wynik zbiorczy ryzyka
+│   ├── markdown_report.py    # budowa raportu Markdown
+│   ├── ratelimit.py          # throttle VirusTotal
+│   ├── cache.py              # cache wyników w pamięci
+│   ├── storage.py            # atomowy zapis historii (JSON)
+│   ├── logging_config.py     # logi WARNING+ do logi/*.jsonl
+│   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila (zakładka AbuseIPDB)
+│   ├── email_forensics.py    # analiza deterministyczna źródła e-maila (zakładka Email)
+│   ├── analizy.py            # zapis analiz e-maili w data/analizy/
+│   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
+│   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
+│   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
+│   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
+│   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
+│   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP
+│   ├── urlscan_report.py     # budowa raportu Markdown z wyniku skanu urlscan.io
+│   ├── routers/               # endpointy /api/*
+│   └── services/               # klient dla każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - submit+poll, nie IntelService)
+├── frontend/
+│   ├── index.html
+│   ├── favicon.ico            # ikona: kanji 査 (16/32/48/64 px)
+│   ├── logo.png               # okrągłe logo (nagłówek strony i README)
+│   ├── css/style.css          # ciemny motyw
+│   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
+│   ├── js/                    # moduły: app, i18n, lookup, urlscan, dmarc, email, report-builder, history, logs
+│   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
+├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane całkowicie fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych), bez danych osobowych
+├── scripts/
+│   ├── dump_facts.py          # zrzut analizy deterministycznej fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
+│   └── check_i18n.py          # kontrola katalogów PL/EN (klucze, parametry, liczba mnoga); `--strict` szuka polskich literałów w kodzie
+├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
+├── logi/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
+└── docs/
+    ├── abuseipdb-reporting-policy.md   # pełna polityka + tabela kategorii AbuseIPDB (po angielsku, kontekst promptu LLM)
+    └── email-analysis-guide.md         # przewodnik analizy e-maila wczytywany do promptu LLM (zakładka Email), po angielsku, z tabelą etykiet PL/EN
+```
+
+Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 25 wpisów, licznik dziennego limitu VirusTotal) i logi w `logi/`.
+
+## Instalacja
+
+Wymaga Python 3.11+.
+
+```bash
+cd seisa
+python3 -m venv .venv
+./.venv/bin/pip install -r requirements.txt
+cp .env.example .env
+```
+
+Uzupełnij `.env` prawdziwymi kluczami API (opis kluczy niżej).
+
+## Uruchomienie
+
+Najprościej przez skrót terminalowy (dodany do `~/.zshrc`):
+
+```bash
+seisa
+```
+
+Otwiera serwer i automatycznie otwiera przeglądarkę na `http://127.0.0.1:54321`.
+
+Ręcznie:
+
+```bash
+cd seisa
+./.venv/bin/uvicorn backend.main:app --port 54321 --host 127.0.0.1
+```
+
+## Klucze API (`.env`)
+
+| Zmienna | Wymagana? | Gdzie zdobyć |
+|---|---|---|
+| `URLSCAN_API_KEY` | tak, dla urlscan.io | [urlscan.io/user/signup](https://urlscan.io/user/signup) |
+| `VIRUSTOTAL_API_KEY` | tak, dla VirusTotal | [virustotal.com](https://www.virustotal.com) |
+| `OTX_API_KEY` | tak, dla OTX | [otx.alienvault.com](https://otx.alienvault.com) |
+| `CLOUDFLARE_RADAR_API_KEY` | tak, dla Cloudflare Radar | [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens) - **musi to być zakresowany API Token z uprawnieniem odczytu Radar, nie stary Global API Key** (ten drugi daje błąd 401) |
+| `ABUSEIPDB_API_KEY` | tak, dla AbuseIPDB (odczyt i zgłoszenia) | [abuseipdb.com](https://www.abuseipdb.com) |
+| `GREYNOISE_API_KEY` | tak, dla GreyNoise | [greynoise.io](https://www.greynoise.io) |
+| `OPENROUTER_API_KEY` | nie, opcjonalny | [openrouter.ai](https://openrouter.ai) - włącza analizę LLM w zakładce Email oraz ocenę kwalifikowalności e-maila i szkic komentarza zgłoszenia w zakładce AbuseIPDB |
+| `OPENROUTER_MODEL` | nie | domyślnie `anthropic/claude-sonnet-4.5` - zweryfikuj dokładny slug na liście modeli OpenRouter |
+
+Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po prostu pokazuje status "brak klucza API" i jest wykluczona z wyniku zbiorczego.
+
+## Bezpieczeństwo i prywatność
+
+- Wszystko działa na `127.0.0.1`, bez uwierzytelniania - narzędzie jednoosobowe, nie wystawiaj portu 54321 na zewnątrz.
+- Klucze API trzymane tylko w `.env` (gitignored), nigdy w kodzie frontendu.
+- Parsowanie DMARC XML dzieje się w całości w przeglądarce.
+- Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
+- Zakładka AbuseIPDB: przycisk "Wczytaj plik .eml" (także przeciągnięcie pliku na pole), licznik czasu analizy LLM oraz tokeny i koszt po analizie "Analizuj".
+- Wykrywanie IP nadawcy w zakładce AbuseIPDB: gdy pierwszy hop spoza domeny odbiorcy jest tylko przekaźnikiem operatora (np. Microsoft Exchange Online), parser przechodzi wewnętrznymi hopami operatora do hopu, w którym zapisano adres łączącego się nadawcy. Jeśli wiadomość powstała wewnątrz współdzielonego dostawcy (np. konto hotmail) i brak publicznego IP nadawcy, IP zostaje puste (pewność low). Wyniki uwierzytelniania są czytane też z `X-MS-Exchange-Authentication-Results` i `ARC-Authentication-Results`. Po analizie z LLM zakładka pokazuje, ile treści zobaczył model (pierwsze 2000 znaków), a twarde sprawdzenia (IP, wiek) mają pierwszeństwo przed opinią modelu.
+- Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria, opis) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa.
+- Zakładka Email wysyła do OpenRouter cały kod źródłowy wiadomości (z danymi osobowymi) po kliknięciu "Analizuj"; jest to świadoma decyzja (analizowane są głównie podejrzane wiadomości).
+- Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logi/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.
+
+## Wersjonowanie i konwencje
+
+- Widoczny numer wersji (tytuł strony, nagłówek, stopka) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu; po X.Y.99 następna wersja to X.(Y+1).0. Wersja 2.0.0 to pierwsze wydanie pod nazwą Seisa.
+- Kod, komentarze, docstringi, komunikaty logów i commity są po angielsku. Dokumentacja jest w dwóch wersjach o tej samej strukturze nagłówków: `README.md` (angielski, główny na GitHubie) i `README.pl.md` (polski); zmiana w jednej oznacza zmianę w drugiej (strukturę nagłówków porównuje `scripts/check_i18n.py`).
+- Teksty widoczne w interfejsie trafiają wyłącznie do katalogów `i18n` (nowy klucz = wpis PL i EN w tym samym commicie); przed commitem `python3 scripts/check_i18n.py` musi kończyć się bez błędów.
+- W całym projekcie (kod, UI, dokumentacja) nie używa się długiego myślnika (znak Unicode U+2014) - tylko zwykły "-".
+
+## Znane otwarte kwestie
+
+- Dokładny slug modelu OpenRouter (`OPENROUTER_MODEL`) warto zweryfikować na bieżącej liście modeli OpenRouter.
+- WHOIS/rDNS nie ma przypisanego przycisku "otwórz stronę usługi" - to bezpośrednie zapytanie protokołem, bez jednego zewnętrznego serwisu do zlinkowania.
+
+## Licencja
+
+Seisa jest udostępniona na licencji [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) - pełny tekst w pliku [LICENSE](LICENSE). Kod jest publiczny (*source-available*), ale **to nie jest licencja open source w rozumieniu OSI**: wolno go używać, kopiować, modyfikować i rozpowszechniać (także forki) wyłącznie do celów niekomercyjnych, m.in. do użytku osobistego, hobbystycznego, edukacyjnego i badawczego oraz przez organizacje charytatywne, edukacyjne, publiczne i rządowe. Użycie komercyjne (w tym sprzedaż, komercyjne forki i praca w celach zarobkowych firmy) wymaga odrębnej zgody autora.
+
+Dołączony `frontend/vendor/marked.min.js` pozostaje na własnej licencji MIT (nagłówek w pliku).
+
+Zasady zgłaszania błędów i współpracy: [CONTRIBUTING.md](CONTRIBUTING.md) - zewnętrzne zmiany w kodzie (pull requesty) nie są przyjmowane.
