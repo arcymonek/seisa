@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { t, tn, fmtSeconds, fmtDateTime, getLocale, registerDirtyCheck } from "./i18n.js";
+import { t, tn, fmtSeconds, fmtDateTime, getLang, getLocale, registerDirtyCheck } from "./i18n.js";
 import { defangUrl, renderMarkdownSafe } from "./markdown-render.js";
 
 let root;
@@ -17,6 +17,7 @@ let currentCreatedAt = null;
 let currentAnalysisId = null;
 let currentTruncated = false;
 let currentCitations = null;
+let currentLang = null; // language the LLM analysis was written in
 
 // First line of the analysis: machine protocol with canonical English codes (see backend/verdict.py). The Polish
 // tokens of analyses saved earlier are still accepted and mapped to the canonical codes.
@@ -25,6 +26,7 @@ const LEGACY_CODES = { legalna: "legit", oszustwo: "scam", niejednoznaczna: "inc
 const canonical = (code) => LEGACY_CODES[code] || code;
 const VERDICT_LEVEL = { legit: "low", inconclusive: "medium" };
 const verdictLabel = (code) => t("verdict." + code);
+const langName = (code) => t("lang." + code);
 
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -139,6 +141,7 @@ function clearOutput() {
   currentAnalysisId = null;
   currentTruncated = false;
   currentCitations = null;
+  currentLang = null;
 }
 
 async function analyze() {
@@ -160,12 +163,15 @@ async function analyze() {
 }
 
 function showDuplicate(matches, raw) {
-  const best = matches.find((m) => !m.truncated) || matches[0];
+  // prefer an analysis in the current UI language, then a complete one
+  const best = matches.find((m) => !m.truncated && m.lang === getLang()) || matches.find((m) => m.lang === getLang()) ||
+    matches.find((m) => !m.truncated) || matches[0];
   const box = root.querySelector("#em-dup");
   box.innerHTML = "";
   const banner = document.createElement("div");
   banner.className = "banner info";
   const details = [t("em.dup_verdict", { verdict: best.verdict ? verdictLabel(best.verdict) : "?" })];
+  details.push(t("em.dup_lang", { lang: langName(best.lang || "pl") }));
   if (best.truncated) details.push(t("em.dup_truncated"));
   if (typeof best.cost === "number") details.push(t("common.cost", { cost: best.cost.toFixed(3) }));
   banner.textContent = t("em.dup_banner", {
@@ -173,6 +179,7 @@ function showDuplicate(matches, raw) {
     details: details.join(", "),
     more: matches.length > 1 ? t("em.dup_more", { n: matches.length }) : ".",
   });
+  if ((best.lang || "pl") !== getLang()) banner.textContent += " " + t("em.dup_other_lang", { ui: langName(getLang()) });
   box.appendChild(banner);
   const openBtn = document.createElement("button");
   openBtn.className = "action";
@@ -282,6 +289,7 @@ function finishAnalysis(evt) {
   currentUsage = evt.usage || null;
   currentModel = evt.model || currentModel;
   currentAnalysisId = evt.analysis_id || currentAnalysisId;
+  currentLang = evt.lang || currentLang;
   currentTruncated = !!evt.truncated;
   currentCitations = evt.citation_check || null;
   if (!currentCreatedAt) currentCreatedAt = new Date().toISOString();
@@ -520,6 +528,7 @@ function buildExport() {
   const created = currentCreatedAt ? new Date(currentCreatedAt) : new Date();
   const L = [`# ${t("em.x.title", { subject: currentSubject || t("em.no_subject") })}`, ""];
   L.push(`- ${t("em.x.date", { date: fmtDateTime(created) })}`);
+  if (currentLang) L.push(`- ${t("em.x.lang", { lang: langName(currentLang) })}`);
   if (currentVerdict) L.push(`- ${t("em.x.verdict", { verdict: verdictLabel(currentVerdict) })}`);
   if (currentModel) L.push(`- ${t("em.x.model", { model: currentModel })}`);
   if (currentUsage && currentUsage.prompt_tokens != null) {
@@ -746,7 +755,7 @@ async function refreshSaved() {
     row.className = "saved-row";
     const level = VERDICT_LEVEL[it.verdict] || "high";
     row.innerHTML = `<span class="muted">${e(fmtDateTime(it.created_at))}</span>
-      ${it.verdict ? `<span class="badge ${level}">${e(verdictLabel(it.verdict).toUpperCase())}</span>` : ""}${it.truncated ? `<span class="badge medium">${e(t("em.truncated_badge"))}</span>` : ""}
+      ${(it.lang || "pl") !== getLang() ? `<span class="badge lang">${e((it.lang || "pl").toUpperCase())}</span>` : ""}${it.verdict ? `<span class="badge ${level}">${e(verdictLabel(it.verdict).toUpperCase())}</span>` : ""}${it.truncated ? `<span class="badge medium">${e(t("em.truncated_badge"))}</span>` : ""}
       <span class="grow"><strong>${e(it.subject || t("em.no_subject"))}</strong><br><span class="muted">${e(it.from || "")}</span></span>`;
     const openBtn = document.createElement("button");
     openBtn.className = "secondary";
@@ -772,6 +781,23 @@ export function openSavedAnalysis(id) {
   return openSaved(id);
 }
 
+// A saved analysis written in another language than the UI: offer a paid re-analysis in the UI language.
+function showLangNotice(rec) {
+  const lang = rec.lang || "pl";
+  if (lang === getLang()) return;
+  const box = root.querySelector("#em-dup");
+  const banner = document.createElement("div");
+  banner.className = "banner info";
+  const cost = rec.usage && typeof rec.usage.cost === "number" ? t("em.lang_cost", { cost: rec.usage.cost.toFixed(3) }) : "";
+  banner.textContent = t("em.lang_notice", { lang: langName(lang), ui: langName(getLang()) });
+  box.appendChild(banner);
+  const btn = document.createElement("button");
+  btn.className = "secondary";
+  btn.textContent = t("em.lang_reanalyze", { ui: langName(getLang()) }) + cost;
+  btn.onclick = () => runAnalysis(rec.raw_email);
+  box.appendChild(btn);
+}
+
 async function openSaved(id) {
   const statusEl = root.querySelector("#em-status");
   let rec;
@@ -793,6 +819,8 @@ async function openSaved(id) {
   currentAnalysisId = rec.id;
   currentTruncated = !!rec.truncated;
   currentCitations = rec.citation_check || null;
+  currentLang = rec.lang || "pl"; // records saved before the language field existed are Polish
+  showLangNotice(rec);
   renderAnalysis();
   showCitations();
   showActions();

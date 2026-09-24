@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from backend.analizy import list_analyses
 from backend.config import HISTORY_MAX_ENTRIES
-from backend.i18n import t
+from backend.i18n import current_lang, t
 from backend.models import HistoryEntry
 from backend.storage import (
     append_history,
@@ -37,6 +37,7 @@ def _email_entry(item: dict) -> dict:
         "created_at": item["created_at"],
         "label": f"{item.get('subject') or '(no subject)'} - {item.get('from') or '?'}",
         "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
+        "lang": item.get("lang") or "pl",
     }
 
 
@@ -49,6 +50,7 @@ async def list_history():
             "created_at": e.created_at,
             "label": e.label,
             "risk_summary": e.risk_summary,
+            "lang": e.lang,
         }
         for e in load_history()
     ]
@@ -69,7 +71,7 @@ async def get_entry(entry_id: str):
 async def create_entry(req: HistoryCreateRequest):
     if req.type not in ("lookup", "dmarc"):
         raise HTTPException(status_code=400, detail=t("history.invalid_type"))
-    entry = HistoryEntry(type=req.type, label=req.label, risk_summary=req.risk_summary, data=req.data)
+    entry = HistoryEntry(type=req.type, label=req.label, risk_summary=req.risk_summary, lang=current_lang(), data=req.data)
     append_history(entry)
     return entry
 

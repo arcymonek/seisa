@@ -67,4 +67,5 @@ class HistoryEntry(BaseModel):
     created_at: str = Field(default_factory=utcnow_iso)
     label: str
     risk_summary: str | None = None
+    lang: str = "pl"  # UI language the entry was created in (entries saved before this field are Polish)
     data: dict[str, Any]

@@ -98,6 +98,7 @@ input[type="checkbox"]:focus-visible { outline: 2px solid #fff; outline-offset: 
   display: inline-block; padding: 3px 10px; border-radius: 3px; font-family: var(--mono);
   font-size: 14px; font-weight: 600;
 }
+.badge.lang { background: none; border: 1px solid var(--hair); color: var(--muted); }
 .badge.high { background: #3a2422; color: var(--fail); }
 .badge.medium { background: #3a3220; color: var(--warn); }
 .badge.low { background: #1f2e24; color: var(--pass); }

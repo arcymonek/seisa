@@ -1,6 +1,6 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
-import { t, fmtDateTime } from "./i18n.js";
+import { t, fmtDateTime, getLang } from "./i18n.js";
 
 let root;
 
@@ -47,7 +47,7 @@ async function load() {
       .map(
         (e) => `<tr data-id="${e.id}" data-type="${e.type}">
       <td class="muted">${escapeHtml(fmtDateTime(e.created_at))}</td>
-      <td>${escapeHtml(TYPE_LABEL[e.type] || e.type)}</td>
+      <td>${escapeHtml(TYPE_LABEL[e.type] || e.type)}${(e.lang || "pl") !== getLang() ? ` <span class="badge lang">${escapeHtml((e.lang || "pl").toUpperCase())}</span>` : ""}</td>
       <td>${escapeHtml(e.label)}</td>
       <td>${e.risk_summary ? `<span class="badge ${escapeHtml(e.risk_summary.toLowerCase())}">${escapeHtml(t("risk." + e.risk_summary.toLowerCase()))}</span>` : "-"}</td>
       <td><button class="secondary open-btn">${escapeHtml(t("history.reopen"))}</button> <button class="secondary del-btn">${escapeHtml(t("common.delete"))}</button></td>

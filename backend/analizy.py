@@ -76,7 +76,7 @@ def find_by_source(sha256: str) -> list[dict[str, Any]]:
         usage = data.get("usage") or {}
         matches.append({
             "id": data.get("id"), "created_at": data.get("created_at"), "verdict": data.get("verdict"),
-            "confidence": data.get("confidence"), "truncated": bool(data.get("truncated")),
+            "confidence": data.get("confidence"), "truncated": bool(data.get("truncated")), "lang": data.get("lang"),
             "cost": usage.get("cost") if isinstance(usage.get("cost"), (int, float)) else None,
         })
     return matches
@@ -92,7 +92,7 @@ def list_analyses() -> list[dict[str, Any]]:
         except (OSError, json.JSONDecodeError):
             continue
         _canonical(data)
-        items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence", "truncated")})
+        items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence", "truncated", "lang")})
     return items
 
 
@@ -100,6 +100,7 @@ def _canonical(data: dict[str, Any]) -> dict[str, Any]:
     """Records saved with the older Polish verdict tokens are shown with the canonical codes (file is untouched)."""
     data["verdict"] = normalize_verdict(data.get("verdict"))
     data["confidence"] = normalize_confidence(data.get("confidence"))
+    data.setdefault("lang", "pl")  # records saved before the language field existed were written in Polish
     return data
 
 

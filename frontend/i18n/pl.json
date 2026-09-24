@@ -349,5 +349,13 @@
   "em.saved_empty": "Brak zapisanych analiz. Każda ukończona analiza zapisuje się razem z surowym e-mailem w katalogu data/analizy.",
   "em.truncated_badge": "UCIĘTA",
   "em.open": "Otwórz",
-  "em.opened": "Otwarto zapisaną analizę z {date}."
+  "em.opened": "Otwarto zapisaną analizę z {date}.",
+  "lang.pl": "polski",
+  "lang.en": "angielski",
+  "em.dup_lang": "język: {lang}",
+  "em.dup_other_lang": "Ta analiza jest w innym języku niż interfejs; nowa analiza w języku: {ui} jest płatna (koszt zbliżony do poprzedniej).",
+  "em.x.lang": "Język analizy: {lang}",
+  "em.lang_notice": "Ta analiza LLM powstała w języku: {lang}, a interfejs jest w języku: {ui}. Tekst analizy i fakty zostają w języku, w którym powstały (etykiety interfejsu są w {ui}).",
+  "em.lang_reanalyze": "Analizuj ponownie w języku: {ui} (płatne)",
+  "em.lang_cost": " - poprzednia kosztowała ≈ ${cost}"
 }

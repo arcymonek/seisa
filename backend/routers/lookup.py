@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from backend.aggregator import detect_indicator_type, run_lookup
+from backend.i18n import current_lang
 from backend.models import HistoryEntry, IndicatorType
 from backend.storage import append_history
 
@@ -38,6 +39,7 @@ def _save_to_history(result) -> None:
         type="lookup",
         label=result.indicator,
         risk_summary=result.risk_score.level,
+        lang=current_lang(),
         data=result.stripped_for_history().model_dump(),
     )
     append_history(entry)

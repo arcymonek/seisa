@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.i18n import t
+from backend.i18n import current_lang, t
 from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
 from backend.report_utils import sanitize_comment, truncate_chars
@@ -58,6 +58,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
             facts,
             extract_relevant_headers(req.raw_email),
             extract_body_excerpt(req.raw_email),
+            current_lang(),
         )
 
     usage = llm_analysis.pop("_usage", None) if isinstance(llm_analysis, dict) else None

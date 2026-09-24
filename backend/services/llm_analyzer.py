@@ -54,54 +54,65 @@ def _report_error(status: int | None, body: object) -> str:
     logger.error(f"OpenRouter: {_openrouter_error_text(status, body, 'en')}")
     return _openrouter_error_text(status, body)
 
-SYSTEM_PROMPT = """Jesteś asystentem oceniającym, czy e-mail kwalifikuje się do zgłoszenia \
-na AbuseIPDB, zgodnie z dołączoną polityką. Twoja ocena jest WYŁĄCZNIE doradcza - twarde \
-sprawdzenia (wiek zgłoszenia, czy IP jest prywatny) są liczone osobno w kodzie i nie zależą \
-od Ciebie. Nie zmyślaj faktów spoza dostarczonych danych.
+# Prompts are input for the model (not UI text): written once, in English. The language of the descriptive fields
+# of the JSON answer is set through {language}; keys and machine values stay as they are, and the report comment
+# is ALWAYS English (an AbuseIPDB requirement), whatever the UI language is.
+LANGUAGE_NAMES = {"pl": "Polish", "en": "English"}
 
-Dostajesz też surowe nagłówki Received/Authentication-Results oraz adres IP, który kod już \
-wybrał jako "hop graniczny" (pierwsze miejsce w łańcuchu Received, gdzie zaufana infrastruktura \
-odbiorcy - np. Microsoft 365/Outlook, Google Workspace - zapisuje faktyczny adres łączącego się \
-nadawcy, zwykle w formie `from [127.0.0.1] (prawdziwe_ip) ... via Frontend Transport` albo \
-`from host (host [prawdziwe_ip])`). Wcześniejsze hopy w takich łańcuchach bywają transferami \
-WEWNĘTRZNYMI między serwerami tego samego dostawcy - mają "publiczne" adresy IP, ale NIE są \
-adresem atakującego. Przeanalizuj samodzielnie surowe nagłówki i sprawdź, czy zgadzasz się z \
-wyborem kodu - jeśli widzisz inny, bardziej prawdopodobny adres graniczny, zgłoś to w \
-`source_ip_check`. To również WYŁĄCZNIE doradcze - nic nie zmienia automatycznie w formularzu.
+SYSTEM_PROMPT = """You are an assistant that assesses whether an e-mail qualifies for a report to AbuseIPDB, \
+according to the attached policy. Your assessment is ADVISORY ONLY - the hard checks (age of the report, whether \
+the IP is private) are computed separately in code and do not depend on you. Do not invent facts beyond the \
+data provided.
 
-Dostajesz też fragment treści e-maila (oczyszczony z HTML) - użyj go, żeby opisać rzeczywisty \
-mechanizm ataku (pod co się podszywa, jaki jest pretekst/przynęta, jaki jest CTA), a nie tylko \
-nagłówki.
+You also receive the raw Received/Authentication-Results headers and the IP address that the code already chose \
+as the "boundary hop" (the first place in the Received chain where the recipient's trusted infrastructure - e.g. \
+Microsoft 365/Outlook, Google Workspace - records the actual address of the connecting sender, usually in the form \
+`from [127.0.0.1] (real_ip) ... via Frontend Transport` or `from host (host [real_ip])`). Earlier hops in such \
+chains are often INTERNAL transfers between servers of the same provider - they have "public" IP addresses but \
+are NOT the address of the attacker. Analyse the raw headers yourself and check whether you agree with the code's \
+choice - if you see a different, more probable boundary address, report it in `source_ip_check`. This is also \
+ADVISORY ONLY - nothing in the form is changed automatically.
 
-Odpowiedz WYŁĄCZNIE w formacie JSON:
-{
+You also receive an excerpt of the e-mail body (cleaned of HTML) - use it to describe the actual attack mechanism \
+(what it impersonates, what the pretext/lure is, what the CTA is), not only the headers.
+
+Write the descriptive fields ("reasoning", "alternatives" and every "note"/"reasoning" inside the nested objects) \
+in {language}. Keep all keys and the machine values (pass/fail/unknown, booleans, numbers) exactly as specified. \
+"report_comment" is ALWAYS in English, regardless of that language.
+
+Answer ONLY in JSON format:
+{{
   "qualifies": bool,
-  "reasoning": "uzasadnienie po polsku, 2-4 zdania",
+  "reasoning": "justification, 2-4 sentences",
   "suggested_categories": [int, ...],
-  "report_comment": "SZCZEGÓŁOWY komentarz PO ANGIELSKU, gotowy do wysłania jako 'comment' w zgłoszeniu AbuseIPDB - opisz mechanizm ataku (co udaje, jaki pretekst) i konkretne dowody techniczne WYŁĄCZNIE na podstawie dostarczonych faktów/nagłówków/treści (np. potwierdzone połączenie SMTP/TLS, co oznacza wynik SPF/DKIM/DMARC, ślady spoofingu, złośliwy załącznik z wykrytym podwójnym rozszerzeniem, żądanie okupu/adres BTC, wzorzec masowej wysyłki jeśli widoczny w nagłówkach typu List-Unsubscribe/X-Mailer). NIE zmyślaj faktów spoza dostarczonych danych. Zmieść się w maksymalnie ok. 900 znakach (twardy limit API to 1024, zostaw margines na sanityzację) - bez zbędnego PII (własny adres e-mail odbiorcy pomijaj, chyba że kluczowy dla opisu mechanizmu)",
-  "alternatives": "sugestie po polsku gdy qualifies=false, inaczej pusty string",
-  "source_ip_check": {
+  "report_comment": "DETAILED comment IN ENGLISH, ready to be sent as the 'comment' of the AbuseIPDB report - describe the attack mechanism (what it impersonates, what the pretext is) and concrete technical evidence ONLY on the basis of the provided facts/headers/body (e.g. a confirmed SMTP/TLS connection, what the SPF/DKIM/DMARC result means, traces of spoofing, a malicious attachment with a detected double extension, a ransom demand/BTC address, a mass-mailing pattern if visible in headers such as List-Unsubscribe/X-Mailer). Do NOT invent facts beyond the provided data. Stay within about 900 characters at most (the hard API limit is 1024, leave a margin for sanitisation) - without unnecessary PII (omit the recipient's own e-mail address unless it is key to describing the mechanism)",
+  "alternatives": "suggestions when qualifies=false, otherwise an empty string",
+  "source_ip_check": {{
     "agrees": bool,
-    "suggested_ip": "adres IP" lub null jeśli agrees=true,
-    "reasoning": "po polsku, dlaczego zgadzasz się lub nie - 1-2 zdania"
-  },
-  "received_verified": {
+    "suggested_ip": "IP address" or null if agrees=true,
+    "reasoning": "why you agree or not - 1-2 sentences"
+  }},
+  "received_verified": {{
     "status": "pass"|"fail"|"unknown",
-    "note": "po polsku - czy adres IP do zgłoszenia pochodzi z nagłówka Received wpisanego przez zaufany serwer odbiorcy (a nie z From/treści/nagłówków podrabialnych przez nadawcę); 'fail' tylko gdy widzisz konkretny dowód, że tak nie jest"
-  },
-  "not_spoofed_source": {
+    "note": "whether the IP address to report comes from a Received header written by the recipient's trusted server (and not from From/body/headers that the sender can forge); 'fail' only when you see concrete evidence that it does not"
+  }},
+  "not_spoofed_source": {{
     "status": "pass"|"fail"|"unknown",
-    "note": "po polsku - czy źródłowe IP jest wiarygodne, tzn. wiadomość dotarła przez faktycznie ustanowione połączenie SMTP/TCP z tego adresu (a nie jest to adres podrobiony, wewnętrzny hop dostawcy albo niezweryfikowany); 'fail' tylko gdy widzisz konkretny dowód, że IP mogło zostać podrobione lub nie jest źródłem ataku"
-  },
-  "category_matches": {
+    "note": "whether the source IP is credible, i.e. the message arrived over a really established SMTP/TCP connection from that address (and it is not a forged address, an internal hop of the provider or an unverified one); 'fail' only when you see concrete evidence that the IP may have been forged or is not the source of the attack"
+  }},
+  "category_matches": {{
     "status": "pass"|"fail"|"unknown",
-    "note": "po polsku - czy suggested_categories trafnie opisują mechanizm ataku"
-  },
-  "pii_redacted": {
+    "note": "whether suggested_categories accurately describe the attack mechanism"
+  }},
+  "pii_redacted": {{
     "status": "pass"|"fail"|"unknown",
-    "note": "po polsku - czy report_comment zawiera zbędne dane osobowe do usunięcia"
-  }
-}"""
+    "note": "whether report_comment contains unnecessary personal data to remove"
+  }}
+}}"""
+
+
+def _system_prompt(lang: str) -> str:
+    return SYSTEM_PROMPT.format(language=LANGUAGE_NAMES.get(lang, "English"))
 
 
 def _parse_json_content(content: str | None) -> dict:
@@ -277,22 +288,22 @@ class LlmAnalyzer:
             logger.error(f"OpenRouter: connection error: {text}")
             yield "error", text
 
-    async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "") -> dict | None:
+    async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "", lang: str = "en") -> dict | None:
         if not self.is_configured():
             return None
         user_content = (
-            "Wyekstrahowane fakty z e-maila (w tym wybór kodu co do hopu granicznego - "
+            "Facts extracted from the e-mail (including the code's choice of the boundary hop - "
             "'trusted_source_ip', 'ip_confidence', 'ip_reasoning', 'received_chain'):\n"
             f"{json.dumps(facts, ensure_ascii=False, indent=2)}\n\n"
-            "Surowe nagłówki (dowód do niezależnej weryfikacji hopu granicznego i do opisania "
-            "mechanizmu ataku):\n"
-            f"{relevant_headers or '(brak)'}\n\n"
-            "Treść wiadomości (fragment, HTML zamienione na tekst):\n"
-            f"{body_excerpt or '(brak)'}\n\n"
-            "Fragment polityki i kategorii AbuseIPDB:\n"
+            "Raw headers (evidence for the independent verification of the boundary hop and for describing "
+            "the attack mechanism):\n"
+            f"{relevant_headers or '(none)'}\n\n"
+            "Message body (an excerpt, HTML converted to text):\n"
+            f"{body_excerpt or '(none)'}\n\n"
+            "Excerpt of the AbuseIPDB policy and categories:\n"
             f"{self._policy_excerpt()}"
         )
-        return await self._chat_json(SYSTEM_PROMPT, user_content)
+        return await self._chat_json(_system_prompt(lang), user_content)
 
 
 llm_analyzer = LlmAnalyzer()

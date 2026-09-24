@@ -335,5 +335,13 @@
   "em.saved_empty": "No saved analyses. Every completed analysis is saved together with the raw e-mail in the data/analizy directory.",
   "em.truncated_badge": "TRUNCATED",
   "em.open": "Open",
-  "em.opened": "Opened the saved analysis from {date}."
+  "em.opened": "Opened the saved analysis from {date}.",
+  "lang.pl": "Polish",
+  "lang.en": "English",
+  "em.dup_lang": "language: {lang}",
+  "em.dup_other_lang": "That analysis is in a different language than the interface; a new analysis in {ui} is paid (a cost similar to the previous one).",
+  "em.x.lang": "Analysis language: {lang}",
+  "em.lang_notice": "This LLM analysis was written in {lang}, while the interface is in {ui}. The text of the analysis and the facts stay in the language they were created in (the interface labels are in {ui}).",
+  "em.lang_reanalyze": "Analyze again in {ui} (paid)",
+  "em.lang_cost": " - the previous one cost ≈ ${cost}"
 }
