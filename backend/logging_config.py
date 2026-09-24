@@ -10,7 +10,7 @@ from backend.config import LOGI_DIR
 class DailyJsonlHandler(logging.Handler):
     """Jeden plik .jsonl na dzień w katalogu logi/. Tylko WARNING i wyżej trafia
     tu w ogóle (poziom ustawiany na handlerze w setup_logging), więc zwykła
-    praca arcyAnalizer nie zostawia żadnego śladu na dysku."""
+    praca Seisy nie zostawia żadnego śladu na dysku."""
 
     def __init__(self, directory=LOGI_DIR):
         super().__init__()

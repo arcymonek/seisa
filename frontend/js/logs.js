@@ -12,7 +12,7 @@ const LEVEL_COLOR = { ERROR: "var(--fail)", WARNING: "var(--warn)" };
 export function initLogs(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Błędy i ostrzeżenia zapisywane przez poszczególne usługi - normalna, bezbłędna praca arcyAnalizer nie zostawia tu żadnego śladu.</div>
+    <div class="subtitle">Błędy i ostrzeżenia zapisywane przez poszczególne usługi - normalna, bezbłędna praca Seisy nie zostawia tu żadnego śladu.</div>
     <div class="chip-row" id="lg-range">
       <span class="chip on" data-range="today">Dziś</span>
       <span class="chip" data-range="3d">Ostatnie 3 dni</span>

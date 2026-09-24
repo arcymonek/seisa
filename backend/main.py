@@ -14,7 +14,7 @@ from backend.routers import abuseipdb_report, email_analysis, history, logs, loo
 setup_logging()
 app_logger = logging.getLogger("app")
 
-app = FastAPI(title="arcyAnalizer")
+app = FastAPI(title="Seisa")
 
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
@@ -34,7 +34,7 @@ app.add_middleware(NoCacheStaticMiddleware)
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     app_logger.error(f"{request.method} {request.url.path}: {exc}")
-    return JSONResponse(status_code=500, content={"detail": "wewnętrzny błąd arcyAnalizer"})
+    return JSONResponse(status_code=500, content={"detail": "wewnętrzny błąd Seisy"})
 
 
 app.include_router(lookup.router, prefix="/api")

@@ -58,7 +58,7 @@ async function load() {
   listEl.querySelectorAll(".open-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const row = btn.closest("tr");
-      if (row.dataset.type === "email") window.arcyApp.goToEmailAnalysis(row.dataset.id);
+      if (row.dataset.type === "email") window.seisaApp.goToEmailAnalysis(row.dataset.id);
       else openEntry(row.dataset.id);
     });
   });
@@ -89,7 +89,7 @@ async function openEntry(id) {
     const btn = document.createElement("button");
     btn.className = "secondary";
     btn.textContent = "Otwórz w Lookup";
-    btn.onclick = () => window.arcyApp.goToLookup(entry.data.indicator);
+    btn.onclick = () => window.seisaApp.goToLookup(entry.data.indicator);
     card.appendChild(btn);
   } else {
     card.innerHTML = `<pre style="white-space:pre-wrap">${JSON.stringify(entry.data, null, 2)}</pre>`;

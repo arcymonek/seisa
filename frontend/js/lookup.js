@@ -184,7 +184,7 @@ function renderResult(result) {
     const reportBtn = document.createElement("button");
     reportBtn.className = "secondary";
     reportBtn.textContent = "Zgłoś AbuseIPDB";
-    reportBtn.onclick = () => window.arcyApp.goToReport(result.indicator, false);
+    reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator, false);
     actions.appendChild(reportBtn);
   }
 

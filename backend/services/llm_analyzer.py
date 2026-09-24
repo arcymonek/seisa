@@ -10,10 +10,10 @@ from backend.services.base import describe_exception
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Nagłówki atrybucji OpenRouter - dzięki nim w panelu OR aplikacja widnieje jako
-# "arcyAnalizer" zamiast "Unknown". Opis aplikacji nie jest ustawiany przez API.
+# "Seisa" zamiast "Unknown". Opis aplikacji nie jest ustawiany przez API.
 OPENROUTER_APP_HEADERS = {
-    "HTTP-Referer": "https://arcyanalizer.local",
-    "X-Title": "arcyAnalizer",
+    "HTTP-Referer": "https://seisa.local",
+    "X-Title": "Seisa",
 }
 
 # Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB) trafiają do jednej usługi logów.

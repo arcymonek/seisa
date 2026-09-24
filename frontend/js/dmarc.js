@@ -339,13 +339,13 @@ function render() {
     });
   });
   resultsEl.querySelectorAll(".lookup-btn").forEach((btn) => {
-    btn.addEventListener("click", () => window.arcyApp.goToLookup(btn.closest("tr").dataset.ip));
+    btn.addEventListener("click", () => window.seisaApp.goToLookup(btn.closest("tr").dataset.ip));
   });
   resultsEl.querySelectorAll(".report-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tr = btn.closest("tr");
       const spoofing = tr.dataset.spfFail === "true" || tr.dataset.dkimFail === "true";
-      window.arcyApp.goToReport(tr.dataset.ip, spoofing);
+      window.seisaApp.goToReport(tr.dataset.ip, spoofing);
     });
   });
 }

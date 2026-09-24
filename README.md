@@ -1,4 +1,6 @@
-# arcyAnalizer
+# Seisa (精査)
+
+**Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
 
 Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
 
@@ -43,7 +45,7 @@ Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + 
 - Pod linią rozdzielającą: **szczegółowa analiza LLM** (OpenRouter, ten sam klucz i model co w AbuseIPDB), streamowana na żywo, według przewodnika `docs/email-analysis-guide.md` (model mentalny, analiza linijka po linijce zarówno elementów dobrych, jak i złych, lista kontrolna, pułapki, ocena, pytania kontrolne z odpowiedziami w zwijanych sekcjach). Pierwsza linia odpowiedzi to werdykt (`legalna`/`phishing`/`spam`/`oszustwo`/`malware`/`niejednoznaczna`) z pewnością.
 - Limit odpowiedzi modelu to 64000 tokenów (liczony razem z ukrytym rozumowaniem modelu, ok. 45% wyjścia; to sufit, płaci się za tokeny faktycznie wygenerowane). Jeśli analiza mimo to zostanie ucięta, zakładka pokazuje ostrzeżenie i przycisk **"Dokończ analizę"** (model dostaje dotychczasowy tekst i dopisuje brakujące części; zużycie tokenów i koszt sumują się w zapisanej analizie).
 - **"Zapisz .md"** i **"Kopiuj Markdown"** eksportują komplet: metadane (data, werdykt, model, tokeny wejścia/wyjścia, koszt), całą analizę deterministyczną (tabele) i analizę LLM.
-- **Wykrywanie duplikatów:** przed płatną analizą arcyAnalizer sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analizy/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
+- **Wykrywanie duplikatów:** przed płatną analizą Seisa sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analizy/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
 - **Kontrola cytatów (lokalna, bez kosztu):** po analizie kod sprawdza, czy adresy IP, cytowane w blokach kodu linie nagłówków, cytaty `Nagłówek: wartość`, liczby SCL/BCL i identyfikatory podane przez model występują w źródle lub w analizie deterministycznej (`backend/citation_check.py`). Rozbieżności są wypisane pod analizą i w eksporcie `.md`; to informacja, a nie dowód błędu (przykład lub parafraza też mogą zostać oznaczone). Nie sprawdza domen ani zapisów typu `spf=pass`, bo analiza omawia też przykłady wiadomości legalnej.
 - Analiza LLM nie odtwarza tabel widocznych w analizie deterministycznej (oś czasu, linki, Received itd.), tylko je interpretuje, żeby nie płacić za powtórki; komplet jest w eksporcie.
 - Wynik LLM jest renderowany bezpiecznie: surowy HTML z e-maila i linki są neutralizowane (linki pokazywane jako nieklikalny, zdefangowany tekst).
@@ -72,9 +74,9 @@ Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, be
 Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statyczny frontend (`frontend/` - czysty JavaScript, ES modules, bez frameworka i bez kroku budowania) na `127.0.0.1:54321`.
 
 ```
-arcyanalizer/
+seisa/
 ├── .env                    # klucze API (gitignored, patrz .env.example)
-├── arcyanalizer.sh          # skrypt startowy (alias `arcyanalizer` w ~/.zshrc)
+├── seisa.sh                 # skrypt startowy (alias `seisa` w ~/.zshrc)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache, obsługa błędów
 │   ├── config.py             # ścieżki, ustawienia z .env
@@ -106,14 +108,14 @@ arcyanalizer/
     └── email-analysis-guide.md         # przewodnik analizy e-maila wczytywany do promptu LLM (zakładka Email)
 ```
 
-Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 10 wpisów, licznik dziennego limitu VirusTotal) i logi w `logi/`.
+Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 25 wpisów, licznik dziennego limitu VirusTotal) i logi w `logi/`.
 
 ## Instalacja
 
 Wymaga Python 3.11+.
 
 ```bash
-cd arcyanalizer
+cd seisa
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 cp .env.example .env
@@ -126,7 +128,7 @@ Uzupełnij `.env` prawdziwymi kluczami API (opis kluczy niżej).
 Najprościej przez skrót terminalowy (dodany do `~/.zshrc`):
 
 ```bash
-arcyanalizer
+seisa
 ```
 
 Otwiera serwer i automatycznie otwiera przeglądarkę na `http://127.0.0.1:54321`.
@@ -134,7 +136,7 @@ Otwiera serwer i automatycznie otwiera przeglądarkę na `http://127.0.0.1:54321
 Ręcznie:
 
 ```bash
-cd arcyanalizer
+cd seisa
 ./.venv/bin/uvicorn backend.main:app --port 54321 --host 127.0.0.1
 ```
 
@@ -167,7 +169,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 
 ## Wersjonowanie i konwencje
 
-- Widoczny numer wersji (tytuł strony, nagłówek, stopka) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu.
+- Widoczny numer wersji (tytuł strony, nagłówek, stopka) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu; po X.Y.99 następna wersja to X.(Y+1).0. Wersja 2.0.0 to pierwsze wydanie pod nazwą Seisa.
 - W całym projekcie (kod, UI, dokumentacja) nie używa się długiego myślnika (znak Unicode U+2014) - tylko zwykły "-".
 
 ## Znane otwarte kwestie

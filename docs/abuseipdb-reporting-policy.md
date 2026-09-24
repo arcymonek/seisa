@@ -83,20 +83,20 @@ wcześniejszych (nowszych) hopów.
 
 ### Dane do zgłoszenia (pola wysyłane do `/report`)
 
-| Pole API | Wymagane? | Wartość w arcyAnalizer |
+| Pole API | Wymagane? | Wartość w Seisie |
 |---|---|---|
 | **ip** | tak | adres IP (Krok 2) |
 | **categories** | tak, min. 1 | zaznaczone kategorie (Krok 2) |
 | **timestamp** | nie (domyślnie "teraz") | Timestamp ataku - osobne pole, NIE trafia do treści komentarza |
 | **comment** | nie (ale AbuseIPDB rekomenduje szczegółowy opis - patrz "Reporting Policy" wyżej) | pisany przez LLM w Kroku 1, edytowalny w Kroku 2 - patrz niżej |
 
-Numer portu nie ma w arcyAnalizer osobnego pola - jeśli jest znany, dopisz go ręcznie do komentarza przed wysyłką.
+Numer portu nie ma w Seisie osobnego pola - jeśli jest znany, dopisz go ręcznie do komentarza przed wysyłką.
 
 ---
 
 ## Treść komentarza - pisana przez LLM, z deterministycznym fallbackiem
 
-Mimo że `comment` jest polem opcjonalnym w API AbuseIPDB, sama polityka AbuseIPDB (wyżej) wprost oczekuje szczegółowego, technicznie uzasadnionego opisu ataku. arcyAnalizer realizuje to inaczej niż przez ręcznie wypełniane pole formularza: gdy skonfigurowany jest `OPENROUTER_API_KEY`, model podczas analizy w Kroku 1 (`analyze_email`) dostaje fakty wyekstrahowane z e-maila, surowe nagłówki (Received/uwierzytelnianie/Subject/Reply-To/wskaźniki spamu jeśli obecne) oraz fragment treści wiadomości (HTML zamienione na czysty tekst) - i na tej podstawie pisze gotowy, szczegółowy komentarz po angielsku (pole `report_comment`), uwzględniający mechanizm ataku, znaczenie SPF/DKIM/DMARC, złośliwe załączniki (z wykrytym podwójnym rozszerzeniem), żądanie okupu/BTC, wzorce masowej wysyłki - cokolwiek istotne widoczne w dostarczonych danych, w granicach ok. 900 znaków (twardy limit API to 1024).
+Mimo że `comment` jest polem opcjonalnym w API AbuseIPDB, sama polityka AbuseIPDB (wyżej) wprost oczekuje szczegółowego, technicznie uzasadnionego opisu ataku. Seisa realizuje to inaczej niż przez ręcznie wypełniane pole formularza: gdy skonfigurowany jest `OPENROUTER_API_KEY`, model podczas analizy w Kroku 1 (`analyze_email`) dostaje fakty wyekstrahowane z e-maila, surowe nagłówki (Received/uwierzytelnianie/Subject/Reply-To/wskaźniki spamu jeśli obecne) oraz fragment treści wiadomości (HTML zamienione na czysty tekst) - i na tej podstawie pisze gotowy, szczegółowy komentarz po angielsku (pole `report_comment`), uwzględniający mechanizm ataku, znaczenie SPF/DKIM/DMARC, złośliwe załączniki (z wykrytym podwójnym rozszerzeniem), żądanie okupu/BTC, wzorce masowej wysyłki - cokolwiek istotne widoczne w dostarczonych danych, w granicach ok. 900 znaków (twardy limit API to 1024).
 
 Ten tekst trafia od razu do edytowalnego pola "Komentarz zgłoszenia" w Kroku 2 - użytkownik może go swobodnie poprawić przed wysyłką (np. dopisać numer portu). Backend i tak sanityzuje/przycina ostateczny tekst tuż przed wysyłką (`sanitize_comment`/`truncate_chars` - ASCII, ochrona przed wstrzyknięciem formuły, twardy limit 1024 znaków), niezależnie od tego, kto go napisał.
 
@@ -131,6 +131,6 @@ Ten tekst też jest edytowalny - to tylko rzadszy, uboższy punkt startowy, gdy 
 - [ ] Adres IP zweryfikowany z nagłówka `Received` (nie z `From`/treści - te można sfałszować)
 - [ ] Źródło nie jest spoofowane (SYN/UDP flood → NIE zgłaszać; TCP z domkniętym handshake → można)
 - [ ] Kategoria dopasowana do rzeczywistego mechanizmu ataku, nie "na wszelki wypadek"
-- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC - dodane jedno zdanie potwierdzające (arcyAnalizer robi to automatycznie)
+- [ ] Jeśli spoofing potwierdzony niepowodzeniem SPF/DMARC - dodane jedno zdanie potwierdzające (Seisa robi to automatycznie)
 - [ ] Timestamp **nie** w treści komentarza - tylko w osobnym polu formularza
 - [ ] Komentarz (podgląd w Kroku 2) nie zawiera własnego adresu e-mail/domeny/innego PII poza tym, co niezbędne do opisu mechanizmu ataku

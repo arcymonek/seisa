@@ -32,7 +32,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (btn) switchTab(btn.dataset.tab);
 });
 
-window.arcyApp = {
+window.seisaApp = {
   switchTab,
   goToLookup: (indicator) => {
     switchTab("lookup");

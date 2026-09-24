@@ -145,13 +145,13 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
                 text = data.decode("utf-8", errors="replace")
             if len(text) > MAX_DECODED_TEXT_CHARS:
                 text = text[:MAX_DECODED_TEXT_CHARS] + "\n...(obcięte)"
-            out.append(f"[arcyAnalizer: poniżej treść części {ctype} zdekodowana z base64 (charset {charset})]")
+            out.append(f"[Seisa: poniżej treść części {ctype} zdekodowana z base64 (charset {charset})]")
             out.extend(text.split("\n"))
-            out.append("[arcyAnalizer: koniec zdekodowanej części]")
+            out.append("[Seisa: koniec zdekodowanej części]")
             notes.append(f"zdekodowano część {ctype} z base64 ({len(data)} B)")
         else:
             digest = hashlib.sha256(data).hexdigest()
-            out.append(f"[arcyAnalizer: pominięto treść base64 ({ctype or 'nieznany typ'}): {len(data)} bajtów po zdekodowaniu, sha256={digest}]")
+            out.append(f"[Seisa: pominięto treść base64 ({ctype or 'nieznany typ'}): {len(data)} bajtów po zdekodowaniu, sha256={digest}]")
             notes.append(f"pominięto binarną treść base64 {ctype or '?'} ({len(data)} B)")
 
     for line in lines:
@@ -190,7 +190,7 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
 
     text = "\n".join(out)
     if len(text) > max_chars:
-        text = text[:max_chars] + "\n[arcyAnalizer: źródło obcięte do limitu]"
+        text = text[:max_chars] + "\n[Seisa: źródło obcięte do limitu]"
         notes.append(f"źródło obcięte do {max_chars} znaków (limit wysyłki do LLM)")
     return text, notes
 

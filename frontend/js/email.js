@@ -50,7 +50,7 @@ function stopTimer() {
 export function initEmail(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Wklej cały kod źródłowy e-maila (nagłówki + treść) albo wczytaj plik .eml, a arcyAnalizer rozłoży go na części: najpierw pokaże twarde fakty obliczone lokalnie (trasa Received, uwierzytelnianie, zgodność domen, oś czasu, struktura MIME, linki, ukryta treść), a potem model językowy przeprowadzi szczegółową analizę zarówno elementów dobrych, jak i złych - krok po kroku, tak żebyś nauczył się czytać źródło wiadomości.</div>
+    <div class="subtitle">Wklej cały kod źródłowy e-maila (nagłówki + treść) albo wczytaj plik .eml, a Seisa rozłoży go na części: najpierw pokaże twarde fakty obliczone lokalnie (trasa Received, uwierzytelnianie, zgodność domen, oś czasu, struktura MIME, linki, ukryta treść), a potem model językowy przeprowadzi szczegółową analizę zarówno elementów dobrych, jak i złych - krok po kroku, tak żebyś nauczył się czytać źródło wiadomości.</div>
     <label>Kod źródłowy e-maila (z nagłówkami)</label>
     <textarea id="em-source" placeholder="Received: ... From: ... Subject: ..." style="min-height:200px"></textarea>
     <div class="banner info">Cała treść wiadomości (z nagłówkami) zostanie wysłana do OpenRouter w celu analizy po kliknięciu "Analizuj". Wiadomość jest traktowana jako niezaufany tekst: nic z niej nie jest otwierane ani pobierane, a linki w wynikach są nieklikalne.</div>
@@ -338,7 +338,7 @@ function showActions() {
     const reportBtn = document.createElement("button");
     reportBtn.className = "action";
     reportBtn.textContent = "Zgłoś AbuseIPDB";
-    reportBtn.onclick = () => window.arcyApp.goToReportWithEmail(currentRaw);
+    reportBtn.onclick = () => window.seisaApp.goToReportWithEmail(currentRaw);
     actions.appendChild(reportBtn);
   }
   const saveBtn = document.createElement("button");
@@ -417,7 +417,7 @@ function mdTable(headers, rows) {
 
 function factsToMarkdown(f) {
   const L = [];
-  L.push("## Analiza deterministyczna", "", "Obliczona lokalnie przez arcyAnalizer, bez modelu językowego. Adresy URL są zdefangowane.", "");
+  L.push("## Analiza deterministyczna", "", "Obliczona lokalnie przez narzędzie Seisa, bez modelu językowego. Adresy URL są zdefangowane.", "");
 
   L.push(`### Uwagi wykryte automatycznie (${f.flags.length})`, "");
   if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? "UWAGA" : "info"}: ${x.text}`));
@@ -606,7 +606,7 @@ function showFacts(f) {
   const parts = [];
 
   parts.push(`<h3>Analiza deterministyczna</h3>
-    <div class="muted">Obliczona lokalnie przez arcyAnalizer, bez modelu językowego: to są twarde fakty wyciągnięte ze źródła. Model dostaje je jako dane wejściowe.</div>`);
+    <div class="muted">Obliczona lokalnie przez narzędzie Seisa, bez modelu językowego: to są twarde fakty wyciągnięte ze źródła. Model dostaje je jako dane wejściowe.</div>`);
 
   // uwagi
   const flags = f.flags.length
