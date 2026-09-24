@@ -67,7 +67,10 @@ czytelnik ma nauczyć się czytać źródło e-maila, a nie tylko dostać werdyk
 
 **Pierwsza linia odpowiedzi** (dokładnie ten format, nic przed nią):
 
-`WERDYKT: <legalna|phishing|spam|oszustwo|malware|niejednoznaczna> | PEWNOSC: <wysoka|srednia|niska>`
+`VERDICT: <legit|phishing|spam|scam|malware|inconclusive> | CONFIDENCE: <high|medium|low>`
+
+Ta linia jest protokołem maszynowym i zawsze używa dokładnie tych angielskich kodów (legit = legalna, scam = oszustwo,
+inconclusive = niejednoznaczna; high/medium/low = wysoka/średnia/niska), niezależnie od języka reszty odpowiedzi.
 
 Następnie markdown w tej kolejności (wszystkie części zawsze, także **Część 1 „Model mentalny"**):
 

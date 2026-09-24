@@ -182,5 +182,15 @@
   "rb.llm_blocked": "The AI analysis disputed the item above - sending is blocked. Check the Received chain and run \"Analyze\" again after correcting the data.",
   "rb.sending": "sending...",
   "rb.sent": "Report sent successfully.",
-  "rb.send_error": "Sending failed: {message}"
+  "rb.send_error": "Sending failed: {message}",
+  "verdict.legit": "legitimate",
+  "verdict.phishing": "phishing",
+  "verdict.spam": "spam",
+  "verdict.scam": "scam",
+  "verdict.malware": "malware",
+  "verdict.inconclusive": "inconclusive",
+  "confidence.high": "high",
+  "confidence.medium": "medium",
+  "confidence.low": "low",
+  "em.confidence": "confidence: {value}"
 }

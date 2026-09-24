@@ -51,7 +51,8 @@ Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + 
 - **Kontrola cytatów (lokalna, bez kosztu):** po analizie kod sprawdza, czy adresy IP, cytowane w blokach kodu linie nagłówków, cytaty `Nagłówek: wartość`, liczby SCL/BCL i identyfikatory podane przez model występują w źródle lub w analizie deterministycznej (`backend/citation_check.py`). Rozbieżności są wypisane pod analizą i w eksporcie `.md`; to informacja, a nie dowód błędu (przykład lub parafraza też mogą zostać oznaczone). Nie sprawdza domen ani zapisów typu `spf=pass`, bo analiza omawia też przykłady wiadomości legalnej.
 - Analiza LLM nie odtwarza tabel widocznych w analizie deterministycznej (oś czasu, linki, Received itd.), tylko je interpretuje, żeby nie płacić za powtórki; komplet jest w eksporcie.
 - Wynik LLM jest renderowany bezpiecznie: surowy HTML z e-maila i linki są neutralizowane (linki pokazywane jako nieklikalny, zdefangowany tekst).
-- Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legalna`) wkleja oryginalny kod do Kroku 1 zakładki AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
+- **Protokół werdyktu:** pierwsza linia odpowiedzi modelu ma postać `VERDICT: <legit|phishing|spam|scam|malware|inconclusive> | CONFIDENCE: <high|medium|low>` i zawsze używa tych kanonicznych kodów, niezależnie od języka analizy (`backend/verdict.py`); interfejs mapuje je na etykiety w wybranym języku. Analizy zapisane wcześniej z polskimi tokenami (`WERDYKT`/`PEWNOSC`) są odczytywane bez migracji plików.
+- Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legit`, czyli legalna) wkleja oryginalny kod do Kroku 1 zakładki AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
 - Każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analizy/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń) jest na dole zakładki.
 
 ### AbuseIPDB (zgłaszanie)
@@ -97,6 +98,7 @@ seisa/
 │   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila (zakładka AbuseIPDB)
 │   ├── email_forensics.py    # analiza deterministyczna źródła e-maila (zakładka Email)
 │   ├── analizy.py            # zapis analiz e-maili w data/analizy/
+│   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
 │   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP

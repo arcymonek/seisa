@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { t } from "./i18n.js";
 import { defangUrl, renderMarkdownSafe } from "./markdown-render.js";
 
 let root;
@@ -17,9 +18,13 @@ let currentAnalysisId = null;
 let currentTruncated = false;
 let currentCitations = null;
 
-const VERDICT_RE = /^\s*WERDYKT:\s*(legalna|phishing|spam|oszustwo|malware|niejednoznaczna)\s*\|\s*PEWNOSC:\s*(wysoka|srednia|niska)[^\n]*\n?/i;
-const VERDICT_LEVEL = { legalna: "low", niejednoznaczna: "medium" };
-const CONFIDENCE_LABEL = { wysoka: "wysoka", srednia: "średnia", niska: "niska" };
+// First line of the analysis: machine protocol with canonical English codes (see backend/verdict.py). The Polish
+// tokens of analyses saved earlier are still accepted and mapped to the canonical codes.
+const VERDICT_RE = /^\s*(?:VERDICT|WERDYKT):\s*(legit|phishing|spam|scam|malware|inconclusive|legalna|oszustwo|niejednoznaczna)\s*\|\s*(?:CONFIDENCE|PEWNOSC):\s*(high|medium|low|wysoka|srednia|niska)[^\n]*\n?/i; // i18n-ok
+const LEGACY_CODES = { legalna: "legit", oszustwo: "scam", niejednoznaczna: "inconclusive", wysoka: "high", srednia: "medium", niska: "low" }; // i18n-ok
+const canonical = (code) => LEGACY_CODES[code] || code;
+const VERDICT_LEVEL = { legit: "low", inconclusive: "medium" };
+const verdictLabel = (code) => t("verdict." + code);
 
 function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -162,7 +167,7 @@ function showDuplicate(matches, raw) {
   const cost = typeof best.cost === "number" ? `, koszt ≈ $${best.cost.toFixed(3)}` : "";
   banner.textContent =
     `Ta wiadomość była już analizowana ${new Date(best.created_at).toLocaleString("pl-PL")} ` +
-    `(werdykt: ${best.verdict || "?"}${best.truncated ? ", analiza ucięta" : ""}${cost}). ` +
+    `(werdykt: ${best.verdict ? verdictLabel(best.verdict) : "?"}${best.truncated ? ", analiza ucięta" : ""}${cost}). ` +
     "Otwórz zapisaną analizę zamiast płacić drugi raz, albo uruchom analizę ponownie" +
     (matches.length > 1 ? ` (zapisanych analiz tej wiadomości: ${matches.length}).` : ".");
   box.appendChild(banner);
@@ -254,7 +259,7 @@ function scheduleRender() {
 function renderAnalysis() {
   const m = streamText.match(VERDICT_RE);
   const body = m ? streamText.slice(m[0].length) : streamText;
-  if (m) showVerdict(m[1].toLowerCase(), m[2].toLowerCase());
+  if (m) showVerdict(canonical(m[1].toLowerCase()), canonical(m[2].toLowerCase()));
   renderMarkdownSafe(root.querySelector("#em-analysis"), body);
 }
 
@@ -262,8 +267,8 @@ function showVerdict(verdict, confidence) {
   currentVerdict = verdict;
   const level = VERDICT_LEVEL[verdict] || "high";
   root.querySelector("#em-verdict").innerHTML =
-    `<div class="verdict-line"><span class="badge ${level}">${escapeHtml(verdict.toUpperCase())}</span>` +
-    `<span class="muted">pewność: ${escapeHtml(CONFIDENCE_LABEL[confidence] || confidence)}</span></div>`;
+    `<div class="verdict-line"><span class="badge ${level}">${escapeHtml(verdictLabel(verdict).toUpperCase())}</span>` +
+    `<span class="muted">${escapeHtml(t("em.confidence", { value: t("confidence." + confidence) }))}</span></div>`;
 }
 
 function finishAnalysis(evt) {
@@ -333,8 +338,8 @@ function showActions() {
       actions.appendChild(contBtn);
     }
   }
-  // "Zgłoś AbuseIPDB" tylko dla wiadomości, które nie są legalne (brak werdyktu = pokaż, na wszelki wypadek)
-  if (currentVerdict !== "legalna") {
+  // "Report to AbuseIPDB" only for messages that are not legitimate (no verdict = show it, just in case)
+  if (currentVerdict !== "legit") {
     const reportBtn = document.createElement("button");
     reportBtn.className = "action";
     reportBtn.textContent = "Zgłoś AbuseIPDB";
@@ -512,7 +517,7 @@ function buildExport() {
   const created = currentCreatedAt ? new Date(currentCreatedAt) : new Date();
   const L = [`# Analiza e-maila: ${currentSubject || "(brak tematu)"}`, ""];
   L.push(`- Data analizy: ${created.toLocaleString("pl-PL")}`);
-  if (currentVerdict) L.push(`- Werdykt: ${currentVerdict}`);
+  if (currentVerdict) L.push(`- Werdykt: ${verdictLabel(currentVerdict)}`);
   if (currentModel) L.push(`- Model: ${currentModel}`);
   if (currentUsage && currentUsage.prompt_tokens != null) {
     L.push(`- Tokeny: ${currentUsage.prompt_tokens} wejście / ${currentUsage.completion_tokens} wyjście` +
@@ -738,7 +743,7 @@ async function refreshSaved() {
     row.className = "saved-row";
     const level = VERDICT_LEVEL[it.verdict] || "high";
     row.innerHTML = `<span class="muted">${new Date(it.created_at).toLocaleString("pl-PL")}</span>
-      ${it.verdict ? `<span class="badge ${level}">${e(it.verdict.toUpperCase())}</span>` : ""}${it.truncated ? '<span class="badge medium">UCIĘTA</span>' : ""}
+      ${it.verdict ? `<span class="badge ${level}">${e(verdictLabel(it.verdict).toUpperCase())}</span>` : ""}${it.truncated ? '<span class="badge medium">UCIĘTA</span>' : ""}
       <span class="grow"><strong>${e(it.subject || "(brak tematu)")}</strong><br><span class="muted">${e(it.from || "")}</span></span>`;
     const openBtn = document.createElement("button");
     openBtn.className = "secondary";

@@ -194,5 +194,15 @@
   "rb.llm_blocked": "Analiza AI zakwestionowała powyższy punkt - wysyłka jest zablokowana. Sprawdź łańcuch Received i uruchom \"Analizuj\" ponownie po poprawieniu danych.",
   "rb.sending": "wysyłam...",
   "rb.sent": "Zgłoszenie wysłane pomyślnie.",
-  "rb.send_error": "Błąd wysyłki: {message}"
+  "rb.send_error": "Błąd wysyłki: {message}",
+  "verdict.legit": "legalna",
+  "verdict.phishing": "phishing",
+  "verdict.spam": "spam",
+  "verdict.scam": "oszustwo",
+  "verdict.malware": "malware",
+  "verdict.inconclusive": "niejednoznaczna",
+  "confidence.high": "wysoka",
+  "confidence.medium": "średnia",
+  "confidence.low": "niska",
+  "em.confidence": "pewność: {value}"
 }

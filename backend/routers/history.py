@@ -24,7 +24,7 @@ class HistoryCreateRequest(BaseModel):
     data: dict
 
 
-EMAIL_VERDICT_RISK = {"legalna": "Low", "niejednoznaczna": "Medium"}
+EMAIL_VERDICT_RISK = {"legit": "Low", "inconclusive": "Medium"}
 
 
 def _email_entry(item: dict) -> dict:

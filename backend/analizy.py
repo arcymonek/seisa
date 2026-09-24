@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from backend.config import ANALIZY_DIR
+from backend.verdict import normalize_confidence, normalize_verdict
 
 _ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{8}$")
 
@@ -71,6 +72,7 @@ def find_by_source(sha256: str) -> list[dict[str, Any]]:
             continue
         if (data.get("source_sha256") or source_hash(data.get("raw_email", ""))) != sha256:
             continue
+        _canonical(data)
         usage = data.get("usage") or {}
         matches.append({
             "id": data.get("id"), "created_at": data.get("created_at"), "verdict": data.get("verdict"),
@@ -89,8 +91,16 @@ def list_analyses() -> list[dict[str, Any]]:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        _canonical(data)
         items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence", "truncated")})
     return items
+
+
+def _canonical(data: dict[str, Any]) -> dict[str, Any]:
+    """Records saved with the older Polish verdict tokens are shown with the canonical codes (file is untouched)."""
+    data["verdict"] = normalize_verdict(data.get("verdict"))
+    data["confidence"] = normalize_confidence(data.get("confidence"))
+    return data
 
 
 def load_analysis(analysis_id: str) -> dict[str, Any] | None:
@@ -98,7 +108,7 @@ def load_analysis(analysis_id: str) -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return _canonical(json.loads(path.read_text(encoding="utf-8")))
     except (OSError, json.JSONDecodeError):
         return None
 
