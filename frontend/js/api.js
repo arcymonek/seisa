@@ -1,8 +1,13 @@
+import { getLang } from "./i18n.js";
+
 const BASE = "/api";
+
+// The header goes only to our own backend (never to third-party hosts such as ipwho.is).
+const langHeader = () => ({ "X-Seisa-Lang": getLang() });
 
 async function request(path, options = {}) {
   const res = await fetch(BASE + path, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...langHeader() },
     ...options,
   });
   if (!res.ok) {
@@ -47,7 +52,7 @@ export const api = {
 async function streamSSE(url, body, onEvent, signal) {
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...langHeader() },
     body: JSON.stringify(body),
     signal,
   });

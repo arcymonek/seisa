@@ -71,6 +71,9 @@ Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili
 ### Logi
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie) i po usłudze. Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
+### Język interfejsu (PL/EN)
+Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Wdrożenie jest etapowe: na tym etapie przetłumaczone są nagłówek, stopka oraz zakładki Historia i Logi.
+
 ## Architektura
 
 Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statyczny frontend (`frontend/` - czysty JavaScript, ES modules, bez frameworka i bez kroku budowania) na `127.0.0.1:54321`.
@@ -105,8 +108,11 @@ seisa/
 │   ├── favicon.ico            # ikona: kanji 査 (16/32/48/64 px)
 │   ├── logo.png               # okrągłe logo (nagłówek strony i README)
 │   ├── css/style.css          # ciemny motyw
-│   ├── js/                    # moduły: app, lookup, urlscan, dmarc, email, report-builder, history, logs
+│   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
+│   ├── js/                    # moduły: app, i18n, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
+├── scripts/
+│   └── check_i18n.py          # kontrola katalogów PL/EN (klucze, parametry, liczba mnoga); `--strict` szuka polskich literałów w kodzie
 ├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
 ├── logi/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
 └── docs/
@@ -176,6 +182,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 ## Wersjonowanie i konwencje
 
 - Widoczny numer wersji (tytuł strony, nagłówek, stopka) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu; po X.Y.99 następna wersja to X.(Y+1).0. Wersja 2.0.0 to pierwsze wydanie pod nazwą Seisa.
+- Teksty widoczne w interfejsie trafiają wyłącznie do katalogów `i18n` (nowy klucz = wpis PL i EN w tym samym commicie); przed commitem `python3 scripts/check_i18n.py` musi kończyć się bez błędów.
 - W całym projekcie (kod, UI, dokumentacja) nie używa się długiego myślnika (znak Unicode U+2014) - tylko zwykły "-".
 
 ## Znane otwarte kwestie

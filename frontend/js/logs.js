@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { t, fmtDateTime } from "./i18n.js";
 
 let root;
 
@@ -12,20 +13,20 @@ const LEVEL_COLOR = { ERROR: "var(--fail)", WARNING: "var(--warn)" };
 export function initLogs(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Błędy i ostrzeżenia zapisywane przez poszczególne usługi - normalna, bezbłędna praca Seisy nie zostawia tu żadnego śladu.</div>
+    <div class="subtitle">${escapeHtml(t("logs.subtitle"))}</div>
     <div class="chip-row" id="lg-range">
-      <span class="chip on" data-range="today">Dziś</span>
-      <span class="chip" data-range="3d">Ostatnie 3 dni</span>
-      <span class="chip" data-range="week">Tydzień</span>
-      <span class="chip" data-range="month">Miesiąc</span>
-      <span class="chip" data-range="all">Wszystkie</span>
+      <span class="chip on" data-range="today">${escapeHtml(t("logs.range_today"))}</span>
+      <span class="chip" data-range="3d">${escapeHtml(t("logs.range_3d"))}</span>
+      <span class="chip" data-range="week">${escapeHtml(t("logs.range_week"))}</span>
+      <span class="chip" data-range="month">${escapeHtml(t("logs.range_month"))}</span>
+      <span class="chip" data-range="all">${escapeHtml(t("logs.range_all"))}</span>
     </div>
-    <label>Usługa</label>
+    <label>${escapeHtml(t("logs.service"))}</label>
     <select id="lg-service">
-      <option value="all">Wszystkie</option>
+      <option value="all">${escapeHtml(t("logs.all_services"))}</option>
       ${SERVICES.map((s) => `<option value="${s}">${s}</option>`).join("")}
     </select>
-    <button class="secondary" id="lg-refresh">Odśwież</button>
+    <button class="secondary" id="lg-refresh">${escapeHtml(t("common.refresh"))}</button>
     <div id="lg-list"></div>
   `;
 
@@ -51,27 +52,27 @@ function currentRange() {
 
 async function load() {
   const listEl = root.querySelector("#lg-list");
-  listEl.innerHTML = '<div class="muted">Ładuję...</div>';
+  listEl.innerHTML = `<div class="muted">${escapeHtml(t("common.loading"))}</div>`;
   const range = currentRange();
   const service = root.querySelector("#lg-service").value;
   let entries;
   try {
     entries = await api.logs(range, service);
   } catch (err) {
-    listEl.innerHTML = `<div class="banner warn">błąd: ${err.message}</div>`;
+    listEl.innerHTML = `<div class="banner warn">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
     return;
   }
   if (!entries.length) {
-    listEl.innerHTML = '<div class="muted">Brak wpisów w wybranym zakresie - dobra wiadomość, nic nie zawiodło.</div>';
+    listEl.innerHTML = `<div class="muted">${escapeHtml(t("logs.empty"))}</div>`;
     return;
   }
-  listEl.innerHTML = "<table><thead><tr><th>Czas</th><th>Poziom</th><th>Usługa</th><th>Wiadomość</th></tr></thead><tbody>" +
+  listEl.innerHTML = `<table><thead><tr><th>${escapeHtml(t("logs.col_time"))}</th><th>${escapeHtml(t("logs.col_level"))}</th><th>${escapeHtml(t("logs.service"))}</th><th>${escapeHtml(t("logs.col_message"))}</th></tr></thead><tbody>` +
     entries
       .map(
         (e) => `<tr>
-      <td class="muted">${new Date(e.time).toLocaleString("pl-PL")}</td>
+      <td class="muted">${escapeHtml(fmtDateTime(e.time))}</td>
       <td style="color:${LEVEL_COLOR[e.level] || "var(--text)"};font-family:var(--mono)">${e.level}</td>
-      <td>${e.service}</td>
+      <td>${escapeHtml(e.service)}</td>
       <td>${escapeHtml(e.message)}</td>
     </tr>`
       )

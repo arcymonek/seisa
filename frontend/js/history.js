@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
+import { t, fmtDateTime } from "./i18n.js";
 
 let root;
 
@@ -11,9 +12,9 @@ function escapeHtml(str) {
 
 export function initHistory(container) {
   root = container;
-  root.innerHTML = `<div class="subtitle">Ostatnie 25 działań: wyszukiwania IP, wgrane raporty DMARC i zapisane analizy e-maili - możesz je otworzyć ponownie albo usunąć. "Wyczyść historię" usuwa tylko wyszukiwania IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwasz pojedynczo.</div>
-    <button class="secondary" id="hi-refresh">Odśwież</button>
-    <button class="secondary" id="hi-clear">Wyczyść historię</button>
+  root.innerHTML = `<div class="subtitle">${escapeHtml(t("history.subtitle"))}</div>
+    <button class="secondary" id="hi-refresh">${escapeHtml(t("common.refresh"))}</button>
+    <button class="secondary" id="hi-clear">${escapeHtml(t("history.clear"))}</button>
     <div id="hi-list"></div>
     <div id="hi-detail"></div>`;
   root.querySelector("#hi-refresh").addEventListener("click", load);
@@ -34,22 +35,22 @@ async function load() {
   try {
     entries = await api.history();
   } catch (err) {
-    listEl.innerHTML = `<div class="muted">błąd: ${err.message}</div>`;
+    listEl.innerHTML = `<div class="muted">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
     return;
   }
   if (!entries.length) {
-    listEl.innerHTML = '<div class="muted">Brak historii.</div>';
+    listEl.innerHTML = `<div class="muted">${escapeHtml(t("history.empty"))}</div>`;
     return;
   }
-  listEl.innerHTML = "<table><thead><tr><th>Data</th><th>Typ</th><th>Etykieta</th><th>Ryzyko</th><th></th></tr></thead><tbody>" +
+  listEl.innerHTML = `<table><thead><tr><th>${escapeHtml(t("history.col_date"))}</th><th>${escapeHtml(t("history.col_type"))}</th><th>${escapeHtml(t("history.col_label"))}</th><th>${escapeHtml(t("history.col_risk"))}</th><th></th></tr></thead><tbody>` +
     entries
       .map(
         (e) => `<tr data-id="${e.id}" data-type="${e.type}">
-      <td class="muted">${new Date(e.created_at).toLocaleString("pl-PL")}</td>
-      <td>${TYPE_LABEL[e.type] || e.type}</td>
+      <td class="muted">${escapeHtml(fmtDateTime(e.created_at))}</td>
+      <td>${escapeHtml(TYPE_LABEL[e.type] || e.type)}</td>
       <td>${escapeHtml(e.label)}</td>
-      <td>${e.risk_summary ? `<span class="badge ${e.risk_summary.toLowerCase()}">${e.risk_summary}</span>` : "-"}</td>
-      <td><button class="secondary open-btn">Otwórz ponownie</button> <button class="secondary del-btn">Usuń</button></td>
+      <td>${e.risk_summary ? `<span class="badge ${escapeHtml(e.risk_summary.toLowerCase())}">${escapeHtml(t("risk." + e.risk_summary.toLowerCase()))}</span>` : "-"}</td>
+      <td><button class="secondary open-btn">${escapeHtml(t("history.reopen"))}</button> <button class="secondary del-btn">${escapeHtml(t("common.delete"))}</button></td>
     </tr>`
       )
       .join("") +
@@ -66,7 +67,7 @@ async function load() {
     btn.addEventListener("click", async () => {
       const row = btn.closest("tr");
       if (row.dataset.type === "email") {
-        if (!confirm("Usunąć tę analizę razem z zapisanym e-mailem?")) return;
+        if (!confirm(t("history.confirm_delete_email"))) return;
         await api.emailAnalysisDelete(row.dataset.id);
       } else {
         await api.historyDelete(row.dataset.id);
@@ -88,7 +89,7 @@ async function openEntry(id) {
     card.appendChild(md);
     const btn = document.createElement("button");
     btn.className = "secondary";
-    btn.textContent = "Otwórz w Lookup";
+    btn.textContent = t("history.open_in_lookup");
     btn.onclick = () => window.seisaApp.goToLookup(entry.data.indicator);
     card.appendChild(btn);
   } else {

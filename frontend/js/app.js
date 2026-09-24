@@ -1,3 +1,4 @@
+import { applyStatic, mountLangSwitch } from "./i18n.js";
 import { initLookup, prefillLookup } from "./lookup.js";
 import { initDmarc } from "./dmarc.js";
 import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-builder.js";
@@ -51,6 +52,9 @@ window.seisaApp = {
     prefillReport(ip, spoofingConfirmed);
   },
 };
+
+applyStatic();
+mountLangSwitch(document.getElementById("lang-switch"));
 
 initLookup(panels.lookup);
 initDmarc(panels.dmarc);

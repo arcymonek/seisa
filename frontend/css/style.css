@@ -50,6 +50,9 @@ h1 small { color: var(--muted); font-size: 15px; font-weight: 400; }
 .panel { display: none; }
 .panel.active { display: block; }
 
+footer .lang-switch { display: inline-flex; gap: 4px; vertical-align: middle; }
+footer .lang-btn { background: none; border: 1px solid var(--hair); color: var(--muted); font: inherit; font-size: 12px; padding: 1px 7px; border-radius: 4px; cursor: pointer; }
+footer .lang-btn.on { color: var(--text); border-color: var(--text); cursor: default; }
 footer { margin-top: 40px; color: var(--muted); font-size: 13.5px; font-family: var(--mono); text-align: center; }
 
 label { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 4px; }
