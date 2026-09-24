@@ -1,8 +1,8 @@
-# Seisa (精査)
-
-**Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
+# Seisa
 
 Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
+
+**Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
 
 Autor: Arkadiusz Polak <kontakt@arkadiuszpolak.pl>
 
