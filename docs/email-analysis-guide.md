@@ -53,6 +53,15 @@ czytelnik ma nauczyć się czytać źródło e-maila, a nie tylko dostać werdyk
 15. **Budżet długości: całość maksymalnie ok. 9000 słów.** Części 3, 4, 5, 6 i Pytania kontrolne są obowiązkowe i
     MUSZĄ się zmieścić. Jeśli brakuje miejsca, skracaj Część 2 (mało istotne bloki opisz w 1-2 zdaniach), a nie
     pomijaj części końcowych.
+16. **Nie odtwarzaj tabel, które użytkownik już widzi w analizie deterministycznej** (trasa Received, uwierzytelnianie,
+    zgodność domen, oś czasu, drzewo MIME, tabela linków, filtry i flagi nadawcy). Odwołaj się do nich po nazwie
+    sekcji („patrz tabela Oś czasu w analizie deterministycznej") i poświęć miejsce **interpretacji**: co z nich
+    wynika, co jest w normie, co niepokoi, jak by wyglądało w wiadomości legalnej. Własne tabele (koperta vs
+    list, lista kontrolna, porównanie z legalną, cel nadawcy -> mechanizm) piszesz normalnie. Pełny komplet
+    (fakty + analiza) użytkownik dostaje w eksporcie, więc nic się nie gubi.
+17. **Cytuj rzetelnie.** Cytaty z nagłówków w blokach kodu muszą być dosłowne (pominięcia oznaczaj `...`), a adresy
+    IP podawaj wyłącznie takie, jakie są w źródle lub w analizie deterministycznej. Po analizie kod sprawdza
+    to automatycznie i oznacza rozbieżności.
 
 ## 3. Wymagana struktura odpowiedzi
 
@@ -106,7 +115,8 @@ temu ufać**, **na co patrzeć**, **jak wyglądałoby w phishingu / w legalnej w
   sprzeczności (identyfikator `id` z parametrami URL, `for <x>`, strefa `+0000` z `(PDT)`, czas identyczny z
   `Date`).
 - **E. Tożsamość i metadane**: `Date`, `From` (display name vs adres), `Reply-To`, `To`, `Message-ID` (domena po
-  `@`, epoch w milisekundach), `Subject`. **Oś czasu** w tabeli, z przeliczeniem do UTC i opóźnieniami.
+  `@`, epoch w milisekundach), `Subject`. **Oś czasu:** nie odtwarzaj tabeli (jest w analizie deterministycznej); omów wnioski: strefy czasowe,
+  opóźnienia między skokami, zgodność `Date` z `Received`, anomalie.
 - **F. Struktura i automatyzacja**: `Content-Type`, `MIME-Version`, `X-*`, `Auto-Submitted`, `Precedence`,
   `List-Unsubscribe` (+ `-Post`, RFC 8058). Nagłówki `X-` to dowolny tekst.
 - **G. Nagłówki filtrów i flagi nadawcy** (`X-Spam-*`, `X-MS-*`, `X-Forefront-*`, `SCL`, `BCL`, `CAT`, `IPV`,
@@ -132,7 +142,7 @@ temu ufać**, **na co patrzeć**, **jak wyglądałoby w phishingu / w legalnej w
     zbędne (np. Base64 dla czysto ASCII-owego tekstu) albo kodowanie ukrywające słowa kluczowe.
 - **H. Struktura MIME i treść**: drzewo (`mixed`/`alternative`/`digest`), `Content-Transfer-Encoding` (dozwolone:
   7bit, 8bit, binary, quoted-printable, base64), boundary, załączniki (nazwy, podwójne rozszerzenia), linki
-  (`href` vs tekst, `http`, parametry śledzące, nadużywane usługi chmurowe), elementy zdalne (`<img>`,
+  (nie odtwarzaj tabeli linków, omów wnioski: `href` vs tekst, `http`, parametry śledzące, nadużywane usługi chmurowe), elementy zdalne (`<img>`,
   `<form>`, `<script>`), **ukryta treść** (nazwij techniki: Bayesian poisoning, hash busting, ukrywanie tekstu,
   losowa wielkość znaczników, fałszywa deklaracja zaufania; uczciwie: preheader bywa legalny, liczy się
   kombinacja), socjotechnika (presja, brak marki, brak danych konta, rozjazd tematu i treści).

@@ -8,9 +8,12 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.analizy import delete_analysis, list_analyses, load_analysis, save_analysis, update_analysis
+from backend.analizy import (
+    delete_analysis, find_by_source, list_analyses, load_analysis, save_analysis, source_hash, update_analysis,
+)
+from backend.citation_check import verify_citations
 from backend.config import EMAIL_GUIDE_FILE
-from backend.email_forensics import compute_facts, normalize_source, prepare_for_llm
+from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
 from backend.config import settings
 from backend.services.llm_analyzer import llm_analyzer
 
@@ -38,6 +41,13 @@ class EmailAnalysisRequest(BaseModel):
     raw_email: str
 
 
+@router.post("/find")
+async def find_existing(req: EmailAnalysisRequest):
+    """Czy ta wiadomość była już analizowana? Pozwala uniknąć płacenia drugi raz za to samo źródło."""
+    sha = source_hash(normalize_source(req.raw_email))
+    return {"sha256": sha, "matches": find_by_source(sha)}
+
+
 def _sse(data: dict) -> str:
     return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
@@ -56,6 +66,15 @@ CONTINUE_INSTRUCTION = (
 )
 
 EM_DASH = "\u2014"  # w projekcie nie używamy długiego myślnika (patrz README, "Wersjonowanie i konwencje")
+
+
+def _citation_check(markdown: str, src: str, prepared: str, facts: dict) -> dict:
+    """Lokalna kontrola cytatów (bez kosztu): czy IP i cytowane nagłówki z analizy występują w źródle."""
+    try:
+        return verify_citations(markdown, src, [prepared, decoded_text_parts(src)], facts)
+    except Exception as exc:  # kontrola pomocnicza nie może zablokować zapisu analizy
+        logger.error(f"email: kontrola cytatów nie powiodła się: {type(exc).__name__}: {exc}")
+        return {"checked": 0, "issues": [], "error": str(exc)}
 
 
 def _guide() -> str:
@@ -129,6 +148,7 @@ async def analyze(req: EmailAnalysisRequest):
         markdown = "".join(chunks)
         verdict, confidence = parse_verdict(markdown)
         truncated = finish == "length"
+        citations = _citation_check(markdown, src, prepared, facts)
         analysis_id = None
         try:
             analysis_id = save_analysis({
@@ -136,12 +156,13 @@ async def analyze(req: EmailAnalysisRequest):
                 "verdict": verdict, "confidence": confidence,
                 "raw_email": src, "facts": facts, "markdown": markdown, "usage": usage,
                 "truncated": truncated, "model": settings.openrouter_model,
+                "source_sha256": source_hash(src), "citation_check": citations,
             })
         except OSError as exc:
             logger.error(f"email: zapis analizy nie powiódł się: {exc}")
         yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id,
                     "verdict": verdict, "confidence": confidence, "usage": usage,
-                    "truncated": truncated, "model": settings.openrouter_model})
+                    "truncated": truncated, "model": settings.openrouter_model, "citation_check": citations})
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 
@@ -197,13 +218,15 @@ async def continue_analysis(analysis_id: str):
         markdown = record["markdown"] + "".join(chunks)
         truncated = finish == "length"
         total_usage = _sum_usage(record.get("usage"), usage)
+        citations = _citation_check(markdown, record["raw_email"], prepared, record["facts"])
         try:
-            update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage})
+            update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage,
+                                          "citation_check": citations})
         except OSError as exc:
             logger.error(f"email: zapis dokończonej analizy nie powiódł się: {exc}")
         yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id, "verdict": record.get("verdict"),
                     "confidence": record.get("confidence"), "usage": total_usage, "truncated": truncated,
-                    "model": record.get("model")})
+                    "model": record.get("model"), "citation_check": citations})
 
     return StreamingResponse(stream(), media_type="text/event-stream")
 

@@ -15,6 +15,7 @@ let currentModel = null;
 let currentCreatedAt = null;
 let currentAnalysisId = null;
 let currentTruncated = false;
+let currentCitations = null;
 
 const VERDICT_RE = /^\s*WERDYKT:\s*(legalna|phishing|spam|oszustwo|malware|niejednoznaczna)\s*\|\s*PEWNOSC:\s*(wysoka|srednia|niska)[^\n]*\n?/i;
 const VERDICT_LEVEL = { legalna: "low", niejednoznaczna: "medium" };
@@ -59,11 +60,13 @@ export function initEmail(container) {
     <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
     <span class="inline-timer" id="em-timer"></span>
     <div class="muted" id="em-status"></div>
+    <div id="em-dup"></div>
 
     <div id="em-facts"></div>
     <div class="section-sep" id="em-sep" style="display:none"></div>
     <div id="em-verdict"></div>
     <div id="em-analysis"></div>
+    <div id="em-citations"></div>
     <div id="em-actions"></div>
 
     <details class="hop-chain" id="em-saved" style="margin-top:28px">
@@ -119,6 +122,8 @@ function clearOutput() {
   root.querySelector("#em-analysis").innerHTML = "";
   root.querySelector("#em-analysis").className = "";
   root.querySelector("#em-actions").innerHTML = "";
+  root.querySelector("#em-citations").innerHTML = "";
+  root.querySelector("#em-dup").innerHTML = "";
   streamText = "";
   currentVerdict = null;
   currentFacts = null;
@@ -127,11 +132,59 @@ function clearOutput() {
   currentCreatedAt = null;
   currentAnalysisId = null;
   currentTruncated = false;
+  currentCitations = null;
 }
 
 async function analyze() {
   const raw = root.querySelector("#em-source").value;
   if (!raw.trim()) return;
+  root.querySelector("#em-dup").innerHTML = "";
+  // ta sama wiadomość analizowana już wcześniej? (unikamy płacenia drugi raz za to samo)
+  let matches = [];
+  try {
+    matches = (await api.emailFind({ raw_email: raw })).matches || [];
+  } catch {
+    matches = [];
+  }
+  if (matches.length) {
+    showDuplicate(matches, raw);
+    return;
+  }
+  runAnalysis(raw);
+}
+
+function showDuplicate(matches, raw) {
+  const best = matches.find((m) => !m.truncated) || matches[0];
+  const box = root.querySelector("#em-dup");
+  box.innerHTML = "";
+  const banner = document.createElement("div");
+  banner.className = "banner info";
+  const cost = typeof best.cost === "number" ? `, koszt ≈ $${best.cost.toFixed(3)}` : "";
+  banner.textContent =
+    `Ta wiadomość była już analizowana ${new Date(best.created_at).toLocaleString("pl-PL")} ` +
+    `(werdykt: ${best.verdict || "?"}${best.truncated ? ", analiza ucięta" : ""}${cost}). ` +
+    "Otwórz zapisaną analizę zamiast płacić drugi raz, albo uruchom analizę ponownie" +
+    (matches.length > 1 ? ` (zapisanych analiz tej wiadomości: ${matches.length}).` : ".");
+  box.appendChild(banner);
+  const openBtn = document.createElement("button");
+  openBtn.className = "action";
+  openBtn.textContent = "Otwórz zapisaną analizę";
+  openBtn.onclick = () => {
+    box.innerHTML = "";
+    openSaved(best.id);
+  };
+  const againBtn = document.createElement("button");
+  againBtn.className = "secondary";
+  againBtn.textContent = "Analizuj ponownie (płatne)";
+  againBtn.onclick = () => {
+    box.innerHTML = "";
+    runAnalysis(raw);
+  };
+  box.appendChild(openBtn);
+  box.appendChild(againBtn);
+}
+
+async function runAnalysis(raw) {
   currentRaw = raw;
   clearOutput();
   const statusEl = root.querySelector("#em-status");
@@ -222,7 +275,9 @@ function finishAnalysis(evt) {
   currentModel = evt.model || currentModel;
   currentAnalysisId = evt.analysis_id || currentAnalysisId;
   currentTruncated = !!evt.truncated;
+  currentCitations = evt.citation_check || null;
   if (!currentCreatedAt) currentCreatedAt = new Date().toISOString();
+  showCitations();
   showActions();
   refreshSaved();
 }
@@ -230,6 +285,27 @@ function finishAnalysis(evt) {
 function analysisBody() {
   const m = streamText.match(VERDICT_RE);
   return (m ? streamText.slice(m[0].length) : streamText).trimStart();
+}
+
+const CITATION_KIND = {
+  ip: "adres IP", brak_naglowka: "nagłówek spoza źródła", cytat_naglowka: "cytat nagłówka",
+  liczba: "liczba", identyfikator: "identyfikator",
+};
+
+function showCitations() {
+  const box = root.querySelector("#em-citations");
+  box.innerHTML = "";
+  const cc = currentCitations;
+  if (!cc || cc.error) return;
+  if (!cc.issues.length) {
+    box.innerHTML = `<div class="muted" style="margin-top:12px">Kontrola cytatów (lokalna, bez kosztu): sprawdzono ${cc.checked} elementów (adresy IP, cytowane nagłówki, wartości SCL/BCL, identyfikatory) i wszystkie zgadzają się ze źródłem.</div>`;
+    return;
+  }
+  const items = cc.issues
+    .map((i) => `<li>${escapeHtml(CITATION_KIND[i.kind] || i.kind)}: <code>${escapeHtml(i.text)}</code> - ${escapeHtml(i.note)}</li>`)
+    .join("");
+  box.innerHTML = `<div class="banner warn"><strong>Kontrola cytatów: ${cc.issues.length} z ${cc.checked} sprawdzonych elementów nie zgadza się ze źródłem.</strong>
+    To nie zawsze błąd (może to przykład, parafraza albo skrót), ale sprawdź te miejsca, zanim uznasz je za prawdę:<ul>${items}</ul></div>`;
 }
 
 function usageInfo() {
@@ -447,6 +523,16 @@ function buildExport() {
   L.push("");
   if (currentFacts) L.push("---", "", ...factsToMarkdown(currentFacts));
   L.push("---", "", analysisBody(), "");
+  if (currentCitations && !currentCitations.error) {
+    L.push("---", "", "## Kontrola cytatów (lokalna, bez kosztu)", "");
+    if (!currentCitations.issues.length) {
+      L.push(`Sprawdzono ${currentCitations.checked} elementów (adresy IP, cytowane nagłówki, wartości SCL/BCL, identyfikatory): wszystkie zgadzają się ze źródłem.`, "");
+    } else {
+      L.push(`${currentCitations.issues.length} z ${currentCitations.checked} sprawdzonych elementów nie zgadza się ze źródłem (to nie zawsze błąd: przykład, parafraza, skrót):`, "");
+      currentCitations.issues.forEach((i) => L.push(`- ${CITATION_KIND[i.kind] || i.kind}: ${mdCode(i.text)} - ${i.note}`));
+      L.push("");
+    }
+  }
   return L.join("\n");
 }
 
@@ -693,7 +779,9 @@ async function openSaved(id) {
   currentCreatedAt = rec.created_at;
   currentAnalysisId = rec.id;
   currentTruncated = !!rec.truncated;
+  currentCitations = rec.citation_check || null;
   renderAnalysis();
+  showCitations();
   showActions();
   statusEl.textContent = `Otwarto zapisaną analizę z ${new Date(rec.created_at).toLocaleString("pl-PL")}.`;
   root.querySelector("#em-facts").scrollIntoView({ behavior: "smooth", block: "start" });

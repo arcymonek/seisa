@@ -53,6 +53,33 @@ def update_analysis(analysis_id: str, fields: dict[str, Any]) -> None:
     _write(analysis_id, record)
 
 
+def source_hash(src: str) -> str:
+    """Odcisk znormalizowanego źródła e-maila - do wykrywania powtórnych analiz tej samej wiadomości."""
+    return hashlib.sha256(src.encode("utf-8", errors="replace")).hexdigest()
+
+
+def find_by_source(sha256: str) -> list[dict[str, Any]]:
+    """Zapisane analizy tego samego źródła (najnowsze pierwsze). Starsze zapisy bez pola source_sha256 są
+    dopasowywane po odcisku surowego e-maila."""
+    if not ANALIZY_DIR.exists():
+        return []
+    matches = []
+    for path in sorted(ANALIZY_DIR.glob("*.json"), reverse=True):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if (data.get("source_sha256") or source_hash(data.get("raw_email", ""))) != sha256:
+            continue
+        usage = data.get("usage") or {}
+        matches.append({
+            "id": data.get("id"), "created_at": data.get("created_at"), "verdict": data.get("verdict"),
+            "confidence": data.get("confidence"), "truncated": bool(data.get("truncated")),
+            "cost": usage.get("cost") if isinstance(usage.get("cost"), (int, float)) else None,
+        })
+    return matches
+
+
 def list_analyses() -> list[dict[str, Any]]:
     if not ANALIZY_DIR.exists():
         return []

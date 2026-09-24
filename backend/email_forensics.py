@@ -578,6 +578,18 @@ def _leaf_text(part: Message) -> str:
             return ""
 
 
+def decoded_text_parts(src: str) -> str:
+    """Zdekodowane (quoted-printable/base64) części tekstowe wiadomości - cytaty z treści HTML modelu
+    odpowiadają im, a nie surowemu źródłu."""
+    try:
+        msg = message_from_string(src)
+        leaves: list[Message] = []
+        _walk_mime(msg, 0, [], [], leaves)
+        return "\n".join(_leaf_text(l) for l in leaves if l.get_content_maintype() == "text" and not l.get_filename())
+    except Exception:
+        return ""
+
+
 def compute_facts(src: str) -> dict:
     msg = message_from_string(src)
     headers = [(n, _unfold(v)) for n, v in msg.items()]
