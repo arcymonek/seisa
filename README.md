@@ -79,6 +79,7 @@ Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statycz
 seisa/
 ├── .env                    # klucze API (gitignored, patrz .env.example)
 ├── seisa.sh                 # skrypt startowy (alias `seisa` w ~/.zshrc)
+├── LICENSE                  # licencja MIT
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache, obsługa błędów
 │   ├── config.py             # ścieżki, ustawienia z .env
@@ -180,3 +181,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 
 - Dokładny slug modelu OpenRouter (`OPENROUTER_MODEL`) warto zweryfikować na bieżącej liście modeli OpenRouter.
 - WHOIS/rDNS nie ma przypisanego przycisku "otwórz stronę usługi" - to bezpośrednie zapytanie protokołem, bez jednego zewnętrznego serwisu do zlinkowania.
+
+## Licencja
+
+Projekt jest udostępniony na licencji MIT - pełny tekst w pliku [LICENSE](LICENSE). Dołączony `frontend/vendor/marked.min.js` ma własną licencję MIT (nagłówek w pliku).
