@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from backend.cache import get as cache_get
 from backend.cache import set as cache_set
+from backend.i18n import t
 from backend.markdown_report import build_markdown
 from backend.models import IndicatorType, LookupResult, ServiceResult
 from backend.scoring import compute_risk_score
@@ -54,7 +55,7 @@ async def run_lookup(
 
         def on_wait(seconds: float) -> None:
             if progress_cb:
-                progress_cb(f"oczekiwanie na limit VirusTotal ({seconds:.0f}s)")
+                progress_cb(t("lookup.vt_wait", seconds=f"{seconds:.0f}"))
 
         kwargs = {"on_wait": on_wait} if name == "virustotal" else {}
         try:

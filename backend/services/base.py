@@ -5,16 +5,17 @@ from abc import ABC, abstractmethod
 
 import httpx
 
+from backend.i18n import t
 from backend.models import ServiceResult
 
 
 def describe_exception(exc: BaseException) -> str:
-    """str(exc) bywa puste (np. httpx.ReadTimeout() bez argumentów) - wtedy
-    pokazujemy przynajmniej typ wyjątku, żeby log nie był pustą linią."""
+    """str(exc) is sometimes empty (e.g. httpx.ReadTimeout() without arguments) - then we show at least the
+    exception type, so that the log line is not empty."""
     text = str(exc)
     if text:
         return f"{type(exc).__name__}: {text}"
-    return f"{type(exc).__name__} (brak treści błędu - prawdopodobnie timeout połączenia)"
+    return f"{type(exc).__name__} (no error text - probably a connection timeout)"
 
 
 class IntelService(ABC):
@@ -33,25 +34,24 @@ class IntelService(ABC):
         return ServiceResult(
             service=self.name,
             status="no_key",
-            summary={"message": "brak klucza API"},
+            summary={"message": t("svc.no_key")},
         )
 
     def not_applicable_result(self) -> ServiceResult:
         return ServiceResult(
             service=self.name,
             status="not_applicable",
-            summary={"message": "usługa nie obsługuje tego typu wskaźnika"},
+            summary={"message": t("svc.not_applicable")},
         )
 
     def error_result(self, message: str) -> ServiceResult:
-        message = message or "nieznany błąd (wyjątek bez treści)"
+        message = message or "unknown error (exception without a message)"
         self.logger.error(message)
         return ServiceResult(service=self.name, status="error", error_message=message)
 
     async def fetch_json(self, method: str, url: str, **kwargs) -> tuple[dict | None, ServiceResult | None]:
-        """Wspólny fetch+parse z bogatym komunikatem błędu (kod HTTP + treść
-        odpowiedzi serwera, nie tylko generyczny wyjątek) - żeby dało się
-        zdiagnozować np. 401 bez zgadywania."""
+        """Common fetch+parse with a rich error message (HTTP code + the server response body, not only a generic
+        exception) - so that e.g. a 401 can be diagnosed without guessing."""
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.request(method, url, **kwargs)
@@ -61,11 +61,11 @@ class IntelService(ABC):
             body = exc.response.text[:300]
             return None, self.error_result(f"HTTP {exc.response.status_code}: {body}")
         except httpx.HTTPError as exc:
-            # httpx potrafi rzucić np. ReadTimeout() bez żadnej treści -
-            # str(exc) bywa wtedy pustym stringiem, więc dokładamy typ wyjątku.
+            # httpx can raise e.g. ReadTimeout() without any text - str(exc) is then an empty string,
+            # so we add the exception type.
             return None, self.error_result(describe_exception(exc))
         except ValueError as exc:
-            return None, self.error_result(f"nieprawidłowa odpowiedź (nie JSON): {describe_exception(exc)}")
+            return None, self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 
     @abstractmethod
     async def query_ip(self, ip: str) -> ServiceResult: ...

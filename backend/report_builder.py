@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.i18n import t
 from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
 
 AGE_LIMIT_DAYS = 60
@@ -71,14 +72,13 @@ def build_comment(
 
 
 def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list[int]) -> dict:
-    """Twarde sprawdzenia odzwierciedlają dokładnie to, czego wymaga AbuseIPDB /report -
-    ip i categories są wymagane, timestamp i comment są opcjonalne (patrz
-    https://docs.abuseipdb.com/#report-endpoint) - dlatego wymagany jest tylko wiek ataku
-    (polityka AbuseIPDB: nie starszy niż 60 dni) i wybór kategorii, nie treść komentarza."""
+    """The hard checks mirror exactly what AbuseIPDB /report requires - ip and categories are required, timestamp
+    and comment are optional (see https://docs.abuseipdb.com/#report-endpoint) - so only the age of the attack
+    (AbuseIPDB policy: not older than 60 days) and the choice of a category are required, not the comment text."""
     ip_ok, ip_reason = is_reportable_ip(ip)
 
     age_ok = False
-    age_reason = "brak daty ataku"
+    age_reason = t("report.age_missing")
     if attack_timestamp:
         try:
             ts = datetime.fromisoformat(attack_timestamp.replace("Z", "+00:00"))
@@ -86,9 +86,9 @@ def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list
                 ts = ts.replace(tzinfo=timezone.utc)
             age_days = (datetime.now(timezone.utc) - ts).days
             age_ok = 0 <= age_days <= AGE_LIMIT_DAYS
-            age_reason = None if age_ok else f"atak ma {age_days} dni (limit {AGE_LIMIT_DAYS})"
+            age_reason = None if age_ok else t("report.age_too_old", days=age_days, limit=AGE_LIMIT_DAYS)
         except ValueError:
-            age_reason = "nieprawidłowy format daty"
+            age_reason = t("report.age_bad_format")
 
     category_ok = bool(categories) and all(c in ABUSEIPDB_CATEGORIES for c in categories)
 

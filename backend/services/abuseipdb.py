@@ -76,6 +76,6 @@ class AbuseIpdbService(IntelService):
         try:
             resp.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            self.logger.error(f"zgłoszenie odrzucone: HTTP {exc.response.status_code}: {exc.response.text[:300]}")
+            self.logger.error(f"report rejected: HTTP {exc.response.status_code}: {exc.response.text[:300]}")
             raise
         return resp.json()

@@ -29,7 +29,7 @@ class CloudflareRadarService(IntelService):
 
         if not data.get("success", True):
             errors = data.get("errors")
-            return self.error_result(f"Cloudflare Radar zwrócił błąd: {errors}")
+            return self.error_result(f"Cloudflare Radar returned an error: {errors}")
 
         result = data.get("result", {})
         summary = {

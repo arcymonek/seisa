@@ -8,9 +8,8 @@ from backend.config import LOGI_DIR
 
 
 class DailyJsonlHandler(logging.Handler):
-    """Jeden plik .jsonl na dzień w katalogu logi/. Tylko WARNING i wyżej trafia
-    tu w ogóle (poziom ustawiany na handlerze w setup_logging), więc zwykła
-    praca Seisy nie zostawia żadnego śladu na dysku."""
+    """One .jsonl file per day in the logi/ directory. Only WARNING and above gets here at all (the level is set
+    on the handler in setup_logging), so normal operation of Seisa leaves no trace on disk."""
 
     def __init__(self, directory=LOGI_DIR):
         super().__init__()

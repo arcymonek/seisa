@@ -1,8 +1,10 @@
-"""Przeniesione 1:1 ze skryptysh/abuseipdb_report.py (funkcje generyczne, bez
-kontekstu VPS): sanitize_comment, truncate_bytes, is_reportable_ip."""
+"""Moved 1:1 from skryptysh/abuseipdb_report.py (generic functions, without the VPS context):
+sanitize_comment, truncate_bytes, is_reportable_ip."""
 from __future__ import annotations
 
 import ipaddress
+
+from backend.i18n import t
 
 MAX_COMMENT_BYTES = 1024
 MAX_COMMENT_CHARS = 1024
@@ -33,7 +35,7 @@ def is_reportable_ip(ip_str: str) -> tuple[bool, str | None]:
     try:
         ip = ipaddress.ip_address(ip_str)
     except ValueError:
-        return False, "nieprawidłowy adres IP"
+        return False, t("report.ip_invalid")
     if (
         ip.is_private
         or ip.is_loopback
@@ -42,5 +44,5 @@ def is_reportable_ip(ip_str: str) -> tuple[bool, str | None]:
         or ip.is_multicast
         or ip.is_unspecified
     ):
-        return False, "adres prywatny/zarezerwowany"
+        return False, t("report.ip_private")
     return True, None

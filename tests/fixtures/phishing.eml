@@ -1,0 +1,43 @@
+Received: from mail-out.example.net (mail-out.example.net [203.0.113.45]) by mx.recipient.example with ESMTPS (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384); Tue, 22 Sep 2026 23:50:31 +0000
+Received: from relay1.recipient.example (relay1.recipient.example [10.1.2.3]) by mx.recipient.example with SMTP id 12345?x=1; Tue, 22 Sep 2026 23:50:18 +0000
+Received: from localhost (localhost [127.0.0.1]) by relay1.recipient.example for <>; Tue, 22 Sep 2026 23:50:16 +0000 (PST)
+Authentication-Results: mx.recipient.example; spf=fail smtp.mailfrom=bank.example; dkim=none; dmarc=fail header.from=bank.example
+Received-SPF: fail (bank.example: domain does not designate 203.0.113.45 as permitted sender) client-ip=203.0.113.45; envelope-from=news@bank.example; helo=mail-out.example.net
+X-Forefront-Antispam-Report: CIP:203.0.113.45;CAT:PHSH;SCL:9;SFV:SPM;IPV:NLI;DIR:INB
+X-MS-Exchange-Organization-SCL: 9
+X-Microsoft-Antispam-Mailbox-Delivery: dest:J;RF:JunkEmail
+X-MS-Exchange-Organization-AuthAs: Anonymous
+X-Message-Flag: Follow up
+Importance: high
+Return-Receipt-To: <track@evil.example>
+X-Originating-IP: [198.51.100.7]
+DKIM-Signature: v=1; a=rsa-sha1; c=relaxed/relaxed; d=evil.example; s=sel1; t=1790000000; h=from:to; bh=AAAAAAAAAAAAAAAAAAAAAAAAAAA=; b=abc
+DomainKey-Signature: a=rsa-sha1; d=evil.example; s=sel1; b=abc
+From: "Example Bank" <service@bank.example>
+Reply-To: helpdesk@evil.example
+To: victim@recipient.example
+To: second@recipient.example
+Subject: =?utf-8?q?Pilne:_zweryfikuj_konto?=
+Date: Tue, 22 Sep 2026 23:50:16 +0000
+Message-ID: <1790000000123@mail-out.example.net>
+List-Unsubscribe: <https://tracker.evil.example/u?a=1&b=2&c=3&d=4&e=5>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="=_boundary_0123456789"
+
+--=_boundary_0123456789
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<HTML><body><div style=3D"display:none">hidden words hidden words</div><a href=3D"http://bit.ly/abc" style=3D"display:block">bank.example {{first_name}}</a><a href=3D"https://xn--bank-example.evil.example/login?a=3D1&b=3D2&c=3D3&d=3D4">https://bank.example/login</a><img src=3D"http://t.evil.example/p.gif" width=3D"1" height=3D"1"><form action=3D"x"></form><script>x</script><Custom1></Custom1><Custom2></Custom2><Custom3></Custom3><Custom4></Custom4><Custom5></Custom5><!-- comment --></body></HTML>
+--=_boundary_0123456789
+Content-Type: application/octet-stream; name="invoice.pdf.exe"
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+Content-Transfer-Encoding: base64
+
+TVqQAAMAAAAEAAAA
+--=_boundary_0123456789
+Content-Type: text/plain
+Content-Transfer-Encoding: weird
+
+bare text
+--=_boundary_0123456789--

@@ -30,9 +30,9 @@ class RiskComponent(BaseModel):
     source: str
     signal: str
     value: str
-    weight: float  # wiarygodność źródła (limit jego głosu)
-    contribution: float  # c * r - maks. "głos" źródła w modelu szum-OR
-    risk: float = 0.0  # ryzyko źródła 0-100
+    weight: float  # credibility of the source (cap of its vote)
+    contribution: float  # c * r - the maximum "vote" of the source in the noisy-OR model
+    risk: float = 0.0  # source risk 0-100
 
 
 class RiskScore(BaseModel):

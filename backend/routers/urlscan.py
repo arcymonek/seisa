@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from backend.i18n import t
 from backend.services import urlscan as urlscan_service
 from backend.urlscan_report import build_urlscan_markdown
 
@@ -16,11 +17,11 @@ class ScanRequest(BaseModel):
 @router.post("/scan")
 async def scan(req: ScanRequest):
     if not urlscan_service.is_configured():
-        raise HTTPException(status_code=400, detail="brak klucza API (URLSCAN_API_KEY)")
+        raise HTTPException(status_code=400, detail=t("urlscan.no_key"))
     try:
         data = await urlscan_service.submit_scan(req.url)
     except urlscan_service.UrlscanError as exc:
-        raise HTTPException(status_code=502, detail=f"zgłoszenie skanu nie powiodło się: {exc.message}")
+        raise HTTPException(status_code=502, detail=t("urlscan.submit_failed", message=exc.message))
     return {
         "uuid": data.get("uuid"),
         "result_page_url": data.get("result") or f"https://urlscan.io/result/{data.get('uuid')}/",
@@ -32,7 +33,7 @@ async def result(uuid: str):
     try:
         data = await urlscan_service.fetch_result(uuid)
     except urlscan_service.UrlscanError as exc:
-        raise HTTPException(status_code=502, detail=f"pobranie wyniku skanu nie powiodło się: {exc.message}")
+        raise HTTPException(status_code=502, detail=t("urlscan.fetch_failed", message=exc.message))
     if data is None:
         return {"status": "pending"}
 

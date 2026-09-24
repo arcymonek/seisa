@@ -28,13 +28,12 @@ def _headers() -> dict:
 
 
 async def submit_scan(url: str) -> dict:
-    """Zgłasza nowy skan - zawsze widoczność 'unlisted' (nie trafia na publiczną
-    stronę główną/wyszukiwarkę urlscan.io, ale jest dostępny po UUID i widoczny
-    dla zweryfikowanych badaczy w urlscan Pro). User-agent i kraj skanowania
-    celowo NIE są ustawiane (Default/Auto) - to po prostu pominięcie tych pól,
-    urlscan.io sam dobiera wartości domyślne."""
+    """Submits a new scan - always with 'unlisted' visibility (it does not appear on the public front
+    page/search of urlscan.io, but is available by UUID and visible to verified researchers in urlscan Pro).
+    The user agent and the scan country are deliberately NOT set (Default/Auto) - the fields are simply
+    omitted and urlscan.io picks the default values itself."""
     if not is_configured():
-        raise UrlscanError("brak klucza API (URLSCAN_API_KEY)")
+        raise UrlscanError("no API key (URLSCAN_API_KEY)")
     payload = {"url": url, "visibility": "unlisted"}
     try:
         async with httpx.AsyncClient(timeout=20) as client:
@@ -43,17 +42,17 @@ async def submit_scan(url: str) -> dict:
         return resp.json()
     except httpx.HTTPStatusError as exc:
         message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
-        logger.error(f"zgłoszenie skanu nie powiodło się: {message}")
+        logger.error(f"scan submission failed: {message}")
         raise UrlscanError(message) from exc
     except httpx.HTTPError as exc:
         message = describe_exception(exc)
-        logger.error(f"zgłoszenie skanu nie powiodło się: {message}")
+        logger.error(f"scan submission failed: {message}")
         raise UrlscanError(message) from exc
 
 
 async def fetch_result(uuid: str) -> dict | None:
-    """Zwraca None, jeśli skan jeszcze trwa (urlscan.io odpowiada 404, dopóki
-    wynik nie jest gotowy - to oczekiwane, nie błąd)."""
+    """Returns None if the scan is still running (urlscan.io answers 404 until the result is ready - that is
+    expected, not an error)."""
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.get(RESULT_URL.format(uuid=uuid), headers=_headers())
@@ -63,9 +62,9 @@ async def fetch_result(uuid: str) -> dict | None:
         return resp.json()
     except httpx.HTTPStatusError as exc:
         message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
-        logger.error(f"pobranie wyniku skanu nie powiodło się: {message}")
+        logger.error(f"fetching the scan result failed: {message}")
         raise UrlscanError(message) from exc
     except httpx.HTTPError as exc:
         message = describe_exception(exc)
-        logger.error(f"pobranie wyniku skanu nie powiodło się: {message}")
+        logger.error(f"fetching the scan result failed: {message}")
         raise UrlscanError(message) from exc

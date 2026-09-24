@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from backend.config import settings
+from backend.i18n import t
 from backend.models import ServiceResult
 from backend.ratelimit import RateLimitedDaily, vt_rate_limiter
 from backend.services.base import IntelService
@@ -26,11 +27,11 @@ class VirusTotalService(IntelService):
         try:
             await vt_rate_limiter.acquire(on_wait=on_wait)
         except RateLimitedDaily:
-            self.logger.warning("przekroczono dzienny limit VirusTotal (500/dzień)")
+            self.logger.warning("VirusTotal daily limit exceeded (500/day)")
             return ServiceResult(
                 service=self.name,
                 status="rate_limited_daily",
-                summary={"message": "przekroczono dzienny limit VirusTotal (500/dzień)"},
+                summary={"message": t("svc.vt_daily_limit")},
             )
 
         headers = {"x-apikey": settings.virustotal_api_key}
@@ -42,10 +43,10 @@ class VirusTotalService(IntelService):
         stats = attrs.get("last_analysis_stats", {})
         malicious = stats.get("malicious", 0)
         suspicious = stats.get("suspicious", 0)
-        # tylko silniki, które wydały werdykt (bez timeout/failure/type-unsupported)
+        # only engines that gave a verdict (without timeout/failure/type-unsupported)
         total = sum(stats.get(k, 0) for k in ("malicious", "suspicious", "harmless", "undetected"))
         summary = {
-            "detection_ratio": f"{malicious + suspicious}/{total}" if total else "brak danych",
+            "detection_ratio": f"{malicious + suspicious}/{total}" if total else t("svc.no_data"),
             "malicious": malicious,
             "suspicious": suspicious,
             "harmless": stats.get("harmless"),

@@ -6,38 +6,30 @@ import logging
 import httpx
 
 from backend.config import ABUSEIPDB_POLICY_FILE, settings
+from backend.i18n import t
 from backend.services.base import describe_exception
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-# Nagłówki atrybucji OpenRouter - dzięki nim w panelu OR aplikacja widnieje jako
-# "Seisa" zamiast "Unknown". Opis aplikacji nie jest ustawiany przez API.
+# OpenRouter attribution headers - thanks to them the app shows up as "Seisa" instead of "Unknown" in the
+# OpenRouter dashboard. The app description is not set through the API.
 OPENROUTER_APP_HEADERS = {
     "HTTP-Referer": "https://seisa.local",
     "X-Title": "Seisa",
 }
 
-# Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB) trafiają do jednej usługi logów.
+# All OpenRouter API errors (Email and AbuseIPDB tabs) go to a single log service.
 logger = logging.getLogger("open_router")
 
-# Limit wyjścia liczy się RAZEM z ukrytym rozumowaniem modelu (w praktyce ok. 45% - patrz
-# completion_tokens_details.reasoning_tokens w zapisanych analizach). To tylko sufit: płaci się za tokeny
-# faktycznie wygenerowane. Model dopuszcza do 128000; 64000 zostawia duży zapas dla złożonych e-maili.
+# The output limit counts TOGETHER with the hidden reasoning of the model (in practice about 45% - see
+# completion_tokens_details.reasoning_tokens in the saved analyses). It is only a ceiling: you pay for the tokens
+# actually generated. The model allows up to 128000; 64000 leaves a large margin for complex e-mails.
 STREAM_MAX_TOKENS = 64000
 
-_OR_HTTP_HINTS = {
-    400: "nieprawidłowe zapytanie",
-    401: "nieprawidłowy klucz API OpenRouter",
-    402: "brak środków na koncie OpenRouter lub przekroczony limit kredytów",
-    403: "odmowa dostępu (moderacja treści lub brak uprawnień klucza)",
-    408: "przekroczony czas oczekiwania",
-    429: "osiągnięty limit zapytań (rate limit)",
-    502: "model lub dostawca niedostępny",
-    503: "brak dostępnego dostawcy dla modelu",
-}
+_OR_HTTP_HINT_CODES = (400, 401, 402, 403, 408, 429, 502, 503)  # texts: or.hint.<code> in backend/locales
 
 
-def _openrouter_error_text(status: int | None, body: object) -> str:
-    """Składa czytelny opis błędu z kodu HTTP i pola 'error' odpowiedzi OpenRouter
+def _openrouter_error_text(status: int | None, body: object, lang: str | None = None) -> str:
+    """Builds a readable error description from the HTTP code and the 'error' field of the OpenRouter response
     ({"error": {"code": ..., "message": ..., "metadata": {...}}})."""
     message = ""
     if isinstance(body, dict):
@@ -52,9 +44,15 @@ def _openrouter_error_text(status: int | None, body: object) -> str:
             status = status or err.get("code")
         elif err:
             message = str(err)
-    hint = _OR_HTTP_HINTS.get(status) if isinstance(status, int) else None
+    hint = t(f"or.hint.{status}", lang) if status in _OR_HTTP_HINT_CODES else None
     parts = [f"HTTP {status}" if status else "", hint or "", message]
-    return " - ".join(p for p in parts if p) or "nieznany błąd OpenRouter"
+    return " - ".join(p for p in parts if p) or t("or.unknown_error", lang)
+
+
+def _report_error(status: int | None, body: object) -> str:
+    """Logs the OpenRouter error in English (logs are not translated) and returns the text in the UI language."""
+    logger.error(f"OpenRouter: {_openrouter_error_text(status, body, 'en')}")
+    return _openrouter_error_text(status, body)
 
 SYSTEM_PROMPT = """Jesteś asystentem oceniającym, czy e-mail kwalifikuje się do zgłoszenia \
 na AbuseIPDB, zgodnie z dołączoną polityką. Twoja ocena jest WYŁĄCZNIE doradcza - twarde \
@@ -107,7 +105,7 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
 
 
 def _parse_json_content(content: str | None) -> dict:
-    """json.loads odporny na ogrodzenie ```json ... ``` i tekst przed/po obiekcie JSON."""
+    """json.loads tolerant of a ```json ... ``` fence and of text before/after the JSON object."""
     text = (content or "").strip()
     try:
         return json.loads(text)
@@ -128,11 +126,11 @@ class LlmAnalyzer:
         return ""
 
     async def _chat_json(self, system_prompt: str, user_content: str) -> dict | None:
-        """Model bywa niedeterministyczny: czasem owija JSON w ```json ... ``` albo zwraca uszkodzony JSON.
-        Odpowiedź niepoprawną składniowo ponawiamy raz (błędy sieci i HTTP nie są ponawiane)."""
+        """The model is sometimes non-deterministic: it may wrap the JSON in ```json ... ``` or return a broken
+        JSON. A syntactically invalid answer is retried once (network and HTTP errors are not retried)."""
         result = await self._chat_json_once(system_prompt, user_content)
         if isinstance(result, dict) and result.pop("_retryable", False):
-            logger.warning("OpenRouter: niepoprawny JSON w odpowiedzi modelu, ponawiam zapytanie raz")
+            logger.warning("OpenRouter: invalid JSON in the model response, retrying the request once")
             result = await self._chat_json_once(system_prompt, user_content)
             if isinstance(result, dict):
                 result.pop("_retryable", None)
@@ -158,7 +156,7 @@ class LlmAnalyzer:
                 resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
         except httpx.HTTPError as exc:
             text = describe_exception(exc)
-            logger.error(f"OpenRouter: błąd połączenia: {text}")
+            logger.error(f"OpenRouter: connection error: {text}")
             return {"error": text}
 
         try:
@@ -167,37 +165,34 @@ class LlmAnalyzer:
             body = None
 
         if resp.status_code >= 400:
-            text = _openrouter_error_text(resp.status_code, body)
-            logger.error(f"OpenRouter: {text}")
+            text = _report_error(resp.status_code, body)
             return {"error": text}
 
-        # OpenRouter potrafi zwrócić 200 z błędem w treści (np. błąd dostawcy w trakcie generowania).
+        # OpenRouter may return 200 with an error in the body (e.g. a provider error during generation).
         if isinstance(body, dict) and body.get("error"):
-            text = _openrouter_error_text(None, body)
-            logger.error(f"OpenRouter: {text}")
+            text = _report_error(None, body)
             return {"error": text}
 
         try:
             choice = body["choices"][0]
             if choice.get("error"):
-                text = _openrouter_error_text(None, {"error": choice["error"]})
-                logger.error(f"OpenRouter: {text}")
+                text = _report_error(None, {"error": choice["error"]})
                 return {"error": text}
             if choice.get("finish_reason") == "length":
-                logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length), możliwy niepełny JSON")
+                logger.warning("OpenRouter: model response truncated (finish_reason=length), the JSON may be incomplete")
             content = choice["message"]["content"]
             try:
                 result = _parse_json_content(content)
             except json.JSONDecodeError as exc:
-                text = f"nieprawidłowa odpowiedź OpenRouter ({describe_exception(exc)})"
-                logger.warning(f"OpenRouter: {text}; początek odpowiedzi: {(content or '')[:200]!r}")
+                text = t("or.invalid_response", detail=describe_exception(exc))
+                logger.warning(f"OpenRouter: invalid response ({describe_exception(exc)}); start of the response: {(content or '')[:200]!r}")
                 return {"error": text, "_retryable": True}
             if isinstance(result, dict) and isinstance(body.get("usage"), dict):
                 result["_usage"] = body["usage"]
             return result
         except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
-            text = f"nieprawidłowa odpowiedź OpenRouter ({describe_exception(exc)})"
-            logger.warning(f"OpenRouter: {text}")
+            text = t("or.invalid_response", detail=describe_exception(exc))
+            logger.warning(f"OpenRouter: invalid response ({describe_exception(exc)})")
             return {"error": text}
 
     async def stream_chat(
@@ -208,11 +203,11 @@ class LlmAnalyzer:
         partial: str | None = None,
         continue_instruction: str | None = None,
     ):
-        """Strumieniowa odpowiedź tekstowa (markdown, nie JSON) - dla długich analiz w zakładce Email.
+        """Streamed text answer (markdown, not JSON) - for the long analyses of the Email tab.
 
-        Generator zdarzeń (rodzaj, dane): ("delta", tekst) | ("usage", dict) | ("warning", tekst) |
-        ("finish", finish_reason) | ("error", tekst). Błędy są logowane do usługi "app" tak samo jak w _chat_json.
-        `partial` + `continue_instruction` dokańczają wcześniej ucięty tekst (dodatkowa tura assistant + user)."""
+        Event generator (kind, data): ("delta", text) | ("usage", dict) | ("warning", text) |
+        ("finish", finish_reason) | ("error", text). Errors are logged to the OpenRouter service like in _chat_json.
+        `partial` + `continue_instruction` finish a previously truncated text (an extra assistant + user turn)."""
         headers = {
             "Authorization": f"Bearer {settings.openrouter_api_key}",
             "Content-Type": "application/json",
@@ -224,7 +219,7 @@ class LlmAnalyzer:
         ]
         if partial is not None:
             messages.append({"role": "assistant", "content": partial})
-            messages.append({"role": "user", "content": continue_instruction or "Kontynuuj."})
+            messages.append({"role": "user", "content": continue_instruction or "Continue."})
         payload = {
             "model": settings.openrouter_model,
             "messages": messages,
@@ -242,13 +237,12 @@ class LlmAnalyzer:
                             body = json.loads(raw)
                         except ValueError:
                             body = None
-                        text = _openrouter_error_text(resp.status_code, body)
-                        logger.error(f"OpenRouter: {text}")
+                        text = _report_error(resp.status_code, body)
                         yield "error", text
                         return
                     async for line in resp.aiter_lines():
                         if not line or line.startswith(":") or not line.startswith("data:"):
-                            continue  # puste linie i keep-alive (": OPENROUTER PROCESSING")
+                            continue  # empty lines and keep-alive (": OPENROUTER PROCESSING")
                         data = line[5:].strip()
                         if data == "[DONE]":
                             break
@@ -257,8 +251,7 @@ class LlmAnalyzer:
                         except ValueError:
                             continue
                         if obj.get("error"):
-                            text = _openrouter_error_text(None, obj)
-                            logger.error(f"OpenRouter: {text}")
+                            text = _report_error(None, obj)
                             yield "error", text
                             return
                         if obj.get("usage"):
@@ -268,8 +261,7 @@ class LlmAnalyzer:
                             continue
                         choice = choices[0]
                         if choice.get("error"):
-                            text = _openrouter_error_text(None, {"error": choice["error"]})
-                            logger.error(f"OpenRouter: {text}")
+                            text = _report_error(None, {"error": choice["error"]})
                             yield "error", text
                             return
                         delta = (choice.get("delta") or {}).get("content")
@@ -277,12 +269,12 @@ class LlmAnalyzer:
                             yield "delta", delta
                         finish = choice.get("finish_reason")
                         if finish == "length":
-                            logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length)")
+                            logger.warning("OpenRouter: model response truncated (finish_reason=length)")
                         if finish:
                             yield "finish", finish
         except httpx.HTTPError as exc:
             text = describe_exception(exc)
-            logger.error(f"OpenRouter: błąd połączenia: {text}")
+            logger.error(f"OpenRouter: connection error: {text}")
             yield "error", text
 
     async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "") -> dict | None:

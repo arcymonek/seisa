@@ -8,6 +8,8 @@ from email import message_from_string
 from email.message import Message
 from email.utils import parsedate_to_datetime
 
+from backend.i18n import t
+
 _BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
 _RANSOM_KEYWORDS = ("bitcoin", "btc", "ransom", "payment", "wallet", "crypto", "decrypt")
 _FROM_BY_RE = re.compile(r"from\s+(?P<from>.+?)\s+by\s+(?P<by>\S+)", re.IGNORECASE)
@@ -24,9 +26,8 @@ AGE_LIMIT_DAYS = 60
 
 
 def _html_to_text(html: str) -> str:
-    """Zamienia HTML na czytelny tekst bez zależności zewnętrznych - usuwa
-    script/style, zamienia zamykające tagi blokowe na nowe linie, usuwa resztę
-    znaczników, dekoduje encje HTML i zwija nadmiar pustych linii."""
+    """Turns HTML into readable text without external dependencies: removes script/style, turns closing block
+    tags into newlines, strips the remaining tags, decodes HTML entities and collapses extra blank lines."""
     text = _HTML_SCRIPT_STYLE_RE.sub(" ", html)
     text = _HTML_BLOCK_CLOSE_RE.sub("\n", text)
     text = _HTML_TAG_RE.sub("", text)
@@ -36,16 +37,14 @@ def _html_to_text(html: str) -> str:
 
 
 def _refold_headers(raw_email: str) -> str:
-    """Wiele klientów pocztowych/przeglądarek przy "pokaż źródło" gubi wcięcia linii
-    kontynuacji (RFC 5322 folding) długich nagłówków - zwłaszcza wielolinijkowych
-    `Received`. Dla stdlib `email` linia bez wiodącej spacji, która nie wygląda jak
-    `Nazwa-Nagłówka:`, oznacza koniec bloku nagłówków - więc taki wklejony e-mail
-    potrafi urwać parsowanie już na pierwszym nagłówku. Douzupełniamy brakujące
-    wcięcie tam, gdzie to jednoznaczne (linia w bloku nagłówków, niepusta, nie
-    zaczyna się od `Nazwa:` ani od białego znaku). Odwrotny przypadek też się zdarza -
-    kolejny nagłówek bywa błędnie wcięty (np. przez narzędzie do wklejania zachowujące
-    zagnieżdżenie) - taką linię rozpoznajemy po wzorcu `Nazwa:` mimo wcięcia i cofamy
-    wcięcie, żeby stdlib potraktował ją jako nowy nagłówek, a nie kontynuację."""
+    """Many mail clients/browsers lose the indentation of continuation lines (RFC 5322 folding) of long headers
+    when you "show the source" - especially multi-line `Received`. For the stdlib `email` parser a line without
+    a leading space that does not look like `Header-Name:` ends the header block, so a pasted e-mail like that
+    can stop parsing at the very first header. We restore the missing indentation where it is unambiguous (a
+    non-empty line inside the header block that starts neither with `Name:` nor with whitespace). The reverse
+    also happens - the next header is wrongly indented (e.g. by a paste tool that keeps nesting) - such a line
+    is recognised by the `Name:` pattern despite the indentation and un-indented, so that the stdlib treats it
+    as a new header and not as a continuation."""
     lines = raw_email.split("\n")
     out: list[str] = []
     in_headers = True
@@ -79,12 +78,11 @@ def _is_special_ip(ip_str: str) -> bool:
 
 
 def _extract_ip_candidates(text: str) -> list[str]:
-    """Zbiera wszystkie adresy IP wspomniane w klauzuli "from" nagłówka Received - zarówno
-    w formie [IP] (konwencja MTA na rDNS/prawdziwe IP), jak i w zwykłych nawiasach (bywają
-    tam też same nazwy hostów typu "HELO foo", które nie sparsują się jako IP i odpadną).
-    Adresy publiczne mają pierwszeństwo nad loopbackiem/prywatnymi - MTA takie jak Microsoft
-    EOP potrafią zapisać `[127.0.0.1] (prawdziwe_ip)`, gdzie to właśnie nawias, nie nawias
-    kwadratowy, niesie realny adres nadawcy."""
+    """Collects all IP addresses mentioned in the "from" clause of a Received header - both in the [IP] form
+    (MTA convention for rDNS/real IP) and in plain parentheses (which may also hold host names such as
+    "HELO foo" that do not parse as an IP and are dropped). Public addresses take precedence over loopback/
+    private ones - MTAs such as Microsoft EOP may write `[127.0.0.1] (real_ip)`, where the parentheses, not the
+    square brackets, carry the real sender address."""
     candidates = []
     for pattern in (_BRACKET_RE, _PAREN_RE):
         for m in pattern.finditer(text):
@@ -107,15 +105,15 @@ def _parse_received_header(raw_header: str) -> dict:
 
 
 def _registrable_domain(host: str | None) -> str | None:
-    """Ostatnie 2 człony nazwy hosta (np. 'sub.foo.outlook.com' -> 'outlook.com').
-    Zwraca None dla adresów IP (nie da się dla nich ustalić "domeny zaufania")."""
+    """Last 2 labels of a host name (e.g. 'sub.foo.outlook.com' -> 'outlook.com').
+    Returns None for IP addresses (no "trust domain" can be determined for them)."""
     if not host or _parse_ip(host) is not None:
         return None
     labels = host.lower().split(".")
     return ".".join(labels[-2:]) if len(labels) >= 2 else host.lower()
 
 
-# Współdzielone przekaźniki dużych dostawców: ich IP nie jest adresem nadawcy i nie należy go zgłaszać.
+# Shared relays of large providers: their IP is not the sender's address and must not be reported.
 _SHARED_PROVIDER_DOMAINS = {
     "outlook.com", "office365.com", "office.com", "microsoft.com", "hotmail.com", "live.com",
     "google.com", "googlemail.com",
@@ -123,11 +121,11 @@ _SHARED_PROVIDER_DOMAINS = {
 
 
 def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
-    """Hop graniczny bywa tylko przekaźnikiem operatora (np. Microsoft Exchange Online przekazuje pocztę
-    do odbiorcy), a faktyczny nadawca połączył się z tym operatorem wcześniej. Jeśli starszy hop ma jako "by" domenę
-    operatora ("from" hopu granicznego), to przechodzimy przez wewnętrzne hopy operatora do pierwszego, w którym
-    "from" jest już spoza niego - tam operator zapisał adres łączącego się klienta.
-    Zwraca (indeks hopu, opis przejścia, czy wiadomość powstała wewnątrz współdzielonego operatora)."""
+    """The boundary hop is sometimes only a provider relay (e.g. Microsoft Exchange Online hands the mail over to
+    the recipient) and the real sender connected to that provider earlier. If an older hop has the provider
+    domain (the "from" of the boundary hop) as "by", we walk through the provider's internal hops to the first
+    one whose "from" is outside it - there the provider recorded the address of the connecting client.
+    Returns (hop index, description of the walk, whether the message originated inside a shared provider)."""
     cur = start
     visited = []
     origin_inside_provider = False
@@ -144,42 +142,37 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
             break
         found_ip = hops[j]["ip"]
         if not found_ip or _is_special_ip(found_ip):
-            break  # starszy hop to wewnętrzna sieć operatora (adres prywatny) - zostajemy przy obecnym
+            break  # the older hop is the provider's internal network (private address) - stay at the current one
         visited.append(relay)
         cur = j
     note = ""
     if visited:
-        note = (
-            f" Pierwszy hop spoza domeny odbiorcy to przekaźnik operatora '{visited[0]}', a nie nadawca, "
-            f"więc przeszedłem dalej łańcuchem ({' -> '.join(visited)}) do hopu, w którym operator zapisał "
-            "adres faktycznie łączącego się nadawcy."
-        )
+        note = " " + t("parser.relay_note", relay=visited[0], chain=" -> ".join(visited))
     return cur, note, origin_inside_provider
 
 
 def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[dict], str, str]:
-    """Nagłówki Received są dopisywane na górze przy każdym hopie, więc `received_headers[0]`
-    to najnowszy (ostatnia dostawa), a najstarszy (pierwsze wejście do sieci) jest na końcu listy.
-    W łańcuchu wielohopowym jednego dostawcy (np. Microsoft 365) większość początkowych hopów to
-    transfery wewnętrzne między jego własnymi serwerami - mogą używać adresów IP formalnie
-    "publicznych" (nie RFC1918/loopback), więc samo sprawdzenie "czy IP jest prywatne" ich nie
-    odsieje. Zamiast tego idziemy od najnowszego hopu w dół i porównujemy domenę hosta "from" z
-    domeną hosta "by" pierwszego hopu (przyjętą jako zaufana) - dopóki się zgadzają, to hop
-    wewnętrzny. Pierwszy hop, w którym się rozjeżdżają (albo "from" to sam adres IP/placeholder typu
-    [127.0.0.1], co jest typowym zapisem bramki pocztowej dla faktycznie łączącego się klienta) to
-    granica zaufanej infrastruktury - jego IP jest tym, które warto zgłaszać."""
+    """Received headers are prepended at every hop, so `received_headers[0]` is the newest (last delivery) and
+    the oldest (first entry into the network) is at the end of the list. In a multi-hop chain of one provider
+    (e.g. Microsoft 365) most of the initial hops are internal transfers between its own servers - they may use
+    formally "public" IP addresses (not RFC1918/loopback), so a plain "is the IP private" check does not filter
+    them out. Instead we walk down from the newest hop and compare the domain of the "from" host with the domain
+    of the "by" host of the first hop (taken as trusted) - as long as they match, the hop is internal. The first
+    hop where they differ (or where "from" is just an IP/placeholder such as [127.0.0.1], the typical way a mail
+    gateway records the actually connecting client) is the boundary of the trusted infrastructure - its IP is
+    the one worth reporting."""
     hops = [_parse_received_header(h) for h in received_headers]
     if not hops:
-        return None, [], "low", "Brak nagłówków Received w e-mailu."
+        return None, [], "low", t("parser.no_received")
 
-    # Zaufana domena = "by" najnowszego hopu, który ją podaje (pierwszy nagłówek Gmaila to "by <id> with SMTP"
-    # bez hosta, więc bierzemy pierwszy hop z rozpoznawalnym "by").
+    # Trusted domain = "by" of the newest hop that gives it (the first Gmail header is "by <id> with SMTP"
+    # without a host, so we take the first hop with a recognisable "by").
     trusted_suffix = next((d for d in (_registrable_domain(h["by_host"]) for h in hops) if d), None)
     boundary_index = len(hops) - 1
     left_trusted_domain = False
     for i, hop in enumerate(hops):
         if hop["from_host"] is None and hop["ip"] is None:
-            continue  # hop bez "from" (wpis własny odbiorcy) - nic z niego nie wynika o nadawcy
+            continue  # hop without "from" (the recipient's own entry) - it says nothing about the sender
         if trusted_suffix and _registrable_domain(hop["from_host"]) == trusted_suffix:
             continue
         boundary_index = i
@@ -191,8 +184,8 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     if left_trusted_domain:
         boundary_index, relay_note, origin_inside_provider = _walk_through_relays(hops, boundary_index)
 
-    # Hop graniczny może nie mieć rozpoznanego IP (np. nietypowy format nagłówka) - w takim
-    # przypadku szukamy dalej w stronę najstarszych hopów, gdzie IP jednak się pojawi.
+    # The boundary hop may have no recognised IP (e.g. an unusual header format) - in that case we keep
+    # looking towards the oldest hops, where an IP does appear.
     ip_index = boundary_index
     while ip_index < len(hops) and hops[ip_index]["ip"] is None:
         ip_index += 1
@@ -200,36 +193,23 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
         ip_index = boundary_index
 
     if origin_inside_provider:
-        return None, hops, "low", (
-            "Wiadomość powstała wewnątrz współdzielonego dostawcy poczty (np. poczta webowa lub konto Microsoft/Google) - "
-            "w łańcuchu Received nie ma publicznego adresu IP nadawcy, są tylko adresy przekaźników dostawcy, "
-            "których nie należy zgłaszać do AbuseIPDB. Nadużycie zgłoś do działu abuse dostawcy."
-        )
+        return None, hops, "low", t("parser.origin_inside_provider")
 
     hops[ip_index]["is_boundary"] = True
     boundary = hops[ip_index]
 
     if boundary["ip"] is None:
         confidence = "low"
-        reasoning = "Nie udało się wyłuskać adresu IP z żadnego nagłówka Received - zweryfikuj ręcznie."
+        reasoning = t("parser.no_ip")
     elif left_trusted_domain:
         confidence = "high"
-        reasoning = (
-            f"Hop graniczny: 'from {boundary['from_host']}' nie należy już do zaufanej domeny "
-            f"'{trusted_suffix}' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze "
-            "miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie "
-            "łączącego się nadawcy." + relay_note
-        )
+        reasoning = t("parser.boundary", host=boundary["from_host"], domain=trusted_suffix) + relay_note
     elif trusted_suffix is None:
         confidence = "medium"
-        reasoning = "Pojedynczy nagłówek Received, bez rozpoznawalnej domeny 'by' - przyjęto jego IP wprost."
+        reasoning = t("parser.single_received")
     else:
         confidence = "low"
-        reasoning = (
-            f"Cały łańcuch Received pozostaje w domenie '{trusted_suffix}' - nie znaleziono "
-            "jednoznacznej granicy zaufanej infrastruktury, przyjęto najstarszy hop jako najbardziej "
-            "prawdopodobny. Zweryfikuj ręcznie."
-        )
+        reasoning = t("parser.whole_chain_trusted", domain=trusted_suffix)
 
     return boundary, hops, confidence, reasoning
 
@@ -250,10 +230,9 @@ _COMMON_DISPLAY_EXTENSIONS = {
 
 
 def _extract_attachments(msg: Message) -> list[dict]:
-    """`declared_extension` to prawdziwe (ostatnie) rozszerzenie pliku. `apparent_extension`
-    wykrywa klasyczny trik phishingowy z podwójnym rozszerzeniem (np. "faktura.pdf.exe") -
-    ustawiane tylko gdy przedostatni segment nazwy wygląda jak popularne, "niewinne"
-    rozszerzenie dokumentu/obrazu, inne niż to prawdziwe."""
+    """`declared_extension` is the real (last) extension of the file. `apparent_extension` detects the classic
+    double-extension phishing trick (e.g. "invoice.pdf.exe") - it is set only when the second-to-last segment of
+    the name looks like a popular, "innocent" document/image extension different from the real one."""
     attachments = []
     for part in msg.walk():
         filename = part.get_filename()
@@ -287,9 +266,8 @@ def _decode_part(part: Message) -> str:
 
 
 def _extract_body_text(msg: Message) -> str:
-    """Wiele phishingowych e-maili to czyste HTML bez części text/plain (tak było w
-    prawdziwym incydencie z tej sesji) - bez fallbacku na HTML treść wiadomości nigdy
-    nie trafiała do analizy (ani do wykrywania BTC/okupu, ani do promptu LLM)."""
+    """Many phishing e-mails are pure HTML without a text/plain part (as in a real incident) - without the HTML
+    fallback the message body never reached the analysis (neither the BTC/ransom detection nor the LLM prompt)."""
     if msg.is_multipart():
         plain_parts, html_parts = [], []
         for part in msg.walk():
@@ -320,14 +298,12 @@ _MAX_EXTRA_HEADER_VALUE = 200
 
 
 def extract_relevant_headers(raw_email: str) -> str:
-    """Blok nagłówków istotnych do analizy - łańcuch Received/uwierzytelnianie (do
-    weryfikacji hopu granicznego) plus podstawowe nagłówki tożsamości/dostarczenia
-    (Subject, Reply-To, Return-Path, List-Unsubscribe, X-Mailer - przydatne np. do
-    rozpoznania masowej wysyłki) oraz - jeśli obecne - nagłówki z wynikiem filtra
-    antyspamowego (nazwa zawiera "spam" albo to Microsoftowy X-MS-Exchange-Organization-SCL,
-    wartość ucięta do bezpiecznej długości). Celowo pomija wielkie, nieistotne bloby
-    (np. base64 X-Microsoft-Antispam-Message-Info, DKIM-Signature) - nie są wymienione
-    z nazwy, więc nie trafiają do promptu."""
+    """Block of headers relevant for the analysis - the Received chain/authentication (to verify the boundary
+    hop) plus the basic identity/delivery headers (Subject, Reply-To, Return-Path, List-Unsubscribe, X-Mailer -
+    useful e.g. to recognise mass mailing) and, if present, the headers carrying the anti-spam filter result
+    (the name contains "spam" or it is Microsoft's X-MS-Exchange-Organization-SCL, the value truncated to a
+    safe length). It deliberately omits big, irrelevant blobs (e.g. the base64 X-Microsoft-Antispam-Message-Info,
+    DKIM-Signature) - they are not listed by name, so they do not reach the prompt."""
     msg = message_from_string(_refold_headers(raw_email))
     allowlist_lower = {h.lower() for h in _LLM_RELEVANT_HEADERS}
     lines = []
@@ -339,7 +315,7 @@ def extract_relevant_headers(raw_email: str) -> str:
             continue
         clean = re.sub(r"\s+", " ", value).strip()
         if len(clean) > _MAX_EXTRA_HEADER_VALUE:
-            clean = clean[:_MAX_EXTRA_HEADER_VALUE] + "...(obcięte)"
+            clean = clean[:_MAX_EXTRA_HEADER_VALUE] + "...(truncated)"
         lines.append(f"{name}: {clean}")
     return "\n".join(lines)
 
@@ -348,19 +324,19 @@ BODY_EXCERPT_LIMIT = 2000
 
 
 def body_text_length(raw_email: str) -> int:
-    """Długość czystego tekstu treści (przed przycięciem) - do informacji dla użytkownika, ile zobaczył model."""
+    """Length of the plain body text (before truncation) - tells the user how much of it the model saw."""
     msg = message_from_string(_refold_headers(raw_email))
     return len(_extract_body_text(msg).strip())
 
 
 def extract_body_excerpt(raw_email: str, limit: int = BODY_EXCERPT_LIMIT) -> str:
-    """Czysty tekst treści e-maila (HTML zamienione na tekst przez `_extract_body_text`),
-    przycięty do `limit` znaków - dowód dla LLM, żeby rozumiał faktyczny mechanizm ataku
-    (co wiadomość mówi), a nie tylko nagłówki. Nie trafia do `facts`/odpowiedzi API."""
+    """Plain text of the e-mail body (HTML converted by `_extract_body_text`), truncated to `limit` characters -
+    evidence for the LLM so that it understands the actual attack mechanism (what the message says) and not only
+    the headers. It does not go into `facts` or the API response."""
     msg = message_from_string(_refold_headers(raw_email))
     body = _extract_body_text(msg).strip()
     if len(body) > limit:
-        body = body[:limit] + "...(obcięte)"
+        body = body[:limit] + "...(truncated)"
     return body
 
 
@@ -371,7 +347,7 @@ def parse_email(raw_email: str) -> dict:
     boundary_hop, hop_chain, ip_confidence, ip_reasoning = _find_boundary_hop(received_headers)
     trusted_ip = boundary_hop["ip"] if boundary_hop else None
 
-    # Serwery bez własnego Authentication-Results (np. Exim) zostawiają wyniki tylko w nagłówkach Microsoftu/ARC.
+    # Servers without their own Authentication-Results (e.g. Exim) leave the results only in Microsoft/ARC headers.
     auth_header = (
         msg.get("Authentication-Results")
         or msg.get("X-MS-Exchange-Authentication-Results")
@@ -401,11 +377,11 @@ def parse_email(raw_email: str) -> dict:
         try:
             ip = ipaddress.ip_address(trusted_ip)
             if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-                ip_ok, ip_reject_reason = False, "adres prywatny/zarezerwowany"
+                ip_ok, ip_reject_reason = False, t("report.ip_private")
         except ValueError:
-            ip_ok, ip_reject_reason = False, "nieprawidłowy adres IP"
+            ip_ok, ip_reject_reason = False, t("report.ip_invalid")
     else:
-        ip_ok, ip_reject_reason = False, "nie znaleziono wiarygodnego publicznego IP w łańcuchu Received"
+        ip_ok, ip_reject_reason = False, t("parser.no_public_ip")
 
     age_ok = age_days is not None and age_days <= AGE_LIMIT_DAYS
 

@@ -3,13 +3,16 @@ from __future__ import annotations
 import httpx
 
 from backend.config import settings
+from backend.i18n import t
 from backend.models import ServiceResult
 from backend.services.base import IntelService, describe_exception
 
 IP_URL = "https://api.greynoise.io/v3/ip"
 COMMUNITY_URL = "https://api.greynoise.io/v3/community"
 
-NO_DATA_MESSAGE = "brak informacji w usłudze"
+
+def _no_data_message() -> str:
+    return t("svc.greynoise_no_data_message")
 
 
 class GreyNoiseService(IntelService):
@@ -27,16 +30,16 @@ class GreyNoiseService(IntelService):
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.get(f"{IP_URL}/{ip}", headers=headers)
             if resp.status_code == 403:
-                # Klucz bez dostępu do pełnego IP Lookup (wyższy poziom planu) -
-                # spadamy na darmowy endpoint community zamiast zwracać błąd.
+                # The key has no access to the full IP Lookup (a higher plan level) - fall back to the free
+                # community endpoint instead of returning an error.
                 return await self._query_community(ip, headers)
             if resp.status_code == 404:
-                # W praktyce /v3/ip/{ip} zwraca 404 (nie found=false w 200), gdy
-                # GreyNoise nie ma żadnych danych o tym adresie.
+                # In practice /v3/ip/{ip} returns 404 (not found=false in a 200) when GreyNoise has no data
+                # about the address.
                 return ServiceResult(
                     service=self.name,
                     status="ok",
-                    summary={"has_data": False, "message": NO_DATA_MESSAGE},
+                    summary={"has_data": False, "message": _no_data_message()},
                 )
             resp.raise_for_status()
             data = resp.json()
@@ -45,7 +48,7 @@ class GreyNoiseService(IntelService):
         except httpx.HTTPError as exc:
             return self.error_result(describe_exception(exc))
         except ValueError as exc:
-            return self.error_result(f"nieprawidłowa odpowiedź (nie JSON): {describe_exception(exc)}")
+            return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 
         summary = _ip_lookup_summary(data)
         return ServiceResult(service=self.name, status="ok", summary=summary, raw=data)
@@ -58,7 +61,7 @@ class GreyNoiseService(IntelService):
                 return ServiceResult(
                     service=self.name,
                     status="ok",
-                    summary={"has_data": False, "message": NO_DATA_MESSAGE},
+                    summary={"has_data": False, "message": _no_data_message()},
                 )
             resp.raise_for_status()
             data = resp.json()
@@ -67,11 +70,11 @@ class GreyNoiseService(IntelService):
         except httpx.HTTPError as exc:
             return self.error_result(describe_exception(exc))
         except ValueError as exc:
-            return self.error_result(f"nieprawidłowa odpowiedź (nie JSON): {describe_exception(exc)}")
+            return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 
         summary = {
             "has_data": True,
-            "source": "community (klucz bez dostępu do pełnego IP Lookup /v3/ip)",
+            "source": t("svc.greynoise_community"),
             "classification": data.get("classification"),
             "noise": data.get("noise"),
             "riot": data.get("riot"),
@@ -86,15 +89,14 @@ class GreyNoiseService(IntelService):
 
 
 def _ip_lookup_summary(data: dict) -> dict:
-    """Pełny GET /v3/ip/{ip} (dokumentacja: https://docs.greynoise.io/reference/v3ip) -
-    dużo bogatszy niż community: aktor, tagi, metadane sieciowe/geo, surowe dane
-    skanowania (porty, JA3/JA4, User-Agent), plus Business Service Intelligence
-    (czy to znana, legalna usługa - np. CDN/skaner wyszukiwarki)."""
+    """Full GET /v3/ip/{ip} (documentation: https://docs.greynoise.io/reference/v3ip) - much richer than
+    community: actor, tags, network/geo metadata, raw scan data (ports, JA3/JA4, User-Agent), plus Business
+    Service Intelligence (whether it is a known, legitimate service - e.g. a CDN/search engine scanner)."""
     isi = data.get("internet_scanner_intelligence") or {}
     bsi = data.get("business_service_intelligence") or {}
 
     if not isi.get("found") and not bsi.get("found"):
-        return {"has_data": False, "message": NO_DATA_MESSAGE}
+        return {"has_data": False, "message": _no_data_message()}
 
     summary: dict = {"has_data": True}
 

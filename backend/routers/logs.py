@@ -14,7 +14,7 @@ MAX_ENTRIES = 500
 
 
 def _normalize_legacy_service(entry: dict) -> dict:
-    """Starsze wpisy błędów OpenRouter miały usługę "app" (albo "llm_analyzer"); od teraz jest to "open_router"."""
+    """Older OpenRouter error entries used the service "app" (or "llm_analyzer"); it is now "open_router"."""
     if entry.get("service") == "llm_analyzer" or (
         entry.get("service") == "app" and str(entry.get("message", "")).startswith("OpenRouter:")
     ):

@@ -14,6 +14,7 @@ from backend.citation_check import verify_citations
 from backend.config import EMAIL_GUIDE_FILE
 from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
 from backend.config import settings
+from backend.i18n import t
 from backend.services.llm_analyzer import llm_analyzer
 from backend.verdict import parse_verdict
 
@@ -37,7 +38,7 @@ class EmailAnalysisRequest(BaseModel):
 
 @router.post("/find")
 async def find_existing(req: EmailAnalysisRequest):
-    """Czy ta wiadomość była już analizowana? Pozwala uniknąć płacenia drugi raz za to samo źródło."""
+    """Was this message analysed before? Avoids paying a second time for the same source."""
     sha = source_hash(normalize_source(req.raw_email))
     return {"sha256": sha, "matches": find_by_source(sha)}
 
@@ -53,15 +54,15 @@ CONTINUE_INSTRUCTION = (
     "dotąd (Część 3, 4, 5, 6 i Pytania kontrolne są obowiązkowe)."
 )
 
-EM_DASH = "\u2014"  # w projekcie nie używamy długiego myślnika (patrz README, "Wersjonowanie i konwencje")
+EM_DASH = "\u2014"  # the project does not use the long dash (see README, "Versioning and conventions")
 
 
 def _citation_check(markdown: str, src: str, prepared: str, facts: dict) -> dict:
-    """Lokalna kontrola cytatów (bez kosztu): czy IP i cytowane nagłówki z analizy występują w źródle."""
+    """Local citation check (free): do the IPs and quoted headers of the analysis appear in the source."""
     try:
         return verify_citations(markdown, src, [prepared, decoded_text_parts(src)], facts)
-    except Exception as exc:  # kontrola pomocnicza nie może zablokować zapisu analizy
-        logger.error(f"email: kontrola cytatów nie powiodła się: {type(exc).__name__}: {exc}")
+    except Exception as exc:  # the auxiliary check must not block saving the analysis
+        logger.error(f"email: citation check failed: {type(exc).__name__}: {exc}")
         return {"checked": 0, "issues": [], "error": str(exc)}
 
 
@@ -70,7 +71,7 @@ def _guide() -> str:
 
 
 def _user_message(facts: dict, prepared: str, prep_notes: list[str]) -> str:
-    safe = prepared.replace(EMAIL_START, "[znacznik]").replace(EMAIL_END, "[znacznik]")
+    safe = prepared.replace(EMAIL_START, "[marker]").replace(EMAIL_END, "[marker]")
     facts_json = json.dumps(facts, ensure_ascii=False, indent=1)
     return (
         "## Fakty obliczone przez kod (deterministycznie, JSON)\n"
@@ -88,17 +89,17 @@ async def analyze(req: EmailAnalysisRequest):
     async def stream():
         src = normalize_source(req.raw_email)
         if not src.strip():
-            yield _sse({"type": "error", "message": "Puste źródło e-maila."})
+            yield _sse({"type": "error", "message": t("email.empty_source")})
             return
         if len(src) > MAX_SOURCE_CHARS:
-            yield _sse({"type": "error", "message": f"Źródło jest za duże ({len(src)} znaków, limit {MAX_SOURCE_CHARS})."})
+            yield _sse({"type": "error", "message": t("email.source_too_large", size=len(src), limit=MAX_SOURCE_CHARS)})
             return
 
         try:
             facts = compute_facts(src)
-        except Exception as exc:  # parser nie może wywrócić całej analizy
-            logger.error(f"email: analiza deterministyczna nie powiodła się: {type(exc).__name__}: {exc}")
-            yield _sse({"type": "error", "message": f"Analiza deterministyczna nie powiodła się: {exc}"})
+        except Exception as exc:  # the parser must not bring down the whole analysis
+            logger.error(f"email: deterministic analysis failed: {type(exc).__name__}: {exc}")
+            yield _sse({"type": "error", "message": t("email.deterministic_failed", message=exc)})
             return
 
         prepared, prep_notes = prepare_for_llm(src)
@@ -147,7 +148,7 @@ async def analyze(req: EmailAnalysisRequest):
                 "source_sha256": source_hash(src), "citation_check": citations,
             })
         except OSError as exc:
-            logger.error(f"email: zapis analizy nie powiódł się: {exc}")
+            logger.error(f"email: saving the analysis failed: {exc}")
         yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id,
                     "verdict": verdict, "confidence": confidence, "usage": usage,
                     "truncated": truncated, "model": settings.openrouter_model, "citation_check": citations})
@@ -167,17 +168,17 @@ def _sum_usage(a: dict | None, b: dict | None) -> dict | None:
 
 @router.post("/analyses/{analysis_id}/continue")
 async def continue_analysis(analysis_id: str):
-    """Dokańcza analizę ucięta limitem długości: model dostaje dotychczasowy tekst i pisze dalszy ciąg."""
+    """Finishes an analysis truncated by the length limit: the model gets the text so far and writes the rest."""
     try:
         record = load_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="nieprawidłowy identyfikator")
+        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
     if record is None:
-        raise HTTPException(status_code=404, detail="nie znaleziono analizy")
+        raise HTTPException(status_code=404, detail=t("email.not_found"))
     if not record.get("truncated"):
-        raise HTTPException(status_code=400, detail="ta analiza nie jest ucięta")
+        raise HTTPException(status_code=400, detail=t("email.not_truncated"))
     if not llm_analyzer.is_configured():
-        raise HTTPException(status_code=400, detail="brak klucza OpenRouter")
+        raise HTTPException(status_code=400, detail=t("email.no_key"))
 
     async def stream():
         prepared, prep_notes = prepare_for_llm(record["raw_email"])
@@ -211,7 +212,7 @@ async def continue_analysis(analysis_id: str):
             update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage,
                                           "citation_check": citations})
         except OSError as exc:
-            logger.error(f"email: zapis dokończonej analizy nie powiódł się: {exc}")
+            logger.error(f"email: saving the finished analysis failed: {exc}")
         yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id, "verdict": record.get("verdict"),
                     "confidence": record.get("confidence"), "usage": total_usage, "truncated": truncated,
                     "model": record.get("model"), "citation_check": citations})
@@ -229,9 +230,9 @@ async def analysis(analysis_id: str):
     try:
         record = load_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="nieprawidłowy identyfikator")
+        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
     if record is None:
-        raise HTTPException(status_code=404, detail="nie znaleziono analizy")
+        raise HTTPException(status_code=404, detail=t("email.not_found"))
     return record
 
 
@@ -240,7 +241,7 @@ async def remove_analysis(analysis_id: str):
     try:
         ok = delete_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail="nieprawidłowy identyfikator")
+        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
     if not ok:
-        raise HTTPException(status_code=404, detail="nie znaleziono analizy")
+        raise HTTPException(status_code=404, detail=t("email.not_found"))
     return {"deleted": True}

@@ -1,0 +1,22 @@
+Received: from smtp.news.example (smtp.news.example [192.0.2.10]) by mx.recipient.example with ESMTPS; Mon, 21 Sep 2026 08:00:05 +0000
+Authentication-Results: mx.recipient.example; spf=pass smtp.mailfrom=news.example; dkim=pass header.d=news.example; dmarc=pass header.from=news.example
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=news.example; s=s1; h=from:to:subject:date:message-id:list-unsubscribe; bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=; b=abc
+From: News <hello@news.example>
+To: reader@recipient.example
+Subject: Weekly digest
+Date: Mon, 21 Sep 2026 08:00:00 +0000
+Message-ID: <abc123@news.example>
+List-Unsubscribe: <mailto:unsub@news.example>, <https://news.example/unsub>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+
+Hello, read more at https://news.example/digest
+--b1
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Hello</p><a href="https://news.example/digest">Read more</a></body></html>
+--b1--

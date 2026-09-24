@@ -1,19 +1,20 @@
-"""Wynik zbiorczy reputacji IP.
+"""Aggregate IP reputation score.
 
-Każde źródło zamieniamy na "ryzyko źródła" r (0-100) nieliniową skalą dobraną do
-tego, co dana usługa faktycznie mierzy, a potem łączymy głosy modelem szum-OR:
+Every source is turned into a "source risk" r (0-100) with a non-linear scale chosen for what the given service
+actually measures, and the votes are then combined with a noisy-OR model:
 
-    wynik = 100 * (1 - PRODUKT(1 - c_i * r_i / 100))
+    score = 100 * (1 - PRODUCT(1 - c_i * r_i / 100))
 
-c_i to wiarygodność źródła (limit jego głosu, < 1 - źródła nie są w pełni
-niezależne, np. VirusTotal wchłania część tych samych zgłoszeń co AbuseIPDB).
-Mocny sygnał nie ginie w średniej, zgodne źródła się wzmacniają, a źródło bez
-danych po prostu nie głosuje (brak informacji nie jest dowodem niewinności).
+c_i is the credibility of the source (the cap of its vote, < 1 - the sources are not fully independent, e.g.
+VirusTotal absorbs part of the same reports as AbuseIPDB). A strong signal does not vanish in an average,
+agreeing sources reinforce each other, and a source without data simply does not vote (no information is not
+proof of innocence).
 """
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.i18n import t
 from backend.models import RiskComponent, RiskScore, ServiceResult
 
 CREDIBILITY = {"abuseipdb": 0.9, "virustotal": 0.8, "greynoise": 0.7, "otx": 0.5}
@@ -21,22 +22,22 @@ CREDIBILITY = {"abuseipdb": 0.9, "virustotal": 0.8, "greynoise": 0.7, "otx": 0.5
 MEDIUM_FROM = 25
 HIGH_FROM = 60
 
-# Znane dobre IP (biała lista AbuseIPDB, GreyNoise benign/RIOT, walidacja OTX) - sufit wyniku,
-# chyba że inne źródło ma silny, sprzeczny sygnał.
+# Known good IPs (AbuseIPDB whitelist, GreyNoise benign/RIOT, OTX validation) - a ceiling for the score,
+# unless another source has a strong, contradicting signal.
 BENIGN_CAP = 15
 CONTRADICTION_RISK = 65
 
 ABUSEIPDB_ANCHORS = [(0, 0), (10, 20), (25, 45), (50, 70), (75, 90), (100, 100)]
-# argument: ważona liczba detekcji = malicious + 0.5 * suspicious
+# argument: weighted number of detections = malicious + 0.5 * suspicious
 VIRUSTOTAL_ANCHORS = [(0, 0), (1, 10), (2.5, 25), (5, 45), (8.5, 65), (15, 85), (21, 100)]
-# argument: "efektywna" liczba pulsów OTX (patrz _otx_pulse_weight); sufit 65 - OTX sam nie daje "high"
+# argument: "effective" number of OTX pulses (see _otx_pulse_weight); cap 65 - OTX alone never gives "high"
 OTX_ANCHORS = [(0, 0), (1, 10), (3, 25), (6, 45), (12, 65)]
 
 GREYNOISE_RISK = {"malicious": 90, "unknown": 30, "benign": 0}
 
 
 def interpolate(x: float, anchors: list[tuple[float, float]]) -> float:
-    """Liniowa interpolacja między kotwicami; poza zakresem - wartość brzegowa."""
+    """Linear interpolation between the anchors; outside the range - the edge value."""
     if x <= anchors[0][0]:
         return anchors[0][1]
     for (x0, y0), (x1, y1) in zip(anchors, anchors[1:]):
@@ -58,12 +59,12 @@ def _days_since(iso: str | None) -> float | None:
 
 
 class Vote:
-    """Wynik oceny jednego źródła: głos (albo brak), ewentualnie sygnał 'znane dobre'."""
+    """Result of scoring one source: a vote (or none), possibly a 'known good' signal."""
 
     def __init__(self, component: RiskComponent | None = None, benign: str | None = None, neutral: str | None = None):
         self.component = component
-        self.benign = benign  # powód "znane dobre IP"
-        self.neutral = neutral  # źródło odpowiedziało, ale nie ma nic do powiedzenia
+        self.benign = benign  # reason for "known good IP"
+        self.neutral = neutral  # the source answered but has nothing to say
 
 
 def _component(source: str, signal: str, value: str, risk: float) -> RiskComponent:
@@ -75,8 +76,8 @@ def _component(source: str, signal: str, value: str, risk: float) -> RiskCompone
 
 def score_abuseipdb(s: dict, raw: dict | None = None) -> Vote:
     confidence = s.get("abuse_confidence_score") or 0
-    value = f"{confidence}% ({s.get('total_reports') or 0} zgł. od {s.get('num_distinct_users') or 0} użytk.)"
-    benign = "AbuseIPDB: IP na białej liście" if s.get("is_whitelisted") else None
+    value = t("score.abuseipdb_value", confidence=confidence, reports=s.get("total_reports") or 0, users=s.get("num_distinct_users") or 0)
+    benign = t("score.abuseipdb_whitelisted") if s.get("is_whitelisted") else None
     risk = 0.0 if benign else interpolate(confidence, ABUSEIPDB_ANCHORS)
     return Vote(_component("abuseipdb", "confidence_score", value, risk), benign=benign)
 
@@ -88,21 +89,21 @@ def score_virustotal(s: dict, raw: dict | None = None) -> Vote | None:
     malicious = s.get("malicious") or 0
     suspicious = s.get("suspicious") or 0
     weighted = malicious + 0.5 * suspicious
-    value = f"{malicious} mal. + {suspicious} podej. z {total} silników"
+    value = t("score.vt_value", malicious=malicious, suspicious=suspicious, total=total)
     return Vote(_component("virustotal", "weighted_detections", value, interpolate(weighted, VIRUSTOTAL_ANCHORS)))
 
 
 def score_greynoise(s: dict, raw: dict | None = None) -> Vote:
     if not s.get("has_data", True):
-        return Vote(neutral="greynoise: brak danych (neutralne - nie wpływa na wynik)")
+        return Vote(neutral=t("score.greynoise_no_data"))
 
     classification = s.get("classification")
     business = s.get("business_service")
     if classification != "malicious" and (classification == "benign" or s.get("riot") or business):
-        reason = "GreyNoise: znana, niegroźna usługa/skaner"
+        reason = t("score.greynoise_benign")
         if isinstance(business, dict) and business.get("name"):
-            reason = f"GreyNoise: znana usługa ({business['name']})"
-        return Vote(_component("greynoise", "classification", "benign / znana usługa", 0), benign=reason)
+            reason = t("score.greynoise_service", name=business["name"])
+        return Vote(_component("greynoise", "classification", t("score.greynoise_benign_value"), 0), benign=reason)
 
     label = classification or "unknown"
     risk = float(GREYNOISE_RISK.get(label, GREYNOISE_RISK["unknown"]))
@@ -114,17 +115,17 @@ def score_greynoise(s: dict, raw: dict | None = None) -> Vote:
     actor = s.get("actor")
     if actor and str(actor).lower() != "unknown":
         risk += 5
-        extras.append(f"aktor: {actor}")
+        extras.append(t("score.greynoise_actor", actor=actor))
     value = label + (f" ({', '.join(extras)})" if extras else "")
     return Vote(_component("greynoise", "classification", value, min(100, risk)))
 
 
 def _otx_pulse_weight(pulse: dict) -> float:
-    """Waga jednego pulsu OTX: świeżość * jakość.
+    """Weight of one OTX pulse: freshness * quality.
 
-    Świeżość: modyfikacja <= 90 dni = 1.0, <= 365 dni = 0.5, starsze 0.2.
-    Jakość: puls wzbogacony (adversary / rodzina malware / MITRE ATT&CK) = 1.0;
-    masowa lista automatyczna (>= 200 wskaźników) = 0.4; zwykły puls = 0.7.
+    Freshness: modified <= 90 days ago = 1.0, <= 365 days = 0.5, older 0.2.
+    Quality: an enriched pulse (adversary / malware family / MITRE ATT&CK) = 1.0;
+    a mass automatic list (>= 200 indicators) = 0.4; an ordinary pulse = 0.7.
     """
     age = _days_since(pulse.get("modified") or pulse.get("created"))
     freshness = 1.0 if age is None or age <= 90 else 0.5 if age <= 365 else 0.2
@@ -139,19 +140,19 @@ def score_otx(s: dict, raw: dict | None = None) -> Vote:
     count = s.get("pulse_count", 0)
     benign = None
     if s.get("validation") or s.get("false_positive"):
-        benign = "OTX: IP oznaczone jako zwalidowane/fałszywy alarm"
+        benign = t("score.otx_validated")
 
     if pulses:
         effective = sum(_otx_pulse_weight(p) for p in pulses)
-        # puls_count może być większy niż lista zwrócona przez API - reszta liczy się jak zwykły, świeży puls
+        # pulse_count may be larger than the list returned by the API - the rest counts as an ordinary, fresh pulse
         effective += max(0, count - len(pulses)) * 0.7
     else:
         effective = count * 0.7
     recent = s.get("recent_pulse_count")
     enriched = s.get("enriched_pulse_count")
-    value = f"pulsów: {count}"
+    value = t("score.otx_pulses", count=count)
     if count:
-        value += f" (świeżych: {recent if recent is not None else '?'}, wzbogaconych: {enriched if enriched is not None else '?'})"
+        value += " " + t("score.otx_detail", recent=recent if recent is not None else "?", enriched=enriched if enriched is not None else "?")
     risk = 0.0 if benign else interpolate(effective, OTX_ANCHORS)
     return Vote(_component("otx", "pulses", value, risk), benign=benign)
 
@@ -172,7 +173,7 @@ def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str) -
         if res is None:
             continue
         if indicator_type != "ip" and name in ("abuseipdb", "greynoise"):
-            excluded.append(f"{name} (nie dotyczy domen)")
+            excluded.append(t("score.not_for_domains", name=name))
             continue
         possible += 1
         if res.status != "ok":
@@ -180,14 +181,14 @@ def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str) -
             continue
         vote = fn(res.summary, res.raw)
         if vote is None:
-            excluded.append(f"{name} (brak danych)")
+            excluded.append(t("score.no_data", name=name))
             continue
         if vote.neutral:
             excluded.append(vote.neutral)
             continue
         votes.append(vote)
 
-    excluded.append("cloudflare_radar (dane sieciowe/kontekstowe, nie werdykt - poza wynikiem liczbowym)")
+    excluded.append(t("score.cloudflare_excluded"))
 
     components = [v.component for v in votes if v.component]
     remaining = 1.0
@@ -200,20 +201,16 @@ def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str) -
     if benign_reasons:
         contradicting = [c for c in components if c.risk >= CONTRADICTION_RISK]
         if contradicting:
-            notes.append(
-                "Sprzeczne sygnały: " + "; ".join(benign_reasons) + " - ale " +
-                ", ".join(c.source for c in contradicting) + " wskazuje wysokie ryzyko. Wynik bez obniżenia."
-            )
+            notes.append(t("score.note_contradiction", reasons="; ".join(benign_reasons), sources=", ".join(c.source for c in contradicting)))
         elif score > BENIGN_CAP:
             score = BENIGN_CAP
-            notes.append("Wynik obniżony do " + str(BENIGN_CAP) + " (znane dobre IP): " + "; ".join(benign_reasons) + ".")
+            notes.append(t("score.note_capped", cap=BENIGN_CAP, reasons="; ".join(benign_reasons)))
         else:
-            notes.append("Znane dobre IP: " + "; ".join(benign_reasons) + ".")
+            notes.append(t("score.note_known_good", reasons="; ".join(benign_reasons)))
 
     if possible and len(components) <= 1:
-        notes.append(
-            "Niska pewność: wynik oparty na " + (f"jednym źródle ({components[0].source})" if components else "braku danych z jakiegokolwiek źródła") + "."
-        )
+        basis = t("score.basis_single", source=components[0].source) if components else t("score.basis_nodata")
+        notes.append(t("score.note_low_confidence", basis=basis))
 
     score = round(score, 1)
     level = "high" if score >= HIGH_FROM else "medium" if score >= MEDIUM_FROM else "low"

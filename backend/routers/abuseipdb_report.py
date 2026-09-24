@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from backend.i18n import t
 from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
 from backend.report_utils import sanitize_comment, truncate_chars
@@ -30,8 +31,8 @@ class ReportFields(BaseModel):
 
 
 def _fallback_comment(facts: dict) -> str:
-    """Deterministyczny komentarz używany tylko gdy LLM jest niedostępny/zawiedzie -
-    budowany wprost z faktów wyekstrahowanych z e-maila, nie z pól formularza."""
+    """Deterministic comment used only when the LLM is unavailable or fails - built directly from the facts
+    extracted from the e-mail, not from the form fields."""
     ransom = None
     if facts.get("btc_addresses_found"):
         ransom = {"wallet": facts["btc_addresses_found"][0]}
@@ -89,10 +90,10 @@ async def preview_report(fields: ReportFields):
 async def submit_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
     if not checks["all_passed"]:
-        raise HTTPException(status_code=400, detail={"message": "twarde sprawdzenia nie przeszły", "checks": checks})
+        raise HTTPException(status_code=400, detail={"message": t("report.hard_checks_failed"), "checks": checks})
 
     if not abuseipdb_service.is_configured():
-        raise HTTPException(status_code=400, detail="brak klucza AbuseIPDB API")
+        raise HTTPException(status_code=400, detail=t("report.no_key"))
 
     comment = truncate_chars(sanitize_comment(fields.comment))
     timestamp = fields.attack_timestamp or datetime.now(timezone.utc).isoformat()
@@ -110,7 +111,7 @@ async def submit_report(fields: ReportFields):
                 "error": str(exc),
             }
         )
-        raise HTTPException(status_code=502, detail=f"błąd AbuseIPDB API: {exc}")
+        raise HTTPException(status_code=502, detail=t("report.api_error", message=exc))
 
     append_report_log(
         {

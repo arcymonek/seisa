@@ -5,6 +5,7 @@ import socket
 
 import whois
 
+from backend.i18n import t
 from backend.models import ServiceResult
 from backend.services.base import IntelService
 
@@ -22,12 +23,12 @@ class WhoisDnsService(IntelService):
         try:
             rdns = await asyncio.to_thread(self._reverse_dns, ip)
         except Exception as exc:
-            self.logger.error(f"reverse DNS nie powiódł się: {exc}")
+            self.logger.error(f"reverse DNS failed: {exc}")
 
-        # rdap.org jest bootstrapem - zawsze przekierowuje (302) do właściwego RIR
-        # (RIPE/ARIN/APNIC/LACNIC/AFRINIC), więc trzeba jawnie podążać za redirectem.
+        # rdap.org is a bootstrap - it always redirects (302) to the right RIR
+        # (RIPE/ARIN/APNIC/LACNIC/AFRINIC), so the redirect has to be followed explicitly.
         rdap_data, err = await self.fetch_json("GET", RDAP_BOOTSTRAP.format(ip=ip), follow_redirects=True)
-        summary = {"reverse_dns": rdns or "brak rekordu PTR"}
+        summary = {"reverse_dns": rdns or t("svc.no_ptr")}
         if rdap_data:
             summary.update(_rdap_summary(rdap_data))
         elif err:
@@ -64,7 +65,7 @@ class WhoisDnsService(IntelService):
 
 
 def _vcard_value(vcard_array, key: str) -> str | None:
-    """jCard (RFC 7095) - vcardArray to ["vcard", [[nazwa, {}, typ, wartość], ...]]."""
+    """jCard (RFC 7095) - vcardArray is ["vcard", [[name, {}, type, value], ...]]."""
     if not vcard_array or len(vcard_array) < 2:
         return None
     for entry in vcard_array[1]:
@@ -77,11 +78,10 @@ def _vcard_value(vcard_array, key: str) -> str | None:
 
 
 def _rdap_summary(data: dict) -> dict:
-    """RDAP (RFC 9083) zastępuje klasyczne WHOIS dla adresów IP - ten sam rodzaj
-    danych (zakres sieci, właściciel, kontakt abuse), ale jako ustandaryzowane
-    zapytanie HTTP/JSON zamiast nieustandaryzowanego protokołu WHOIS po porcie 43,
-    z automatycznym przekierowaniem do właściwego RIR (ARIN/RIPE/APNIC/LACNIC/AFRINIC)
-    przez bootstrap rdap.org."""
+    """RDAP (RFC 9083) replaces the classic WHOIS for IP addresses - the same kind of data (network range,
+    owner, abuse contact), but as a standardised HTTP/JSON query instead of the non-standardised WHOIS protocol
+    on port 43, with automatic redirection to the right RIR (ARIN/RIPE/APNIC/LACNIC/AFRINIC) through the
+    rdap.org bootstrap."""
     org = None
     abuse_contact = None
     tech_contact = None

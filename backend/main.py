@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from backend.config import FRONTEND_DIR
+from backend.i18n import reset_lang, set_lang, t
 from backend.logging_config import setup_logging
 from backend.routers import abuseipdb_report, email_analysis, history, logs, lookup, urlscan
 
@@ -18,8 +19,7 @@ app = FastAPI(title="Seisa")
 
 
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
-    """Narzędzie deweloperskie na jednego użytkownika - przeglądarka nie
-    powinna sama trzymać starych wersji HTML/JS/CSS między naszymi zmianami."""
+    """Single-user local tool: the browser should not keep old HTML/JS/CSS between our changes."""
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -28,13 +28,25 @@ class NoCacheStaticMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class LanguageMiddleware(BaseHTTPMiddleware):
+    """Stores the UI language sent by the frontend (X-Seisa-Lang) for the duration of the request."""
+
+    async def dispatch(self, request: Request, call_next):
+        token = set_lang(request.headers.get("x-seisa-lang"))
+        try:
+            return await call_next(request)
+        finally:
+            reset_lang(token)
+
+
 app.add_middleware(NoCacheStaticMiddleware)
+app.add_middleware(LanguageMiddleware)
 
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     app_logger.error(f"{request.method} {request.url.path}: {exc}")
-    return JSONResponse(status_code=500, content={"detail": "wewnętrzny błąd Seisy"})
+    return JSONResponse(status_code=500, content={"detail": t("error.internal")})
 
 
 app.include_router(lookup.router, prefix="/api")

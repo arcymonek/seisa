@@ -23,7 +23,7 @@ class SlidingWindowLimiter:
         self._lock = asyncio.Lock()
 
     async def acquire(self) -> float:
-        """Zwraca liczbę sekund oczekiwania, jakie faktycznie minęły."""
+        """Returns the number of seconds actually spent waiting."""
         async with self._lock:
             waited = 0.0
             while True:

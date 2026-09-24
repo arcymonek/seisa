@@ -1,10 +1,12 @@
-"""Deterministyczna analiza źródła e-maila dla zakładki "Email".
+"""Deterministic analysis of the e-mail source for the "Email" tab.
 
-Wszystko tutaj jest liczone lokalnie, bez sieci i bez LLM: oś czasu, konwersje epoch, długości bh=,
-drzewo MIME, tabela linków, ukryta treść itd. Wynik trafia i do interfejsu (od razu), i do promptu LLM
-jako "fakty obliczone przez kod", żeby model tłumaczył zamiast liczyć.
+Everything here is computed locally, without network and without an LLM: timeline, epoch conversions, bh=
+lengths, MIME tree, link table, hidden content etc. The result goes both to the interface (immediately) and to
+the LLM prompt as "facts computed by the code", so that the model explains instead of calculating.
 
-Wiadomość jest niezaufanym wejściem: nic tu nie otwiera linków, nie pobiera zasobów ani nie wykonuje treści.
+User-facing texts (findings, roles, labels) are produced with t() in the language of the current request.
+
+The message is untrusted input: nothing here opens links, downloads resources or executes content.
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
 
 from backend.email_parser import _parse_received_header
+from backend.i18n import t
 
 MAX_LLM_SOURCE_CHARS = 120_000
 MAX_DECODED_TEXT_CHARS = 60_000
@@ -75,11 +78,11 @@ HIDDEN_STYLE_RES = {
 
 
 # ---------------------------------------------------------------------------
-# normalizacja i przygotowanie źródła
+# normalisation and preparation of the source
 # ---------------------------------------------------------------------------
 
 def decode_eml_bytes(data: bytes) -> str:
-    """Bajty pliku .eml -> tekst: UTF-8, a gdy się nie da, windows-1252 (bajty nigdy nie giną)."""
+    """Bytes of an .eml file -> text: UTF-8, and when that fails windows-1252 (bytes are never lost)."""
     if data.startswith(b"\xef\xbb\xbf"):
         data = data[3:]
     try:
@@ -89,8 +92,8 @@ def decode_eml_bytes(data: bytes) -> str:
 
 
 def normalize_source(raw: str) -> str:
-    """Ujednolica źródło wklejone/wczytane z pliku: BOM, zakończenia linii, koperta mbox ("From ..."),
-    puste linie na początku. Nie zmienia niczego wewnątrz nagłówków ani treści."""
+    """Unifies the source pasted/loaded from a file: BOM, line endings, mbox envelope ("From ..."), leading
+    empty lines. Does not change anything inside the headers or the body."""
     text = raw.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
     text = text.lstrip("\n")
     lines = text.split("\n", 1)
@@ -111,8 +114,9 @@ def _b64_decode(lines: list[str]) -> bytes | None:
 
 
 def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[str, list[str]]:
-    """Wersja źródła dla LLM: binarne załączniki base64 zastępowane znacznikiem (rozmiar + sha256), tekstowe
-    części base64 dekodowane (model czyta je wprost), reszta bez zmian. Zwraca (tekst, notatki dla użytkownika)."""
+    """Version of the source for the LLM: binary base64 attachments are replaced by a marker (size + sha256),
+    text base64 parts are decoded (the model reads them directly), the rest is unchanged. Returns (text, notes
+    for the user). The markers are input for the model (English); the notes are shown to the user (translated)."""
     lines = src.split("\n")
     out: list[str] = []
     notes: list[str] = []
@@ -144,15 +148,15 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
             except LookupError:
                 text = data.decode("utf-8", errors="replace")
             if len(text) > MAX_DECODED_TEXT_CHARS:
-                text = text[:MAX_DECODED_TEXT_CHARS] + "\n...(obcięte)"
-            out.append(f"[Seisa: poniżej treść części {ctype} zdekodowana z base64 (charset {charset})]")
+                text = text[:MAX_DECODED_TEXT_CHARS] + "\n...(truncated)"
+            out.append(f"[Seisa: below is the content of the {ctype} part decoded from base64 (charset {charset})]")
             out.extend(text.split("\n"))
-            out.append("[Seisa: koniec zdekodowanej części]")
-            notes.append(f"zdekodowano część {ctype} z base64 ({len(data)} B)")
+            out.append("[Seisa: end of the decoded part]")
+            notes.append(t("forensics.prep_decoded", ctype=ctype, size=len(data)))
         else:
             digest = hashlib.sha256(data).hexdigest()
-            out.append(f"[Seisa: pominięto treść base64 ({ctype or 'nieznany typ'}): {len(data)} bajtów po zdekodowaniu, sha256={digest}]")
-            notes.append(f"pominięto binarną treść base64 {ctype or '?'} ({len(data)} B)")
+            out.append(f"[Seisa: base64 content omitted ({ctype or 'unknown type'}): {len(data)} bytes after decoding, sha256={digest}]")
+            notes.append(t("forensics.prep_omitted", ctype=ctype or "?", size=len(data)))
 
     for line in lines:
         if mode == "capture":
@@ -190,13 +194,13 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
 
     text = "\n".join(out)
     if len(text) > max_chars:
-        text = text[:max_chars] + "\n[Seisa: źródło obcięte do limitu]"
-        notes.append(f"źródło obcięte do {max_chars} znaków (limit wysyłki do LLM)")
+        text = text[:max_chars] + "\n[Seisa: source truncated to the limit]"
+        notes.append(t("forensics.prep_truncated", n=max_chars))
     return text, notes
 
 
 # ---------------------------------------------------------------------------
-# narzędzia pomocnicze
+# helpers
 # ---------------------------------------------------------------------------
 
 def registrable_domain(host: str | None) -> str | None:
@@ -204,7 +208,7 @@ def registrable_domain(host: str | None) -> str | None:
         return None
     host = host.strip().strip(".").lower()
     if re.fullmatch(r"[\d.]+|[0-9a-f:]+", host) and (":" in host or host.count(".") == 3):
-        return None  # adres IP
+        return None  # an IP address
     labels = host.split(".")
     if len(labels) < 2:
         return host
@@ -213,7 +217,7 @@ def registrable_domain(host: str | None) -> str | None:
     return ".".join(labels[-2:])
 
 
-# Rodziny domen jednego operatora poczty: Received/Authentication-Results tego samego operatora bywają pod różnymi domenami.
+# Domain families of one mail operator: Received/Authentication-Results of the same operator may use different domains.
 PROVIDER_FAMILIES = {
     "microsoft": {"microsoft.com", "outlook.com", "office365.com", "office.com", "hotmail.com", "live.com", "msn.com"},
     "google": {"google.com", "gmail.com", "googlemail.com"},
@@ -224,7 +228,7 @@ PROVIDER_FAMILIES = {
 
 
 def family(domain: str | None) -> str | None:
-    """Klucz rodziny operatora dla domeny (nieznana domena = sama sobie rodziną)."""
+    """Operator family key for a domain (an unknown domain is its own family)."""
     if not domain:
         return None
     for key, members in PROVIDER_FAMILIES.items():
@@ -272,7 +276,7 @@ def _decode_words(value: str) -> str:
 
 
 def _tags(value: str) -> dict[str, str]:
-    """Tagi DKIM/ARC 'k=v; k=v' -> dict (kolejne wystąpienia nie nadpisują pierwszego)."""
+    """DKIM/ARC tags 'k=v; k=v' -> dict (later occurrences do not overwrite the first one)."""
     out: dict[str, str] = {}
     for part in value.split(";"):
         if "=" in part:
@@ -286,7 +290,7 @@ def _fmt_utc(dt: datetime | None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# analiza HTML (ukryta treść, linki, elementy zdalne)
+# HTML analysis (hidden content, links, remote elements)
 # ---------------------------------------------------------------------------
 
 class _HtmlAudit(HTMLParser):
@@ -308,7 +312,7 @@ class _HtmlAudit(HTMLParser):
         if "height:0+overflow:hidden" in found and "overflow" not in style:
             found.remove("height:0+overflow:hidden")
         if "hidden" in attrs:
-            found.append("atrybut hidden")
+            found.append(t("forensics.hidden_attr"))
         return found
 
     def handle_starttag(self, tag, attrs_list):
@@ -389,12 +393,12 @@ def _audit_html(html: str) -> dict:
     try:
         audit.feed(html)
         audit.close()
-    except Exception:  # zepsuty HTML nie może wywrócić analizy
+    except Exception:  # broken HTML must not bring down the analysis
         pass
 
     tag_names = re.findall(r"<\s*/?\s*([A-Za-z][A-Za-z0-9:_-]*)", html)
-    mixed = sorted({t for t in tag_names if t != t.lower() and t != t.upper() and t != t.capitalize()})
-    unknown = sorted({t.lower() for t in tag_names if t.lower() not in KNOWN_HTML_TAGS})
+    mixed = sorted({tag for tag in tag_names if tag != tag.lower() and tag != tag.upper() and tag != tag.capitalize()})
+    unknown = sorted({tag.lower() for tag in tag_names if tag.lower() not in KNOWN_HTML_TAGS})
 
     links = []
     for l in audit.links:
@@ -427,23 +431,24 @@ def _audit_html(html: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę
+# recipient anti-spam filters and flags set by the sender
 # ---------------------------------------------------------------------------
 
+# header -> catalog key of the explanation (forensics.sender.<key>)
 SENDER_SET_HEADERS = {
-    "x-message-flag": "flaga wiadomości ustawiana przez nadawcę (Outlook pokaże ją przy wiadomości) - technika przyciągania uwagi",
-    "importance": "ważność deklarowana przez nadawcę (wpływa tylko na wyświetlanie w kliencie)",
-    "x-priority": "priorytet deklarowany przez nadawcę (1 = najwyższy)",
-    "priority": "priorytet deklarowany przez nadawcę",
-    "x-msmail-priority": "priorytet deklarowany przez nadawcę",
-    "return-receipt-to": "żądanie potwierdzenia odbioru (śledzenie: potwierdza, że skrzynka żyje)",
-    "disposition-notification-to": "żądanie potwierdzenia odczytu (śledzenie: potwierdza, że wiadomość otwarto)",
+    "x-message-flag": "message_flag",
+    "importance": "importance",
+    "x-priority": "x_priority",
+    "priority": "priority",
+    "x-msmail-priority": "priority",
+    "return-receipt-to": "return_receipt",
+    "disposition-notification-to": "read_receipt",
 }
-PHISH_CATEGORIES = {"PHSH": "phishing", "HPHSH": "phishing o wysokiej pewności", "MALW": "malware", "SPM": "spam", "HSPM": "spam o wysokiej pewności", "BULK": "masowa"}
+PHISH_CATEGORIES = ("PHSH", "HPHSH", "MALW", "SPM", "HSPM", "BULK")  # names: forensics.category.<code>
 
 
 def _kv(value: str) -> dict[str, str]:
-    """Nagłówki filtrów Microsoftu 'KLUCZ:wartość;KLUCZ:wartość' -> dict (klucze wielkimi literami)."""
+    """Microsoft filter headers 'KEY:value;KEY:value' -> dict (keys in upper case)."""
     out: dict[str, str] = {}
     for part in value.split(";"):
         if ":" in part:
@@ -477,7 +482,7 @@ def _extract_filters(headers: list[tuple[str, str]], flag) -> dict:
     if delivery_decoded:
         m = re.search(r"SCL=(-?\d+)", delivery_decoded)
         if m:
-            scl["X-Message-Delivery (zdekodowany)"] = m.group(1)
+            scl[t("forensics.msg_delivery_decoded")] = m.group(1)
     antispam = _kv(hd["x-microsoft-antispam"]) if "x-microsoft-antispam" in hd else {}
     mailbox = _kv(hd["x-microsoft-antispam-mailbox-delivery"]) if "x-microsoft-antispam-mailbox-delivery" in hd else {}
 
@@ -486,7 +491,7 @@ def _extract_filters(headers: list[tuple[str, str]], flag) -> dict:
         ms = {
             "scl": scl,
             "bcl": antispam.get("BCL"),
-            "folder": "Wiadomości-śmieci (Junk)" if junk else None,
+            "folder": t("forensics.junk_folder") if junk else None,
             "mailbox_delivery": {k: mailbox[k] for k in ("DEST", "RF", "OFR") if k in mailbox},
             "auth_as": hd.get("x-ms-exchange-organization-authas"),
             "auth_source": hd.get("x-ms-exchange-organization-authsource"),
@@ -498,37 +503,37 @@ def _extract_filters(headers: list[tuple[str, str]], flag) -> dict:
         }
         nums = [int(x) for x in scl.values() if re.fullmatch(r"-?\d+", x)]
         if nums and max(nums) >= 5:
-            flag("warn", f"Filtr odbiorcy (Microsoft): SCL={max(nums)} (0-1 czysta, 5-6 spam, 9 najwyższa pewność spamu).")
+            flag("warn", t("forensics.flag.scl", scl=max(nums)))
         if junk:
-            flag("warn", "Wiadomość została dostarczona do folderu Wiadomości-śmieci (znaczniki RF:JunkEmail / dest:J w nagłówku dostarczenia filtra).")
+            flag("warn", t("forensics.flag.junk"))
         cat = forefront.get("CAT", "")
         for code in [c for c in re.split(r"[+,\s]+", cat) if c in PHISH_CATEGORIES]:
-            flag("warn", f"Kategoria filtra Microsoftu: {code} ({PHISH_CATEGORIES[code]}).")
+            flag("warn", t("forensics.flag.ms_category", code=code, name=t(f"forensics.category.{code}")))
         if (ms["auth_as"] or "").lower() == "anonymous":
-            flag("info", "Wiadomość weszła do tenanta anonimowo (AuthAs: Anonymous), bez uwierzytelnionej tożsamości nadawcy.")
+            flag("info", t("forensics.flag.anonymous"))
 
     other = []
     for name in ("x-spam-flag", "x-spam-status", "x-spam-score", "x-spam-level", "x-rspamd-score", "x-spam-report"):
         if name in hd:
             other.append({"header": name, "value": hd[name][:200]})
     if hd.get("x-spam-flag", "").strip().upper() == "YES":
-        flag("warn", "Filtr antyspamowy odbiorcy oznaczył wiadomość jako spam (X-Spam-Flag: YES).")
+        flag("warn", t("forensics.flag.spam_flag"))
 
     sender_set = []
-    for name, note in SENDER_SET_HEADERS.items():
+    for name, note_key in SENDER_SET_HEADERS.items():
         if name in hd:
-            sender_set.append({"header": name, "value": hd[name].strip()[:120], "note": note})
+            sender_set.append({"header": name, "value": hd[name].strip()[:120], "note": t(f"forensics.sender.{note_key}")})
     for item in sender_set:
         if item["header"] in ("return-receipt-to", "disposition-notification-to", "x-message-flag"):
-            flag("warn", f"Nadawca ustawił `{item['header']}: {item['value']}` - {item['note']}.")
+            flag("warn", t("forensics.flag.sender_set", header=item["header"], value=item["value"], note=item["note"]))
         elif item["header"] == "importance" and item["value"].lower() == "high" or item["header"] == "x-priority" and item["value"][:1] in ("1", "2"):
-            flag("info", f"Nadawca deklaruje wysoki priorytet (`{item['header']}: {item['value']}`) - element presji.")
+            flag("info", t("forensics.flag.high_priority", header=item["header"], value=item["value"]))
 
     return {"microsoft": ms or None, "other": other, "sender_set": sender_set}
 
 
 # ---------------------------------------------------------------------------
-# główna funkcja
+# main function
 # ---------------------------------------------------------------------------
 
 def _walk_mime(msg: Message, depth: int, rows: list[dict], flags: list[str], leaves: list[Message]) -> None:
@@ -541,17 +546,17 @@ def _walk_mime(msg: Message, depth: int, rows: list[dict], flags: list[str], lea
         "filename": None, "size": None, "boundary": None,
     }
     if not row["cte_valid"]:
-        flags.append(f"Niedozwolone Content-Transfer-Encoding: `{cte_raw[:40]}` (część {ctype}) - filtr i klient mogą je zinterpretować różnie (parser differential).")
+        flags.append(t("forensics.flag.bad_cte", cte=cte_raw[:40], ctype=ctype))
     if msg.is_multipart():
         row["boundary"] = msg.get_boundary()
         if row["boundary"] and re.search(r"987654321|123456789|0123456789|12345678", row["boundary"]):
-            flags.append(f"Boundary `{row['boundary'][:60]}` zawiera ręcznie wpisany ciąg cyfr (imituje generator).")
+            flags.append(t("forensics.flag.boundary_digits", boundary=row["boundary"][:60]))
         rows.append(row)
         parts = msg.get_payload() if isinstance(msg.get_payload(), list) else []
         if ctype == "multipart/digest":
             odd = [p.get_content_type() for p in parts if p.get_content_type().startswith("text/")]
             if odd:
-                flags.append("`multipart/digest` służy do paczek wiadomości (message/rfc822), a zawiera części tekstowe/HTML - nietypowe, utrudnia parsowanie.")
+                flags.append(t("forensics.flag.digest"))
         for p in parts:
             _walk_mime(p, depth + 1, rows, flags, leaves)
     else:
@@ -579,8 +584,8 @@ def _leaf_text(part: Message) -> str:
 
 
 def decoded_text_parts(src: str) -> str:
-    """Zdekodowane (quoted-printable/base64) części tekstowe wiadomości - cytaty z treści HTML modelu
-    odpowiadają im, a nie surowemu źródłu."""
+    """Decoded (quoted-printable/base64) text parts of the message - quotes from the HTML body made by the model
+    correspond to them, not to the raw source."""
     try:
         msg = message_from_string(src)
         leaves: list[Message] = []
@@ -610,7 +615,7 @@ def compute_facts(src: str) -> dict:
 
     date_dt = _parse_date(first("date"))
 
-    # --- przegląd ---
+    # --- overview ---
     subject_raw = first("subject") or ""
     overview = {
         "subject": _decode_words(subject_raw)[:300],
@@ -624,14 +629,14 @@ def compute_facts(src: str) -> dict:
         "source_chars": len(src),
     }
 
-    # --- nagłówki: duplikaty, wielkość liter, kodowanie ---
+    # --- headers: duplicates, letter case, encoding ---
     dup = []
     for name in SINGLE_INSTANCE_HEADERS:
         vals = all_of(name)
         if len(vals) > 1:
             dup.append({"name": name, "count": len(vals), "values": [v[:80] for v in vals]})
-            flag("warn", f"Nagłówek `{name}` występuje {len(vals)} razy (powinien raz)" + (
-                ": wartości są różne." if len(set(vals)) > 1 else "."))
+            flag("warn", t("forensics.flag.duplicate", name=name, n=len(vals)) + (
+                t("forensics.flag.duplicate_differ") if len(set(vals)) > 1 else "."))
     casings: dict[str, set[str]] = {}
     for n, _ in headers:
         casings.setdefault(n.lower(), set()).add(n)
@@ -644,7 +649,7 @@ def compute_facts(src: str) -> dict:
         elif not v.isascii():
             non_ascii.append(n)
     if non_ascii:
-        flag("info", "Znaki spoza ASCII w nagłówkach bez kodowania RFC 2047: " + ", ".join(sorted(set(non_ascii))[:6]) + " (mógł to spowodować eksport/wklejenie).")
+        flag("info", t("forensics.flag.non_ascii", headers=", ".join(sorted(set(non_ascii))[:6])))
 
     placeholders: list[str] = []
     head_blob = "\n".join(f"{n}: {v}" for n, v in headers)
@@ -660,17 +665,20 @@ def compute_facts(src: str) -> dict:
         if ";" in raw:
             ts = _parse_date(raw.rsplit(";", 1)[1])
         hop_flags = []
+        info_hop_flags = set()  # findings that are informational only
         m_id = re.search(r"\bid\s+(\S+?)(?:[;\s]|$)", raw)
         if m_id and re.search(r"[?&=]", m_id.group(1)):
-            hop_flags.append(f"pole id zawiera parametry URL (`{m_id.group(1)[:60]}`)")
+            hop_flags.append(t("forensics.hop.id_params", id=m_id.group(1)[:60]))
         m_for = re.search(r"\bfor\s+<?([^>;\s]+)>?", raw)
         if m_for and "@" not in m_for.group(1):
-            hop_flags.append(f"`for {m_for.group(1)[:30]}` bez adresu (placeholder?)")
+            hop_flags.append(t("forensics.hop.for_no_address", value=m_for.group(1)[:30]))
         m_tz = re.search(r"([+-]\d{4})\s*\((\w+)\)\s*$", raw.strip())
         if m_tz and m_tz.group(2).upper() in TZ_ABBR and TZ_ABBR[m_tz.group(2).upper()] != int(m_tz.group(1)):
-            hop_flags.append(f"strefa {m_tz.group(1)} nie zgadza się z ({m_tz.group(2)})")
+            hop_flags.append(t("forensics.hop.tz_mismatch", offset=m_tz.group(1), name=m_tz.group(2)))
         if ts and date_dt and ts == date_dt and idx == len(recv_raw) - 1 and len(recv_raw) > 1:
-            hop_flags.append("czas najstarszego Received identyczny co do sekundy z Date")
+            same_time = t("forensics.hop.same_time_as_date")
+            hop_flags.append(same_time)
+            info_hop_flags.add(same_time)
         m_helo = re.search(r"helo=([^\s)\]]+)", raw)
         m_ptr = re.search(r"\bfrom\s+\S+\s+\(([^\s()\[\]]+?)\.?\s+\[[0-9a-fA-F:.]+\]", raw)
         m_with = re.search(r"\bwith\s+([A-Za-z0-9]+)", raw)
@@ -682,9 +690,9 @@ def compute_facts(src: str) -> dict:
             "flags": hop_flags, "raw": hop["raw"][:400],
         })
         for f in hop_flags:
-            # przy bezpośrednim przyjęciu przez dużego operatora identyczny czas jest normalny - tylko informacja
-            level = "info" if f.startswith("czas najstarszego Received") else "warn"
-            flag(level, f"Received #{idx} (od góry): {f}.")
+            # with direct acceptance by a large operator an identical time is normal - information only
+            level = "info" if f in info_hop_flags else "warn"
+            flag(level, t("forensics.flag.hop", idx=idx, text=f))
     single_operator = None
     trust_note = None
     trust_index = 0
@@ -696,23 +704,19 @@ def compute_facts(src: str) -> dict:
             trust_index = len(received) - 1
             for r in received:
                 r["role"] = (
-                    "najstarszy wpis operatora odbiorcy - pierwszy zapis połączenia, IP z gniazda TCP (granica zaufania)"
+                    t("forensics.role.oldest_operator")
                     if r["index"] == trust_index
-                    else "wewnętrzny skok tego samego operatora (po granicy zaufania)"
+                    else t("forensics.role.internal_hop")
                 )
-            trust_note = (
-                f"Cały łańcuch Received należy do jednego operatora ({single_operator}) - to infrastruktura odbiorcy. "
-                f"Granicą zaufania jest najstarszy wpis (#{trust_index}): to on zapisał adres IP połączenia; "
-                "wyższe wpisy to wewnętrzne skoki tego samego operatora."
-            )
+            trust_note = t("forensics.trust_note", operator=single_operator, index=trust_index)
             flag("info", trust_note)
         else:
-            received[0]["role"] = "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)"
+            received[0]["role"] = t("forensics.role.top")
             for r in received[1:]:
-                r["role"] = "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora"
+                r["role"] = t("forensics.role.below")
 
-    # --- uwierzytelnianie ---
-    top_by_domains = set()  # rodziny operatorów, które zapisały Received po stronie odbiorcy
+    # --- authentication ---
+    top_by_domains = set()  # operator families that wrote Received on the recipient's side
     for r in received:
         d = family(registrable_domain((r["by_host"] or "").strip("[]")))
         if d:
@@ -746,27 +750,27 @@ def compute_facts(src: str) -> dict:
     # --- DKIM / ARC ---
     dkim = []
     for v in all_of("dkim-signature"):
-        t = _tags(v)
-        signed = [h.strip().lower() for h in t.get("h", "").split(":") if h.strip()]
-        bh = t.get("bh", "")
-        hash_hint = {28: "SHA-1 (20 B)", 44: "SHA-256 (32 B)", 88: "SHA-512 (64 B)"}.get(len(bh), "nietypowa")
+        tags = _tags(v)
+        signed = [h.strip().lower() for h in tags.get("h", "").split(":") if h.strip()]
+        bh = tags.get("bh", "")
+        hash_hint = {28: "SHA-1 (20 B)", 44: "SHA-256 (32 B)", 88: "SHA-512 (64 B)"}.get(len(bh), t("forensics.dkim_unusual"))
         unsigned = [h for h in ("from", "to", "subject", "date", "reply-to", "message-id", "content-type") if h not in signed]
         dkim.append({
-            "d": t.get("d"), "s": t.get("s"), "a": t.get("a"), "c": t.get("c"), "i": t.get("i"), "t": t.get("t"),
+            "d": tags.get("d"), "s": tags.get("s"), "a": tags.get("a"), "c": tags.get("c"), "i": tags.get("i"), "t": tags.get("t"),
             "bh_len": len(bh), "hash_hint": hash_hint, "signed_headers": signed, "unsigned_important": unsigned,
-            "legacy_sha1": (t.get("a") or "").lower().endswith("sha1"),
+            "legacy_sha1": (tags.get("a") or "").lower().endswith("sha1"),
         })
-        if (t.get("a") or "").lower().endswith("sha1"):
-            flag("warn", f"DKIM `d={t.get('d')}` używa {t.get('a')} (SHA-1 jest przestarzały, RFC 8301).")
+        if (tags.get("a") or "").lower().endswith("sha1"):
+            flag("warn", t("forensics.flag.dkim_sha1", d=tags.get("d"), a=tags.get("a")))
     if "domainkey-signature" in lower_names:
-        flag("warn", "Obecny nagłówek `DomainKey-Signature` (przestarzały poprzednik DKIM).")
+        flag("warn", t("forensics.flag.domainkey"))
     arc = []
     for n, v in headers:
         if n.lower() == "arc-seal":
-            t = _tags(v)
-            arc.append({"i": t.get("i"), "d": t.get("d"), "s": t.get("s"), "cv": t.get("cv"), "t": t.get("t")})
+            tags = _tags(v)
+            arc.append({"i": tags.get("i"), "d": tags.get("d"), "s": tags.get("s"), "cv": tags.get("cv"), "t": tags.get("t")})
 
-    # --- tożsamość i zgodność domen ---
+    # --- identity and domain alignment ---
     from_addr, from_dom = _addr_domain(first("from"))
     from_reg = registrable_domain(from_dom)
     identity_rows = []
@@ -805,18 +809,18 @@ def compute_facts(src: str) -> dict:
         add_identity("List-Unsubscribe", u[:100], host)
     misaligned = [r for r in identity_rows if r["aligned"] is False and r["field"] != "Message-ID"]
     if misaligned and from_reg:
-        flag("warn", "Domeny niezgodne z domeną `From` (" + str(from_reg) + "): " + ", ".join(sorted({f"{r['field']}={r['domain']}" for r in misaligned})[:6]) + ".")
+        flag("warn", t("forensics.flag.misaligned", domain=from_reg, list=", ".join(sorted({f"{r['field']}={r['domain']}" for r in misaligned})[:6])))
     if rt and _addr_domain(rt)[1] and registrable_domain(_addr_domain(rt)[1]) != from_reg:
-        flag("warn", "Reply-To w innej domenie niż From (klasyczny sygnał ostrzegawczy).")
+        flag("warn", t("forensics.flag.reply_to"))
     for dom in [from_dom] + [r["domain"] for r in identity_rows if r["domain"]]:
         if dom and (dom.startswith("xn--") or ".xn--" in dom or not dom.isascii()):
-            flag("warn", f"Domena `{dom}` używa punycode/znaków spoza ASCII (możliwy homoglif).")
+            flag("warn", t("forensics.flag.punycode", domain=dom))
             break
 
-    # --- oś czasu ---
+    # --- timeline ---
     timeline = []
     if date_dt:
-        timeline.append({"event": "Date (deklaracja nadawcy)", "raw": first("date"), "_ts": date_dt})
+        timeline.append({"event": t("forensics.date_declared"), "raw": first("date"), "_ts": date_dt})
     for r in reversed(received):
         if r["_ts"]:
             label = f"Received #{r['index']} ({r['by_host'] or '?'})"
@@ -829,9 +833,9 @@ def compute_facts(src: str) -> dict:
     if date_dt and received and received[0]["_ts"]:
         total = int((received[0]["_ts"] - date_dt).total_seconds())
         if total > 3600:
-            flag("warn", f"Od `Date` do najwyższego Received minęło {total // 3600} h {(total % 3600) // 60} min (duże opóźnienie).")
+            flag("warn", t("forensics.flag.delay", h=total // 3600, m=(total % 3600) // 60))
         elif total < -300:
-            flag("warn", "`Date` jest późniejsza niż czas najwyższego Received (data z przyszłości względem odbioru).")
+            flag("warn", t("forensics.flag.future_date"))
     for r in received:
         r.pop("_ts", None)
     for row in timeline:
@@ -859,13 +863,13 @@ def compute_facts(src: str) -> dict:
             if m:
                 epoch_add(n, m.group(1))
 
-    # --- MIME i treść ---
+    # --- MIME and body ---
     mime_rows: list[dict] = []
     mime_flag_texts: list[str] = []
     leaves: list[Message] = []
     _walk_mime(msg, 0, mime_rows, mime_flag_texts, leaves)
-    for t in mime_flag_texts:
-        flag("warn", t)
+    for text in mime_flag_texts:
+        flag("warn", text)
 
     attachments = []
     html_parts, text_parts = [], []
@@ -886,16 +890,16 @@ def compute_facts(src: str) -> dict:
                 "extension": ext, "double_extension_as": apparent, "risky_extension": ext in RISKY_EXTENSIONS,
             })
             if apparent:
-                flag("warn", f"Załącznik `{fname[:60]}`: podwójne rozszerzenie (wygląda na .{apparent}, faktycznie .{ext}).")
+                flag("warn", t("forensics.flag.att_double_ext", name=fname[:60], apparent=apparent, ext=ext))
             elif ext in RISKY_EXTENSIONS:
-                flag("warn", f"Załącznik `{fname[:60]}` ma ryzykowne rozszerzenie .{ext}.")
+                flag("warn", t("forensics.flag.att_risky", name=fname[:60], ext=ext))
             continue
         if ctype == "text/html":
             html_parts.append(_leaf_text(leaf))
         elif ctype == "text/plain":
             text_parts.append(_leaf_text(leaf))
     if html_parts and not text_parts:
-        flag("info", "Brak części `text/plain` (jest tylko HTML) - legalne wysyłki masowe zwykle dodają tekstową alternatywę.")
+        flag("info", t("forensics.flag.no_plain"))
 
     html_audit = _audit_html("\n".join(html_parts)) if html_parts else None
     body_blob = "\n".join(text_parts + html_parts)
@@ -903,47 +907,47 @@ def compute_facts(src: str) -> dict:
         placeholders += [m.group(0) for m in rx.finditer(body_blob)][:3]
     placeholders = list(dict.fromkeys(placeholders))[:8]
     if placeholders:
-        flag("warn", "Niepodstawione placeholdery szablonu: " + ", ".join(f"`{p[:30]}`" for p in placeholders[:5]) + ".")
+        flag("warn", t("forensics.flag.placeholders", list=", ".join(f"`{p[:30]}`" for p in placeholders[:5])))
 
     urls_plain = list(dict.fromkeys(re.findall(r"https?://[^\s<>\"')]+", "\n".join(text_parts))))[:15]
 
     if html_audit:
         h = html_audit
         if h["hidden"]:
-            techs = sorted({t for rec in h["hidden"] for t in rec["techniques"]})
-            flag("warn", f"Ukryta treść: {len(h['hidden'])} elementów ({h['hidden_text_total']} znaków), techniki: {', '.join(techs)}.")
+            techs = sorted({tech for rec in h["hidden"] for tech in rec["techniques"]})
+            flag("warn", t("forensics.flag.hidden", n=len(h["hidden"]), chars=h["hidden_text_total"], techniques=", ".join(techs)))
         if h["comment_chars"] > 500:
-            flag("warn", f"Duży komentarz HTML ({h['comment_chars']} znaków w {h['comment_count']} komentarzach) - możliwe wypełniacze (Bayesian poisoning).")
+            flag("warn", t("forensics.flag.big_comment", chars=h["comment_chars"], count=h["comment_count"]))
         if h["mixed_case_tags"]:
-            flag("warn", "Losowa wielkość liter w znacznikach: " + ", ".join(f"`{t}`" for t in h["mixed_case_tags"][:4]) + ".")
+            flag("warn", t("forensics.flag.mixed_case", list=", ".join(f"`{tag}`" for tag in h["mixed_case_tags"][:4])))
         if h["unknown_tag_count"] >= 5:
-            flag("warn", f"{h['unknown_tag_count']} nieznanych znaczników HTML (możliwy hash busting), np. " + ", ".join(f"`{t}`" for t in h["unknown_tags"][:3]) + ".")
+            flag("warn", t("forensics.flag.unknown_tags", n=h["unknown_tag_count"], list=", ".join(f"`{tag}`" for tag in h["unknown_tags"][:3])))
         if h["wrapped_anchor"]:
-            flag("warn", "Duża część treści jest opakowana w jeden link (`<a style=display:block>`): każdy klik prowadzi na stronę docelową.")
-        for kind, cnt in (("formularz", h["forms"]), ("skrypt", h["scripts"]), ("iframe", h["iframes"]), ("object/embed", h["objects"])):
+            flag("warn", t("forensics.flag.wrapped_anchor"))
+        for kind, cnt in ((t("forensics.kind.form"), h["forms"]), (t("forensics.kind.script"), h["scripts"]), ("iframe", h["iframes"]), ("object/embed", h["objects"])):
             if cnt:
-                flag("warn", f"Treść zawiera {kind} ({cnt}).")
+                flag("warn", t("forensics.flag.contains", kind=kind, n=cnt))
         tracking = [i for i in h["images"] if i["tracking_hint"]]
         if tracking:
-            flag("info", f"{len(tracking)} obrazów wygląda na śledzące (1x1 lub z parametrami w URL).")
+            flag("info", t("forensics.flag.tracking", n=len(tracking)))
         for l in h["links"]:
             if l["text_host_mismatch"]:
-                flag("warn", f"Link: widoczny tekst wskazuje inną domenę niż href (`{l['text'][:40]}` -> `{l['host']}`).")
+                flag("warn", t("forensics.flag.link_mismatch", text=l["text"][:40], host=l["host"]))
             if l["scheme"] == "http":
-                flag("info", f"Link używa http:// (`{(l['host'] or '')[:50]}`).")
+                flag("info", t("forensics.flag.link_http", host=(l["host"] or "")[:50]))
             if l["abused_host"]:
-                flag("info", f"Link do usługi często nadużywanej do hostowania phishingu: `{l['host']}`.")
+                flag("info", t("forensics.flag.link_abused", host=l["host"]))
             if l["shortener"]:
-                flag("warn", f"Link przez skracacz: `{l['host']}`.")
+                flag("warn", t("forensics.flag.link_shortener", host=l["host"]))
         if any(l["query_params"] >= 4 for l in h["links"]):
-            flag("info", "Link z wieloma parametrami w URL (identyfikatory śledzące?).")
+            flag("info", t("forensics.flag.link_params"))
 
     all_link_hosts = []
     for u in unsub_urls:
         if re.match(r"(?i)https?://", u):
             all_link_hosts.append(_url_host(u))
     if unsub_hdr and not first("list-unsubscribe-post"):
-        flag("info", "`List-Unsubscribe` bez `List-Unsubscribe-Post` (brak one-click RFC 8058).")
+        flag("info", t("forensics.flag.unsub"))
 
     filters = _extract_filters(headers, flag)
 
@@ -957,9 +961,9 @@ def compute_facts(src: str) -> dict:
         if v:
             ips.append({"ip": v.strip("[] ")[:45], "where": name})
     if first("x-originating-ip"):
-        flag("info", "Nagłówek `X-Originating-IP` może być wyciekiem infrastruktury albo przynętą - nie nadaje się do zgłoszeń bez potwierdzenia w zaufanym Received.")
+        flag("info", t("forensics.flag.x_originating"))
 
-    # nagłówki o nazwach używanych przez odbiorcę/dostawcę, a leżące PONIŻEJ wszystkich Received
+    # headers with names used by the recipient/provider that sit BELOW all the Received headers
     if len(received) > 1:
         last_recv_idx = max(i for i, (n, _) in enumerate(headers) if n.lower() == "received")
         below = {
@@ -967,7 +971,7 @@ def compute_facts(src: str) -> dict:
             if n.lower().startswith(("x-google-", "x-original-sender", "envelope-to", "x-gm-", "delivered-to"))
         }
         if below:
-            flag("warn", "Nagłówki o nazwach używanych przez odbiorcę/dostawcę są PONIŻEJ wszystkich Received (tekst nadawcy, nie serwera): " + ", ".join(sorted(below)[:6]) + ".")
+            flag("warn", t("forensics.flag.below_received", list=", ".join(sorted(below)[:6])))
 
     return {
         "overview": overview,

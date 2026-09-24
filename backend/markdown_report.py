@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from backend.i18n import t
 from backend.models import RiskScore, ServiceResult
 
 SERVICE_TITLES = {
@@ -13,27 +14,31 @@ SERVICE_TITLES = {
     "whois_rdns": "WHOIS / rDNS",
 }
 
-# Stała kolejność sekcji w raporcie, niezależnie od kolejności zakończenia zapytań.
+# Fixed order of the sections in the report, regardless of the order in which the queries finish.
 SERVICE_ORDER = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"]
 
-STATUS_LABELS = {
-    "ok": "OK",
-    "error": "błąd",
-    "no_key": "brak klucza API",
-    "not_applicable": "nie dotyczy tego typu wskaźnika",
-    "rate_limited_daily": "przekroczony dzienny limit",
+STATUS_KEYS = {
+    "ok": "md.status.ok",
+    "error": "md.status.error",
+    "no_key": "md.status.no_key",
+    "not_applicable": "md.status.not_applicable",
+    "rate_limited_daily": "md.status.rate_limited_daily",
 }
 
 
+def status_label(status: str) -> str:
+    return t(STATUS_KEYS[status]) if status in STATUS_KEYS else status
+
+
 def _format_scalar(value) -> str:
-    """URL-e jako klikalne autolinki (składnia CommonMark <url>), reszta bez zmian."""
+    """URLs as clickable autolinks (CommonMark <url> syntax), everything else unchanged."""
     if isinstance(value, str) and (value.startswith("http://") or value.startswith("https://")):
         return f"<{value}>"
     return str(value)
 
 
 def _render_value_lines(value, indent: int = 0) -> list[str]:
-    """Zagnieżdżone dict/list jako czytelna lista wypunktowana, nie blok kodu."""
+    """Nested dict/list as a readable bullet list, not a code block."""
     pad = "  " * indent
     lines: list[str] = []
     if isinstance(value, dict):
@@ -70,26 +75,26 @@ def build_markdown(
     services: dict[str, ServiceResult],
 ) -> str:
     lines: list[str] = []
-    lines.append(f"# Raport reputacji - `{indicator}`")
+    lines.append(f"# {t('md.report_title')} - `{indicator}`")
     lines.append("")
-    lines.append(f"## Wynik zbiorczy: {risk_score.level.upper()} ({risk_score.score}/100)")
+    lines.append(f"## {t('md.aggregate_score')}: {risk_score.level.upper()} ({risk_score.score}/100)")
     lines.append("")
     if risk_score.sources_possible:
-        lines.append(f"Wynik oparty na {risk_score.sources_used} z {risk_score.sources_possible} źródeł.")
+        lines.append(t("md.score_based_on", used=risk_score.sources_used, possible=risk_score.sources_possible))
         lines.append("")
     for note in risk_score.notes:
         lines.append(f"> {note}")
         lines.append("")
     if risk_score.components:
-        lines.append("### Sygnały składowe")
+        lines.append(f"### {t('md.components')}")
         lines.append("")
-        lines.append("| Źródło | Sygnał | Wartość | Ryzyko źródła (0-100) | Wiarygodność |")
+        lines.append(f"| {t('md.col_source')} | {t('md.col_signal')} | {t('md.col_value')} | {t('md.col_risk')} | {t('md.col_credibility')} |")
         lines.append("|---|---|---|---|---|")
         for c in risk_score.components:
             lines.append(f"| {c.source} | {c.signal} | {c.value} | {c.risk} | {c.weight} |")
         lines.append("")
     if risk_score.excluded_sources:
-        lines.append(f'<div class="excluded-sources">Poza wynikiem: {"; ".join(risk_score.excluded_sources)}</div>')
+        lines.append(f'<div class="excluded-sources">{t("md.excluded")}: {"; ".join(risk_score.excluded_sources)}</div>')
         lines.append("")
 
     ordered = sorted(services.items(), key=lambda kv: SERVICE_ORDER.index(kv[0]) if kv[0] in SERVICE_ORDER else len(SERVICE_ORDER))
@@ -97,7 +102,7 @@ def build_markdown(
         title = SERVICE_TITLES.get(name, name)
         lines.append(f"## {title}")
         lines.append("")
-        lines.append(f"Status: **{STATUS_LABELS.get(result.status, result.status)}**")
+        lines.append(f"{t('md.status')}: **{status_label(result.status)}**")
         lines.append("")
         if result.error_message:
             lines.append(f"> {result.error_message}")
@@ -110,9 +115,8 @@ def build_markdown(
                     lines.append(f"- **{key}**:")
                     lines.extend(_render_value_lines(value, indent=1))
                 elif isinstance(value, str) and "\n" in value:
-                    # wielolinijkowy tekst (np. surowy rekord WHOIS) - jedna linia
-                    # źródła = jeden punkt listy, żeby zwykła treść nie zlała się
-                    # w jeden akapit ani nie wyglądała jak blok kodu
+                    # multi-line text (e.g. a raw WHOIS record) - one source line = one list item, so that plain
+                    # content neither merges into one paragraph nor looks like a code block
                     lines.append(f"- **{key}**:")
                     for raw_line in value.strip().split("\n"):
                         entry = raw_line.strip()
@@ -127,7 +131,7 @@ def build_markdown(
                     lines.append(f"- **{key}**: {_format_scalar(value)}")
             lines.append("")
         if result.raw:
-            lines.append("<details><summary>Pełna odpowiedź API</summary>")
+            lines.append(f"<details><summary>{t('md.full_api_response')}</summary>")
             lines.append("")
             raw_text = json.dumps(result.raw, ensure_ascii=False, indent=2, default=str)
             lines.extend(numbered_code_block(raw_text))

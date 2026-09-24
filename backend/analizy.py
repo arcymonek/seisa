@@ -1,7 +1,7 @@
-"""Zapis analiz e-maili (zakładka "Email") w osobnym podkatalogu data/analizy/.
+"""Storage of e-mail analyses (the "Email" tab) in a separate subdirectory data/analizy/.
 
-Jeden plik JSON na analizę, razem z surowym e-mailem (zawiera dane osobowe, dlatego pliki 0600, katalog 0700
-i wpis w .gitignore). Identyfikator jest walidowany, żeby nie dało się wyjść poza katalog.
+One JSON file per analysis, together with the raw e-mail (it contains personal data, hence files 0600,
+directory 0700 and an entry in .gitignore). The identifier is validated so that nobody can escape the directory.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ _ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{8}$")
 
 def _path(analysis_id: str):
     if not _ID_RE.match(analysis_id):
-        raise ValueError("nieprawidłowy identyfikator analizy")
+        raise ValueError("invalid analysis identifier")
     return ANALIZY_DIR / f"{analysis_id}.json"
 
 
@@ -55,13 +55,13 @@ def update_analysis(analysis_id: str, fields: dict[str, Any]) -> None:
 
 
 def source_hash(src: str) -> str:
-    """Odcisk znormalizowanego źródła e-maila - do wykrywania powtórnych analiz tej samej wiadomości."""
+    """Fingerprint of the normalised e-mail source - used to detect repeated analyses of the same message."""
     return hashlib.sha256(src.encode("utf-8", errors="replace")).hexdigest()
 
 
 def find_by_source(sha256: str) -> list[dict[str, Any]]:
-    """Zapisane analizy tego samego źródła (najnowsze pierwsze). Starsze zapisy bez pola source_sha256 są
-    dopasowywane po odcisku surowego e-maila."""
+    """Saved analyses of the same source (newest first). Older records without the source_sha256 field are
+    matched by the fingerprint of the raw e-mail."""
     if not ANALIZY_DIR.exists():
         return []
     matches = []
