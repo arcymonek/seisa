@@ -106,6 +106,18 @@ Odpowiedz WYŁĄCZNIE w formacie JSON:
 }"""
 
 
+def _parse_json_content(content: str | None) -> dict:
+    """json.loads odporny na ogrodzenie ```json ... ``` i tekst przed/po obiekcie JSON."""
+    text = (content or "").strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            raise
+        return json.loads(text[start:end + 1])
+
+
 class LlmAnalyzer:
     def is_configured(self) -> bool:
         return bool(settings.openrouter_api_key)
@@ -116,6 +128,17 @@ class LlmAnalyzer:
         return ""
 
     async def _chat_json(self, system_prompt: str, user_content: str) -> dict | None:
+        """Model bywa niedeterministyczny: czasem owija JSON w ```json ... ``` albo zwraca uszkodzony JSON.
+        Odpowiedź niepoprawną składniowo ponawiamy raz (błędy sieci i HTTP nie są ponawiane)."""
+        result = await self._chat_json_once(system_prompt, user_content)
+        if isinstance(result, dict) and result.pop("_retryable", False):
+            logger.warning("OpenRouter: niepoprawny JSON w odpowiedzi modelu, ponawiam zapytanie raz")
+            result = await self._chat_json_once(system_prompt, user_content)
+            if isinstance(result, dict):
+                result.pop("_retryable", None)
+        return result
+
+    async def _chat_json_once(self, system_prompt: str, user_content: str) -> dict | None:
         headers = {
             "Authorization": f"Bearer {settings.openrouter_api_key}",
             "Content-Type": "application/json",
@@ -162,7 +185,13 @@ class LlmAnalyzer:
                 return {"error": text}
             if choice.get("finish_reason") == "length":
                 logger.warning("OpenRouter: odpowiedź modelu ucięta (finish_reason=length), możliwy niepełny JSON")
-            result = json.loads(choice["message"]["content"])
+            content = choice["message"]["content"]
+            try:
+                result = _parse_json_content(content)
+            except json.JSONDecodeError as exc:
+                text = f"nieprawidłowa odpowiedź OpenRouter ({describe_exception(exc)})"
+                logger.warning(f"OpenRouter: {text}; początek odpowiedzi: {(content or '')[:200]!r}")
+                return {"error": text, "_retryable": True}
             if isinstance(result, dict) and isinstance(body.get("usage"), dict):
                 result["_usage"] = body["usage"]
             return result
