@@ -79,7 +79,7 @@ Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statycz
 seisa/
 ├── .env                    # klucze API (gitignored, patrz .env.example)
 ├── seisa.sh                 # skrypt startowy (alias `seisa` w ~/.zshrc)
-├── LICENSE                  # licencja MIT
+├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache, obsługa błędów
 │   ├── config.py             # ścieżki, ustawienia z .env
@@ -184,4 +184,6 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 
 ## Licencja
 
-Projekt jest udostępniony na licencji MIT - pełny tekst w pliku [LICENSE](LICENSE). Dołączony `frontend/vendor/marked.min.js` ma własną licencję MIT (nagłówek w pliku).
+Seisa jest udostępniona na licencji [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) - pełny tekst w pliku [LICENSE](LICENSE). Kod jest publiczny (*source-available*), ale **to nie jest licencja open source w rozumieniu OSI**: wolno go używać, kopiować, modyfikować i rozpowszechniać (także forki) wyłącznie do celów niekomercyjnych, m.in. do użytku osobistego, hobbystycznego, edukacyjnego i badawczego oraz przez organizacje charytatywne, edukacyjne, publiczne i rządowe. Użycie komercyjne (w tym sprzedaż, komercyjne forki i praca w celach zarobkowych firmy) wymaga odrębnej zgody autora.
+
+Dołączony `frontend/vendor/marked.min.js` pozostaje na własnej licencji MIT (nagłówek w pliku).
