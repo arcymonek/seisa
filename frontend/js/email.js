@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { t } from "./i18n.js";
+import { t, tn, fmtSeconds, fmtDateTime, getLocale, registerDirtyCheck } from "./i18n.js";
 import { defangUrl, renderMarkdownSafe } from "./markdown-render.js";
 
 let root;
@@ -31,7 +31,7 @@ function escapeHtml(str) {
 }
 
 function formatElapsed(ms) {
-  return `Analiza: ${(ms / 1000).toFixed(1).replace(".", ",")} sekund`;
+  return t("em.analysis_time", { time: fmtSeconds(ms) });
 }
 
 function startTimer() {
@@ -55,13 +55,13 @@ function stopTimer() {
 export function initEmail(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">Wklej cały kod źródłowy e-maila (nagłówki + treść) albo wczytaj plik .eml, a Seisa rozłoży go na części: najpierw pokaże twarde fakty obliczone lokalnie (trasa Received, uwierzytelnianie, zgodność domen, oś czasu, struktura MIME, linki, ukryta treść), a potem model językowy przeprowadzi szczegółową analizę zarówno elementów dobrych, jak i złych - krok po kroku, tak żebyś nauczył się czytać źródło wiadomości.</div>
-    <label>Kod źródłowy e-maila (z nagłówkami)</label>
+    <div class="subtitle">${escapeHtml(t("em.subtitle"))}</div>
+    <label>${escapeHtml(t("rb.email_source"))}</label>
     <textarea id="em-source" placeholder="Received: ... From: ... Subject: ..." style="min-height:200px"></textarea>
-    <div class="banner info">Cała treść wiadomości (z nagłówkami) zostanie wysłana do OpenRouter w celu analizy po kliknięciu "Analizuj". Wiadomość jest traktowana jako niezaufany tekst: nic z niej nie jest otwierane ani pobierane, a linki w wynikach są nieklikalne.</div>
-    <button class="action" id="em-analyze">Analizuj</button>
-    <button class="secondary" id="em-cancel" style="display:none">Przerwij</button>
-    <button class="secondary" id="em-file-btn">Wczytaj plik .eml</button>
+    <div class="banner info">${escapeHtml(t("em.banner"))}</div>
+    <button class="action" id="em-analyze">${escapeHtml(t("common.analyze"))}</button>
+    <button class="secondary" id="em-cancel" style="display:none">${escapeHtml(t("em.cancel"))}</button>
+    <button class="secondary" id="em-file-btn">${escapeHtml(t("common.load_eml"))}</button>
     <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
     <span class="inline-timer" id="em-timer"></span>
     <div class="muted" id="em-status"></div>
@@ -75,7 +75,7 @@ export function initEmail(container) {
     <div id="em-actions"></div>
 
     <details class="hop-chain" id="em-saved" style="margin-top:28px">
-      <summary id="em-saved-summary">Zapisane analizy</summary>
+      <summary id="em-saved-summary">${escapeHtml(t("em.saved_title"))}</summary>
       <div id="em-saved-list"></div>
     </details>
   `;
@@ -97,6 +97,7 @@ export function initEmail(container) {
       loadFile(file);
     }
   });
+  registerDirtyCheck(() => abortController !== null || !!textarea.value.trim());
   refreshSaved();
 }
 
@@ -109,10 +110,10 @@ async function loadFile(file) {
   } catch {
     text = new TextDecoder("windows-1252").decode(buf);
   }
-  // BOM i zakończenia linii (koperta mbox i reszta normalizacji dzieje się po stronie serwera)
+  // BOM and line endings (the mbox envelope and the rest of the normalisation happen server-side)
   text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   root.querySelector("#em-source").value = text;
-  status.textContent = `Wczytano plik ${file.name} (${(file.size / 1024).toFixed(1).replace(".", ",")} KB).`;
+  status.textContent = t("common.file_loaded", { name: file.name, size: (file.size / 1024).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
 function setBusy(busy) {
@@ -144,7 +145,7 @@ async function analyze() {
   const raw = root.querySelector("#em-source").value;
   if (!raw.trim()) return;
   root.querySelector("#em-dup").innerHTML = "";
-  // ta sama wiadomość analizowana już wcześniej? (unikamy płacenia drugi raz za to samo)
+  // was this message analysed before? (avoids paying twice for the same source)
   let matches = [];
   try {
     matches = (await api.emailFind({ raw_email: raw })).matches || [];
@@ -164,23 +165,25 @@ function showDuplicate(matches, raw) {
   box.innerHTML = "";
   const banner = document.createElement("div");
   banner.className = "banner info";
-  const cost = typeof best.cost === "number" ? `, koszt ≈ $${best.cost.toFixed(3)}` : "";
-  banner.textContent =
-    `Ta wiadomość była już analizowana ${new Date(best.created_at).toLocaleString("pl-PL")} ` +
-    `(werdykt: ${best.verdict ? verdictLabel(best.verdict) : "?"}${best.truncated ? ", analiza ucięta" : ""}${cost}). ` +
-    "Otwórz zapisaną analizę zamiast płacić drugi raz, albo uruchom analizę ponownie" +
-    (matches.length > 1 ? ` (zapisanych analiz tej wiadomości: ${matches.length}).` : ".");
+  const details = [t("em.dup_verdict", { verdict: best.verdict ? verdictLabel(best.verdict) : "?" })];
+  if (best.truncated) details.push(t("em.dup_truncated"));
+  if (typeof best.cost === "number") details.push(t("common.cost", { cost: best.cost.toFixed(3) }));
+  banner.textContent = t("em.dup_banner", {
+    date: fmtDateTime(best.created_at),
+    details: details.join(", "),
+    more: matches.length > 1 ? t("em.dup_more", { n: matches.length }) : ".",
+  });
   box.appendChild(banner);
   const openBtn = document.createElement("button");
   openBtn.className = "action";
-  openBtn.textContent = "Otwórz zapisaną analizę";
+  openBtn.textContent = t("em.open_saved");
   openBtn.onclick = () => {
     box.innerHTML = "";
     openSaved(best.id);
   };
   const againBtn = document.createElement("button");
   againBtn.className = "secondary";
-  againBtn.textContent = "Analizuj ponownie (płatne)";
+  againBtn.textContent = t("em.analyze_again");
   againBtn.onclick = () => {
     box.innerHTML = "";
     runAnalysis(raw);
@@ -208,13 +211,13 @@ async function runAnalysis(raw) {
           currentFacts = evt.facts;
           showFacts(evt.facts);
           if (evt.prep_notes && evt.prep_notes.length) {
-            statusEl.textContent = "Przygotowanie źródła dla modelu: " + evt.prep_notes.join("; ") + ".";
+            statusEl.textContent = t("em.prep_notes", { notes: evt.prep_notes.join("; ") });
           }
           if (!evt.llm_configured) {
             root.querySelector("#em-analysis").innerHTML =
-              '<div class="banner warn">Brak klucza OpenRouter (OPENROUTER_API_KEY w .env) - pokazuję tylko analizę deterministyczną.</div>';
+              `<div class="banner warn">${escapeHtml(t("em.no_key"))}</div>`;
           } else {
-            root.querySelector("#em-analysis").innerHTML = '<div class="muted">Model pisze analizę...</div>';
+            root.querySelector("#em-analysis").innerHTML = `<div class="muted">${escapeHtml(t("em.model_writing"))}</div>`;
           }
         } else if (evt.type === "delta") {
           streamText += evt.text;
@@ -224,7 +227,7 @@ async function runAnalysis(raw) {
         } else if (evt.type === "error") {
           hadError = true;
           const box = evt.phase === "llm" ? root.querySelector("#em-actions") : root.querySelector("#em-analysis");
-          box.innerHTML = `<div class="banner warn">${evt.phase === "llm" ? "Analiza LLM nie powiodła się" : "Błąd"}: ${escapeHtml(evt.message)}</div>`;
+          box.innerHTML = `<div class="banner warn">${escapeHtml(t(evt.phase === "llm" ? "em.llm_failed" : "em.error", { message: evt.message }))}</div>`;
         } else if (evt.type === "done") {
           finished = true;
           finishAnalysis(evt);
@@ -234,9 +237,9 @@ async function runAnalysis(raw) {
     );
   } catch (err) {
     if (err.name === "AbortError") {
-      statusEl.textContent = "Przerwano - niepełna analiza nie została zapisana.";
+      statusEl.textContent = t("em.aborted");
     } else {
-      statusEl.textContent = "Błąd: " + err.message;
+      statusEl.textContent = t("em.error", { message: err.message });
     }
   } finally {
     const elapsed = stopTimer();
@@ -293,8 +296,8 @@ function analysisBody() {
 }
 
 const CITATION_KIND = {
-  ip: "adres IP", brak_naglowka: "nagłówek spoza źródła", cytat_naglowka: "cytat nagłówka",
-  liczba: "liczba", identyfikator: "identyfikator",
+  ip: "em.kind.ip", brak_naglowka: "em.kind.missing_header", cytat_naglowka: "em.kind.header_quote", // i18n-ok
+  liczba: "em.kind.number", identyfikator: "em.kind.identifier", // i18n-ok
 };
 
 function showCitations() {
@@ -303,22 +306,22 @@ function showCitations() {
   const cc = currentCitations;
   if (!cc || cc.error) return;
   if (!cc.issues.length) {
-    box.innerHTML = `<div class="muted" style="margin-top:12px">Kontrola cytatów (lokalna, bez kosztu): sprawdzono ${cc.checked} elementów (adresy IP, cytowane nagłówki, wartości SCL/BCL, identyfikatory) i wszystkie zgadzają się ze źródłem.</div>`;
+    box.innerHTML = `<div class="muted" style="margin-top:12px">${escapeHtml(t("em.citations_ok", { n: cc.checked }))}</div>`;
     return;
   }
   const items = cc.issues
-    .map((i) => `<li>${escapeHtml(CITATION_KIND[i.kind] || i.kind)}: <code>${escapeHtml(i.text)}</code> - ${escapeHtml(i.note)}</li>`)
+    .map((i) => `<li>${escapeHtml(CITATION_KIND[i.kind] ? t(CITATION_KIND[i.kind]) : i.kind)}: <code>${escapeHtml(i.text)}</code> - ${escapeHtml(i.note)}</li>`)
     .join("");
-  box.innerHTML = `<div class="banner warn"><strong>Kontrola cytatów: ${cc.issues.length} z ${cc.checked} sprawdzonych elementów nie zgadza się ze źródłem.</strong>
-    To nie zawsze błąd (może to przykład, parafraza albo skrót), ale sprawdź te miejsca, zanim uznasz je za prawdę:<ul>${items}</ul></div>`;
+  box.innerHTML = `<div class="banner warn"><strong>${escapeHtml(t("em.citations_bad", { bad: cc.issues.length, n: cc.checked }))}</strong>
+    ${escapeHtml(t("em.citations_hint"))}<ul>${items}</ul></div>`;
 }
 
 function usageInfo() {
   const info = [];
   if (currentUsage && currentUsage.prompt_tokens != null) {
-    info.push(`tokeny: ${currentUsage.prompt_tokens} wejście / ${currentUsage.completion_tokens} wyjście`);
+    info.push(t("common.tokens", { input: currentUsage.prompt_tokens, output: currentUsage.completion_tokens }));
   }
-  if (currentUsage && typeof currentUsage.cost === "number") info.push(`koszt ≈ $${currentUsage.cost.toFixed(3)}`);
+  if (currentUsage && typeof currentUsage.cost === "number") info.push(t("common.cost", { cost: currentUsage.cost.toFixed(3) }));
   return info;
 }
 
@@ -328,12 +331,12 @@ function showActions() {
   if (currentTruncated) {
     const banner = document.createElement("div");
     banner.className = "banner warn";
-    banner.textContent = "Analiza została ucięta przez limit długości odpowiedzi - brakuje jej końcowych części.";
+    banner.textContent = t("em.truncated_banner");
     actions.appendChild(banner);
     if (currentAnalysisId) {
       const contBtn = document.createElement("button");
       contBtn.className = "action";
-      contBtn.textContent = "Dokończ analizę";
+      contBtn.textContent = t("em.continue");
       contBtn.onclick = continueAnalysis;
       actions.appendChild(contBtn);
     }
@@ -342,23 +345,23 @@ function showActions() {
   if (currentVerdict !== "legit") {
     const reportBtn = document.createElement("button");
     reportBtn.className = "action";
-    reportBtn.textContent = "Zgłoś AbuseIPDB";
+    reportBtn.textContent = t("lookup.report_abuseipdb");
     reportBtn.onclick = () => window.seisaApp.goToReportWithEmail(currentRaw);
     actions.appendChild(reportBtn);
   }
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
-  saveBtn.textContent = "Zapisz .md";
+  saveBtn.textContent = t("common.save_md");
   saveBtn.onclick = saveMarkdown;
   actions.appendChild(saveBtn);
   const copyBtn = document.createElement("button");
   copyBtn.className = "secondary";
-  copyBtn.textContent = "Kopiuj Markdown";
+  copyBtn.textContent = t("common.copy_markdown");
   copyBtn.onclick = () => navigator.clipboard.writeText(buildExport());
   actions.appendChild(copyBtn);
 
   const info = usageInfo();
-  if (currentAnalysisId) info.unshift("zapisano w data/analizy");
+  if (currentAnalysisId) info.unshift(t("em.saved_in"));
   if (info.length) {
     const div = document.createElement("div");
     div.className = "muted";
@@ -372,7 +375,7 @@ async function continueAnalysis() {
   if (!currentAnalysisId) return;
   const statusEl = root.querySelector("#em-status");
   const actions = root.querySelector("#em-actions");
-  actions.innerHTML = '<div class="muted">Model dopisuje brakujące części...</div>';
+  actions.innerHTML = `<div class="muted">${escapeHtml(t("em.continuing"))}</div>`;
   abortController = new AbortController();
   setBusy(true);
   startTimer();
@@ -385,7 +388,7 @@ async function continueAnalysis() {
           streamText += evt.text;
           scheduleRender();
         } else if (evt.type === "error") {
-          actions.innerHTML = `<div class="banner warn">Dokończenie nie powiodło się: ${escapeHtml(evt.message)}</div>`;
+          actions.innerHTML = `<div class="banner warn">${escapeHtml(t("em.continue_failed", { message: evt.message }))}</div>`;
         } else if (evt.type === "done") {
           finished = true;
           finishAnalysis(evt);
@@ -394,7 +397,7 @@ async function continueAnalysis() {
       abortController.signal
     );
   } catch (err) {
-    statusEl.textContent = err.name === "AbortError" ? "Przerwano dokańczanie." : "Błąd: " + err.message;
+    statusEl.textContent = err.name === "AbortError" ? t("em.continue_aborted") : t("em.error", { message: err.message });
     if (!finished) showActions();
   } finally {
     stopTimer();
@@ -404,14 +407,14 @@ async function continueAnalysis() {
 }
 
 // ---------------------------------------------------------------------------
-// eksport .md: metadane + analiza deterministyczna + analiza LLM
+// .md export: metadata + deterministic analysis + LLM analysis (labels follow the UI language at export time)
 // ---------------------------------------------------------------------------
 
 const mdCell = (v) => String(v ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
 const mdCode = (v) => (v ? "`" + String(v).replace(/`/g, "'") + "`" : "-");
 
 function mdTable(headers, rows) {
-  if (!rows.length) return ["brak", ""];
+  if (!rows.length) return [t("common.none"), ""];
   return [
     `| ${headers.join(" | ")} |`,
     `|${headers.map(() => "---").join("|")}|`,
@@ -422,32 +425,32 @@ function mdTable(headers, rows) {
 
 function factsToMarkdown(f) {
   const L = [];
-  L.push("## Analiza deterministyczna", "", "Obliczona lokalnie przez narzędzie Seisa, bez modelu językowego. Adresy URL są zdefangowane.", "");
+  L.push("## " + t("em.f.title"), "", t("em.f.md_intro"), "");
 
-  L.push(`### Uwagi wykryte automatycznie (${f.flags.length})`, "");
-  if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? "UWAGA" : "info"}: ${x.text}`));
-  else L.push("Nie wykryto automatycznie żadnych anomalii (to nie znaczy, że ich nie ma).");
+  L.push(`### ${t("em.f.flags", { n: f.flags.length })}`, "");
+  if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? t("em.f.flag_warn") : t("em.f.flag_info")}: ${x.text}`));
+  else L.push(t("em.f.no_flags"));
   L.push("");
 
   const o = f.overview;
-  L.push("### Przegląd", "", ...mdTable(["Pole", "Wartość"], [
-    ["Temat (zdekodowany)", o.subject], ["From", o.from], ["To", o.to], ["Date", `${o.date || ""}${o.date_utc ? ` (${o.date_utc})` : ""}`],
-    ["Message-ID", mdCode(o.message_id)], ["Nagłówków / Received", `${o.header_count} / ${o.received_count}`], ["Rozmiar źródła", `${o.source_chars} znaków`],
+  L.push("### " + t("em.f.overview"), "", ...mdTable([t("common.field"), t("common.value")], [
+    [t("em.f.subject_decoded"), o.subject], ["From", o.from], ["To", o.to], ["Date", `${o.date || ""}${o.date_utc ? ` (${o.date_utc})` : ""}`],
+    ["Message-ID", mdCode(o.message_id)], [t("em.f.headers_received"), `${o.header_count} / ${o.received_count}`], [t("em.f.source_size"), t("em.f.chars", { n: o.source_chars })],
   ].map(([k, v]) => [k, k === "Message-ID" ? v : mdCode(v)])));
 
-  L.push(`### Trasa wiadomości: nagłówki Received (${f.received.length}), od góry (najnowszy)`, "",
-    ...mdTable(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", "Czas UTC", "Rola / uwagi"],
+  L.push(`### ${t("em.f.received", { n: f.received.length })}`, "",
+    ...mdTable(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", t("em.f.time_utc"), t("em.f.role_notes")],
       f.received.map((r) => [r.index, mdCode(r.from_host), mdCode(r.ptr), mdCode(r.ip), mdCode(r.by_host),
         `${r.with || ""} ${r.tls || ""}`.trim(), r.time_utc || "", [r.role, ...r.flags].filter(Boolean).join("; ")])));
 
   if (f.trust_note) L.push(`> ${f.trust_note}`, "");
 
-  L.push("### Uwierzytelnianie: SPF / DKIM / DMARC / ARC", "",
-    ...mdTable(["Nagłówek", "authserv-id", "Zgodny z odbiorcą?", "Wyniki", "Szczegóły"],
-      f.auth.map((a) => [a.header, mdCode(a.authserv_id), a.matches_receiver === true ? "tak" : a.matches_receiver === false ? "nie" : "-",
+  L.push("### " + t("em.f.auth"), "",
+    ...mdTable([t("em.f.header"), "authserv-id", t("em.f.matches_receiver"), t("em.f.results"), t("em.f.details")],
+      f.auth.map((a) => [a.header, mdCode(a.authserv_id), a.matches_receiver === true ? t("common.yes") : a.matches_receiver === false ? t("common.no") : "-",
         Object.entries(a.results).map(([k, v]) => `${k}=${v}`).join(" "), mdCode(Object.entries(a.details).map(([k, v]) => `${k}=${v}`).join(" "))])));
   if (f.dkim.length) {
-    L.push("#### DKIM-Signature", "", ...mdTable(["d=", "s=", "a=", "bh (dł. → skrót)", "Podpisane nagłówki", "Niepodpisane ważne"],
+    L.push("#### DKIM-Signature", "", ...mdTable(["d=", "s=", "a=", t("em.f.bh"), t("em.f.signed_headers"), t("em.f.unsigned_important")],
       f.dkim.map((d) => [mdCode(d.d), mdCode(d.s), mdCode(d.a), `${d.bh_len} → ${d.hash_hint}`, mdCode(d.signed_headers.join(":")), d.unsigned_important.join(", ")])));
   }
   if (f.arc.length) {
@@ -457,84 +460,84 @@ function factsToMarkdown(f) {
   const fRowsMd = filterRows(f.filters);
   const senderSetMd = (f.filters && f.filters.sender_set) || [];
   if (fRowsMd.length || senderSetMd.length) {
-    L.push("### Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę", "");
-    if (fRowsMd.length) L.push(...mdTable(["Nagłówek / pole", "Wartość"], fRowsMd.map(([k, v]) => [k, mdCode(String(v))])));
-    if (senderSetMd.length) L.push("#### Flagi ustawione przez nadawcę", "", ...mdTable(["Nagłówek", "Wartość", "Znaczenie"], senderSetMd.map((s) => [mdCode(s.header), mdCode(s.value), s.note])));
+    L.push("### " + t("em.f.filters"), "");
+    if (fRowsMd.length) L.push(...mdTable([t("em.f.header_field"), t("common.value")], fRowsMd.map(([k, v]) => [k, mdCode(String(v))])));
+    if (senderSetMd.length) L.push("#### " + t("em.f.sender_flags"), "", ...mdTable([t("em.f.header"), t("common.value"), t("em.f.meaning")], senderSetMd.map((s) => [mdCode(s.header), mdCode(s.value), s.note])));
   }
 
-  L.push("### Zgodność domen (względem From)", "",
-    ...mdTable(["Pole", "Wartość", "Domena", "Zgodna z From?"],
-      f.identity.map((r) => [r.field, mdCode(r.value), mdCode(r.domain), r.field === "From" ? "punkt odniesienia" : r.aligned === true ? "tak" : r.aligned === false ? "NIE" : "-"])));
+  L.push("### " + t("em.f.identity"), "",
+    ...mdTable([t("common.field"), t("common.value"), t("em.f.domain"), t("em.f.aligned_q")],
+      f.identity.map((r) => [r.field, mdCode(r.value), mdCode(r.domain), r.field === "From" ? t("em.f.reference") : r.aligned === true ? t("common.yes") : r.aligned === false ? t("em.f.no_caps") : "-"])));
 
-  L.push("### Oś czasu (UTC)", "", ...mdTable(["Zdarzenie", "Czas UTC", "Różnica od poprzedniego"], f.timeline.map((t) => [t.event, t.utc, fmtDelta(t.delta_s)])));
+  L.push("### " + t("em.f.timeline"), "", ...mdTable([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((t) => [t.event, t.utc, fmtDelta(t.delta_s)])));
   if (f.epochs.length) {
-    L.push("#### Znaczniki epoch", "", ...mdTable(["Gdzie", "Wartość", "Jednostka", "UTC", "Różnica vs Date"], f.epochs.map((x) => [x.where, mdCode(x.value), x.unit, x.utc, fmtDelta(x.diff_vs_date_s)])));
+    L.push("#### " + t("em.f.epochs"), "", ...mdTable([t("em.f.where"), t("common.value"), t("em.f.unit"), "UTC", t("em.f.diff_date")], f.epochs.map((x) => [x.where, mdCode(x.value), x.unit, x.utc, fmtDelta(x.diff_vs_date_s)])));
   }
 
-  L.push(`### Struktura MIME (${f.mime.length} części)`, "",
-    ...mdTable(["Typ", "charset", "Content-Transfer-Encoding", "Nazwa pliku", "Rozmiar", "boundary"],
-      f.mime.map((m) => [`${"· ".repeat(m.depth)}${mdCode(m.content_type)}`, m.charset || "", m.cte ? `${m.cte}${m.cte_valid ? "" : " (niedozwolone)"}` : "", mdCode(m.filename), m.size != null ? `${m.size} B` : "", mdCode(m.boundary)])));
+  L.push(`### ${tn("em.f.mime", f.mime.length)}`, "",
+    ...mdTable([t("em.f.type"), "charset", "Content-Transfer-Encoding", t("em.f.filename"), t("em.f.size"), "boundary"],
+      f.mime.map((m) => [`${"· ".repeat(m.depth)}${mdCode(m.content_type)}`, m.charset || "", m.cte ? `${m.cte}${m.cte_valid ? "" : ` (${t("em.f.not_allowed")})`}` : "", mdCode(m.filename), m.size != null ? `${m.size} B` : "", mdCode(m.boundary)])));
   if (f.attachments.length) {
-    L.push("#### Załączniki", "", ...mdTable(["Plik", "Typ", "Rozmiar", "SHA-256", "Uwagi"],
+    L.push("#### " + t("em.f.attachments"), "", ...mdTable([t("em.f.file"), t("em.f.type"), t("em.f.size"), "SHA-256", t("em.f.notes")],
       f.attachments.map((a) => [mdCode(a.filename), a.content_type, `${a.size} B`, mdCode(a.sha256),
-        [a.double_extension_as ? `podwójne rozszerzenie (.${a.double_extension_as} → .${a.extension})` : "", a.risky_extension ? "ryzykowne rozszerzenie" : ""].filter(Boolean).join("; ")])));
+        [a.double_extension_as ? t("em.f.double_ext", { apparent: a.double_extension_as, real: a.extension }) : "", a.risky_extension ? t("em.f.risky_ext") : ""].filter(Boolean).join("; ")])));
   }
 
   if (f.html) {
     const h = f.html;
-    L.push("### Treść HTML: linki, elementy zdalne, ukryta treść", "", ...mdTable(["Cecha", "Wartość"], [
-      ["Linki", h.links.length], ["Obrazy", h.images.length], ["Formularze / skrypty / iframe / object", `${h.forms} / ${h.scripts} / ${h.iframes} / ${h.objects}`],
-      ["Ukryte elementy (znaków tekstu)", `${h.hidden.length} (${h.hidden_text_total})`], ["Komentarze HTML (znaków)", `${h.comment_count} (${h.comment_chars})`],
-      ["Znaczniki o losowej wielkości liter", h.mixed_case_tags.join(", ")], ["Nieznane znaczniki", `${h.unknown_tag_count}${h.unknown_tags.length ? ": " + h.unknown_tags.join(", ") : ""}`],
-      ["Duża część treści opakowana w jeden link", h.wrapped_anchor ? "tak" : "nie"],
+    L.push("### " + t("em.f.html"), "", ...mdTable([t("em.f.feature"), t("common.value")], [
+      [t("em.f.links"), h.links.length], [t("em.f.images"), h.images.length], [t("em.f.forms"), `${h.forms} / ${h.scripts} / ${h.iframes} / ${h.objects}`],
+      [t("em.f.hidden_elements"), `${h.hidden.length} (${h.hidden_text_total})`], [t("em.f.html_comments"), `${h.comment_count} (${h.comment_chars})`],
+      [t("em.f.mixed_case_tags"), h.mixed_case_tags.join(", ")], [t("em.f.unknown_tags"), `${h.unknown_tag_count}${h.unknown_tags.length ? ": " + h.unknown_tags.join(", ") : ""}`],
+      [t("em.f.wrapped_anchor"), h.wrapped_anchor ? t("common.yes") : t("common.no")],
     ]));
     if (h.links.length) {
-      L.push("#### Linki (adresy zdefangowane)", "", ...mdTable(["Widoczny tekst", "href", "Uwagi"], h.links.map((l) => [
-        mdCode(l.text || "(brak tekstu)"), mdCode(defangUrl(l.href || "")),
-        [l.text_host_mismatch ? "tekst ≠ href" : "", l.scheme === "http" ? "http" : "", l.abused_host ? "usługa często nadużywana" : "", l.shortener ? "skracacz" : "", l.idn ? "IDN/punycode" : "", l.query_params >= 4 ? `${l.query_params} parametrów` : ""].filter(Boolean).join("; "),
+      L.push("#### " + t("em.f.links_defanged"), "", ...mdTable([t("em.f.visible_text"), "href", t("em.f.notes")], h.links.map((l) => [
+        mdCode(l.text || t("em.f.no_text")), mdCode(defangUrl(l.href || "")),
+        [l.text_host_mismatch ? t("em.f.text_ne_href") : "", l.scheme === "http" ? "http" : "", l.abused_host ? t("em.f.abused") : "", l.shortener ? t("em.f.shortener") : "", l.idn ? "IDN/punycode" : "", l.query_params >= 4 ? t("em.f.params", { n: l.query_params }) : ""].filter(Boolean).join("; "),
       ])));
     }
     if (h.hidden.length) {
-      L.push("#### Ukryta treść", "", ...mdTable(["Znacznik", "Techniki ukrywania", "Znaków", "Fragment"], h.hidden.map((x) => [mdCode(x.tag), x.techniques.join(", "), x.text_len, mdCode(x.sample)])));
+      L.push("#### " + t("em.f.hidden_content"), "", ...mdTable([t("em.f.tag"), t("em.f.techniques"), t("em.f.chars_word"), t("em.f.excerpt")], h.hidden.map((x) => [mdCode(x.tag), x.techniques.join(", "), x.text_len, mdCode(x.sample)])));
     }
-    if (h.comment_samples.length) L.push("#### Początki komentarzy HTML", "", ...h.comment_samples.map((c) => `- ${mdCode(c)}`), "");
+    if (h.comment_samples.length) L.push("#### " + t("em.f.comment_starts"), "", ...h.comment_samples.map((c) => `- ${mdCode(c)}`), "");
   }
 
   const other = [];
-  if (f.duplicates.length) other.push(["Powtórzone nagłówki jednokrotne", f.duplicates.map((d) => `${d.name} ×${d.count}`).join(", ")]);
+  if (f.duplicates.length) other.push([t("em.f.dup_headers"), f.duplicates.map((d) => `${d.name} ×${d.count}`).join(", ")]);
   const casing = Object.values(f.casing_variants);
-  if (casing.length) other.push(["Różna wielkość liter w nazwach nagłówków", casing.map((v) => v.join(" / ")).join("; ")]);
+  if (casing.length) other.push([t("em.f.casing"), casing.map((v) => v.join(" / ")).join("; ")]);
   if (f.encoded_words.length) other.push(["Encoded-words (RFC 2047)", f.encoded_words.map((w) => `${w.header}: ${mdCode(w.raw)} → ${w.decoded}`).join("; ")]);
-  if (f.placeholders.length) other.push(["Niepodstawione placeholdery", f.placeholders.map((p) => mdCode(p)).join(" ")]);
+  if (f.placeholders.length) other.push([t("em.f.placeholders"), f.placeholders.map((p) => mdCode(p)).join(" ")]);
   if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mdCode(defangUrl(u))).join(" ") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
-  if (f.urls_plain.length) other.push(["Adresy URL w części tekstowej", f.urls_plain.map((u) => mdCode(defangUrl(u))).join(" ")]);
-  if (f.ips.length) other.push(["Adresy IP w nagłówkach", f.ips.map((i) => `${mdCode(i.ip)} (${i.where})`).join("; ")]);
-  if (other.length) L.push("### Inne obserwacje", "", ...mdTable(["Co", "Wartość"], other));
+  if (f.urls_plain.length) other.push([t("em.f.urls_plain"), f.urls_plain.map((u) => mdCode(defangUrl(u))).join(" ")]);
+  if (f.ips.length) other.push([t("em.f.ips"), f.ips.map((i) => `${mdCode(i.ip)} (${i.where})`).join("; ")]);
+  if (other.length) L.push("### " + t("em.f.other"), "", ...mdTable([t("em.f.what"), t("common.value")], other));
   return L;
 }
 
 function buildExport() {
   const created = currentCreatedAt ? new Date(currentCreatedAt) : new Date();
-  const L = [`# Analiza e-maila: ${currentSubject || "(brak tematu)"}`, ""];
-  L.push(`- Data analizy: ${created.toLocaleString("pl-PL")}`);
-  if (currentVerdict) L.push(`- Werdykt: ${verdictLabel(currentVerdict)}`);
-  if (currentModel) L.push(`- Model: ${currentModel}`);
+  const L = [`# ${t("em.x.title", { subject: currentSubject || t("em.no_subject") })}`, ""];
+  L.push(`- ${t("em.x.date", { date: fmtDateTime(created) })}`);
+  if (currentVerdict) L.push(`- ${t("em.x.verdict", { verdict: verdictLabel(currentVerdict) })}`);
+  if (currentModel) L.push(`- ${t("em.x.model", { model: currentModel })}`);
   if (currentUsage && currentUsage.prompt_tokens != null) {
-    L.push(`- Tokeny: ${currentUsage.prompt_tokens} wejście / ${currentUsage.completion_tokens} wyjście` +
-      (currentUsage.total_tokens ? ` (razem ${currentUsage.total_tokens})` : ""));
+    L.push(`- ${t("em.x.tokens", { input: currentUsage.prompt_tokens, output: currentUsage.completion_tokens })}` +
+      (currentUsage.total_tokens ? ` (${t("em.x.total", { n: currentUsage.total_tokens })})` : ""));
   }
-  if (currentUsage && typeof currentUsage.cost === "number") L.push(`- Koszt: ≈ $${currentUsage.cost.toFixed(3)}`);
-  if (currentTruncated) L.push("- Uwaga: analiza LLM została ucięta przez limit długości (brakuje części końcowych).");
+  if (currentUsage && typeof currentUsage.cost === "number") L.push(`- ${t("em.x.cost", { cost: currentUsage.cost.toFixed(3) })}`);
+  if (currentTruncated) L.push(`- ${t("em.x.truncated")}`);
   L.push("");
   if (currentFacts) L.push("---", "", ...factsToMarkdown(currentFacts));
   L.push("---", "", analysisBody(), "");
   if (currentCitations && !currentCitations.error) {
-    L.push("---", "", "## Kontrola cytatów (lokalna, bez kosztu)", "");
+    L.push("---", "", `## ${t("em.x.citations")}`, "");
     if (!currentCitations.issues.length) {
-      L.push(`Sprawdzono ${currentCitations.checked} elementów (adresy IP, cytowane nagłówki, wartości SCL/BCL, identyfikatory): wszystkie zgadzają się ze źródłem.`, "");
+      L.push(t("em.x.citations_ok", { n: currentCitations.checked }), "");
     } else {
-      L.push(`${currentCitations.issues.length} z ${currentCitations.checked} sprawdzonych elementów nie zgadza się ze źródłem (to nie zawsze błąd: przykład, parafraza, skrót):`, "");
-      currentCitations.issues.forEach((i) => L.push(`- ${CITATION_KIND[i.kind] || i.kind}: ${mdCode(i.text)} - ${i.note}`));
+      L.push(t("em.x.citations_bad", { bad: currentCitations.issues.length, n: currentCitations.checked }), "");
+      currentCitations.issues.forEach((i) => L.push(`- ${CITATION_KIND[i.kind] ? t(CITATION_KIND[i.kind]) : i.kind}: ${mdCode(i.text)} - ${i.note}`));
       L.push("");
     }
   }
@@ -542,7 +545,7 @@ function buildExport() {
 }
 
 function saveMarkdown() {
-  const filename = `analiza-${(currentSubject || "email").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 50) || "email"}.md`;
+  const filename = `${t("em.x.file_prefix")}-${(currentSubject || "email").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 50) || "email"}.md`;
   const blob = new Blob([buildExport()], { type: "text/markdown" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -555,11 +558,11 @@ function saveMarkdown() {
 let currentSubject = "";
 
 // ---------------------------------------------------------------------------
-// analiza deterministyczna
+// deterministic analysis
 // ---------------------------------------------------------------------------
 
 function table(headers, rows) {
-  if (!rows.length) return '<div class="muted">brak</div>';
+  if (!rows.length) return `<div class="muted">${escapeHtml(t("common.none"))}</div>`;
   return `<div class="table-wrap"><table class="fact-table"><thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead><tbody>${rows
     .map((r) => `<tr>${r.map((c) => `<td>${c ?? ""}</td>`).join("")}</tr>`)
     .join("")}</tbody></table></div>`;
@@ -587,21 +590,21 @@ function filterRows(fl) {
     if (scl) rows.push(["SCL (Spam Confidence Level)", scl]);
     if (ms.bcl != null) rows.push(["BCL (Bulk Complaint Level)", ms.bcl]);
     const md = ms.mailbox_delivery || {};
-    if (Object.keys(md).length) rows.push(["Nagłówek dostarczenia do skrzynki", Object.entries(md).map(([k, v]) => `${k}:${v}`).join("; ")]);
-    if (ms.folder) rows.push(["Folder docelowy", ms.folder]);
-    if (ms.auth_as) rows.push(["AuthAs (tożsamość nadawcy w tenancie)", ms.auth_as]);
+    if (Object.keys(md).length) rows.push([t("em.f.mailbox_delivery"), Object.entries(md).map(([k, v]) => `${k}:${v}`).join("; ")]);
+    if (ms.folder) rows.push([t("em.f.target_folder"), ms.folder]);
+    if (ms.auth_as) rows.push([t("em.f.authas"), ms.auth_as]);
     if (ms.auth_source) rows.push(["AuthSource", ms.auth_source]);
     if (ms.sid_result || ms.sid_pra) rows.push(["Sender ID (SID-Result / SID-PRA)", `${ms.sid_result || "-"} / ${ms.sid_pra || "-"}`]);
     const ff = Object.entries(ms.forefront || {}).map(([k, v]) => `${k}:${v}`).join("; ");
     if (ff) rows.push(["X-Forefront-Antispam-Report", ff]);
-    if (ms.message_delivery_decoded) rows.push(["X-Message-Delivery (zdekodowany z Base64)", ms.message_delivery_decoded]);
-    if (ms.opaque_headers && ms.opaque_headers.length) rows.push(["Nagłówki nieczytelne dla człowieka (wewnętrzne bloby Microsoftu)", ms.opaque_headers.join(", ")]);
+    if (ms.message_delivery_decoded) rows.push([t("em.f.msg_delivery"), ms.message_delivery_decoded]);
+    if (ms.opaque_headers && ms.opaque_headers.length) rows.push([t("em.f.opaque"), ms.opaque_headers.join(", ")]);
   }
   ((fl && fl.other) || []).forEach((o) => rows.push([o.header, o.value]));
   return rows;
 }
 
-// Wszystkie sekcje analizy deterministycznej są domyślnie zwinięte (użytkownik rozwija tylko to, czego potrzebuje).
+// All sections of the deterministic analysis are collapsed by default (the user expands only what is needed).
 function block(title, inner) {
   return `<details class="fact-block"><summary>${e(title)}</summary>${inner}</details>`;
 }
@@ -610,27 +613,27 @@ function showFacts(f) {
   currentSubject = f.overview.subject || "";
   const parts = [];
 
-  parts.push(`<h3>Analiza deterministyczna</h3>
-    <div class="muted">Obliczona lokalnie przez narzędzie Seisa, bez modelu językowego: to są twarde fakty wyciągnięte ze źródła. Model dostaje je jako dane wejściowe.</div>`);
+  parts.push(`<h3>${e(t("em.f.title"))}</h3>
+    <div class="muted">${e(t("em.f.intro"))}</div>`);
 
-  // uwagi
+  // findings
   const flags = f.flags.length
     ? f.flags.map((x) => `<div class="fact-flag ${x.level}"><span>${e(x.text).replace(/`([^`]+)`/g, "<code>$1</code>")}</span></div>`).join("")
-    : '<div class="muted">Nie wykryto automatycznie żadnych anomalii (to nie znaczy, że ich nie ma).</div>';
-  parts.push(block(`Uwagi wykryte automatycznie (${f.flags.length})`, flags));
+    : `<div class="muted">${e(t("em.f.no_flags"))}</div>`;
+  parts.push(block(t("em.f.flags", { n: f.flags.length }), flags));
 
   const o = f.overview;
-  parts.push(block("Przegląd", table(["Pole", "Wartość"], [
-    ["Temat (zdekodowany)", e(o.subject)], ["From", e(o.from)], ["To", e(o.to)],
+  parts.push(block(t("em.f.overview"), table([t("common.field"), t("common.value")], [
+    [t("em.f.subject_decoded"), e(o.subject)], ["From", e(o.from)], ["To", e(o.to)],
     ["Date", `${e(o.date || "")} ${o.date_utc ? `<span class="muted">(${e(o.date_utc)})</span>` : ""}`],
     ["Message-ID", mono(o.message_id)],
-    ["Nagłówków / Received", `${o.header_count} / ${o.received_count}`], ["Rozmiar źródła", `${o.source_chars} znaków`],
+    [t("em.f.headers_received"), `${o.header_count} / ${o.received_count}`], [t("em.f.source_size"), t("em.f.chars", { n: o.source_chars })],
   ])));
 
-  parts.push(block(`Trasa wiadomości: nagłówki Received (${f.received.length}), od góry (najnowszy)`,
-    '<div class="muted">Granica zaufania: wiarygodny jest tylko Received dopisany przez serwer odbiorcy. Role poniżej to heurystyka kodu, ostateczną ocenę robi analiza.</div>' +
+  parts.push(block(t("em.f.received", { n: f.received.length }),
+    `<div class="muted">${e(t("em.f.received_help"))}</div>` +
     (f.trust_note ? `<div class="banner info">${e(f.trust_note)}</div>` : "") +
-    table(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", "Czas UTC", "Rola / uwagi"],
+    table(["#", "from (HELO)", "PTR", "IP", "by", "with / TLS", t("em.f.time_utc"), t("em.f.role_notes")],
       f.received.map((r) => [
         r.index, mono(r.from_host), mono(r.ptr), mono(r.ip), mono(r.by_host),
         `${e(r.with || "")} ${r.tls ? `<span class="muted">${e(r.tls)}</span>` : ""}`,
@@ -638,16 +641,16 @@ function showFacts(f) {
         `<span class="muted">${e(r.role || "")}</span>` + r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join(""),
       ]))));
 
-  parts.push(block(`Uwierzytelnianie: SPF / DKIM / DMARC / ARC (${f.auth.length} nagłówków wyników)`,
-    '<div class="muted">Liczy się tylko Authentication-Results napisany przez serwer odbiorcy (authserv-id). Wynik napisany przez kogoś innego to jego deklaracja.</div>' +
-    table(["Nagłówek", "authserv-id", "Zgodny z odbiorcą?", "Wyniki", "Szczegóły"],
+  parts.push(block(t("em.f.auth_count", { n: f.auth.length }),
+    `<div class="muted">${e(t("em.f.auth_help"))}</div>` +
+    table([t("em.f.header"), "authserv-id", t("em.f.matches_receiver"), t("em.f.results"), t("em.f.details")],
       f.auth.map((a) => [
         e(a.header), mono(a.authserv_id || ""),
-        a.matches_receiver === true ? '<span class="ok">tak (domena zgodna z by)</span>' : a.matches_receiver === false ? '<span class="warnc">nie</span>' : '<span class="muted">-</span>',
+        a.matches_receiver === true ? `<span class="ok">${e(t("em.f.yes_by"))}</span>` : a.matches_receiver === false ? `<span class="warnc">${e(t("common.no"))}</span>` : '<span class="muted">-</span>',
         Object.entries(a.results).map(([k, v]) => `<span class="${resultClass(v)}">${e(k)}=${e(v)}</span>`).join(" "),
         `<span class="mono">${e(Object.entries(a.details).map(([k, v]) => `${k}=${v}`).join(" "))}</span>`,
       ])) +
-    (f.dkim.length ? "<h4>DKIM-Signature</h4>" + table(["d=", "s=", "a=", "bh (dł. → skrót)", "Podpisane nagłówki (h=)", "Niepodpisane ważne"],
+    (f.dkim.length ? "<h4>DKIM-Signature</h4>" + table(["d=", "s=", "a=", t("em.f.bh"), t("em.f.signed_headers"), t("em.f.unsigned_important")],
       f.dkim.map((d) => [mono(d.d), mono(d.s), mono(d.a) + (d.legacy_sha1 ? ' <span class="bad">SHA-1</span>' : ""),
         `${d.bh_len} → ${e(d.hash_hint)}`, `<span class="mono">${e(d.signed_headers.join(":"))}</span>`, e(d.unsigned_important.join(", "))])) : "") +
     (f.arc.length ? "<h4>ARC-Seal</h4>" + table(["i=", "d=", "s=", "cv="], f.arc.map((a) => [e(a.i), mono(a.d), mono(a.s), e(a.cv)])) : "")));
@@ -655,72 +658,72 @@ function showFacts(f) {
   const fRows = filterRows(f.filters);
   const senderSet = (f.filters && f.filters.sender_set) || [];
   if (fRows.length || senderSet.length) {
-    parts.push(block("Filtry antyspamowe odbiorcy i flagi ustawione przez nadawcę",
-      '<div class="muted">Nagłówki filtrów napisał serwer odbiorcy (mają wagę dowodową). Flagi nadawcy to jego deklaracje - nie dowód, tylko element presji lub śledzenia.</div>' +
-      (fRows.length ? table(["Nagłówek / pole", "Wartość"], fRows.map(([k, v]) => [e(k), mono(String(v))])) : "") +
-      (senderSet.length ? "<h4>Flagi ustawione przez nadawcę</h4>" + table(["Nagłówek", "Wartość", "Znaczenie"], senderSet.map((s) => [mono(s.header), e(s.value), e(s.note)])) : "")));
+    parts.push(block(t("em.f.filters"),
+      `<div class="muted">${e(t("em.f.filters_help"))}</div>` +
+      (fRows.length ? table([t("em.f.header_field"), t("common.value")], fRows.map(([k, v]) => [e(k), mono(String(v))])) : "") +
+      (senderSet.length ? `<h4>${e(t("em.f.sender_flags"))}</h4>` + table([t("em.f.header"), t("common.value"), t("em.f.meaning")], senderSet.map((s) => [mono(s.header), e(s.value), e(s.note)])) : "")));
   }
 
-  parts.push(block("Zgodność domen (alignment względem From)",
-    table(["Pole", "Wartość", "Domena", "Zgodna z From?"], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? '<span class="muted">punkt odniesienia</span>' : tick(r.aligned)]))));
+  parts.push(block(t("em.f.identity"),
+    table([t("common.field"), t("common.value"), t("em.f.domain"), t("em.f.aligned_q")], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? `<span class="muted">${e(t("em.f.reference"))}</span>` : tick(r.aligned)]))));
 
-  parts.push(block("Oś czasu (UTC)",
-    table(["Zdarzenie", "Czas UTC", "Różnica od poprzedniego"], f.timeline.map((t) => [e(t.event), e(t.utc), e(fmtDelta(t.delta_s))])) +
-    (f.epochs.length ? "<h4>Znaczniki epoch znalezione w nagłówkach</h4>" + table(["Gdzie", "Wartość", "Jednostka", "UTC", "Różnica vs Date"],
+  parts.push(block(t("em.f.timeline"),
+    table([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((t) => [e(t.event), e(t.utc), e(fmtDelta(t.delta_s))])) +
+    (f.epochs.length ? `<h4>${e(t("em.f.epochs"))}</h4>` + table([t("em.f.where"), t("common.value"), t("em.f.unit"), "UTC", t("em.f.diff_date")],
       f.epochs.map((x) => [e(x.where), mono(x.value), e(x.unit), e(x.utc), e(fmtDelta(x.diff_vs_date_s))])) : "")));
 
-  parts.push(block(`Struktura MIME (${f.mime.length} części)`,
-    table(["Typ", "charset", "Content-Transfer-Encoding", "Nazwa pliku", "Rozmiar", "boundary"],
+  parts.push(block(tn("em.f.mime", f.mime.length),
+    table([t("em.f.type"), "charset", "Content-Transfer-Encoding", t("em.f.filename"), t("em.f.size"), "boundary"],
       f.mime.map((m) => [
         `<span style="padding-left:${m.depth * 16}px">${mono(m.content_type)}</span>`, e(m.charset || ""),
-        m.cte ? `<span class="${m.cte_valid ? "" : "bad"}">${e(m.cte)}${m.cte_valid ? "" : " (niedozwolone)"}</span>` : '<span class="muted">-</span>',
+        m.cte ? `<span class="${m.cte_valid ? "" : "bad"}">${e(m.cte)}${m.cte_valid ? "" : ` (${e(t("em.f.not_allowed"))})`}</span>` : '<span class="muted">-</span>',
         e(m.filename || ""), m.size != null ? `${m.size} B` : "", mono(m.boundary),
       ])) +
-    (f.attachments.length ? "<h4>Załączniki</h4>" + table(["Plik", "Typ", "Rozmiar", "SHA-256", "Uwagi"],
+    (f.attachments.length ? `<h4>${e(t("em.f.attachments"))}</h4>` + table([t("em.f.file"), t("em.f.type"), t("em.f.size"), "SHA-256", t("em.f.notes")],
       f.attachments.map((a) => [mono(a.filename), e(a.content_type), `${a.size} B`, mono(a.sha256),
-        (a.double_extension_as ? `<span class="bad">podwójne rozszerzenie (.${e(a.double_extension_as)} → .${e(a.extension)})</span> ` : "") +
-        (a.risky_extension ? '<span class="bad">ryzykowne rozszerzenie</span>' : "")])) : "")));
+        (a.double_extension_as ? `<span class="bad">${e(t("em.f.double_ext", { apparent: a.double_extension_as, real: a.extension }))}</span> ` : "") +
+        (a.risky_extension ? `<span class="bad">${e(t("em.f.risky_ext"))}</span>` : "")])) : "")));
 
   if (f.html) {
     const h = f.html;
     const summary = [
-      ["Linki", h.links.length], ["Obrazy", h.images.length], ["Formularze / skrypty / iframe / object", `${h.forms} / ${h.scripts} / ${h.iframes} / ${h.objects}`],
-      ["Ukryte elementy (znaków tekstu)", `${h.hidden.length} (${h.hidden_text_total})`],
-      ["Komentarze HTML (znaków)", `${h.comment_count} (${h.comment_chars})`],
-      ["Znaczniki o losowej wielkości liter", h.mixed_case_tags.join(", ")], ["Nieznane znaczniki", `${h.unknown_tag_count}${h.unknown_tags.length ? ": " + h.unknown_tags.join(", ") : ""}`],
-      ["Duża część treści opakowana w jeden link", h.wrapped_anchor ? "tak" : "nie"],
+      [t("em.f.links"), h.links.length], [t("em.f.images"), h.images.length], [t("em.f.forms"), `${h.forms} / ${h.scripts} / ${h.iframes} / ${h.objects}`],
+      [t("em.f.hidden_elements"), `${h.hidden.length} (${h.hidden_text_total})`],
+      [t("em.f.html_comments"), `${h.comment_count} (${h.comment_chars})`],
+      [t("em.f.mixed_case_tags"), h.mixed_case_tags.join(", ")], [t("em.f.unknown_tags"), `${h.unknown_tag_count}${h.unknown_tags.length ? ": " + h.unknown_tags.join(", ") : ""}`],
+      [t("em.f.wrapped_anchor"), h.wrapped_anchor ? t("common.yes") : t("common.no")],
     ].map(([k, v]) => [e(k), e(v)]);
     const linkRows = h.links.map((l) => [
-      e(l.text || "(brak tekstu)"), mono(defangUrl(l.href || "")),
-      (l.text_host_mismatch ? '<span class="bad">tekst ≠ href</span> ' : "") + (l.scheme === "http" ? '<span class="warnc">http</span> ' : "") +
-      (l.abused_host ? '<span class="warnc">usługa często nadużywana</span> ' : "") + (l.shortener ? '<span class="bad">skracacz</span> ' : "") +
-      (l.idn ? '<span class="bad">IDN/punycode</span> ' : "") + (l.query_params >= 4 ? `<span class="muted">${l.query_params} parametrów</span>` : ""),
+      e(l.text || t("em.f.no_text")), mono(defangUrl(l.href || "")),
+      (l.text_host_mismatch ? `<span class="bad">${e(t("em.f.text_ne_href"))}</span> ` : "") + (l.scheme === "http" ? '<span class="warnc">http</span> ' : "") +
+      (l.abused_host ? `<span class="warnc">${e(t("em.f.abused"))}</span> ` : "") + (l.shortener ? `<span class="bad">${e(t("em.f.shortener"))}</span> ` : "") +
+      (l.idn ? '<span class="bad">IDN/punycode</span> ' : "") + (l.query_params >= 4 ? `<span class="muted">${e(t("em.f.params", { n: l.query_params }))}</span>` : ""),
     ]);
     const hiddenRows = h.hidden.map((x) => [mono(x.tag), e(x.techniques.join(", ")), `${x.text_len}`, `<span class="mono">${e(x.sample)}</span>`]);
-    parts.push(block("Treść HTML: linki, elementy zdalne, ukryta treść",
-      table(["Cecha", "Wartość"], summary) +
-      "<h4>Linki (adresy zdefangowane, nieklikalne)</h4>" + table(["Widoczny tekst", "href", "Uwagi"], linkRows) +
-      (hiddenRows.length ? "<h4>Ukryta treść</h4>" + table(["Znacznik", "Techniki ukrywania", "Znaków", "Fragment"], hiddenRows) : "") +
-      (h.comment_samples.length ? "<h4>Początki komentarzy HTML</h4>" + h.comment_samples.map((c) => `<div class="mono">${e(c)}</div>`).join("") : "")));
+    parts.push(block(t("em.f.html"),
+      table([t("em.f.feature"), t("common.value")], summary) +
+      `<h4>${e(t("em.f.links_defanged"))}</h4>` + table([t("em.f.visible_text"), "href", t("em.f.notes")], linkRows) +
+      (hiddenRows.length ? `<h4>${e(t("em.f.hidden_content"))}</h4>` + table([t("em.f.tag"), t("em.f.techniques"), t("em.f.chars_word"), t("em.f.excerpt")], hiddenRows) : "") +
+      (h.comment_samples.length ? `<h4>${e(t("em.f.comment_starts"))}</h4>` + h.comment_samples.map((c) => `<div class="mono">${e(c)}</div>`).join("") : "")));
   }
 
   const other = [];
-  if (f.duplicates.length) other.push(["Powtórzone nagłówki, które powinny być jednokrotne", e(f.duplicates.map((d) => `${d.name} ×${d.count}`).join(", "))]);
+  if (f.duplicates.length) other.push([t("em.f.dup_headers"), e(f.duplicates.map((d) => `${d.name} ×${d.count}`).join(", "))]);
   const casing = Object.entries(f.casing_variants);
-  if (casing.length) other.push(["Różna wielkość liter w nazwach nagłówków (ślad różnych programów)", e(casing.map(([, v]) => v.join(" / ")).join("; "))]);
+  if (casing.length) other.push([t("em.f.casing"), e(casing.map(([, v]) => v.join(" / ")).join("; "))]);
   if (f.encoded_words.length) other.push(["Encoded-words (RFC 2047)", f.encoded_words.map((w) => `${e(w.header)}: <span class="mono">${e(w.raw)}</span> → ${e(w.decoded)}`).join("<br>")]);
-  if (f.placeholders.length) other.push(["Niepodstawione placeholdery", f.placeholders.map((p) => `<code>${e(p)}</code>`).join(" ")]);
+  if (f.placeholders.length) other.push([t("em.f.placeholders"), f.placeholders.map((p) => `<code>${e(p)}</code>`).join(" ")]);
   if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mono(defangUrl(u))).join(" ") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
-  if (f.urls_plain.length) other.push(["Adresy URL w części tekstowej", f.urls_plain.map((u) => mono(defangUrl(u))).join("<br>")]);
-  if (f.ips.length) other.push(["Adresy IP w nagłówkach", f.ips.map((i) => `${mono(i.ip)} <span class="muted">(${e(i.where)})</span>`).join("<br>")]);
-  if (other.length) parts.push(block("Inne obserwacje", table(["Co", "Wartość"], other)));
+  if (f.urls_plain.length) other.push([t("em.f.urls_plain"), f.urls_plain.map((u) => mono(defangUrl(u))).join("<br>")]);
+  if (f.ips.length) other.push([t("em.f.ips"), f.ips.map((i) => `${mono(i.ip)} <span class="muted">(${e(i.where)})</span>`).join("<br>")]);
+  if (other.length) parts.push(block(t("em.f.other"), table([t("em.f.what"), t("common.value")], other)));
 
   root.querySelector("#em-facts").innerHTML = parts.join("");
   root.querySelector("#em-sep").style.display = "block";
 }
 
 // ---------------------------------------------------------------------------
-// zapisane analizy
+// saved analyses
 // ---------------------------------------------------------------------------
 
 async function refreshSaved() {
@@ -729,12 +732,12 @@ async function refreshSaved() {
   try {
     items = await api.emailAnalyses();
   } catch (err) {
-    list.innerHTML = `<div class="banner warn">błąd: ${e(err.message)}</div>`;
+    list.innerHTML = `<div class="banner warn">${e(t("common.error", { message: err.message }))}</div>`;
     return;
   }
-  root.querySelector("#em-saved-summary").textContent = `Zapisane analizy (${items.length})`;
+  root.querySelector("#em-saved-summary").textContent = t("em.saved_count", { n: items.length });
   if (!items.length) {
-    list.innerHTML = '<div class="muted">Brak zapisanych analiz. Każda ukończona analiza zapisuje się razem z surowym e-mailem w katalogu data/analizy.</div>';
+    list.innerHTML = `<div class="muted">${e(t("em.saved_empty"))}</div>`;
     return;
   }
   list.innerHTML = "";
@@ -742,20 +745,20 @@ async function refreshSaved() {
     const row = document.createElement("div");
     row.className = "saved-row";
     const level = VERDICT_LEVEL[it.verdict] || "high";
-    row.innerHTML = `<span class="muted">${new Date(it.created_at).toLocaleString("pl-PL")}</span>
-      ${it.verdict ? `<span class="badge ${level}">${e(verdictLabel(it.verdict).toUpperCase())}</span>` : ""}${it.truncated ? '<span class="badge medium">UCIĘTA</span>' : ""}
-      <span class="grow"><strong>${e(it.subject || "(brak tematu)")}</strong><br><span class="muted">${e(it.from || "")}</span></span>`;
+    row.innerHTML = `<span class="muted">${e(fmtDateTime(it.created_at))}</span>
+      ${it.verdict ? `<span class="badge ${level}">${e(verdictLabel(it.verdict).toUpperCase())}</span>` : ""}${it.truncated ? `<span class="badge medium">${e(t("em.truncated_badge"))}</span>` : ""}
+      <span class="grow"><strong>${e(it.subject || t("em.no_subject"))}</strong><br><span class="muted">${e(it.from || "")}</span></span>`;
     const openBtn = document.createElement("button");
     openBtn.className = "secondary";
     openBtn.style.margin = "0";
-    openBtn.textContent = "Otwórz";
+    openBtn.textContent = t("em.open");
     openBtn.onclick = () => openSaved(it.id);
     const delBtn = document.createElement("button");
     delBtn.className = "secondary";
     delBtn.style.margin = "0";
-    delBtn.textContent = "Usuń";
+    delBtn.textContent = t("common.delete");
     delBtn.onclick = async () => {
-      if (!confirm("Usunąć tę analizę razem z zapisanym e-mailem?")) return;
+      if (!confirm(t("history.confirm_delete_email"))) return;
       await api.emailAnalysisDelete(it.id);
       refreshSaved();
     };
@@ -775,7 +778,7 @@ async function openSaved(id) {
   try {
     rec = await api.emailAnalysis(id);
   } catch (err) {
-    statusEl.textContent = "Błąd: " + err.message;
+    statusEl.textContent = t("em.error", { message: err.message });
     return;
   }
   clearOutput();
@@ -793,6 +796,6 @@ async function openSaved(id) {
   renderAnalysis();
   showCitations();
   showActions();
-  statusEl.textContent = `Otwarto zapisaną analizę z ${new Date(rec.created_at).toLocaleString("pl-PL")}.`;
+  statusEl.textContent = t("em.opened", { date: fmtDateTime(rec.created_at) });
   root.querySelector("#em-facts").scrollIntoView({ behavior: "smooth", block: "start" });
 }
