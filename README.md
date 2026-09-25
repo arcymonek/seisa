@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.21</b></p>
+<p align="center"><b>Seisa 2.0.22</b></p>
 
 # Seisa
 
@@ -144,7 +144,7 @@ There is no database - all persistence is plain JSON files in `data/` (history l
 
 ## Installation
 
-Requires Python 3.11+.
+Requires Python 3.11+ on **macOS** or **Linux**. On Debian/Ubuntu install the venv module first (`sudo apt install python3-venv`). Windows is not supported natively; it works through WSL as Linux.
 
 ```bash
 cd seisa
@@ -157,7 +157,7 @@ Fill `.env` with real API keys (the keys are described below) and make the file 
 
 ## Running
 
-The simplest way is the start script, which starts the server and opens the browser at `http://127.0.0.1:54321`:
+The simplest way is the start script, which starts the server and opens the browser at `http://127.0.0.1:54321` (macOS: `open`; Linux with a desktop: `xdg-open`; otherwise it only prints the address to open by hand):
 
 ```bash
 ./seisa.sh

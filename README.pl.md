@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.21</b></p>
+<p align="center"><b>Seisa 2.0.22</b></p>
 
 # Seisa
 
@@ -144,7 +144,7 @@ Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia og
 
 ## Instalacja
 
-Wymaga Python 3.11+.
+Wymaga Python 3.11+ na **macOS** lub **Linuksie**. Na Debianie/Ubuntu najpierw zainstaluj moduł venv (`sudo apt install python3-venv`). Windows nie jest wspierany natywnie; działa przez WSL jako Linux.
 
 ```bash
 cd seisa
@@ -157,7 +157,7 @@ Uzupełnij `.env` prawdziwymi kluczami API (opis kluczy niżej) i ustaw plikowi 
 
 ## Uruchomienie
 
-Najprościej skryptem startowym, który uruchamia serwer i otwiera przeglądarkę na `http://127.0.0.1:54321`:
+Najprościej skryptem startowym, który uruchamia serwer i otwiera przeglądarkę na `http://127.0.0.1:54321` (macOS: `open`; Linux z pulpitem: `xdg-open`; w pozostałych przypadkach tylko wypisuje adres do otwarcia ręcznie):
 
 ```bash
 ./seisa.sh
