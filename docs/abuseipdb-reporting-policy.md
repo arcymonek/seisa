@@ -1,27 +1,26 @@
 # AbuseIPDB reporting rules
 
-This file describes the rules of reporting to the AbuseIPDB service - https://www.abuseipdb.com
+This file describes the rules of reporting to the AbuseIPDB service - https://www.abuseipdb.com. The wording below is our own summary, not a copy of the AbuseIPDB texts.
 
-## Reporting Policy
+## Reporting rules (summary)
 
-These rules apply to use of the report and report-bulk API endpoints, as well as the respective web forms.
+This is a summary in our own words of the rules published by AbuseIPDB at https://www.abuseipdb.com/reporting-policy
+(last checked against the source version dated 2022-06-23). It is not a copy of that page - the binding text is the
+one on the AbuseIPDB website, and the rules apply to the API (`report`, `report-bulk`) and to the web forms alike.
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
+"Attack" always means a cybersecurity attack. The words MUST / SHOULD / MAY below carry their usual RFC 2119 weight.
 
-Attack here and elsewhere on the site refers to a cybersecurity attack. If you were physically assaulted or abused, please call your local police.
+- The reported activity MUST be no older than 60 days.
+- The report MUST describe the activity in detail. Useful details: port, payload, timestamp.
+- The report SHOULD carry the time of the event. Without a timestamp in the comment, the time of submission is
+  taken as the time of the attack.
+- Do NOT report activity whose source address is probably forged (SYN or UDP floods). A TCP connection may be
+  reported only if the three-way handshake was completed; UDP traffic cannot be reported.
+- Do NOT report an address just because of its AbuseIPDB confidence score - that would be circular reasoning.
+- One report MAY summarise several log entries that belong to the same attack.
 
-- Report MUST be of an attack no older than 60 days.
-- Report MUST contain a detailed description of the attack. Recommended details to include are: port number, payload, and timestamp.
-- Report SHOULD include a timestamp of the attack. If no timestamp is included in the comment, the time of report is assumed to be the time of attack.
-- Report MUST NOT be of an attack where the source address is likely spoofed i.e. SYN floods and UDP floods. TCP connections can only be reported if they complete the three-way handshake. UDP connections cannot be reported.
-- Report MUST NOT be on the basis of an AbuseIPDB confidence of abuse score. This is circular logic.
-- Report MAY be an aggregation of multiple logs related to a single attack.
-
-Reports with the same comment and categories within a 24 hour window will be merged.
-
-AbuseIPDB reserves the right to remove reports at its discretion. AbuseIPDB reserves the right to suspend any user's ability to report.
-
-Last Modified 2022-06-23
+Reports with an identical comment and identical categories submitted within 24 hours are merged. AbuseIPDB may
+remove reports and may suspend the reporting rights of a user at its own discretion.
 
 ## Identifying the real IP address in the Received chain
 
@@ -50,31 +49,33 @@ the IP of the earlier (newer) hops.
 
 ## AbuseIPDB categories
 
+The IDs and names are those of the AbuseIPDB API; the descriptions are our own short paraphrases.
+
 | ID | Name | Description |
 |----|------|-------------|
-| 1 | DNS Compromise | Altering DNS records resulting in improper redirection. |
-| 2 | DNS Poisoning | Falsifying the cache of a DNS server (cache poisoning). |
-| 3 | Fraud Orders | Fraudulent orders. |
-| 4 | DDoS Attack | Participating in a distributed denial-of-service attack (usually part of a botnet). |
-| 5 | FTP Brute-Force | - |
-| 6 | Ping of Death | An oversized IP packet. |
-| 7 | Phishing | Phishing websites and/or phishing e-mails. |
-| 8 | Fraud VoIP | - |
-| 9 | Open Proxy | An open proxy, open relay or Tor exit node. |
-| 10 | Web Spam | Comment/forum spam, HTTP referer spam or other CMS spam. |
-| 11 | Email Spam | Spam in the e-mail body, infected attachments and phishing e-mails. Note: keep comments to relevant information only (instead of log dumps) and remove PII if you want to stay anonymous. |
-| 12 | Blog Spam | CMS blog comment spam. |
-| 13 | VPN IP | A conjunctive (combined) category. |
-| 14 | Port Scan | Scanning for open ports and vulnerable services. |
-| 15 | Hacking | - |
-| 16 | SQL Injection | SQL injection attempts. |
-| 17 | Spoofing | Impersonating the sender of an e-mail. |
-| 18 | Brute-Force | Brute-force attacks on credentials of websites and services such as SSH, FTP, SIP, SMTP, RDP etc. A category separate from DDoS attacks. |
-| 19 | Bad Web Bot | Web scraping (e-mail addresses, content etc.) and crawlers that do not respect robots.txt. Excessive requests and user-agent spoofing can be reported here too. |
-| 20 | Exploited Host | A host probably infected with malware and used for other attacks or to host malicious content. The owner of the host may be unaware of the compromise. The category is often used together with other attack categories. |
-| 21 | Web App Attack | Attempts to probe or exploit installed web applications, e.g. CMS (WordPress/Drupal), e-commerce solutions, forum software, phpMyAdmin and other plugins/solutions. |
-| 22 | SSH | Abuse related to Secure Shell (SSH). Use together with more specific categories. |
-| 23 | IoT Targeted | An attack aimed at an "Internet of Things" device. The comments should state the type of the attacked device. |
+| 1 | DNS Compromise | Tampering with DNS records so that traffic is redirected. |
+| 2 | DNS Poisoning | Planting forged data in a DNS server's cache. |
+| 3 | Fraud Orders | Orders placed fraudulently. |
+| 4 | DDoS Attack | Taking part in a distributed denial-of-service attack, typically as a botnet member. |
+| 5 | FTP Brute-Force | Password guessing against FTP. |
+| 6 | Ping of Death | Oversized IP packets sent to crash a target. |
+| 7 | Phishing | Phishing sites or phishing e-mails. |
+| 8 | Fraud VoIP | Fraud involving VoIP services. |
+| 9 | Open Proxy | An open proxy, an open relay or a Tor exit node. |
+| 10 | Web Spam | Comment or forum spam, referer spam and other CMS spam. |
+| 11 | Email Spam | Spam in the message body, infected attachments and phishing e-mails. Keep the comment to relevant facts (no log dumps) and strip personal data if you want to stay anonymous. |
+| 12 | Blog Spam | Spam comments on blogs and CMS sites. |
+| 13 | VPN IP | A combined category for addresses of VPN services. |
+| 14 | Port Scan | Probing for open ports and vulnerable services. |
+| 15 | Hacking | General intrusion attempts. |
+| 16 | SQL Injection | Attempts at SQL injection. |
+| 17 | Spoofing | Forging the identity of an e-mail sender. |
+| 18 | Brute-Force | Password guessing against websites and services such as SSH, FTP, SIP, SMTP or RDP; separate from DDoS. |
+| 19 | Bad Web Bot | Scrapers and crawlers that ignore robots.txt, excessive requests, user-agent spoofing. |
+| 20 | Exploited Host | A host that is probably infected and used to attack others or serve malicious content; the owner may not know. Often combined with other categories. |
+| 21 | Web App Attack | Probing or exploiting web applications (CMS, shops, forums, phpMyAdmin, plugins). |
+| 22 | SSH | Abuse of Secure Shell; combine with a more specific category. |
+| 23 | IoT Targeted | An attack aimed at an Internet-of-Things device; the comment should name the device type. |
 
 ## AbuseIPDB report template
 
@@ -85,7 +86,7 @@ the IP of the earlier (newer) hops.
 | **ip** | yes | the IP address (Step 2) |
 | **categories** | yes, at least 1 | the selected categories (Step 2) |
 | **timestamp** | no (default "now") | The attack timestamp - a separate field, it does NOT go into the comment text |
-| **comment** | no (but AbuseIPDB recommends a detailed description - see the "Reporting Policy" above) | written by the LLM in Step 1, editable in Step 2 - see below |
+| **comment** | no (but AbuseIPDB recommends a detailed description - see the "Reporting rules" section above) | written by the LLM in Step 1, editable in Step 2 - see below |
 
 Seisa has no separate field for the port number - if it is known, add it to the comment manually before sending.
 

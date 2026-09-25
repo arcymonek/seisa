@@ -266,7 +266,7 @@ def _decode_part(part: Message) -> str:
 
 
 def _extract_body_text(msg: Message) -> str:
-    """Many phishing e-mails are pure HTML without a text/plain part (as in a real incident) - without the HTML
+    """Many phishing e-mails are pure HTML without a text/plain part - without the HTML
     fallback the message body never reached the analysis (neither the BTC/ransom detection nor the LLM prompt)."""
     if msg.is_multipart():
         plain_parts, html_parts = [], []

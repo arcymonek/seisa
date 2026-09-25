@@ -1,19 +1,20 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
+<p align="center"><b>Seisa 2.0.21</b></p>
 
 # Seisa
 
 **English** | [Polski](README.pl.md)
 
-A local tool for IP reputation analysis, URL scanning (urlscan.io), DMARC reports and preparing AbuseIPDB abuse reports. It runs **locally only** (`127.0.0.1`), with no login and without sending anything out except the explicit queries to the selected threat-intel services.
+A local tool for IP reputation analysis, URL scanning (urlscan.io), DMARC reports and preparing AbuseIPDB abuse reports. It runs **locally only** (`127.0.0.1`), with no login and without sending anything out except the explicit queries to the selected threat-intel services (and, on an explicit click of the "geo/ASN" button in the DMARC tab, one IP address to [ipwho.is](https://ipwho.is)).
 
 **Seisa** (精査, *せいさ*, pronounced roughly "say-sah") is a Japanese word meaning a thorough, detailed examination - looking at something closely. 精 (*sei*) = precise, exact, detailed; 査 (*sa*) = to examine, to inspect.
 
-Author: Arkadiusz Polak <kontakt@arkadiuszpolak.pl>
+Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mail: kontakt (at) arkadiuszpolak (dot) pl). Security issues: see [SECURITY.md](SECURITY.md).
 
 ## Features
 
 ### IP
-You enter an IP address (IP only - URL/domain analysis lives in the separate URLScan tab) and the tool queries in parallel:
+You enter an IP address (batch mode also accepts domain names; scanning a URL lives in the separate URLScan tab) and the tool queries in parallel:
 
 | Service | What it provides |
 |---|---|
@@ -40,7 +41,7 @@ Orders a live scan of the given URL through the [urlscan.io API](https://urlscan
 The result shows the API response in as much detail as possible, formatted as readable text: a page summary (final URL after redirects, title, domain, IP, ASN, geolocation, HTTP server, status), the TLS certificate, the urlscan.io verdict (malicious score, categories, detected brands), statistics (number of requests, unique domains/IPs/countries/ASNs, cookies), detected technologies, the list of contacted IP addresses and domains, and the links found on the page. At the end, in a collapsible "Full API response" section, the whole raw response as code with line numbers - the same as in the IP tab.
 
 ### DMARC
-Drag and drop aggregate DMARC XML reports (from Google, Microsoft etc.) - the tool parses them 100% in the browser (no files are sent anywhere), aggregates by source IP address, shows SPF/DKIM pass/fail, alignment (adkim/aspf) and the policy (p/sp/pct) from every report. The "Records" button next to each IP expands the full detail of every single record - header/envelope from, the reason of a policy override (`policy_evaluated > reason`) and the raw `auth_results` outcome (domain/selector/result for DKIM, domain/scope/result for SPF) - exactly what lets you diagnose *why* alignment failed, not just that it did. From every IP row you can jump straight to a full reputation check (IP tab) or to preparing an AbuseIPDB report.
+Drag and drop aggregate DMARC XML reports (from Google, Microsoft etc.) - the tool parses them 100% in the browser (no files are sent anywhere), aggregates by source IP address, shows SPF/DKIM pass/fail, alignment (adkim/aspf) and the policy (p/sp/pct) from every report. The optional "geo/ASN" button sends that single IP address to the external service [ipwho.is](https://ipwho.is) (from your browser, only on click) and shows the country and ASN. The "Records" button next to each IP expands the full detail of every single record - header/envelope from, the reason of a policy override (`policy_evaluated > reason`) and the raw `auth_results` outcome (domain/selector/result for DKIM, domain/scope/result for SPF) - exactly what lets you diagnose *why* alignment failed, not just that it did. From every IP row you can jump straight to a full reputation check (IP tab) or to preparing an AbuseIPDB report.
 
 ### Email
 An educational analysis of the e-mail source: paste the whole source (headers + body) or load an `.eml` file (UTF-8 or windows-1252, the mbox envelope and line endings are normalised; binary base64 attachments do not go to the model - only their size and sha256 stay, while text base64 parts are decoded).
@@ -71,6 +72,11 @@ A workflow compliant with the [AbuseIPDB reporting policy](docs/abuseipdb-report
 7. Under the IP field the tab shows what AbuseIPDB already knows about the address (reports, distinct reporters, confidence score and last report in 90 days; one `/check` query per address, only with an API key) and your own earlier reports of it from `data/report_log.json`. AbuseIPDB accepts a repeated report of the same IP from one account only after 15 minutes, so within that time the "Send" button is disabled and the backend refuses the request (HTTP 409) instead of spending a call. The fallback comment (without an LLM) contains only the local part of the `Message-ID`, because the domain after `@` is usually your own.
 8. Sending through the AbuseIPDB API (the backend validates the hard checks anew, independently of the state of the form in the browser) **or** copying the comment for manual pasting on the website.
 
+Further details of this tab:
+
+- The "Load .eml file" button (also dragging a file onto the field), a timer of the analysis and the tokens and cost after the "Analyze" analysis, shown next to the buttons.
+- Detection of the sender IP: when the first hop outside the recipient's domain is only a relay of an operator (e.g. Microsoft Exchange Online), the parser walks through the operator's internal hops to the hop where the address of the connecting sender was recorded. If the message originated inside a shared provider (e.g. a hotmail account) and there is no public sender IP, the IP stays empty (confidence low). Authentication results are also read from `X-MS-Exchange-Authentication-Results` and `ARC-Authentication-Results`. After an analysis with an LLM the tab shows how much of the content the model saw (the first 2000 characters), and the hard checks (IP, age) take precedence over the opinion of the model.
+
 ### History
 The last 25 actions: IP lookups, DMARC imports and saved e-mail analyses (reopened in the Email tab), which you can reopen or delete. "Clear history" removes only IP and DMARC entries; e-mail analyses (with the raw messages) are deleted one by one.
 
@@ -78,7 +84,7 @@ The last 25 actions: IP lookups, DMARC imports and saved e-mail analyses (reopen
 Errors and warnings (WARNING level and above) from every service - normal, error-free operation of the tool leaves no trace on disk. Filtering by date range (today / 3 days / week / month / all; the default is all) and by service (the default is all). All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
 
 ### Interface language (PL/EN)
-The `PL | EN` switch is in the footer. The choice is remembered by the browser (`localStorage`, key `seisa.lang`); without a stored choice the browser language is used (`pl` or `en`), and English in all other cases. Changing the language reloads the page (you are asked first if that would lose work in progress). The interface texts live in the catalogs `frontend/i18n/pl.json` and `en.json` (flat keys, `{name}` parameters, plural forms through `Intl.PluralRules`), dates use the `pl-PL` or `en-GB` format. The development mode `/?lang=qa` shows `[[key]]` instead of texts, so places that bypass the translations are visible at once. The frontend sends the selected language in the `X-Seisa-Lang` header (only to its own backend) and the backend translates error messages, the deterministic e-mail analysis, the IP scoring notes and the Markdown reports on its side (catalogs `backend/locales/pl.json` and `en.json`, module `backend/i18n.py`). Analyses and history entries saved earlier keep the language they were created in. The logs (Logs tab) are in English regardless of the interface language. LLM answers (Email and AbuseIPDB tabs) are written in the interface language of the moment of the request; the prompts and guides are single, in English, and the answer language is set by an explicit directive (the AbuseIPDB report comment is always in English - an AbuseIPDB policy requirement). The cost of requests depends on the model, and an English prompt is usually a little shorter (in an A/B test on a synthetic message about 8% fewer input tokens than before).
+The `PL | EN` switch is in the footer. The choice is remembered by the browser (`localStorage`, key `seisa.lang`); without a stored choice the browser language is used (`pl` or `en`), and English in all other cases. Changing the language reloads the page (you are asked first if that would lose work in progress). The interface texts live in the catalogs `frontend/i18n/pl.json` and `en.json` (flat keys, `{name}` parameters, plural forms through `Intl.PluralRules`), dates use the `pl-PL` or `en-GB` format. The development mode `/?lang=qa` shows `[[key]]` instead of texts, so places that bypass the translations are visible at once. The frontend sends the selected language in the `X-Seisa-Lang` header (only to its own backend) and the backend translates error messages, the deterministic e-mail analysis, the IP scoring notes and the Markdown reports on its side (catalogs `backend/locales/pl.json` and `en.json`, module `backend/i18n.py`). Analyses and history entries saved earlier keep the language they were created in. The logs (Logs tab) are in English regardless of the interface language. LLM answers (Email and AbuseIPDB tabs) are written in the interface language of the moment of the request; the prompts and guides are single, in English, and the answer language is set by an explicit directive (the AbuseIPDB report comment is always in English - an AbuseIPDB policy requirement). The cost of requests depends on the model.
 
 ## Architecture
 
@@ -87,10 +93,12 @@ A single **Python FastAPI** process (`backend/`) serves both the API and the sta
 ```
 seisa/
 ├── .env                    # API keys (gitignored, see .env.example)
-├── seisa.sh                 # start script (alias `seisa` in ~/.zshrc)
+├── seisa.sh                 # start script (starts the server and opens the browser)
 ├── README.md / README.pl.md  # this documentation in English (the main one on GitHub) and in Polish
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
+├── SECURITY.md              # how to report a vulnerability
+├── .github/ISSUE_TEMPLATE/  # bug report template
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache and language middleware, error handling
 │   ├── config.py             # paths, settings from .env
@@ -121,7 +129,7 @@ seisa/
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # modules: app, i18n, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
-├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; entirely fictitious data (.example domains, documentation address ranges), no personal data
+├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 ├── scripts/
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   └── check_i18n.py          # checks the PL/EN catalogs (keys, parameters, plurals); `--strict` looks for Polish literals in code
@@ -145,19 +153,17 @@ python3 -m venv .venv
 cp .env.example .env
 ```
 
-Fill `.env` with real API keys (the keys are described below).
+Fill `.env` with real API keys (the keys are described below) and make the file readable only for you: `chmod 600 .env`.
 
 ## Running
 
-The simplest way is the terminal shortcut (added to `~/.zshrc`):
+The simplest way is the start script, which starts the server and opens the browser at `http://127.0.0.1:54321`:
 
 ```bash
-seisa
+./seisa.sh
 ```
 
-It starts the server and automatically opens the browser at `http://127.0.0.1:54321`.
-
-Manually:
+You can add a shell alias for it (e.g. `alias seisa='~/path/to/seisa/seisa.sh'`). Without the script:
 
 ```bash
 cd seisa
@@ -183,19 +189,17 @@ A missing key for any service does not block the rest of the tool - the service 
 
 - Everything runs on `127.0.0.1`, without authentication - a single-user tool, do not expose port 54321 to the outside.
 - API keys are kept only in `.env` (gitignored), never in the frontend code.
-- DMARC XML parsing happens entirely in the browser.
+- DMARC XML parsing happens entirely in the browser. The only call the frontend makes to a third party is the optional "geo/ASN" button, which sends a single IP address to ipwho.is on click.
 - The server accepts only loopback `Host` headers (`127.0.0.1`, `localhost`), which blocks DNS-rebinding attacks from other web pages. Every response carries a Content-Security-Policy (scripts only from the tool's own origin).
 - Reports contain text from third-party APIs (e.g. comments from other AbuseIPDB users), so the rendered HTML goes through an allow-list: only the tags the reports use survive, links only with `http(s)`, and any other markup is shown as inert text.
 - The content of a pasted e-mail goes to OpenRouter **only** after an explicit click on "Analyze" (not "Analyze without LLM") - the interface says so plainly before sending.
-- AbuseIPDB tab: the "Load .eml file" button (also dragging a file onto the field), a timer of the analysis and the tokens and cost after the "Analyze" analysis, shown next to the buttons.
-- Detection of the sender IP in the AbuseIPDB tab: when the first hop outside the recipient's domain is only a relay of an operator (e.g. Microsoft Exchange Online), the parser walks through the operator's internal hops to the hop where the address of the connecting sender was recorded. If the message originated inside a shared provider (e.g. a hotmail account) and there is no public sender IP, the IP stays empty (confidence low). Authentication results are also read from `X-MS-Exchange-Authentication-Results` and `ARC-Authentication-Results`. After an analysis with an LLM the tab shows how much of the content the model saw (the first 2000 characters), and the hard checks (IP, age) take precedence over the opinion of the model.
-- A report to AbuseIPDB always requires a deliberate click on "Send"; the backend validates the hard checks (age, IP, category, description) anew regardless of the state of the form in the browser - they, not the informational checklist, decide whether sending is possible.
+- A report to AbuseIPDB always requires a deliberate click on "Send"; the backend validates the hard checks (age, IP, category) anew regardless of the state of the form in the browser - they, not the informational checklist, decide whether sending is possible. The comment is only sanitised and shortened, not judged.
 - The Email tab sends the whole source of the message (with personal data) to OpenRouter after a click on "Analyze"; this is a deliberate decision (mostly suspicious messages are analysed).
 - History, saved e-mail analyses and logs stay only locally in `data/` and `logi/` (gitignored). The analyses contain raw e-mails, so the files have 0600 permissions.
 
 ## Versioning and conventions
 
-- The visible version number (page title, header, footer) is increased by 0.0.1 after every change to the tool; after X.Y.99 the next version is X.(Y+1).0. Version 2.0.0 is the first release under the name Seisa.
+- The visible version number (page title, header and footer in `index.html`, and under the logo in both READMEs) is increased by 0.0.1 after every change to the tool; after X.Y.99 the next version is X.(Y+1).0. Version 2.0.0 is the first release under the name Seisa.
 - Code, comments, docstrings, log messages and commits are in English. The documentation exists in two versions with the same heading structure: `README.md` (English, the main one on GitHub) and `README.pl.md` (Polish); a change in one means a change in the other (the heading structure is compared by `scripts/check_i18n.py`).
 - Every tab that runs an action shows the timer (always one decimal, e.g. `13.1 s`), the status (e.g. the loaded file) and any related buttons in one row next to the action button, both during and after the run; in the Email tab the tokens and cost sit there too.
 - Texts visible in the interface go exclusively to the `i18n` catalogs (a new key = a PL and an EN entry in the same commit); before a commit `python3 scripts/check_i18n.py` must finish without errors.

@@ -1,5 +1,4 @@
-"""Moved 1:1 from skryptysh/abuseipdb_report.py (generic functions, without the VPS context):
-sanitize_comment, truncate_bytes, is_reportable_ip."""
+"""Comment sanitising and IP eligibility helpers: sanitize_comment, truncate_bytes, is_reportable_ip."""
 from __future__ import annotations
 
 import ipaddress

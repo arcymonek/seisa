@@ -27,6 +27,7 @@ def _path(analysis_id: str):
 
 def _write(analysis_id: str, record: dict[str, Any]) -> None:
     ANALIZY_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
+    os.chmod(ANALIZY_DIR, 0o700)  # mkdir(mode=...) does not touch a directory that already exists (raw e-mails inside)
     fd, tmp = tempfile.mkstemp(dir=ANALIZY_DIR, prefix=".analiza.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:

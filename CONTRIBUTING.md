@@ -1,12 +1,39 @@
-# Współpraca przy projekcie / Contributing
+# Contributing
 
-## Zmiany w kodzie
+Polski: [Współpraca przy projekcie](#współpraca-przy-projekcie-polski)
+
+## Code changes
+
+Seisa is developed by its author only. **Pull requests with code changes are not accepted** and will be closed without merging. This is not a judgement of their quality: it keeps a single copyright holder for the whole codebase (see [LICENSE](LICENSE)).
+
+If you have an idea for a change, describe it in an issue. If I think it is a good one, I will implement it myself.
+
+## Issues
+
+Bug reports and feature ideas are welcome. To make diagnosis easier, include the Seisa version (shown in the page header), your operating system, the Python version and the steps that lead to the problem.
+
+**Do not paste sensitive data into issues:**
+- API keys or the contents of your `.env` file,
+- full e-mails, headers or addresses from private correspondence (anonymise them or replace them with examples),
+- files from the `data/` and `logi/` directories.
+
+Report security vulnerabilities privately, following [SECURITY.md](SECURITY.md), not as a public issue.
+
+## Forks
+
+You may fork the project and change it for yourself, but the same license applies: **noncommercial use only** ([PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)). Commercial use requires a separate permission of the author.
+
+---
+
+## Współpraca przy projekcie (polski)
+
+### Zmiany w kodzie
 
 Seisa jest rozwijana wyłącznie przez autora. **Pull requesty z zewnętrznymi zmianami w kodzie nie są przyjmowane** i będą zamykane bez scalania - nie jest to ocena ich jakości, tylko decyzja o utrzymaniu jednego właściciela praw autorskich do całości kodu (patrz [LICENSE](LICENSE)).
 
 Jeśli masz pomysł na zmianę, opisz go w zgłoszeniu (issue). Jeśli uznam go za dobry, wdrożę go samodzielnie.
 
-## Zgłoszenia (issues)
+### Zgłoszenia (issues)
 
 Mile widziane są zgłoszenia błędów i propozycje funkcji. Żeby ułatwić diagnozę, podaj wersję Seisy (widoczna w nagłówku strony), system, wersję Pythona i kroki prowadzące do problemu.
 
@@ -15,14 +42,8 @@ Mile widziane są zgłoszenia błędów i propozycje funkcji. Żeby ułatwić di
 - pełnych e-maili, nagłówków ani adresów z prywatnej korespondencji (zanonimizuj je lub zastąp przykładowymi),
 - plików z katalogów `data/` i `logi/`.
 
-Zgłoszenia dotyczące bezpieczeństwa (podatności) wyślij prywatnie na adres autora z README, a nie jako publiczne issue.
+Zgłoszenia dotyczące bezpieczeństwa (podatności) wysyłaj prywatnie, zgodnie z [SECURITY.md](SECURITY.md), a nie jako publiczne issue.
 
-## Forki
+### Forki
 
 Możesz zrobić własny fork i zmieniać go u siebie, ale obowiązuje go ta sama licencja: **wyłącznie użycie niekomercyjne** ([PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)). Użycie komercyjne wymaga odrębnej zgody autora.
-
----
-
-## English summary
-
-Seisa is developed by its author only. **Pull requests with code changes are not accepted** and will be closed without merging, so that a single copyright holder is kept for the whole codebase (see [LICENSE](LICENSE)). Bug reports and feature ideas are welcome as issues; please never paste API keys, `.env` contents, raw e-mails or files from `data/` and `logi/`. Report security vulnerabilities privately to the author's address in the README. Forks are allowed under the same noncommercial license; commercial use requires the author's permission.

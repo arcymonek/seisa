@@ -4,7 +4,7 @@
 Usage: python3 scripts/check_i18n.py [--strict]
 
 Checks: key parity pl/en, {placeholder} parity, plural-suffix completeness, forbidden characters (HTML, U+2014),
-keys used in code but missing from the catalog, unused keys, README heading parity and (with --strict) user-facing
+keys used in code but missing from the catalog, unused keys, README heading parity, the same version in all five places and (with --strict) user-facing
 literals with Polish diacritics that bypass t(). Exit code 1 on errors. Warnings never fail the run.
 """
 from __future__ import annotations
@@ -162,12 +162,31 @@ def check_readme_parity() -> None:
         errors.append(f"README.md and README.pl.md have different heading structure ({len(headings(en))} vs {len(headings(pl))} headings)")
 
 
+def check_versions() -> None:
+    """The visible version must be identical everywhere: 3x index.html (title, header, footer) + 2x README."""
+    found: dict[str, str] = {}
+    html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
+    for label, pattern in (
+        ("index.html <title>", r"<title>Seisa ([\d.]+)</title>"),
+        ("index.html header", r"<small>([\d.]+)</small>"),
+        ("index.html footer", r"<footer>Seisa ([\d.]+)"),
+    ):
+        m = re.search(pattern, html)
+        found[label] = m.group(1) if m else "?"
+    for name in ("README.md", "README.pl.md"):
+        m = re.search(r"<b>Seisa ([\d.]+)</b>", (ROOT / name).read_text(encoding="utf-8"))
+        found[name] = m.group(1) if m else "?"
+    if len(set(found.values())) != 1:
+        errors.append(f"version differs between places: {found}")
+
+
 def main() -> int:
     strict = "--strict" in sys.argv
     cats = {name: check_pair(name, d) for name, d in PAIRS.items()}
     check_usage("frontend", cats["frontend"]["en"], source_files("frontend/js", (".js",)), FRONT_USE, FRONT_DYN)
     check_usage("backend", cats["backend"]["en"], source_files("backend", (".py",)), BACK_USE, BACK_DYN)
     check_readme_parity()
+    check_versions()
     if strict:
         check_hardcoded_python()
         check_hardcoded_js()

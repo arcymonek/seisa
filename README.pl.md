@@ -1,19 +1,20 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
+<p align="center"><b>Seisa 2.0.21</b></p>
 
 # Seisa
 
 [English](README.md) | **Polski**
 
-Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel.
+Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel (oraz, po jawnym kliknięciu przycisku "geo/ASN" w zakładce DMARC, jednego adresu IP do [ipwho.is](https://ipwho.is)).
 
 **Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
 
-Autor: Arkadiusz Polak <kontakt@arkadiuszpolak.pl>
+Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mail: kontakt (at) arkadiuszpolak (dot) pl). Problemy z bezpieczeństwem: zobacz [SECURITY.md](SECURITY.md).
 
 ## Funkcje
 
 ### IP
-Wpisujesz adres IP (wyłącznie IP - analiza URL/domen jest w osobnej zakładce URLScan), narzędzie odpytuje równolegle:
+Wpisujesz adres IP (tryb wsadowy przyjmuje także nazwy domen; skanowanie URL jest w osobnej zakładce URLScan), narzędzie odpytuje równolegle:
 
 | Usługa | Co dostarcza |
 |---|---|
@@ -40,7 +41,7 @@ Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/d
 Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen oraz linki znalezione na stronie. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
 
 ### DMARC
-Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail, dopasowanie (alignment adkim/aspf) i politykę (p/sp/pct) z każdego raportu. Przycisk "Rekordy" przy każdym IP rozwija pełny szczegół każdego pojedynczego rekordu - header/envelope from, powód nadpisania polityki (`policy_evaluated > reason`), oraz surowy wynik `auth_results` (domena/selektor/wynik dla DKIM, domena/scope/wynik dla SPF) - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
+Przeciągnij i upuść raporty zbiorcze DMARC XML (od Google, Microsoft itd.) - narzędzie parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek), agreguje wg adresu IP źródła, pokazuje SPF/DKIM pass/fail, dopasowanie (alignment adkim/aspf) i politykę (p/sp/pct) z każdego raportu. Opcjonalny przycisk "geo/ASN" wysyła ten jeden adres IP do zewnętrznej usługi [ipwho.is](https://ipwho.is) (z przeglądarki, wyłącznie po kliknięciu) i pokazuje kraj oraz ASN. Przycisk "Rekordy" przy każdym IP rozwija pełny szczegół każdego pojedynczego rekordu - header/envelope from, powód nadpisania polityki (`policy_evaluated > reason`), oraz surowy wynik `auth_results` (domena/selektor/wynik dla DKIM, domena/scope/wynik dla SPF) - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Z każdego wiersza IP można od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB.
 
 ### Email
 Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + treść) albo wczytaj plik `.eml` (UTF-8 lub windows-1252, koperta mbox i zakończenia linii są normalizowane; binarne załączniki base64 nie idą do modelu, zostaje ich rozmiar i sha256, a tekstowe części base64 są dekodowane).
@@ -71,6 +72,11 @@ Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-po
 7. Pod polem IP zakładka pokazuje, co AbuseIPDB już wie o adresie (zgłoszenia, liczba zgłaszających, wynik pewności i ostatnie zgłoszenie z 90 dni; jedno zapytanie `/check` na adres, tylko z kluczem API) oraz Twoje wcześniejsze zgłoszenia tego adresu z `data/report_log.json`. AbuseIPDB przyjmuje powtórne zgłoszenie tego samego IP z jednego konta dopiero po 15 minutach, więc w tym czasie przycisk "Wyślij" jest wyłączony, a backend odrzuca żądanie (HTTP 409) zamiast zużywać zapytanie. Komentarz awaryjny (bez LLM) zawiera tylko lokalną część `Message-ID`, bo domena po `@` jest zwykle Twoja.
 8. Wysyłka przez API AbuseIPDB (backend waliduje twarde sprawdzenia od nowa, niezależnie od stanu formularza w przeglądarce) **albo** skopiowanie komentarza do ręcznego wklejenia na stronie.
 
+Dalsze szczegóły tej zakładki:
+
+- Przycisk "Wczytaj plik .eml" (także przeciągnięcie pliku na pole), licznik czasu analizy oraz tokeny i koszt po analizie "Analizuj", wyświetlane obok przycisków.
+- Wykrywanie IP nadawcy: gdy pierwszy hop spoza domeny odbiorcy jest tylko przekaźnikiem operatora (np. Microsoft Exchange Online), parser przechodzi wewnętrznymi hopami operatora do hopu, w którym zapisano adres łączącego się nadawcy. Jeśli wiadomość powstała wewnątrz współdzielonego dostawcy (np. konto hotmail) i brak publicznego IP nadawcy, IP zostaje puste (pewność low). Wyniki uwierzytelniania są czytane też z `X-MS-Exchange-Authentication-Results` i `ARC-Authentication-Results`. Po analizie z LLM zakładka pokazuje, ile treści zobaczył model (pierwsze 2000 znaków), a twarde sprawdzenia (IP, wiek) mają pierwszeństwo przed opinią modelu.
+
 ### Historia
 Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili (otwierane z powrotem w zakładce Email), z możliwością ponownego otwarcia lub usunięcia. "Wyczyść historię" usuwa tylko wpisy IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo.
 
@@ -78,7 +84,7 @@ Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie) i po usłudze (domyślnie wszystkie). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
 ### Język interfejsu (PL/EN)
-Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Frontend wysyła wybrany język w nagłówku `X-Seisa-Lang` (tylko do własnego backendu), a backend tłumaczy po swojej stronie komunikaty błędów, analizę deterministyczną e-maila, uwagi punktacji IP i raporty Markdown (katalogi `backend/locales/pl.json` i `en.json`, moduł `backend/i18n.py`). Zapisane wcześniej analizy i wpisy historii zachowują język, w którym powstały. Logi (zakładka Logi) są po angielsku niezależnie od języka interfejsu. Odpowiedzi LLM (zakładki Email i AbuseIPDB) powstają w języku interfejsu z chwili zapytania; prompty i przewodniki są jedne, po angielsku, a język odpowiedzi ustawia jawna dyrektywa (komentarz zgłoszenia do AbuseIPDB jest zawsze po angielsku - wymóg polityki AbuseIPDB). Koszt zapytań zależy od modelu, a angielski prompt jest zwykle nieco krótszy (w teście A/B na syntetycznej wiadomości ok. 8% mniej tokenów wejściowych niż wcześniej).
+Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Frontend wysyła wybrany język w nagłówku `X-Seisa-Lang` (tylko do własnego backendu), a backend tłumaczy po swojej stronie komunikaty błędów, analizę deterministyczną e-maila, uwagi punktacji IP i raporty Markdown (katalogi `backend/locales/pl.json` i `en.json`, moduł `backend/i18n.py`). Zapisane wcześniej analizy i wpisy historii zachowują język, w którym powstały. Logi (zakładka Logi) są po angielsku niezależnie od języka interfejsu. Odpowiedzi LLM (zakładki Email i AbuseIPDB) powstają w języku interfejsu z chwili zapytania; prompty i przewodniki są jedne, po angielsku, a język odpowiedzi ustawia jawna dyrektywa (komentarz zgłoszenia do AbuseIPDB jest zawsze po angielsku - wymóg polityki AbuseIPDB). Koszt zapytań zależy od modelu.
 
 ## Architektura
 
@@ -87,9 +93,11 @@ Jeden proces **Python FastAPI** (`backend/`) serwuje jednocześnie API i statycz
 ```
 seisa/
 ├── .env                    # klucze API (gitignored, patrz .env.example)
-├── seisa.sh                 # skrypt startowy (alias `seisa` w ~/.zshrc)
+├── seisa.sh                 # skrypt startowy (uruchamia serwer i otwiera przeglądarkę)
 ├── README.md / README.pl.md  # ta dokumentacja po angielsku (główna na GitHubie) i po polsku
 ├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
+├── SECURITY.md              # jak zgłosić podatność
+├── .github/ISSUE_TEMPLATE/  # szablon zgłoszenia błędu
 ├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache, obsługa błędów
@@ -121,7 +129,7 @@ seisa/
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # moduły: app, i18n, lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
-├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane całkowicie fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych), bez danych osobowych
+├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 ├── scripts/
 │   ├── dump_facts.py          # zrzut analizy deterministycznej fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   └── check_i18n.py          # kontrola katalogów PL/EN (klucze, parametry, liczba mnoga); `--strict` szuka polskich literałów w kodzie
@@ -145,19 +153,17 @@ python3 -m venv .venv
 cp .env.example .env
 ```
 
-Uzupełnij `.env` prawdziwymi kluczami API (opis kluczy niżej).
+Uzupełnij `.env` prawdziwymi kluczami API (opis kluczy niżej) i ustaw plikowi dostęp tylko dla siebie: `chmod 600 .env`.
 
 ## Uruchomienie
 
-Najprościej przez skrót terminalowy (dodany do `~/.zshrc`):
+Najprościej skryptem startowym, który uruchamia serwer i otwiera przeglądarkę na `http://127.0.0.1:54321`:
 
 ```bash
-seisa
+./seisa.sh
 ```
 
-Otwiera serwer i automatycznie otwiera przeglądarkę na `http://127.0.0.1:54321`.
-
-Ręcznie:
+Możesz dodać do niego alias powłoki (np. `alias seisa='~/ścieżka/do/seisa/seisa.sh'`). Bez skryptu:
 
 ```bash
 cd seisa
@@ -183,19 +189,17 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 
 - Wszystko działa na `127.0.0.1`, bez uwierzytelniania - narzędzie jednoosobowe, nie wystawiaj portu 54321 na zewnątrz.
 - Klucze API trzymane tylko w `.env` (gitignored), nigdy w kodzie frontendu.
-- Parsowanie DMARC XML dzieje się w całości w przeglądarce.
+- Parsowanie DMARC XML dzieje się w całości w przeglądarce. Jedyne wywołanie strony trzeciej z frontendu to opcjonalny przycisk "geo/ASN", który po kliknięciu wysyła jeden adres IP do ipwho.is.
 - Serwer przyjmuje tylko nagłówki `Host` z pętli zwrotnej (`127.0.0.1`, `localhost`), co blokuje ataki DNS rebinding z innych stron. Każda odpowiedź ma nagłówek Content-Security-Policy (skrypty tylko z własnego originu narzędzia).
 - Raporty zawierają tekst z zewnętrznych API (np. komentarze innych użytkowników AbuseIPDB), dlatego renderowany HTML przechodzi przez allow-listę: zostają tylko tagi używane w raportach, linki tylko z `http(s)`, a każdy inny znacznik jest pokazywany jako nieszkodliwy tekst.
 - Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
-- Zakładka AbuseIPDB: przycisk "Wczytaj plik .eml" (także przeciągnięcie pliku na pole), licznik czasu analizy oraz tokeny i koszt po analizie "Analizuj", wyświetlane obok przycisków.
-- Wykrywanie IP nadawcy w zakładce AbuseIPDB: gdy pierwszy hop spoza domeny odbiorcy jest tylko przekaźnikiem operatora (np. Microsoft Exchange Online), parser przechodzi wewnętrznymi hopami operatora do hopu, w którym zapisano adres łączącego się nadawcy. Jeśli wiadomość powstała wewnątrz współdzielonego dostawcy (np. konto hotmail) i brak publicznego IP nadawcy, IP zostaje puste (pewność low). Wyniki uwierzytelniania są czytane też z `X-MS-Exchange-Authentication-Results` i `ARC-Authentication-Results`. Po analizie z LLM zakładka pokazuje, ile treści zobaczył model (pierwsze 2000 znaków), a twarde sprawdzenia (IP, wiek) mają pierwszeństwo przed opinią modelu.
-- Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria, opis) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa.
+- Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa. Komentarz jest tylko sanityzowany i skracany, nie oceniany.
 - Zakładka Email wysyła do OpenRouter cały kod źródłowy wiadomości (z danymi osobowymi) po kliknięciu "Analizuj"; jest to świadoma decyzja (analizowane są głównie podejrzane wiadomości).
 - Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logi/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.
 
 ## Wersjonowanie i konwencje
 
-- Widoczny numer wersji (tytuł strony, nagłówek, stopka) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu; po X.Y.99 następna wersja to X.(Y+1).0. Wersja 2.0.0 to pierwsze wydanie pod nazwą Seisa.
+- Widoczny numer wersji (tytuł strony, nagłówek i stopka w `index.html` oraz pod logo w obu README) jest zwiększany o 0.0.1 po każdej kolejnej zmianie w narzędziu; po X.Y.99 następna wersja to X.(Y+1).0. Wersja 2.0.0 to pierwsze wydanie pod nazwą Seisa.
 - Kod, komentarze, docstringi, komunikaty logów i commity są po angielsku. Dokumentacja jest w dwóch wersjach o tej samej strukturze nagłówków: `README.md` (angielski, główny na GitHubie) i `README.pl.md` (polski); zmiana w jednej oznacza zmianę w drugiej (strukturę nagłówków porównuje `scripts/check_i18n.py`).
 - Każda zakładka z akcją pokazuje licznik czasu (zawsze jedno miejsce po przecinku, np. `13,1 s`), status (np. wczytany plik) i powiązane przyciski w jednym wierszu obok przycisku akcji, zarówno w trakcie, jak i po zakończeniu; w zakładce Email są tam także tokeny i koszt.
 - Teksty widoczne w interfejsie trafiają wyłącznie do katalogów `i18n` (nowy klucz = wpis PL i EN w tym samym commicie); przed commitem `python3 scripts/check_i18n.py` musi kończyć się bez błędów.
