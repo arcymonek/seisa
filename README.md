@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.35</b></p>
+<p align="center"><b>Seisa 2.0.36</b></p>
 
 # Seisa
 
@@ -88,7 +88,7 @@ The last 25 actions: IP lookups, DMARC imports and saved e-mail analyses (reopen
 Errors and warnings (WARNING level and above) from every service - normal, error-free operation of the tool leaves no trace on disk. Filtering by date range (today / 3 days / week / month / all; the default is all) and by service (the default is all). All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
 
 ### Info
-The round "I" button at the far right of the tab row opens the Info tab: the name and the current version (read from the page header), a short description of Seisa, the meaning of the name (精査, *せいさ*), the license (the same summary as in the License section below) and the author's contact details (e-mail, GitHub, website).
+The round info button (ⓘ) at the far right of the tab row opens the Info tab: the name and the current version (read from the page header), a short description of Seisa, the meaning of the name (精査, *せいさ*), the license (the same summary as in the License section below) and the author's contact details (e-mail, GitHub, website).
 
 ### Interface language (PL/EN)
 The `PL | EN` switch is in the footer. The choice is remembered by the browser (`localStorage`, key `seisa.lang`); without a stored choice the browser language is used (`pl` or `en`), and English in all other cases. Changing the language reloads the page (you are asked first if that would lose work in progress). The interface texts live in the catalogs `frontend/i18n/pl.json` and `en.json` (flat keys, `{name}` parameters, plural forms through `Intl.PluralRules`), dates use the `pl-PL` or `en-GB` format. The development mode `/?lang=qa` shows `[[key]]` instead of texts, so places that bypass the translations are visible at once. The frontend sends the selected language in the `X-Seisa-Lang` header (only to its own backend) and the backend translates error messages, the deterministic e-mail analysis, the IP scoring notes and the Markdown reports on its side (catalogs `backend/locales/pl.json` and `en.json`, module `backend/i18n.py`). Analyses and history entries saved earlier keep the language they were created in. The logs (Logs tab) are in English regardless of the interface language. LLM answers (Email and AbuseIPDB tabs) are written in the interface language of the moment of the request; the prompts and guides are single, in English, and the answer language is set by an explicit directive (the AbuseIPDB report comment is always in English - an AbuseIPDB policy requirement). The cost of requests depends on the model.
