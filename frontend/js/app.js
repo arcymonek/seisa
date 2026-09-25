@@ -6,6 +6,7 @@ import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
 import { initUrlscan } from "./urlscan.js";
+import { initAbout } from "./about.js";
 
 const panels = {
   lookup: document.getElementById("panel-lookup"),
@@ -15,6 +16,7 @@ const panels = {
   history: document.getElementById("panel-history"),
   logs: document.getElementById("panel-logs"),
   urlscan: document.getElementById("panel-urlscan"),
+  about: document.getElementById("panel-about"),
 };
 
 export function switchTab(name) {
@@ -63,3 +65,4 @@ initReportBuilder(panels.report);
 initHistory(panels.history);
 initLogs(panels.logs);
 initUrlscan(panels.urlscan);
+initAbout(panels.about);

@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.31</b></p>
+<p align="center"><b>Seisa 2.0.32</b></p>
 
 # Seisa
 
@@ -83,6 +83,9 @@ Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili
 ### Logi
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie) i po usłudze (domyślnie wszystkie). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
+### Informacje
+Okrągły przycisk „I” na prawym końcu rzędu zakładek otwiera zakładkę Informacje: nazwa i aktualna wersja (czytana z nagłówka strony), krótki opis Seisy, znaczenie nazwy (精査, *せいさ*) oraz dane kontaktowe autora.
+
 ### Język interfejsu (PL/EN)
 Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Frontend wysyła wybrany język w nagłówku `X-Seisa-Lang` (tylko do własnego backendu), a backend tłumaczy po swojej stronie komunikaty błędów, analizę deterministyczną e-maila, uwagi punktacji IP i raporty Markdown (katalogi `backend/locales/pl.json` i `en.json`, moduł `backend/i18n.py`). Zapisane wcześniej analizy i wpisy historii zachowują język, w którym powstały. Logi (zakładka Logi) są po angielsku niezależnie od języka interfejsu. Odpowiedzi LLM (zakładki Email i AbuseIPDB) powstają w języku interfejsu z chwili zapytania; prompty i przewodniki są jedne, po angielsku, a język odpowiedzi ustawia jawna dyrektywa (komentarz zgłoszenia do AbuseIPDB jest zawsze po angielsku - wymóg polityki AbuseIPDB). Koszt zapytań zależy od modelu.
 
@@ -129,7 +132,7 @@ seisa/
 │   ├── logo.png               # okrągłe logo (nagłówek strony i README)
 │   ├── css/style.css          # ciemny motyw
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
-│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup, urlscan, dmarc, email, report-builder, history, logs
+│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup, urlscan, dmarc, email, report-builder, history, logs, about
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
 ├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 ├── scripts/
