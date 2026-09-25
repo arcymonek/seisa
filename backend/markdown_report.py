@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from backend.i18n import t
-from backend.models import RiskScore, ServiceResult
+from backend.models import Identity, RiskScore, ServiceResult
 
 SERVICE_TITLES = {
     "virustotal": "VirusTotal",
@@ -69,10 +69,31 @@ def numbered_code_block(text: str, lang: str = "json") -> list[str]:
     return [f"```{lang}", *numbered, "```"]
 
 
+def _identity_lines(identity: Identity) -> list[str]:
+    """Table of the merged identity: the value shown, how many sources agree, and the other values (with sources)
+    wherever the sources disagree."""
+    lines = [f"## {t('identity.title')}", ""]
+    lines.append(f"| {t('md.col_field')} | {t('md.col_value')} | {t('md.col_agreement')} |")
+    lines.append("|---|---|---|")
+    for f in identity.fields:
+        agreement = t(f"identity.status.{f.status}", agree=f.agree, total=f.total)
+        if f.status in ("majority", "conflict"):
+            others = "; ".join(f"{v.value} ({', '.join(SERVICE_TITLES.get(s, s) for s in v.sources)})" for v in f.variants[1:])
+            agreement = f"{agreement} - {t('identity.other_values')}: {others}"
+        cells = (t(f"identity.f.{f.key}"), f.value, agreement)
+        lines.append("| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |")
+    lines.append("")
+    for note in identity.notes:
+        lines.append(f"> {note}")
+        lines.append("")
+    return lines
+
+
 def build_markdown(
     indicator: str,
     risk_score: RiskScore,
     services: dict[str, ServiceResult],
+    identity: Identity | None = None,
 ) -> str:
     lines: list[str] = []
     lines.append(f"# {t('md.report_title')} - `{indicator}`")
@@ -96,6 +117,9 @@ def build_markdown(
     if risk_score.excluded_sources:
         lines.append(f'<div class="excluded-sources">{t("md.excluded")}: {"; ".join(risk_score.excluded_sources)}</div>')
         lines.append("")
+
+    if identity and identity.fields:
+        lines.extend(_identity_lines(identity))
 
     ordered = sorted(services.items(), key=lambda kv: SERVICE_ORDER.index(kv[0]) if kv[0] in SERVICE_ORDER else len(SERVICE_ORDER))
     for name, result in ordered:

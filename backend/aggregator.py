@@ -8,6 +8,7 @@ from urllib.parse import quote
 from backend.cache import get as cache_get
 from backend.cache import set as cache_set
 from backend.i18n import t
+from backend.identity import build_identity
 from backend.markdown_report import build_markdown
 from backend.models import IndicatorType, LookupResult, ServiceResult
 from backend.scoring import compute_risk_score
@@ -102,7 +103,8 @@ async def run_lookup(
 
     risk_score = compute_risk_score(results, indicator_type)
     talos_url = f"https://talosintelligence.com/reputation_center/lookup?search={quote(indicator)}"
-    markdown = build_markdown(indicator, risk_score, results)
+    identity = build_identity(results) if indicator_type == "ip" else None
+    markdown = build_markdown(indicator, risk_score, results, identity)
 
     return LookupResult(
         indicator=indicator,
@@ -111,4 +113,5 @@ async def run_lookup(
         services=results,
         talos_url=talos_url,
         markdown=markdown,
+        identity=identity,
     )

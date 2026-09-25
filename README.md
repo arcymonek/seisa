@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.43</b></p>
+<p align="center"><b>Seisa 2.0.44</b></p>
 
 # Seisa
 
@@ -30,7 +30,7 @@ You enter an IP address (batch mode also accepts domain names; scanning a URL li
 | WHOIS / rDNS | reverse DNS (PTR) + full RDAP (RFC 9083, the successor of WHOIS) - network range, owner, abuse/technical contact, registration dates - no API key needed |
 | Cisco Talos | no official API - only a button for a manual check |
 
-The result is one **aggregate score** 0-100 (a noisy-OR model: every source - AbuseIPDB, VirusTotal, GreyNoise, OTX - gives a risk of 0-100 on a non-linear scale and has its own credibility; a source without data does not vote, a known good IP lowers the score to 15; thresholds: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logic in `backend/scoring.py`; Cloudflare Radar is contextual and deliberately excluded from the number) and a full Markdown report with the data of every service - including the raw API response in a collapsible section, for your own analysis.
+The result is one **aggregate score** 0-100 (a noisy-OR model: every source - AbuseIPDB, VirusTotal, GreyNoise, OTX - gives a risk of 0-100 on a non-linear scale and has its own credibility; a source without data does not vote, a known good IP lowers the score to 15; thresholds: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logic in `backend/scoring.py`; Cloudflare Radar is contextual and deliberately excluded from the number) shown as a report: a verdict banner (colour by level, with the values behind it), summary tiles (abuse confidence, detections, GreyNoise, OTX pulses, country, ASN, IP type), the component-score table and an **address identity** card. The card merges owner, ASN, country, network, reverse DNS, usage type and Tor from all sources that report them, after normalising the values (ASN to a number, country to an ISO code, owner names without legal-form suffixes, RDAP ranges to CIDR). Each field shows how many sources agree; where they disagree, the majority value is shown with an amber badge (a click lists every value with its sources), and on a tie the value of the highest-priority source (RDAP first, as the registry) is shown with a red badge. The registration country (RDAP) and the geolocation country are separate fields, since they legitimately differ for hosting and anycast. This affects the display only, not the score (`backend/identity.py`). Below, every source is a collapsible card with the fields that matter, open only for sources with a signal (source risk ≥ 25); lists (tags, CVEs, ports, pulses) are chips with "show more", and the complete API response of each source (with line numbers) sits in a "Full API response" section. The Markdown export contains the whole report, including the identity table.
 
 It supports batch mode (many IP addresses at once, with a visible VirusTotal throttle - 4 requests/min, 500/day) and an in-memory cache (15 min), with an option to force a refresh.
 
@@ -125,6 +125,7 @@ seisa/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
 │   ├── scoring.py            # aggregate IP reputation score (noisy-OR)
+│   ├── identity.py           # merged address identity (ASN, owner, country, network) with per-field source agreement
 │   ├── report_builder.py     # AbuseIPDB comment builder + policy validation
 │   ├── report_utils.py       # text sanitisation, IP checks
 │   ├── urlscan_report.py     # Markdown report builder for a urlscan.io scan result
@@ -136,7 +137,7 @@ seisa/
 │   ├── logo.png               # round logo (page header and README)
 │   ├── css/style.css          # dark theme
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
-│   ├── js/                    # modules: app, i18n, util (shared helpers), lookup, urlscan, dmarc, archive (unpacking .gz/.zip), email, report-builder, history, logs, about
+│   ├── js/                    # modules: app, i18n, util (shared helpers), lookup (+ lookup-result: the report view), urlscan, dmarc, archive (unpacking .gz/.zip), email, report-builder, history, logs, about
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
 ├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 ├── scripts/

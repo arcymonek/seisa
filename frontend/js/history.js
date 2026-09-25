@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { renderMarkdown } from "./markdown-render.js";
+import { renderLookupResult } from "./lookup-result.js";
 import { t, fmtDateTime, getLang } from "./i18n.js";
 import { escapeHtml } from "./util.js";
 
@@ -82,9 +82,7 @@ async function openEntry(id) {
   const card = document.createElement("div");
   card.className = "card";
   if (entry.type === "lookup") {
-    const md = document.createElement("div");
-    renderMarkdown(md, entry.data.markdown);
-    card.appendChild(md);
+    card.appendChild(renderLookupResult(entry.data));
     const btn = document.createElement("button");
     btn.className = "secondary";
     btn.textContent = t("history.open_in_lookup");

@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.43</b></p>
+<p align="center"><b>Seisa 2.0.44</b></p>
 
 # Seisa
 
@@ -30,7 +30,7 @@ Wpisujesz adres IP (tryb wsadowy przyjmuje także nazwy domen; skanowanie URL je
 | WHOIS / rDNS | odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji - bez klucza API |
 | Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
-Wynik to jeden **wynik zbiorczy** 0-100 (model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność; źródło bez danych nie głosuje, znane dobre IP obniża wynik do 15; progi: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logika w `backend/scoring.py`; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) oraz pełny raport Markdown z danymi każdej usługi - łącznie z surową odpowiedzią API w zwijanej sekcji, do samodzielnej analizy.
+Wynik to jeden **wynik zbiorczy** 0-100 (model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność; źródło bez danych nie głosuje, znane dobre IP obniża wynik do 15; progi: <25 LOW, 25-59 MEDIUM, ≥60 HIGH; logika w `backend/scoring.py`; Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby) pokazany jako raport: baner werdyktu (kolor wg poziomu, z wartościami, na których się opiera), kafelki podsumowania (pewność nadużyć, wykrycia, GreyNoise, pulsy OTX, kraj, ASN, typ IP), tabela wyników składowych i karta **tożsamości adresu**. Karta scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł, które je podają, po normalizacji wartości (ASN do liczby, kraj do kodu ISO, nazwy właścicieli bez form prawnych, zakresy RDAP do CIDR). Przy każdym polu widać, ile źródeł się zgadza; gdy się różnią, pokazywana jest wartość większości z bursztynową plakietką (kliknięcie wypisuje wszystkie wartości ze źródłami), a przy remisie wartość z najwyżej cenionego źródła (RDAP jako rejestr pierwszy) z czerwoną plakietką. Kraj rejestracji (RDAP) i kraj geolokalizacji to osobne pola, bo przy hostingu i anycaście zwykle się różnią. Dotyczy to tylko wyświetlania, nie wyniku (`backend/identity.py`). Niżej każde źródło jest zwijaną kartą z najważniejszymi polami, otwartą tylko dla źródeł z sygnałem (ryzyko źródła ≥ 25); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej", a pełna odpowiedź API każdego źródła (z numerami linii) jest w sekcji "Pełna odpowiedź API". Eksport Markdown zawiera cały raport, także tabelę tożsamości.
 
 Obsługuje tryb wsadowy (wiele adresów IP naraz, z widocznym throttlem VirusTotal - 4 zapytania/min, 500/dzień) oraz cache w pamięci (15 min), z opcją wymuszenia odświeżenia.
 
@@ -125,6 +125,7 @@ seisa/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
 │   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
+│   ├── identity.py           # scalona tożsamość adresu (ASN, właściciel, kraj, sieć) ze zgodnością źródeł per pole
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP
 │   ├── urlscan_report.py     # budowa raportu Markdown z wyniku skanu urlscan.io
@@ -136,7 +137,7 @@ seisa/
 │   ├── logo.png               # okrągłe logo (nagłówek strony i README)
 │   ├── css/style.css          # ciemny motyw
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
-│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup, urlscan, dmarc, archive (rozpakowywanie .gz/.zip), email, report-builder, history, logs, about
+│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup (+ lookup-result: widok raportu), urlscan, dmarc, archive (rozpakowywanie .gz/.zip), email, report-builder, history, logs, about
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
 ├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 ├── scripts/

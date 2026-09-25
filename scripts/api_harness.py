@@ -95,13 +95,13 @@ def handler(request: httpx.Request) -> httpx.Response:
             {"name": "Pulse " + XSS, "modified": "2026-09-01T00:00:00", "tags": ["phishing"], "adversary": "APT-X",
              "indicator_type_counts": {"IPv4": 10}},
             {"name": "Bulk list", "created": "2024-01-01T00:00:00", "indicator_type_counts": {"IPv4": 500}}]},
-            "country_name": "Netherlands", "asn": "AS64500"})
+            "country_name": "Netherlands", "country_code": "NL", "asn": "AS64500"})
     if host == "api.cloudflare.com":
-        return httpx.Response(200, json={"success": True, "result": {"ip": {"asn": 64500, "location": "NL"}}})
+        return httpx.Response(200, json={"success": True, "result": {"ip": {"asn": 64500, "location": "DE", "asnName": "EXAMPLE-AS"}}})
     if host == "api.greynoise.io":
         return httpx.Response(200, json={"internet_scanner_intelligence": {
             "found": True, "classification": "malicious", "actor": "unknown", "tags": [{"name": "SSH Bruteforcer"}],
-            "cves": ["CVE-2024-0001"], "metadata": {"organization": "Org", "asn": "AS64500", "source_country": "NL"},
+            "cves": ["CVE-2024-0001"], "metadata": {"organization": "Org", "asn": "AS64500", "source_country": "Netherlands", "source_country_code": "NL"},
             "raw_data": {"scan": [{"port": 22, "protocol": "TCP"}]}}, "business_service_intelligence": {"found": False}})
     if host == "rdap.org":
         return httpx.Response(200, json={"handle": "NET-1", "name": "EXAMPLE-NET", "startAddress": "185.220.101.0",
@@ -299,6 +299,46 @@ for r in RESULTS:
     want = EXPECTED_STATUS.get(r["name"].split("] ", 1)[-1])
     if want is not None and r["status"] != want:
         failures.append(f"{r['name']}: status {r['status']}, expected {want}")
+# identity merging (backend/identity.py): tie-break by source priority, normalisation, no false conflicts
+try:
+    from backend.identity import build_identity
+except ImportError:  # `--root` points at a checkout from before the module existed
+    build_identity = None
+
+if build_identity:
+    from backend.models import ServiceResult as _SR
+
+    def _res(**summaries):
+        return {name: _SR(service=name, status="ok", summary=summary) for name, summary in summaries.items()}
+
+    def _field(identity, key):
+        return next((f for f in identity.fields if f.key == key), None)
+
+    ident = build_identity(_res(
+        whois_rdns={"organization": "TC Datacenter Ltd.", "reverse_dns": "no PTR record", "network_range": "10.0.0.0 - 10.0.0.255", "country": "NL"},
+        virustotal={"as_owner": "TC DATACENTER LIMITED", "asn": 64500, "network": "10.0.0.0/16", "country": "PL"},
+        greynoise={"organization": "Other Corp", "asn": "AS64501", "country_code": "DE", "tor": False},
+        abuseipdb={"isp": "Third Party", "country_code": "FR", "is_tor": False},
+        otx={"asn": "AS64500 tc datacenter"},
+    ))
+    org, asn, loc, net = (_field(ident, k) for k in ("organization", "asn", "country_location", "network"))
+    if not (org and org.status == "majority" and org.agree == 2 and org.value == "TC Datacenter Ltd."):
+        failures.append(f"identity: owner spelling variants are not grouped: {org}")
+    if not (asn and asn.status == "majority" and asn.value == "AS64500" and asn.agree == 2):
+        failures.append(f"identity: ASN majority is wrong: {asn}")
+    if not (loc and loc.status == "conflict" and loc.value == "FR"):
+        failures.append(f"identity: a country tie must be flagged and resolved by source priority: {loc}")
+    if not (net and net.status == "agree" and net.value == "10.0.0.0/24"):
+        failures.append(f"identity: a network reported at another granularity is not a disagreement: {net}")
+    if _field(ident, "rdns") or _field(ident, "tor"):
+        failures.append("identity: the 'no PTR' placeholder or an all-'no' Tor flag leaked into the card")
+    if not ident.notes:
+        failures.append("identity: registration vs geolocation country note missing")
+    tor = _field(build_identity(_res(greynoise={"tor": True}, abuseipdb={"is_tor": False})), "tor")
+    if not (tor and tor.status == "conflict"):
+        failures.append("identity: a Tor disagreement must be flagged")
+    if build_identity({}).fields:
+        failures.append("identity: no sources must give no fields")
 if UNHANDLED:
     failures.append(f"{len(UNHANDLED)} request(s) left the mocks: {UNHANDLED[:3]}")
 if probes["foreign Host header accepted (DNS rebinding)"] != 400:

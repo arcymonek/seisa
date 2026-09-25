@@ -126,6 +126,7 @@ def _ip_lookup_summary(data: dict) -> dict:
                 "rdns": meta.get("rdns"),
                 "os": meta.get("os"),
                 "category": meta.get("category"),
+                "country_code": meta.get("source_country_code"),
                 "location": ", ".join(filter(None, [meta.get("source_city"), meta.get("source_country")])) or None,
                 "datacenter": meta.get("datacenter"),
                 "scanned_ports": ports or None,

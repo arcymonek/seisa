@@ -231,3 +231,29 @@ tr.src-row:hover { background: var(--bg-raised); }
 .src-detail { background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 6px; padding: 12px 14px; }
 .src-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
 .src-actions button { margin: 0; }
+
+/* --- zakładka IP: raport --- */
+.lookup-result + .lookup-result { border-top: 1px solid var(--hair); margin-top: 28px; padding-top: 12px; }
+.report-title { font-family: var(--mono); font-size: 20px; margin: 12px 0 8px; }
+.report-title code { font-family: var(--mono); background: #14171a; padding: 1px 6px; border-radius: 3px; }
+button.mini { margin: 0 0 0 10px; padding: 2px 10px; font-size: 13px; vertical-align: middle; }
+.src-body button.mini { margin: 6px 0 8px; display: block; }
+.kpi .muted { font-size: 13px; overflow-wrap: anywhere; }
+.badge.sm.agree { background: #1f2e24; color: var(--pass); }
+.badge.sm.majority { background: #3a3220; color: var(--warn); }
+.badge.sm.conflict { background: #3a2422; color: var(--fail); }
+.badge.sm.single { background: none; border: 1px solid var(--hair); color: var(--muted); font-weight: 400; }
+.ident-var > summary { cursor: pointer; }
+.ident-var ul { margin: 6px 0 2px; padding-left: 20px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-family: var(--mono); font-size: 13px; padding: 1px 9px; border-radius: 12px; border: 1px solid var(--hair); color: var(--text); background: none; }
+.tag[hidden] { display: none; }
+button.tag.more { color: var(--accent); border-color: var(--accent); cursor: pointer; }
+.riskbar { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: var(--hair); vertical-align: middle; overflow: hidden; }
+.riskbar i { display: block; height: 100%; }
+.riskbar.high i { background: var(--fail); }
+.riskbar.medium i { background: var(--warn); }
+.riskbar.low i { background: var(--pass); }
+td.mono { font-family: var(--mono); font-size: 13px; }
+.src-body { padding: 2px 0 8px 18px; }
+.raw-json { background: #14171a; border-radius: 4px; padding: 12px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; font-family: var(--mono); font-size: 13px; max-height: 600px; overflow: auto; }

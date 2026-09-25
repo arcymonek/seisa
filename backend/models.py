@@ -45,6 +45,27 @@ class RiskScore(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class IdentityVariant(BaseModel):
+    value: str
+    sources: list[str]  # service ids that reported this value, best-priority source first
+
+
+class IdentityField(BaseModel):
+    key: str
+    value: str  # the value shown: the majority value, or (on a tie) the one from the highest-priority source
+    status: Literal["agree", "majority", "conflict", "single"]
+    agree: int  # number of sources behind the shown value
+    total: int  # number of sources that reported this field at all
+    variants: list[IdentityVariant] = Field(default_factory=list)  # every distinct value, the shown one first
+
+
+class Identity(BaseModel):
+    """Who the address belongs to (ASN, owner, country, network), merged from every source that reports it."""
+
+    fields: list[IdentityField] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 class LookupResult(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     indicator: str
@@ -54,6 +75,7 @@ class LookupResult(BaseModel):
     services: dict[str, ServiceResult] = Field(default_factory=dict)
     talos_url: str
     markdown: str
+    identity: Identity | None = None  # IP lookups only
 
     def stripped_for_history(self) -> LookupResult:
         return self.model_copy(

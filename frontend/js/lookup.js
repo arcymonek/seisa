@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { renderMarkdown } from "./markdown-render.js";
+import { renderLookupResult } from "./lookup-result.js";
 import { t } from "./i18n.js";
 import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
 
@@ -131,12 +131,7 @@ async function onSubmit() {
 }
 
 function renderResult(result) {
-  const wrap = document.createElement("div");
-  wrap.className = "card";
-
-  const mdContainer = document.createElement("div");
-  renderMarkdown(mdContainer, result.markdown);
-  wrap.appendChild(mdContainer);
+  const wrap = renderLookupResult(result);
 
   const actions = document.createElement("div");
   const talosBtn = document.createElement("button");

@@ -65,6 +65,7 @@ class OtxService(IntelService):
             "pulse_names": [p.get("name") for p in pulses[:10]],
             "pulse_tags": sorted({t for p in pulses for t in (p.get("tags") or [])})[:15],
             "country": data.get("country_name"),
+            "country_code": data.get("country_code"),
             "city": data.get("city"),
             "asn": data.get("asn"),
             "reputation": data.get("reputation"),
