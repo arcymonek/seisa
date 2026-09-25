@@ -188,6 +188,7 @@ function onClick(ev) {
     case "save-md": return downloadMarkdown(exportFilename(S, "md"), buildExport(S));
     case "copy-md": return navigator.clipboard.writeText(buildExport(S));
     case "save-html": return saveHtml();
+    case "view-source": return viewer.open();
     case "goto-citations": {
       setPane("overview");
       const sec = $("#em-sec-citations");

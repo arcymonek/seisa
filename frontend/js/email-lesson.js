@@ -9,7 +9,7 @@ import { renderMarkdownSafe } from "./markdown-render.js";
 // The structure of the answer is fixed by docs/email-analysis-guide.md: after the title and summary come six parts and
 // the control questions. Sections are recognised by their position (the headings are translated), never by their text.
 export const ROLES = ["model", "lines", "checklist", "compare", "traps", "advice", "questions"];
-const OPEN_BY_DEFAULT = new Set(["checklist", "advice"]);
+const OPEN_BY_DEFAULT = new Set(); // every card starts collapsed; a card the reader opened or closed is remembered
 const STORAGE_KEY = "seisa.em.cards";
 const MIN_INLINE = 7;
 

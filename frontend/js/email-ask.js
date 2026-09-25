@@ -25,6 +25,7 @@ export function createAsk({ container, lesson, getId, onSaved }) {
       <div class="action-row">
         <button type="button" class="action" data-ask="send" disabled>${e(t("em.ask.send"))}</button>
         <button type="button" class="secondary" data-ask="cancel" hidden>${e(t("em.cancel"))}</button>
+        <button type="button" class="secondary" data-act="view-source">${e(t("em.src.view"))}</button>
         <span class="action-info"><span class="em-ask-info"></span></span>
       </div>
       <div class="banner info em-ask-note">${e(t("em.ask.note"))}</div>
