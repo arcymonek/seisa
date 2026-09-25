@@ -97,8 +97,7 @@ Seisa has no separate field for the port number - if it is known, add it to the 
 Although `comment` is an optional field in the AbuseIPDB API, the AbuseIPDB policy itself (above) expressly expects a
 detailed, technically justified description of the attack. Seisa does this differently than through a manually filled
 form field: when `OPENROUTER_API_KEY` is configured, during the analysis in Step 1 (`analyze_email`) the model
-receives the facts extracted from the e-mail, the raw headers (Received/authentication/Subject/Reply-To/spam
-indicators if present) and an excerpt of the message body (HTML converted to plain text) - and on that basis writes a
+receives the facts extracted from the e-mail, the complete raw source of the message (all headers and the whole body) - and on that basis writes a
 ready, detailed comment in English (the `report_comment` field) covering the attack mechanism, the meaning of
 SPF/DKIM/DMARC, malicious attachments (with a detected double extension), a ransom/BTC demand, mass-mailing patterns -
 anything relevant visible in the provided data, within about 900 characters (the hard API limit is 1024).

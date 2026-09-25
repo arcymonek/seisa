@@ -289,14 +289,6 @@ def _extract_body_text(msg: Message) -> str:
     return raw
 
 
-_LLM_RELEVANT_HEADERS = (
-    "Received", "Received-SPF", "Authentication-Results", "Date", "From", "To",
-    "Subject", "Message-ID", "Reply-To", "Return-Path", "List-Unsubscribe", "X-Mailer",
-)
-_LLM_EXTRA_HEADER_NAME_RE = re.compile(r"spam|X-MS-Exchange-Organization-SCL", re.IGNORECASE)
-_MAX_EXTRA_HEADER_VALUE = 200
-
-
 def parse_message(raw_email: str) -> Message:
     """Parses the pasted source once; the functions below accept the result instead of the raw text, so that one
     request does not parse the same e-mail five times."""
@@ -305,47 +297,6 @@ def parse_message(raw_email: str) -> Message:
 
 def _as_message(source: str | Message) -> Message:
     return source if isinstance(source, Message) else parse_message(source)
-
-
-def extract_relevant_headers(source: str | Message) -> str:
-    """Block of headers relevant for the analysis - the Received chain/authentication (to verify the boundary
-    hop) plus the basic identity/delivery headers (Subject, Reply-To, Return-Path, List-Unsubscribe, X-Mailer -
-    useful e.g. to recognise mass mailing) and, if present, the headers carrying the anti-spam filter result
-    (the name contains "spam" or it is Microsoft's X-MS-Exchange-Organization-SCL, the value truncated to a
-    safe length). It deliberately omits big, irrelevant blobs (e.g. the base64 X-Microsoft-Antispam-Message-Info,
-    DKIM-Signature) - they are not listed by name, so they do not reach the prompt."""
-    msg = _as_message(source)
-    allowlist_lower = {h.lower() for h in _LLM_RELEVANT_HEADERS}
-    lines = []
-    for name in _LLM_RELEVANT_HEADERS:
-        for value in msg.get_all(name) or []:
-            lines.append(f"{name}: " + re.sub(r"\s+", " ", value).strip())
-    for name, value in msg.items():
-        if name.lower() in allowlist_lower or not _LLM_EXTRA_HEADER_NAME_RE.search(name):
-            continue
-        clean = re.sub(r"\s+", " ", value).strip()
-        if len(clean) > _MAX_EXTRA_HEADER_VALUE:
-            clean = clean[:_MAX_EXTRA_HEADER_VALUE] + "...(truncated)"
-        lines.append(f"{name}: {clean}")
-    return "\n".join(lines)
-
-
-BODY_EXCERPT_LIMIT = 2000
-
-
-def body_text_length(source: str | Message) -> int:
-    """Length of the plain body text (before truncation) - tells the user how much of it the model saw."""
-    return len(_extract_body_text(_as_message(source)).strip())
-
-
-def extract_body_excerpt(source: str | Message, limit: int = BODY_EXCERPT_LIMIT) -> str:
-    """Plain text of the e-mail body (HTML converted by `_extract_body_text`), truncated to `limit` characters -
-    evidence for the LLM so that it understands the actual attack mechanism (what the message says) and not only
-    the headers. It does not go into `facts` or the API response."""
-    body = _extract_body_text(_as_message(source)).strip()
-    if len(body) > limit:
-        body = body[:limit] + "...(truncated)"
-    return body
 
 
 def extract_addresses(source: str | Message) -> dict:

@@ -13,10 +13,6 @@ from pydantic import BaseModel, Field
 
 from backend.config import MAX_SOURCE_CHARS
 from backend.email_parser import (
-    BODY_EXCERPT_LIMIT,
-    body_text_length,
-    extract_body_excerpt,
-    extract_relevant_headers,
     parse_email,
     parse_message,
 )
@@ -91,14 +87,12 @@ def _api_timestamp(value: str | None) -> str:
 async def analyze_email(req: EmailAnalyzeRequest):
     msg = parse_message(req.raw_email)
     facts = parse_email(msg)
-    body_chars = body_text_length(msg)
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
         llm_analysis = await llm_analyzer.analyze_email(
             facts,
-            extract_relevant_headers(msg),
-            extract_body_excerpt(msg),
+            req.raw_email,
             current_lang(),
         )
 
@@ -118,7 +112,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
         "usage": usage,
-        "llm_input": {"body_chars": body_chars, "body_limit": BODY_EXCERPT_LIMIT},
+        "llm_input": {"chars": len(req.raw_email)},
         "report_comment": report_comment,
     }
 

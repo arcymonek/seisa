@@ -64,7 +64,7 @@ according to the attached policy. Your assessment is ADVISORY ONLY - the hard ch
 the IP is private) are computed separately in code and do not depend on you. Do not invent facts beyond the \
 data provided.
 
-You also receive the raw Received/Authentication-Results headers and the IP address that the code already chose \
+You also receive the complete raw source of the message (all headers and the whole body, exactly as pasted) and the IP address that the code already chose \
 as the "boundary hop" (the first place in the Received chain where the recipient's trusted infrastructure - e.g. \
 Microsoft 365/Outlook, Google Workspace - records the actual address of the connecting sender, usually in the form \
 `from [127.0.0.1] (real_ip) ... via Frontend Transport` or `from host (host [real_ip])`). Earlier hops in such \
@@ -73,7 +73,7 @@ are NOT the address of the attacker. Analyse the raw headers yourself and check 
 choice - if you see a different, more probable boundary address, report it in `source_ip_check`. This is also \
 ADVISORY ONLY - nothing in the form is changed automatically.
 
-You also receive an excerpt of the e-mail body (cleaned of HTML) - use it to describe the actual attack mechanism \
+Read the whole source (including the HTML, links and every part of the body) to describe the actual attack mechanism \
 (what it impersonates, what the pretext/lure is, what the CTA is), not only the headers.
 
 Write the descriptive fields ("reasoning", "alternatives" and every "note"/"reasoning" inside the nested objects) \
@@ -288,18 +288,16 @@ class LlmAnalyzer:
             logger.error(f"OpenRouter: connection error: {text}")
             yield "error", text
 
-    async def analyze_email(self, facts: dict, relevant_headers: str = "", body_excerpt: str = "", lang: str = "en") -> dict | None:
+    async def analyze_email(self, facts: dict, raw_email: str, lang: str = "en") -> dict | None:
         if not self.is_configured():
             return None
         user_content = (
             "Facts extracted from the e-mail (including the code's choice of the boundary hop - "
             "'trusted_source_ip', 'ip_confidence', 'ip_reasoning', 'received_chain'):\n"
             f"{json.dumps(facts, ensure_ascii=False, indent=2)}\n\n"
-            "Raw headers (evidence for the independent verification of the boundary hop and for describing "
-            "the attack mechanism):\n"
-            f"{relevant_headers or '(none)'}\n\n"
-            "Message body (an excerpt, HTML converted to text):\n"
-            f"{body_excerpt or '(none)'}\n\n"
+            "Complete raw source of the message (evidence for the independent verification of the boundary hop "
+            "and for describing the attack mechanism):\n"
+            f"{raw_email}\n\n"
             "Excerpt of the AbuseIPDB policy and categories:\n"
             f"{self._policy_excerpt()}"
         )

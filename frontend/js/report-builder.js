@@ -182,10 +182,7 @@ function renderAttachmentsList(facts) {
 
 function renderLlmInputNote(useLlm, info) {
   if (!useLlm || !info) return "";
-  if (info.body_chars > info.body_limit) {
-    return `<div class="banner warn"><strong>${escapeHtml(t("rb.llm_partial_title"))}</strong> ${escapeHtml(t("rb.llm_partial", { limit: info.body_limit, total: info.body_chars }))}</div>`;
-  }
-  return `<div class="muted" style="margin:6px 0">${escapeHtml(t("rb.llm_full", { chars: info.body_chars }))}</div>`;
+  return `<div class="muted" style="margin:6px 0">${escapeHtml(t("rb.llm_full", { chars: info.chars }))}</div>`;
 }
 
 function renderReceivedChain(facts) {
