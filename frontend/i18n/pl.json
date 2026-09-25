@@ -4,7 +4,7 @@
   "tab.history": "Historia",
   "tab.logs": "Logi",
   "tab.info": "Informacje",
-  "about.description": "Lokalne narzędzie do analizy reputacji IP, skanów URL, raportów DMARC, analizy źródła e-maili i zgłoszeń do AbuseIPDB. Seisa działa wyłącznie na 127.0.0.1, bez logowania, i nie wysyła nic na zewnątrz poza jawnymi zapytaniami do wybranych usług threat intel.",
+  "about.description": "Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa wyłącznie lokalnie (127.0.0.1), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel (oraz, po jawnym kliknięciu przycisku \"geo/ASN\" w zakładce DMARC, jednego adresu IP do ipwho.is).",
   "about.name_title": "Nazwa",
   "about.name_meaning": "japońskie słowo oznaczające dokładne, szczegółowe zbadanie - przyjrzenie się czemuś z bliska. Wymowa: mniej więcej „sejsa\".",
   "about.kanji_sei": "precyzyjny, dokładny, szczegółowy",

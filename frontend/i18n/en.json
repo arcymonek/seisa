@@ -4,7 +4,7 @@
   "tab.history": "History",
   "tab.logs": "Logs",
   "tab.info": "Info",
-  "about.description": "Local IP reputation analysis, URL scans, DMARC reports, e-mail source analysis and AbuseIPDB reports. Seisa runs only on 127.0.0.1, without a login, and sends nothing out except the explicit queries to the selected threat-intel services.",
+  "about.description": "A local tool for IP reputation analysis, URL scanning (urlscan.io), DMARC reports and preparing AbuseIPDB abuse reports. It runs locally only (127.0.0.1), with no login and without sending anything out except the explicit queries to the selected threat-intel services (and, on an explicit click of the \"geo/ASN\" button in the DMARC tab, one IP address to ipwho.is).",
   "about.name_title": "The name",
   "about.name_meaning": "a Japanese word meaning a thorough, detailed examination - looking at something closely. Pronounced roughly \"say-sah\".",
   "about.kanji_sei": "precise, exact, detailed",
