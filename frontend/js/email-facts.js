@@ -12,9 +12,9 @@ const AUTH_WEAK = ["none", "neutral", "policy"];
 // small helpers
 // ---------------------------------------------------------------------------
 
-function table(headers, rows) {
+function table(headers, rows, cls = "") {
   if (!rows.length) return `<div class="muted">${e(t("common.none"))}</div>`;
-  return `<div class="table-wrap"><table class="fact-table"><thead><tr>${headers.map((h) => `<th>${e(h)}</th>`).join("")}</tr></thead><tbody>${rows
+  return `<div class="table-wrap"><table class="fact-table${cls ? " " + cls : ""}"><thead><tr>${headers.map((h) => `<th>${e(h)}</th>`).join("")}</tr></thead><tbody>${rows
     .map((r) => `<tr>${r.map((c) => `<td>${c ?? ""}</td>`).join("")}</tr>`)
     .join("")}</tbody></table></div>`;
 }
@@ -261,7 +261,7 @@ export function factCardsHtml(f) {
         `${e(r.with || "")} ${r.tls ? `<span class="muted">${e(r.tls)}</span>` : ""}<div class="muted">${e(r.time_utc || "")}</div>`,
         `<span class="muted">${e(r.role || "")}</span>` + r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join("") +
           `<div class="em-row-actions">${ipBtn(r.ip)}${srcBtn(r.raw)}</div>`,
-      ]))));
+      ]), "em-recv")));
 
   const a = authSummary(f);
   cards.push(card("auth", t("em.f.auth_count", { n: f.auth.length }), authState(a),

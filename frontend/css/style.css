@@ -191,6 +191,9 @@ a:hover { color: var(--accent); }
 .table-wrap { overflow-x: auto; }
 .fact-table td, .fact-table th { font-size: 14px; }
 .fact-table .mono { font-family: var(--mono); font-size: 12.5px; overflow-wrap: break-word; }
+.em-recv .mono { overflow-wrap: anywhere; }
+.em-recv td:nth-child(5), .em-recv td:nth-child(6) { min-width: 210px; }
+.em-recv td:nth-child(2), .em-recv td:nth-child(4) { min-width: 130px; }
 .em-row-actions { margin-top: 4px; }
 .em-row-actions .mini.inline { margin: 0 6px 0 0; }
 .fact-table .ok, .ok { color: var(--pass); }
