@@ -86,7 +86,7 @@
   "md.service.abuseipdb": "Confidence score nadużyć, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP, typ użycia.",
   "md.service.greynoise": "Czy adres to znany 'szum internetowy' (masowe skanery/boty) czy coś nietypowego.",
   "md.service.whois": "Rekord WHOIS domeny lub odwrotny DNS (PTR) adresu IP - bezpośrednie zapytanie protokołowe, bez zewnętrznego konta ani jednej strony źródłowej.",
-  "dmarc.subtitle": "Wgraj zbiorcze raporty DMARC (XML) od dostawców poczty, żeby zobaczyć które serwery wysyłają wiadomości w imieniu Twojej domeny, czy przechodzą SPF/DKIM i ich dopasowanie (alignment), oraz które adresy IP wyglądają podejrzanie.",
+  "dmarc.subtitle": "Wgraj zbiorcze raporty DMARC (XML, także spakowane .gz i .zip) od dostawców poczty, żeby zobaczyć które serwery wysyłają wiadomości w imieniu Twojej domeny, czy przechodzą SPF/DKIM i ich dopasowanie (alignment), oraz które adresy IP wyglądają podejrzanie.",
   "dmarc.drop_click": "Kliknij, aby wybrać pliki",
   "dmarc.drop_or_drag": "albo przeciągnij je tutaj",
   "dmarc.drop_multiple": "Można wgrać kilka raportów naraz; obsługiwane są pliki .xml, .gz i .zip",

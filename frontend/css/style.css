@@ -200,7 +200,7 @@ a:hover { color: var(--accent); }
 .dropzone.compact { padding: 10px 16px; text-align: left; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; }
 .dropzone.compact p { margin: 0; }
 .dropzone.compact .dz-hint { display: none; }
-.dropzone.compact #dm-file-list { flex-basis: 100%; }
+.dropzone.compact #dm-file-list { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 0 20px; }
 .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
 .kpi { flex: 1 1 130px; background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; }
 .kpi.wide { flex: 2 1 260px; }

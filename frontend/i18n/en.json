@@ -86,7 +86,7 @@
   "md.service.abuseipdb": "Abuse confidence score, number of reports, author of the latest report, ISP, usage type.",
   "md.service.greynoise": "Whether the address is known 'internet noise' (mass scanners/bots) or something unusual.",
   "md.service.whois": "WHOIS record of a domain or reverse DNS (PTR) of an IP address - a direct protocol query, with no external account and no single source website.",
-  "dmarc.subtitle": "Upload aggregate DMARC reports (XML) from mail providers to see which servers send messages on behalf of your domain, whether they pass SPF/DKIM and their alignment, and which IP addresses look suspicious.",
+  "dmarc.subtitle": "Upload aggregate DMARC reports (XML, also packed as .gz or .zip) from mail providers to see which servers send messages on behalf of your domain, whether they pass SPF/DKIM and their alignment, and which IP addresses look suspicious.",
   "dmarc.drop_click": "Click to choose files",
   "dmarc.drop_or_drag": "or drag them here",
   "dmarc.drop_multiple": "You can upload several reports at once; .xml, .gz and .zip files are accepted",
