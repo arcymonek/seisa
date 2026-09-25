@@ -36,6 +36,7 @@
   "common.copy_markdown": "Kopiuj Markdown",
   "common.copy": "Kopiuj",
   "lookup.checking": "Sprawdzanie: {time} s",
+  "lookup.checked": "Sprawdzono: {time} s",
   "lookup.subtitle": "Sprawdź reputację adresu IP jednocześnie w kilku niezależnych źródłach threat-intelligence (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS/rDNS) i zobacz jeden zbiorczy wynik ryzyka.",
   "lookup.ip_address": "Adres IP",
   "lookup.batch_mode": "Tryb wsadowy (batch)",

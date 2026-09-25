@@ -50,6 +50,8 @@ async function loadFile(file) {
   const textarea = root.querySelector("#rb-email");
   textarea.value = text;
   textarea.scrollTop = 0;
+  root.querySelector("#rb-timer").textContent = "";
+  root.querySelector("#rb-usage").textContent = "";
   root.querySelector("#rb-status").textContent = t("common.file_loaded", { name: file.name, size: (file.size / 1024).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
@@ -61,13 +63,17 @@ export function initReportBuilder(container) {
     <label>${escapeHtml(t("rb.email_source"))}</label>
     <textarea id="rb-email" placeholder="Received: ... From: ... Subject: ..."></textarea>
     <div class="banner info">${escapeHtml(t("rb.llm_banner"))}</div>
-    <button class="action" id="rb-analyze">${escapeHtml(t("common.analyze"))}</button>
-    <button class="secondary" id="rb-analyze-no-llm">${escapeHtml(t("common.analyze_no_llm"))}</button>
-    <button class="secondary" id="rb-file-btn">${escapeHtml(t("common.load_eml"))}</button>
-    <input type="file" id="rb-file" accept=".eml,.txt,message/rfc822" style="display:none">
-    <span class="inline-timer" id="rb-timer"></span>
-    <span class="inline-timer" id="rb-usage"></span>
-    <div class="muted" id="rb-status"></div>
+    <div class="action-row">
+      <button class="action" id="rb-analyze">${escapeHtml(t("common.analyze"))}</button>
+      <button class="secondary" id="rb-analyze-no-llm">${escapeHtml(t("common.analyze_no_llm"))}</button>
+      <button class="secondary" id="rb-file-btn">${escapeHtml(t("common.load_eml"))}</button>
+      <input type="file" id="rb-file" accept=".eml,.txt,message/rfc822" style="display:none">
+      <span class="action-info">
+        <span id="rb-status"></span>
+        <span id="rb-timer"></span>
+        <span id="rb-usage"></span>
+      </span>
+    </div>
 
     <div id="rb-analysis"></div>
 
@@ -231,17 +237,18 @@ async function analyze(useLlm) {
   const usageEl = root.querySelector("#rb-usage");
   usageEl.textContent = "";
   timerEl.textContent = "";
-  if (useLlm) startTimer();
+  root.querySelector("#rb-status").textContent = "";
+  startTimer();
   let data;
   try {
     data = await api.analyzeEmail({ raw_email: rawEmail, use_llm: useLlm });
   } catch (err) {
-    if (useLlm) stopTimer();
+    stopTimer();
     analysisEl.innerHTML = `<div class="banner warn">${escapeHtml(t("rb.analysis_error", { message: err.message }))}</div>`;
     return;
   }
 
-  if (useLlm) stopTimer();
+  stopTimer();
   usageEl.textContent = usageText(data.usage);
   categoriesMap = data.categories;
   const facts = data.facts;

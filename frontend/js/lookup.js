@@ -20,8 +20,7 @@ function formatElapsed(ms) {
 
 function startTimer() {
   timerStart = performance.now();
-  root.querySelector("#lk-progress").textContent = "";
-  const timerEl = root.querySelector("#lk-timer");
+  const timerEl = root.querySelector("#lk-info");
   timerEl.textContent = formatElapsed(0);
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
@@ -29,13 +28,11 @@ function startTimer() {
   }, 100);
 }
 
-function stopTimer(prefix) {
+function stopTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
   const elapsed = timerStart ? performance.now() - timerStart : 0;
-  root.querySelector("#lk-timer").textContent = "";
-  const duration = formatElapsed(elapsed);
-  root.querySelector("#lk-progress").textContent = prefix ? `${prefix} - ${duration}` : duration;
+  root.querySelector("#lk-info").textContent = t("lookup.checked", { time: fmtSeconds(elapsed) });
   return elapsed;
 }
 
@@ -57,9 +54,11 @@ export function initLookup(container) {
     <label>${escapeHtml(t("lookup.services"))}</label>
     <div class="chip-row" id="lk-chips"></div>
 
-    <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button><span class="inline-timer" id="lk-timer"></span>
+    <div class="action-row">
+      <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button>
+      <span class="action-info" id="lk-info"></span>
+    </div>
     <div class="muted" id="lk-batch-status"></div>
-    <div class="muted" id="lk-progress"></div>
 
     <div id="lk-results"></div>
   `;
@@ -123,10 +122,10 @@ async function onSubmit() {
         }
       });
       batchStatusEl.textContent = t("lookup.done");
-      stopTimer(t("lookup.done"));
+      stopTimer();
     } catch (err) {
       stopTimer();
-      root.querySelector("#lk-progress").textContent = t("common.error", { message: err.message });
+      batchStatusEl.textContent = t("common.error", { message: err.message });
     }
     return;
   }
@@ -143,7 +142,7 @@ async function onSubmit() {
     resultsEl.appendChild(renderResult(result));
   } catch (err) {
     stopTimer();
-    root.querySelector("#lk-progress").textContent = t("common.error", { message: err.message });
+    batchStatusEl.textContent = t("common.error", { message: err.message });
   }
 }
 

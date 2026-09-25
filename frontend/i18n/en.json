@@ -36,6 +36,7 @@
   "common.copy_markdown": "Copy Markdown",
   "common.copy": "Copy",
   "lookup.checking": "Checking: {time} s",
+  "lookup.checked": "Checked: {time} s",
   "lookup.subtitle": "Check the reputation of an IP address in several independent threat-intelligence sources at once (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS/rDNS) and see one aggregate risk score.",
   "lookup.ip_address": "IP address",
   "lookup.batch_mode": "Batch mode",

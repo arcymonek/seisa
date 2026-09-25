@@ -159,7 +159,9 @@ a:hover { color: var(--accent); }
 
 .excluded-sources { font-size: 12px; color: var(--muted); margin: 2px 0 16px; }
 
-.inline-timer { font-size: 13px; color: var(--muted); margin-left: 4px; }
+.action-row { display: flex; flex-wrap: wrap; align-items: center; }
+.action-info { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+.action-info button { margin-top: 0; margin-right: 0; }
 
 .checklist-item.auto-pending::before { content: "?"; color: var(--muted); font-weight: 700; }
 

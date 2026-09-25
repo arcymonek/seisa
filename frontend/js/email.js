@@ -40,6 +40,7 @@ function startTimer() {
   timerStart = performance.now();
   const el = root.querySelector("#em-timer");
   el.textContent = formatElapsed(0);
+  root.querySelector("#em-usage").textContent = "";
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     el.textContent = formatElapsed(performance.now() - timerStart);
@@ -50,7 +51,7 @@ function stopTimer() {
   clearInterval(timerInterval);
   timerInterval = null;
   const elapsed = timerStart ? performance.now() - timerStart : 0;
-  root.querySelector("#em-timer").textContent = "";
+  root.querySelector("#em-timer").textContent = formatElapsed(elapsed);
   return elapsed;
 }
 
@@ -61,12 +62,17 @@ export function initEmail(container) {
     <label>${escapeHtml(t("rb.email_source"))}</label>
     <textarea id="em-source" placeholder="Received: ... From: ... Subject: ..." style="min-height:200px"></textarea>
     <div class="banner info">${escapeHtml(t("em.banner"))}</div>
-    <button class="action" id="em-analyze">${escapeHtml(t("common.analyze"))}</button>
-    <button class="secondary" id="em-cancel" style="display:none">${escapeHtml(t("em.cancel"))}</button>
-    <button class="secondary" id="em-file-btn">${escapeHtml(t("common.load_eml"))}</button>
-    <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
-    <span class="inline-timer" id="em-timer"></span>
-    <div class="muted" id="em-status"></div>
+    <div class="action-row">
+      <button class="action" id="em-analyze">${escapeHtml(t("common.analyze"))}</button>
+      <button class="secondary" id="em-cancel" style="display:none">${escapeHtml(t("em.cancel"))}</button>
+      <button class="secondary" id="em-file-btn">${escapeHtml(t("common.load_eml"))}</button>
+      <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
+      <span class="action-info">
+        <span id="em-status"></span>
+        <span id="em-timer"></span>
+        <span id="em-usage"></span>
+      </span>
+    </div>
     <div id="em-dup"></div>
 
     <div id="em-facts"></div>
@@ -115,6 +121,8 @@ async function loadFile(file) {
   // BOM and line endings (the mbox envelope and the rest of the normalisation happen server-side)
   text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   root.querySelector("#em-source").value = text;
+  root.querySelector("#em-timer").textContent = "";
+  root.querySelector("#em-usage").textContent = "";
   status.textContent = t("common.file_loaded", { name: file.name, size: (file.size / 1024).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
@@ -249,12 +257,9 @@ async function runAnalysis(raw) {
       statusEl.textContent = t("em.error", { message: err.message });
     }
   } finally {
-    const elapsed = stopTimer();
+    stopTimer();
     setBusy(false);
     abortController = null;
-    if (finished && !hadError) {
-      statusEl.textContent = (statusEl.textContent ? statusEl.textContent + " " : "") + formatElapsed(elapsed) + ".";
-    }
   }
 }
 
@@ -295,6 +300,7 @@ function finishAnalysis(evt) {
   if (!currentCreatedAt) currentCreatedAt = new Date().toISOString();
   showCitations();
   showActions();
+  showUsage();
   refreshSaved();
 }
 
@@ -333,6 +339,10 @@ function usageInfo() {
   return info;
 }
 
+function showUsage() {
+  root.querySelector("#em-usage").textContent = usageInfo().join(", ");
+}
+
 function showActions() {
   const actions = root.querySelector("#em-actions");
   actions.innerHTML = "";
@@ -368,8 +378,8 @@ function showActions() {
   copyBtn.onclick = () => navigator.clipboard.writeText(buildExport());
   actions.appendChild(copyBtn);
 
-  const info = usageInfo();
-  if (currentAnalysisId) info.unshift(t("em.saved_in"));
+  const info = [];
+  if (currentAnalysisId) info.push(t("em.saved_in"));
   if (info.length) {
     const div = document.createElement("div");
     div.className = "muted";
@@ -824,6 +834,8 @@ async function openSaved(id) {
   renderAnalysis();
   showCitations();
   showActions();
+  root.querySelector("#em-timer").textContent = "";
+  showUsage();
   statusEl.textContent = t("em.opened", { date: fmtDateTime(rec.created_at) });
   root.querySelector("#em-facts").scrollIntoView({ behavior: "smooth", block: "start" });
 }

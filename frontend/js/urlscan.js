@@ -28,8 +28,11 @@ export function initUrlscan(container) {
     <div class="banner info">
       ${escapeHtml(t("urlscan.banner"))}
     </div>
-    <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
-    <div class="muted" id="us-status"></div>
+    <div class="action-row">
+      <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
+      <span class="action-info" id="us-status"></span>
+    </div>
+    <div id="us-error"></div>
     <div id="us-result"></div>
   `;
   root.querySelector("#us-submit").addEventListener("click", onSubmit);
@@ -56,6 +59,7 @@ async function onSubmit() {
   const statusEl = root.querySelector("#us-status");
   const resultEl = root.querySelector("#us-result");
   resultEl.innerHTML = "";
+  root.querySelector("#us-error").innerHTML = "";
   statusEl.textContent = t("urlscan.submitting");
   setBusy(true);
 
@@ -63,13 +67,15 @@ async function onSubmit() {
   try {
     submitted = await api.urlscanSubmit(url);
   } catch (err) {
-    statusEl.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.submit_error", { message: err.message }))}</div>`;
+    statusEl.textContent = "";
+    showError(t("urlscan.submit_error", { message: err.message }));
     setBusy(false);
     return;
   }
 
   if (!submitted.uuid) {
-    statusEl.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.no_uuid"))}</div>`;
+    statusEl.textContent = "";
+    showError(t("urlscan.no_uuid"));
     setBusy(false);
     return;
   }
@@ -78,6 +84,10 @@ async function onSubmit() {
   renderStatus(submitted.result_page_url, t("urlscan.submitted"));
   elapsedTimer = setInterval(() => updateStatusText(t("urlscan.in_progress")), 1000);
   pollTimer = setTimeout(() => poll(submitted.uuid, submitted.result_page_url), FIRST_POLL_DELAY_MS);
+}
+
+function showError(message) {
+  root.querySelector("#us-error").innerHTML = `<div class="banner warn">${escapeHtml(message)}</div>`;
 }
 
 function renderStatus(resultPageUrl, message) {
@@ -107,7 +117,8 @@ async function poll(uuid, resultPageUrl) {
     data = await api.urlscanResult(uuid);
   } catch (err) {
     stopTimers();
-    statusEl.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.result_error", { message: err.message }))}</div>`;
+    statusEl.textContent = "";
+    showError(t("urlscan.result_error", { message: err.message }));
     setBusy(false);
     return;
   }

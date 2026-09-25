@@ -15,11 +15,11 @@ export function initLogs(container) {
   root.innerHTML = `
     <div class="subtitle">${escapeHtml(t("logs.subtitle"))}</div>
     <div class="chip-row" id="lg-range">
-      <span class="chip on" data-range="today">${escapeHtml(t("logs.range_today"))}</span>
+      <span class="chip" data-range="today">${escapeHtml(t("logs.range_today"))}</span>
       <span class="chip" data-range="3d">${escapeHtml(t("logs.range_3d"))}</span>
       <span class="chip" data-range="week">${escapeHtml(t("logs.range_week"))}</span>
       <span class="chip" data-range="month">${escapeHtml(t("logs.range_month"))}</span>
-      <span class="chip" data-range="all">${escapeHtml(t("logs.range_all"))}</span>
+      <span class="chip on" data-range="all">${escapeHtml(t("logs.range_all"))}</span>
     </div>
     <label>${escapeHtml(t("logs.service"))}</label>
     <select id="lg-service">
@@ -47,7 +47,7 @@ export function refreshLogs() {
 
 function currentRange() {
   const active = root.querySelector("#lg-range .chip.on");
-  return active ? active.dataset.range : "today";
+  return active ? active.dataset.range : "all";
 }
 
 async function load() {
