@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.48</b></p>
+<p align="center"><b>Seisa 2.0.49</b></p>
 
 # Seisa
 
@@ -92,7 +92,7 @@ Dalsze szczegóły tej zakładki:
 Ostatnie 25 działań: wyszukiwania IP, skany URL (otwierane z powrotem w zakładce URLScan, z miniaturą zrzutu ekranu), importy DMARC, zapisane analizy e-maili (otwierane z powrotem w zakładce Email) i przyjęte zgłoszenia AbuseIPDB (otwierane jako szkic w zakładce AbuseIPDB), z możliwością ponownego otwarcia lub usunięcia (poza zgłoszeniami). "Wyczyść historię" usuwa tylko wpisy IP, skanów URL i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo; log zgłoszeń zostaje.
 
 ### Logi
-Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie) i po usłudze (domyślnie wszystkie). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
+Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Na górze: kafelki podsumowania (błędy, ostrzeżenia, usługa z największą liczbą wpisów, ostatni wpis) albo, gdy nie ma czego pokazać, zielony baner. Niżej: chipy filtrów zakresu dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie), poziomu (wszystkie / błędy / ostrzeżenia) i usługi (budowane z wpisów, z liczbą przy każdej) oraz pole wyszukiwania w wiadomościach; kafelki i liczby przy chipach zawsze opisują cały zakres dat, a poziom, usługa i wyszukiwanie tylko zawężają listę. Każdy wpis to zwijana karta (czas, poziom, usługa i pierwsza linia wiadomości; pełny tekst, np. cały błąd API, otwiera się kliknięciem i można go skopiować); karty, które otworzyłeś, zostają otwarte po odświeżeniu. "Odświeżaj co 10 s" przeładowuje listę samoczynnie, dopóki zakładka jest otwarta, a "Wyczyść logi" (dwa kliknięcia, drugie potwierdza) usuwa wszystkie pliki logów. Widać maksymalnie 500 najnowszych wpisów (baner informuje, gdy starsze zostały obcięte). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
 ### Informacje
 Okrągły przycisk informacji (ⓘ) na prawym końcu rzędu zakładek otwiera zakładkę Informacje: nazwa i aktualna wersja (czytana z nagłówka strony), krótki opis Seisy, znaczenie nazwy (精査, *せいさ*), licencja (to samo streszczenie co w sekcji Licencja poniżej) oraz dane kontaktowe autora (e-mail, GitHub, strona www).

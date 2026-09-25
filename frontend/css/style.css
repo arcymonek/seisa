@@ -388,3 +388,18 @@ details.legend { margin-top: 24px; }
 .em-cmp tr.em-same td:first-child { border-left: 3px solid var(--pass); }
 .em-cmp td:first-child { color: var(--muted); white-space: nowrap; }
 .saved-row .em-cmp-check { margin: 0; }
+
+/* --- zakladki Logi i Historia --- */
+.lg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 8px 0 2px; }
+.lg-search { flex: 0 1 320px; width: auto; padding: 6px 10px; font-size: 15px; }
+.inline-check { display: inline-flex; align-items: center; margin: 0; font-size: 14px; }
+.chip.disabled { pointer-events: none; }
+button.secondary.armed { border-color: var(--fail); color: var(--fail); }
+.log-entry { border: 1px solid var(--hair); border-radius: 6px; background: var(--bg-raised); margin: 6px 0; }
+.log-entry > summary { cursor: pointer; padding: 8px 12px; display: flex; align-items: baseline; gap: 4px 12px; font-size: 14.5px; }
+.log-entry .mono { font-family: var(--mono); font-size: 13px; flex: none; }
+.log-entry .tag, .log-entry .badge { flex: none; }
+.log-line { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-entry[open] .log-line { white-space: normal; overflow-wrap: anywhere; }
+.log-body { padding: 0 12px 10px; }
+.log-body .raw-json { margin-top: 2px; }

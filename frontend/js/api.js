@@ -40,7 +40,8 @@ export const api = {
   ipInfo: (ip) => request(`/abuseipdb/ip-info?ip=${encodeURIComponent(ip)}`),
   submitReport: (body) => request("/abuseipdb/report/submit", { method: "POST", body: JSON.stringify(body) }),
 
-  logs: (range, service) => request(`/logs?range=${encodeURIComponent(range)}&service=${encodeURIComponent(service)}`),
+  logs: (range) => request(`/logs?range=${encodeURIComponent(range)}`),
+  logsClear: () => request("/logs", { method: "DELETE" }),
 
   emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),
   emailContinueStream: (id, onEvent, signal) => streamSSE(`${BASE}/email/analyses/${encodeURIComponent(id)}/continue`, {}, onEvent, signal),

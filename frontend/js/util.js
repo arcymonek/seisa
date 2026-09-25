@@ -1,5 +1,5 @@
 // Small helpers shared by the tab modules (one copy instead of one per tab).
-import { t, fmtSeconds, getLocale } from "./i18n.js";
+import { t, fmtSeconds, fmtDateTime, getLocale } from "./i18n.js";
 
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
@@ -85,4 +85,39 @@ export async function downloadMarkdown(filename, text, { native = false } = {}) 
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// "3 minutes ago" / "2 days ago" in the interface language (falls back to the full date after a month).
+export function fmtRelative(value) {
+  const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat(getLocale(), { numeric: "auto" });
+  const units = [["day", 86400], ["hour", 3600], ["minute", 60]];
+  if (Math.abs(seconds) >= 30 * 86400) return fmtDateTime(value);
+  for (const [unit, size] of units) {
+    if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
+  }
+  return rtf.format(Math.min(seconds, 0), "second");
+}
+
+// Two-click confirmation instead of a blocking confirm(): the first click arms the button (its text becomes
+// `confirmText` for `ms`), the second one within that time runs `onConfirm`.
+export function armedConfirm(btn, confirmText, onConfirm, ms = 4000) {
+  const label = btn.textContent;
+  let timer = null;
+  const disarm = () => {
+    clearTimeout(timer);
+    timer = null;
+    btn.textContent = label;
+    btn.classList.remove("armed");
+  };
+  btn.addEventListener("click", () => {
+    if (timer === null) {
+      btn.textContent = confirmText;
+      btn.classList.add("armed");
+      timer = setTimeout(disarm, ms);
+      return;
+    }
+    disarm();
+    onConfirm();
+  });
 }

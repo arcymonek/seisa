@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.48</b></p>
+<p align="center"><b>Seisa 2.0.49</b></p>
 
 # Seisa
 
@@ -92,7 +92,7 @@ Further details of this tab:
 The last 25 actions: IP lookups, URL scans (reopened in the URLScan tab, with a thumbnail of the screenshot), DMARC imports, saved e-mail analyses (reopened in the Email tab) and accepted AbuseIPDB reports (reopened as a draft in the AbuseIPDB tab), which you can reopen or delete (except the reports). "Clear history" removes only IP, URL scan and DMARC entries; e-mail analyses (with the raw messages) are deleted one by one; the report log stays.
 
 ### Logs
-Errors and warnings (WARNING level and above) from every service - normal, error-free operation of the tool leaves no trace on disk. Filtering by date range (today / 3 days / week / month / all; the default is all) and by service (the default is all). All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
+Errors and warnings (WARNING level and above) from every service - normal, error-free operation of the tool leaves no trace on disk. At the top: summary tiles (errors, warnings, the service with the most entries, the last entry) or, when there is nothing to show, a green banner. Below: filter chips for the date range (today / 3 days / week / month / all; the default is all), the level (all / errors / warnings) and the service (built from the entries, each with a count), and a search box over the messages; the tiles and chip counts always describe the whole date range, the level, service and search only narrow the list. Every entry is a collapsible card (time, level, service and the first line of the message; the full text, for example a whole API error, opens on a click and can be copied); the cards you opened stay open across refreshes. "Refresh every 10 s" reloads the list on its own while the tab is open, and "Clear logs" (two clicks, the second one confirms) deletes all log files. Up to the newest 500 entries are shown (a banner says so when older ones are cut off). All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
 
 ### Info
 The round info button (ⓘ) at the far right of the tab row opens the Info tab: the name and the current version (read from the page header), a short description of Seisa, the meaning of the name (精査, *せいさ*), the license (the same summary as in the License section below) and the author's contact details (e-mail, GitHub, website).

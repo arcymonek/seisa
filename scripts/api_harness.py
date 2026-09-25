@@ -379,6 +379,8 @@ for lang in ("pl", "en"):
     rec(p + "history entry missing", client.get("/api/history/nope", headers=H))
     rec(p + "logs all", client.get("/api/logs?range=all&service=all", headers=H))
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
+    rec(p + "logs clear", client.delete("/api/logs", headers=H))
+    rec(p + "logs after clear", client.get("/api/logs?range=all", headers=H))
     if aid:
         rec(p + "email delete", client.delete(f"/api/email/analyses/{aid}", headers=H))
     rec(p + "history clear", client.delete("/api/history", headers=H))

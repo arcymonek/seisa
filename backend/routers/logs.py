@@ -14,15 +14,6 @@ RANGE_DAYS_BACK = {"today": 0, "3d": 2, "week": 6, "month": 29}
 MAX_ENTRIES = 500
 
 
-def _normalize_legacy_service(entry: dict) -> dict:
-    """Older OpenRouter error entries used the service "app" (or "llm_analyzer"); it is now "open_router"."""
-    if entry.get("service") == "llm_analyzer" or (
-        entry.get("service") == "app" and str(entry.get("message", "")).startswith("OpenRouter:")
-    ):
-        return {**entry, "service": "open_router"}
-    return entry
-
-
 @router.get("/logs")
 def get_logs(log_range: str = Query("today", alias="range"), service: str = "all"):
     today = datetime.now().astimezone().date()
@@ -49,10 +40,20 @@ def get_logs(log_range: str = Query("today", alias="range"), service: str = "all
                     entry = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                entry = _normalize_legacy_service(entry)
                 if service != "all" and entry.get("service") != service:
                     continue
                 entries.append(entry)
 
     entries.sort(key=lambda e: e.get("time", ""), reverse=True)
     return entries[:MAX_ENTRIES]
+
+
+@router.delete("/logs")
+def clear_logs():
+    """Deletes every daily log file; the number of removed files is returned."""
+    deleted = 0
+    if LOGS_DIR.exists():
+        for path in LOGS_DIR.glob("*.jsonl"):
+            path.unlink()
+            deleted += 1
+    return {"deleted": deleted}
