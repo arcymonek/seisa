@@ -12,6 +12,7 @@ let checksDebounce = null;
 let lastChecks = null;
 let lastFacts = null;
 let lastLlmAnalysis = null;
+let lastVerdict = "unknown"; // "yes" = eligible for a report, "no" = not eligible (blocks sending), "unknown" = doubt
 let cooldownLeft = 0;
 let infoIp = null;
 
@@ -68,6 +69,7 @@ export function initReportBuilder(container) {
       <div class="muted" id="rb-char-count"></div>
 
       <h3>${escapeHtml(t("rb.step3"))}</h3>
+      <div id="rb-checklist-verdict"></div>
       <div id="rb-checklist-hard"></div>
       <div id="rb-checklist-blocking"></div>
       <div class="muted">${escapeHtml(t("rb.info_only"))}</div>
@@ -108,6 +110,7 @@ export function initReportBuilder(container) {
 
   registerDirtyCheck(() => !!root.querySelector("#rb-email").value.trim());
   renderChecklist(baselineChecklist());
+  renderVerdictCheck();
 }
 
 export function prefillReportEmail(rawEmail) {
@@ -121,10 +124,12 @@ export async function prefillReport(ip) {
   // Data from a previously analysed e-mail does not apply to an IP handed over from another tab.
   lastFacts = null;
   lastLlmAnalysis = null;
+  lastVerdict = "unknown";
   root.querySelector("#rb-form").style.display = "block";
   await ensureCategoriesRendered();
   root.querySelector("#rb-ip").value = ip;
   renderChecklist(baselineChecklist());
+  renderVerdictCheck();
   scheduleChecks();
 }
 
@@ -234,19 +239,22 @@ async function analyze(useLlm) {
   if (!facts.age_ok) reasons.push(facts.age_days === null ? t("rb.no_reliable_date") : t("rb.age_reason", { days: facts.age_days }));
   const local = data.local_assessment || {};
 
+  // banner border: green = does not qualify (nothing to report), red = qualifies (report it), none = not assessed
+  lastVerdict = !hardOk || (llmOk && !llm.qualifies) || (!llmOk && local.self_sent) ? "no" : llmOk ? "yes" : "unknown";
+
   let html = "";
   if (!hardOk || (llmOk && !llm.qualifies)) {
-    html += `<div class="banner bad"><strong>${escapeHtml(t("rb.not_qualifying"))}</strong>`;
+    html += `<div class="banner verdict-no"><strong>${escapeHtml(t("rb.not_qualifying"))}</strong>`;
     if (reasons.length) html += `<br>${escapeHtml(reasons.join("; "))}`;
     if (llmOk && llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
     if (llmOk && llm.alternatives) html += `<br><strong>${escapeHtml(t("rb.alternatives"))}</strong> ${escapeHtml(llm.alternatives)}`;
     html += "</div>";
   } else if (llmOk) {
-    html += `<div class="banner good"><strong>${escapeHtml(t("rb.qualifying"))}</strong>`;
+    html += `<div class="banner verdict-yes"><strong>${escapeHtml(t("rb.qualifying"))}</strong>`;
     if (llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
     html += "</div>";
   } else if (local.self_sent) {
-    html += `<div class="banner bad"><strong>${escapeHtml(t("rb.self_sent_title"))}</strong><br>${escapeHtml(t("rb.self_sent_body", { address: local.address }))}</div>`;
+    html += `<div class="banner verdict-no"><strong>${escapeHtml(t("rb.self_sent_title"))}</strong><br>${escapeHtml(t("rb.self_sent_body", { address: local.address }))}</div>`;
   } else {
     html += `<div class="banner"><strong>${escapeHtml(t("rb.hard_only_title"))}</strong><br>${escapeHtml(t("rb.hard_only_body"))}</div>`;
   }
@@ -284,6 +292,8 @@ async function analyze(useLlm) {
 
   renderCategoryChips((llm && !llm.error && llm.suggested_categories) || []);
   renderChecklist(baselineChecklist());
+  renderVerdictCheck();
+  if (lastVerdict === "no") root.querySelector("#rb-submit").disabled = true;
   scheduleChecks();
 }
 
@@ -449,6 +459,12 @@ function renderBlockingChecks(checklist) {
       : "");
 }
 
+function renderVerdictCheck() {
+  const status = { yes: "auto-pass", no: "auto-fail", unknown: "auto-pending" }[lastVerdict];
+  root.querySelector("#rb-checklist-verdict").innerHTML =
+    `<div class="checklist-item ${status}">${escapeHtml(t("rb.check.verdict"))} - ${escapeHtml(t("rb.verdict." + lastVerdict))}</div>`;
+}
+
 function renderHardChecks(checks) {
   const el = root.querySelector("#rb-checklist-hard");
   el.innerHTML = `
@@ -459,7 +475,9 @@ function renderHardChecks(checks) {
 }
 
 function updateSubmitState(checks) {
-  root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed) || llmBlockers().length > 0 || cooldownLeft > 0;
+  root.querySelector("#rb-submit").disabled =
+    !(checks && checks.all_passed) || lastVerdict === "no" || llmBlockers().length > 0 || cooldownLeft > 0;
+  renderVerdictCheck();
   if (checks) renderHardChecks(checks);
 }
 

@@ -144,12 +144,16 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 }
 .hop-row.hop-boundary { border-left-color: var(--accent); color: var(--text); }
 
-/* One background for every banner; the border carries the meaning: bad = red, good = green, neutral = no colour */
-.banner { background: #1c2a30; border: 1px solid var(--hair); border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; }
+/* One background for every banner; the border carries the meaning: bad = red, good = green, neutral = no colour; the text is always white */
+.banner { background: #1c2a30; border: 1px solid var(--hair); border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; color: #fff; }
 .banner.warn { border-color: var(--warn); }
 .banner.info { border-color: var(--accent); }
 .banner.bad { border-color: var(--fail); }
 .banner.good { border-color: var(--pass); }
+.banner.bad, .banner.good { color: #fff; }
+/* eligibility verdict (AbuseIPDB tab): green = nothing to report, red = worth reporting */
+.banner.verdict-no { border-color: var(--pass); }
+.banner.verdict-yes { border-color: var(--fail); }
 
 .muted { color: var(--muted); font-size: 14.5px; }
 .dropzone {
