@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.24</b></p>
+<p align="center"><b>Seisa 2.0.25</b></p>
 
 # Seisa
 
@@ -95,6 +95,7 @@ seisa/
 ├── .env                    # API keys (gitignored, see .env.example)
 ├── seisa.sh                 # start script (starts the server and opens the browser)
 ├── README.md / README.pl.md  # this documentation in English (the main one on GitHub) and in Polish
+├── pyproject.toml           # ruff configuration (linter only, not a package)
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
@@ -107,7 +108,8 @@ seisa/
 │   ├── markdown_report.py    # Markdown report builder
 │   ├── ratelimit.py          # VirusTotal throttle
 │   ├── cache.py              # in-memory result cache
-│   ├── storage.py            # atomic history storage (JSON)
+│   ├── storage.py            # atomic JSON storage (history, VirusTotal counter, report log)
+│   ├── sse.py                # Server-Sent Events framing shared by the streaming endpoints
 │   ├── logging_config.py     # WARNING+ logs to logi/*.jsonl
 │   ├── email_parser.py       # fact extraction from the raw e-mail (AbuseIPDB tab)
 │   ├── email_forensics.py    # deterministic analysis of the e-mail source (Email tab)
@@ -127,7 +129,7 @@ seisa/
 │   ├── logo.png               # round logo (page header and README)
 │   ├── css/style.css          # dark theme
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
-│   ├── js/                    # modules: app, i18n, lookup, urlscan, dmarc, email, report-builder, history, logs
+│   ├── js/                    # modules: app, i18n, util (shared helpers), lookup, urlscan, dmarc, email, report-builder, history, logs
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
 ├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 ├── scripts/

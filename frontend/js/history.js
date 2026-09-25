@@ -1,14 +1,11 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
 import { t, fmtDateTime, getLang } from "./i18n.js";
+import { escapeHtml } from "./util.js";
 
 let root;
 
 const TYPE_LABEL = { lookup: "IP", dmarc: "DMARC", email: "Email" };
-
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
 
 export function initHistory(container) {
   root = container;

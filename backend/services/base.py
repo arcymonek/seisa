@@ -18,6 +18,14 @@ def describe_exception(exc: BaseException) -> str:
     return f"{type(exc).__name__} (no error text - probably a connection timeout)"
 
 
+def http_error_text(exc: httpx.HTTPError) -> str:
+    """One-line description of an httpx failure: an error status with the start of the response body (so that e.g. a
+    401 can be diagnosed without guessing), anything else through describe_exception."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        return f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
+    return describe_exception(exc)
+
+
 class IntelService(ABC):
     name: str
     supports_ip: bool = True
@@ -57,13 +65,8 @@ class IntelService(ABC):
                 resp = await client.request(method, url, **kwargs)
             resp.raise_for_status()
             return resp.json(), None
-        except httpx.HTTPStatusError as exc:
-            body = exc.response.text[:300]
-            return None, self.error_result(f"HTTP {exc.response.status_code}: {body}")
         except httpx.HTTPError as exc:
-            # httpx can raise e.g. ReadTimeout() without any text - str(exc) is then an empty string,
-            # so we add the exception type.
-            return None, self.error_result(describe_exception(exc))
+            return None, self.error_result(http_error_text(exc))
         except ValueError as exc:
             return None, self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 

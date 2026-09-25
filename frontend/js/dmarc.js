@@ -3,6 +3,7 @@
 // and hand the IP over to the IP tab or to the AbuseIPDB tab. Every value from the XML is untrusted: escapeHtml.
 import { api } from "./api.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime } from "./i18n.js";
+import { escapeHtml } from "./util.js";
 
 let root;
 let allRecords = [];
@@ -83,10 +84,6 @@ function logLine(text) {
 function txt(el, sel) {
   const node = el.querySelector(sel);
   return node ? node.textContent.trim() : null;
-}
-
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 function parseXML(xmlString, filename) {

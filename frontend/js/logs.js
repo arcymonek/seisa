@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { t, fmtDateTime } from "./i18n.js";
+import { escapeHtml } from "./util.js";
 
 let root;
 
@@ -80,8 +81,3 @@ async function load() {
     "</tbody></table>";
 }
 
-function escapeHtml(s) {
-  const div = document.createElement("div");
-  div.textContent = s;
-  return div.innerHTML;
-}

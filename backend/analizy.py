@@ -7,13 +7,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import tempfile
 from datetime import datetime, timezone
 from typing import Any
 
 from backend.config import ANALIZY_DIR
+from backend.storage import atomic_write_json
 from backend.verdict import normalize_confidence, normalize_verdict
 
 _ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{8}$")
@@ -26,17 +25,7 @@ def _path(analysis_id: str):
 
 
 def _write(analysis_id: str, record: dict[str, Any]) -> None:
-    ANALIZY_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
-    os.chmod(ANALIZY_DIR, 0o700)  # mkdir(mode=...) does not touch a directory that already exists (raw e-mails inside)
-    fd, tmp = tempfile.mkstemp(dir=ANALIZY_DIR, prefix=".analiza.", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(record, f, ensure_ascii=False, indent=2)
-        os.chmod(tmp, 0o600)
-        os.replace(tmp, _path(analysis_id))
-    finally:
-        if os.path.exists(tmp):
-            os.remove(tmp)
+    atomic_write_json(_path(analysis_id), record, dir_mode=0o700)  # raw e-mails inside: only the owner may enter
 
 
 def save_analysis(record: dict[str, Any]) -> str:

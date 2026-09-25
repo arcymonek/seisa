@@ -5,7 +5,7 @@ import httpx
 from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
-from backend.services.base import IntelService, describe_exception
+from backend.services.base import IntelService, describe_exception, http_error_text
 
 IP_URL = "https://api.greynoise.io/v3/ip"
 COMMUNITY_URL = "https://api.greynoise.io/v3/community"
@@ -43,10 +43,8 @@ class GreyNoiseService(IntelService):
                 )
             resp.raise_for_status()
             data = resp.json()
-        except httpx.HTTPStatusError as exc:
-            return self.error_result(f"HTTP {exc.response.status_code}: {exc.response.text[:300]}")
         except httpx.HTTPError as exc:
-            return self.error_result(describe_exception(exc))
+            return self.error_result(http_error_text(exc))
         except ValueError as exc:
             return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 
@@ -65,10 +63,8 @@ class GreyNoiseService(IntelService):
                 )
             resp.raise_for_status()
             data = resp.json()
-        except httpx.HTTPStatusError as exc:
-            return self.error_result(f"HTTP {exc.response.status_code}: {exc.response.text[:300]}")
         except httpx.HTTPError as exc:
-            return self.error_result(describe_exception(exc))
+            return self.error_result(http_error_text(exc))
         except ValueError as exc:
             return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 

@@ -93,7 +93,7 @@ def _extract_ip_candidates(text: str) -> list[str]:
     return public or candidates
 
 
-def _parse_received_header(raw_header: str) -> dict:
+def parse_received_header(raw_header: str) -> dict:
     normalized = re.sub(r"\s+", " ", raw_header).strip()
     match = _FROM_BY_RE.search(normalized)
     from_raw = match.group("from") if match else ""
@@ -161,7 +161,7 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     hop where they differ (or where "from" is just an IP/placeholder such as [127.0.0.1], the typical way a mail
     gateway records the actually connecting client) is the boundary of the trusted infrastructure - its IP is
     the one worth reporting."""
-    hops = [_parse_received_header(h) for h in received_headers]
+    hops = [parse_received_header(h) for h in received_headers]
     if not hops:
         return None, [], "low", t("parser.no_received")
 
@@ -297,14 +297,24 @@ _LLM_EXTRA_HEADER_NAME_RE = re.compile(r"spam|X-MS-Exchange-Organization-SCL", r
 _MAX_EXTRA_HEADER_VALUE = 200
 
 
-def extract_relevant_headers(raw_email: str) -> str:
+def parse_message(raw_email: str) -> Message:
+    """Parses the pasted source once; the functions below accept the result instead of the raw text, so that one
+    request does not parse the same e-mail five times."""
+    return message_from_string(_refold_headers(raw_email))
+
+
+def _as_message(source: str | Message) -> Message:
+    return source if isinstance(source, Message) else parse_message(source)
+
+
+def extract_relevant_headers(source: str | Message) -> str:
     """Block of headers relevant for the analysis - the Received chain/authentication (to verify the boundary
     hop) plus the basic identity/delivery headers (Subject, Reply-To, Return-Path, List-Unsubscribe, X-Mailer -
     useful e.g. to recognise mass mailing) and, if present, the headers carrying the anti-spam filter result
     (the name contains "spam" or it is Microsoft's X-MS-Exchange-Organization-SCL, the value truncated to a
     safe length). It deliberately omits big, irrelevant blobs (e.g. the base64 X-Microsoft-Antispam-Message-Info,
     DKIM-Signature) - they are not listed by name, so they do not reach the prompt."""
-    msg = message_from_string(_refold_headers(raw_email))
+    msg = _as_message(source)
     allowlist_lower = {h.lower() for h in _LLM_RELEVANT_HEADERS}
     lines = []
     for name in _LLM_RELEVANT_HEADERS:
@@ -323,26 +333,24 @@ def extract_relevant_headers(raw_email: str) -> str:
 BODY_EXCERPT_LIMIT = 2000
 
 
-def body_text_length(raw_email: str) -> int:
+def body_text_length(source: str | Message) -> int:
     """Length of the plain body text (before truncation) - tells the user how much of it the model saw."""
-    msg = message_from_string(_refold_headers(raw_email))
-    return len(_extract_body_text(msg).strip())
+    return len(_extract_body_text(_as_message(source)).strip())
 
 
-def extract_body_excerpt(raw_email: str, limit: int = BODY_EXCERPT_LIMIT) -> str:
+def extract_body_excerpt(source: str | Message, limit: int = BODY_EXCERPT_LIMIT) -> str:
     """Plain text of the e-mail body (HTML converted by `_extract_body_text`), truncated to `limit` characters -
     evidence for the LLM so that it understands the actual attack mechanism (what the message says) and not only
     the headers. It does not go into `facts` or the API response."""
-    msg = message_from_string(_refold_headers(raw_email))
-    body = _extract_body_text(msg).strip()
+    body = _extract_body_text(_as_message(source)).strip()
     if len(body) > limit:
         body = body[:limit] + "...(truncated)"
     return body
 
 
-def extract_addresses(raw_email: str) -> dict:
+def extract_addresses(source: str | Message) -> dict:
     """Lower-cased addresses from From, Return-Path (envelope sender) and Delivered-To/To (recipients)."""
-    msg = message_from_string(_refold_headers(raw_email))
+    msg = _as_message(source)
 
     def addrs(*names: str) -> list[str]:
         values = [v for name in names for v in (msg.get_all(name) or [])]
@@ -355,8 +363,8 @@ def extract_addresses(raw_email: str) -> dict:
     }
 
 
-def parse_email(raw_email: str) -> dict:
-    msg = message_from_string(_refold_headers(raw_email))
+def parse_email(source: str | Message) -> dict:
+    msg = _as_message(source)
 
     received_headers = msg.get_all("Received") or []
     boundary_hop, hop_chain, ip_confidence, ip_reasoning = _find_boundary_hop(received_headers)

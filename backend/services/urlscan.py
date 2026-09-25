@@ -5,7 +5,7 @@ import logging
 import httpx
 
 from backend.config import settings
-from backend.services.base import describe_exception
+from backend.services.base import http_error_text
 
 logger = logging.getLogger("urlscan")
 
@@ -40,12 +40,8 @@ async def submit_scan(url: str) -> dict:
             resp = await client.post(SCAN_URL, headers=_headers(), json=payload)
         resp.raise_for_status()
         return resp.json()
-    except httpx.HTTPStatusError as exc:
-        message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
-        logger.error(f"scan submission failed: {message}")
-        raise UrlscanError(message) from exc
     except httpx.HTTPError as exc:
-        message = describe_exception(exc)
+        message = http_error_text(exc)
         logger.error(f"scan submission failed: {message}")
         raise UrlscanError(message) from exc
 
@@ -60,11 +56,7 @@ async def fetch_result(uuid: str) -> dict | None:
             return None
         resp.raise_for_status()
         return resp.json()
-    except httpx.HTTPStatusError as exc:
-        message = f"HTTP {exc.response.status_code}: {exc.response.text[:300]}"
-        logger.error(f"fetching the scan result failed: {message}")
-        raise UrlscanError(message) from exc
     except httpx.HTTPError as exc:
-        message = describe_exception(exc)
+        message = http_error_text(exc)
         logger.error(f"fetching the scan result failed: {message}")
         raise UrlscanError(message) from exc

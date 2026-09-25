@@ -1,39 +1,19 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
-import { t, fmtSeconds } from "./i18n.js";
+import { t } from "./i18n.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
 
 const ALL_SERVICES = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"];
 
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
 let root;
 const enabledServices = new Set(ALL_SERVICES);
-let timerInterval = null;
-let timerStart = null;
-
-function formatElapsed(ms) {
-  return t("lookup.checking", { time: fmtSeconds(ms) });
-}
-
-function startTimer() {
-  timerStart = performance.now();
-  const timerEl = root.querySelector("#lk-info");
-  timerEl.textContent = formatElapsed(0);
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    timerEl.textContent = formatElapsed(performance.now() - timerStart);
-  }, 100);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  const elapsed = timerStart ? performance.now() - timerStart : 0;
-  root.querySelector("#lk-info").textContent = t("lookup.checked", { time: fmtSeconds(elapsed) });
-  return elapsed;
-}
+const timer = createTimer(
+  () => root.querySelector("#lk-info"),
+  elapsedSeconds("lookup.checking"),
+  elapsedSeconds("lookup.checked"),
+);
+const startTimer = () => timer.start();
+const stopTimer = () => timer.stop();
 
 export function initLookup(container) {
   root = container;
@@ -194,27 +174,6 @@ function renderResult(result) {
   return wrap;
 }
 
-async function saveMarkdown(result) {
-  const filename = `${result.indicator.replace(/[^a-zA-Z0-9.-]/g, "_")}.md`;
-  if (window.showSaveFilePicker) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: filename,
-        types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
-      });
-      const writable = await handle.createWritable();
-      await writable.write(result.markdown);
-      await writable.close();
-      return;
-    } catch (err) {
-      if (err.name === "AbortError") return;
-    }
-  }
-  const blob = new Blob([result.markdown], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+function saveMarkdown(result) {
+  return downloadMarkdown(`${result.indicator.replace(/[^a-zA-Z0-9.-]/g, "_")}.md`, result.markdown, { native: true });
 }

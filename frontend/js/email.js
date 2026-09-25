@@ -3,13 +3,12 @@
 // streamed as Markdown, then the verdict, the citation check and the saved analysis id). "Finish the analysis" resumes
 // a truncated answer. The LLM output is rendered through renderMarkdownSafe (links defanged); nothing is reported here.
 import { api } from "./api.js";
-import { t, tn, fmtSeconds, fmtDateTime, getLang, getLocale, registerDirtyCheck } from "./i18n.js";
+import { t, tn, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { defangUrl, renderMarkdownSafe } from "./markdown-render.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
 
 let root;
 let abortController = null;
-let timerInterval = null;
-let timerStart = null;
 let renderTimer = null;
 let streamText = "";
 let currentRaw = "";
@@ -21,6 +20,7 @@ let currentCreatedAt = null;
 let currentAnalysisId = null;
 let currentTruncated = false;
 let currentCitations = null;
+let currentSubject = "";
 let currentLang = null; // language the LLM analysis was written in
 
 // First line of the analysis: machine protocol with canonical English codes (see backend/verdict.py). The Polish
@@ -32,32 +32,14 @@ const VERDICT_LEVEL = { legit: "low", inconclusive: "medium" };
 const verdictLabel = (code) => t("verdict." + code);
 const langName = (code) => t("lang." + code);
 
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function formatElapsed(ms) {
-  return t("em.analysis_time", { time: fmtSeconds(ms) });
-}
+const timer = createTimer(() => root.querySelector("#em-timer"), elapsedSeconds("em.analysis_time"));
 
 function startTimer() {
-  timerStart = performance.now();
-  const el = root.querySelector("#em-timer");
-  el.textContent = formatElapsed(0);
   root.querySelector("#em-usage").textContent = "";
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    el.textContent = formatElapsed(performance.now() - timerStart);
-  }, 100);
+  timer.start();
 }
 
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  const elapsed = timerStart ? performance.now() - timerStart : 0;
-  root.querySelector("#em-timer").textContent = formatElapsed(elapsed);
-  return elapsed;
-}
+const stopTimer = () => timer.stop();
 
 export function initEmail(container) {
   root = container;
@@ -114,20 +96,10 @@ export function initEmail(container) {
 }
 
 async function loadFile(file) {
-  const status = root.querySelector("#em-status");
-  const buf = await file.arrayBuffer();
-  let text;
-  try {
-    text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
-  } catch {
-    text = new TextDecoder("windows-1252").decode(buf);
-  }
-  // BOM and line endings (the mbox envelope and the rest of the normalisation happen server-side)
-  text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
-  root.querySelector("#em-source").value = text;
+  root.querySelector("#em-source").value = await readEmlFile(file);
   root.querySelector("#em-timer").textContent = "";
   root.querySelector("#em-usage").textContent = "";
-  status.textContent = t("common.file_loaded", { name: file.name, size: (file.size / 1024).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
+  root.querySelector("#em-status").textContent = fileLoadedText(file);
 }
 
 function setBusy(busy) {
@@ -330,17 +302,8 @@ function showCitations() {
     ${escapeHtml(t("em.citations_hint"))}<ul>${items}</ul></div>`;
 }
 
-function usageInfo() {
-  const info = [];
-  if (currentUsage && currentUsage.prompt_tokens != null) {
-    info.push(t("common.tokens", { input: currentUsage.prompt_tokens, output: currentUsage.completion_tokens }));
-  }
-  if (currentUsage && typeof currentUsage.cost === "number") info.push(t("common.cost", { cost: currentUsage.cost.toFixed(3) }));
-  return info;
-}
-
 function showUsage() {
-  root.querySelector("#em-usage").textContent = usageInfo().join(", ");
+  root.querySelector("#em-usage").textContent = formatUsage(currentUsage);
 }
 
 function showActions() {
@@ -565,16 +528,8 @@ function buildExport() {
 
 function saveMarkdown() {
   const filename = `${t("em.x.file_prefix")}-${(currentSubject || "email").replace(/[^a-zA-Z0-9]+/g, "_").slice(0, 50) || "email"}.md`;
-  const blob = new Blob([buildExport()], { type: "text/markdown" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadMarkdown(filename, buildExport());
 }
-
-let currentSubject = "";
 
 // ---------------------------------------------------------------------------
 // deterministic analysis

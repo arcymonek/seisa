@@ -10,8 +10,14 @@ from backend.config import HISTORY_FILE, HISTORY_MAX_ENTRIES, REPORT_LOG_FILE, V
 from backend.models import HistoryEntry
 
 
-def _atomic_write(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+def atomic_write_json(path: Path, data: dict[str, Any], dir_mode: int | None = None) -> None:
+    """Writes JSON through a temp file + rename (no half-written files); the file gets 0600 from mkstemp.
+
+    `dir_mode` (e.g. 0o700) is also applied to a parent directory that already exists, unlike mkdir(mode=...).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True, **({"mode": dir_mode} if dir_mode is not None else {}))
+    if dir_mode is not None:
+        os.chmod(path.parent, dir_mode)
     fd, tmp_path = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
@@ -38,7 +44,7 @@ def load_history() -> list[HistoryEntry]:
 
 
 def save_history(entries: list[HistoryEntry]) -> None:
-    _atomic_write(HISTORY_FILE, {"entries": [e.model_dump() for e in entries]})
+    atomic_write_json(HISTORY_FILE, {"entries": [e.model_dump() for e in entries]})
 
 
 def append_history(entry: HistoryEntry) -> None:
@@ -73,7 +79,7 @@ def load_vt_usage() -> dict[str, Any]:
 
 
 def save_vt_usage(data: dict[str, Any]) -> None:
-    _atomic_write(VT_USAGE_FILE, data)
+    atomic_write_json(VT_USAGE_FILE, data)
 
 
 def successful_reports(ip: str) -> list[dict[str, Any]]:
@@ -85,4 +91,4 @@ def successful_reports(ip: str) -> list[dict[str, Any]]:
 def append_report_log(entry: dict[str, Any]) -> None:
     data = _read_json(REPORT_LOG_FILE, {"entries": []})
     data.setdefault("entries", []).insert(0, entry)
-    _atomic_write(REPORT_LOG_FILE, data)
+    atomic_write_json(REPORT_LOG_FILE, data)

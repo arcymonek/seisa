@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from email.message import Message
 
 from backend.email_parser import extract_addresses
 from backend.i18n import t
@@ -71,11 +72,11 @@ def build_comment(
     return truncate_chars(comment)
 
 
-def local_assessment(raw_email: str, facts: dict) -> dict:
+def local_assessment(source: str | Message, facts: dict) -> dict:
     """Cheap deterministic pre-assessment used without the LLM. It never says that a message qualifies - it only
     recognises the obvious case of a test sent from the user's own account to themselves: the sender, the envelope
     sender and a recipient are the same address, and there is no sign of an attack in the headers."""
-    addr = extract_addresses(raw_email)
+    addr = extract_addresses(source)
     sender = addr["from"][0] if len(addr["from"]) == 1 else None
     same_party = bool(sender) and addr["return_path"] == [sender] and sender in addr["recipients"]
     no_attack_signs = not (

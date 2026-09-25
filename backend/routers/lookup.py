@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -11,6 +10,7 @@ from pydantic import BaseModel
 from backend.aggregator import detect_indicator_type, run_lookup
 from backend.i18n import current_lang
 from backend.models import HistoryEntry, IndicatorType
+from backend.sse import sse
 from backend.storage import append_history
 
 router = APIRouter()
@@ -62,7 +62,7 @@ async def lookup_batch(req: BatchLookupRequest):
             indicator = indicator.strip()
             if not indicator:
                 continue
-            yield _sse({"type": "progress", "completed": i - 1, "total": total, "current": indicator})
+            yield sse({"type": "progress", "completed": i - 1, "total": total, "current": indicator})
             indicator_type = detect_indicator_type(indicator)
 
             wait_queue: asyncio.Queue[str] = asyncio.Queue()
@@ -76,16 +76,12 @@ async def lookup_batch(req: BatchLookupRequest):
             while not task.done():
                 try:
                     message = await asyncio.wait_for(wait_queue.get(), timeout=0.5)
-                    yield _sse({"type": "wait", "current": indicator, "message": message})
+                    yield sse({"type": "wait", "current": indicator, "message": message})
                 except TimeoutError:
                     continue
             result = await task
             _save_to_history(result)
-            yield _sse({"type": "result", "indicator": indicator, "result": result.model_dump()})
-        yield _sse({"type": "done"})
+            yield sse({"type": "result", "indicator": indicator, "result": result.model_dump()})
+        yield sse({"type": "done"})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-def _sse(data: dict) -> str:
-    return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"

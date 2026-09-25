@@ -11,7 +11,14 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
+from backend.email_parser import (
+    BODY_EXCERPT_LIMIT,
+    body_text_length,
+    extract_body_excerpt,
+    extract_relevant_headers,
+    parse_email,
+    parse_message,
+)
 from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
@@ -81,15 +88,16 @@ def _api_timestamp(value: str | None) -> str:
 
 @router.post("/email/analyze")
 async def analyze_email(req: EmailAnalyzeRequest):
-    facts = parse_email(req.raw_email)
-    body_chars = body_text_length(req.raw_email)
+    msg = parse_message(req.raw_email)
+    facts = parse_email(msg)
+    body_chars = body_text_length(msg)
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
         llm_analysis = await llm_analyzer.analyze_email(
             facts,
-            extract_relevant_headers(req.raw_email),
-            extract_body_excerpt(req.raw_email),
+            extract_relevant_headers(msg),
+            extract_body_excerpt(msg),
             current_lang(),
         )
 
@@ -104,7 +112,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
 
     return {
         "facts": facts,
-        "local_assessment": local_assessment(req.raw_email, facts),
+        "local_assessment": local_assessment(msg, facts),
         "categories": ABUSEIPDB_CATEGORIES,
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
@@ -112,6 +120,12 @@ async def analyze_email(req: EmailAnalyzeRequest):
         "llm_input": {"body_chars": body_chars, "body_limit": BODY_EXCERPT_LIMIT},
         "report_comment": report_comment,
     }
+
+
+@router.get("/categories")
+def categories():
+    """AbuseIPDB category table (id -> name), single source of truth for the frontend chips."""
+    return ABUSEIPDB_CATEGORIES
 
 
 @router.post("/report/preview")

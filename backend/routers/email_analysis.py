@@ -27,6 +27,7 @@ from backend.config import EMAIL_GUIDE_FILE, settings
 from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
 from backend.i18n import current_lang, t
 from backend.services.llm_analyzer import llm_analyzer
+from backend.sse import sse
 from backend.verdict import parse_verdict
 
 router = APIRouter()
@@ -63,6 +64,35 @@ def _system_prompt(lang: str) -> str:
     return SYSTEM_PREAMBLE.format(directive=_language_directive(lang)) + _guide()
 
 
+class _LlmRun:
+    """What one pass over the LLM stream produced (filled in by _relay)."""
+
+    def __init__(self) -> None:
+        self.chunks: list[str] = []
+        self.usage: dict | None = None
+        self.finish: str | None = None
+        self.failed = False
+
+
+async def _relay(stream, run: _LlmRun):
+    """Forwards the LLM events to the browser as SSE (deltas, warnings, errors) and records the rest in `run`."""
+    async for kind, payload in stream:
+        if kind == "delta":
+            payload = payload.replace(EM_DASH, "-")
+            run.chunks.append(payload)
+            yield sse({"type": "delta", "text": payload})
+        elif kind == "usage":
+            run.usage = payload
+        elif kind == "finish":
+            run.finish = payload
+        elif kind == "warning":
+            yield sse({"type": "warning", "message": payload})
+        elif kind == "error":
+            run.failed = True
+            yield sse({"type": "error", "message": payload, "phase": "llm"})
+            return
+
+
 class EmailAnalysisRequest(BaseModel):
     raw_email: str
 
@@ -72,10 +102,6 @@ def find_existing(req: EmailAnalysisRequest):
     """Was this message analysed before? Avoids paying a second time for the same source."""
     sha = source_hash(normalize_source(req.raw_email))
     return {"sha256": sha, "matches": find_by_source(sha)}
-
-
-def _sse(data: dict) -> str:
-    return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
 
 
 CONTINUE_INSTRUCTION = (
@@ -122,69 +148,53 @@ async def analyze(req: EmailAnalysisRequest):
     async def stream():
         src = normalize_source(req.raw_email)
         if not src.strip():
-            yield _sse({"type": "error", "message": t("email.empty_source")})
+            yield sse({"type": "error", "message": t("email.empty_source")})
             return
         if len(src) > MAX_SOURCE_CHARS:
-            yield _sse({"type": "error", "message": t("email.source_too_large", size=len(src), limit=MAX_SOURCE_CHARS)})
+            yield sse({"type": "error", "message": t("email.source_too_large", size=len(src), limit=MAX_SOURCE_CHARS)})
             return
 
         try:
             facts = compute_facts(src)
         except Exception as exc:  # the parser must not bring down the whole analysis
             logger.error(f"email: deterministic analysis failed: {type(exc).__name__}: {exc}")
-            yield _sse({"type": "error", "message": t("email.deterministic_failed", message=exc)})
+            yield sse({"type": "error", "message": t("email.deterministic_failed", message=exc)})
             return
 
         prepared, prep_notes = prepare_for_llm(src)
-        yield _sse({
+        yield sse({
             "type": "facts", "facts": facts, "prep_notes": prep_notes,
             "llm_configured": llm_analyzer.is_configured(),
         })
         if not llm_analyzer.is_configured():
-            yield _sse({"type": "done", "llm": False})
+            yield sse({"type": "done", "llm": False})
             return
 
         lang = current_lang()
         system_prompt = _system_prompt(lang)
-        chunks: list[str] = []
-        usage = None
-        failed = False
-        finish = None
-        async for kind, payload in llm_analyzer.stream_chat(system_prompt, _user_message(facts, prepared, prep_notes, lang)):
-            if kind == "delta":
-                payload = payload.replace(EM_DASH, "-")
-                chunks.append(payload)
-                yield _sse({"type": "delta", "text": payload})
-            elif kind == "usage":
-                usage = payload
-            elif kind == "finish":
-                finish = payload
-            elif kind == "warning":
-                yield _sse({"type": "warning", "message": payload})
-            elif kind == "error":
-                failed = True
-                yield _sse({"type": "error", "message": payload, "phase": "llm"})
-                break
-        if failed or not chunks:
+        run = _LlmRun()
+        async for line in _relay(llm_analyzer.stream_chat(system_prompt, _user_message(facts, prepared, prep_notes, lang)), run):
+            yield line
+        if run.failed or not run.chunks:
             return
 
-        markdown = "".join(chunks)
+        markdown = "".join(run.chunks)
         verdict, confidence = parse_verdict(markdown)
-        truncated = finish == "length"
+        truncated = run.finish == "length"
         citations = _citation_check(markdown, src, prepared, facts)
         analysis_id = None
         try:
             analysis_id = save_analysis({
                 "subject": facts["overview"]["subject"], "from": facts["overview"]["from"],
                 "verdict": verdict, "confidence": confidence,
-                "raw_email": src, "facts": facts, "markdown": markdown, "usage": usage,
+                "raw_email": src, "facts": facts, "markdown": markdown, "usage": run.usage,
                 "truncated": truncated, "model": settings.openrouter_model,
                 "source_sha256": source_hash(src), "citation_check": citations, "lang": lang,
             })
         except OSError as exc:
             logger.error(f"email: saving the analysis failed: {exc}")
-        yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id, "lang": lang,
-                    "verdict": verdict, "confidence": confidence, "usage": usage,
+        yield sse({"type": "done", "llm": True, "analysis_id": analysis_id, "lang": lang,
+                    "verdict": verdict, "confidence": confidence, "usage": run.usage,
                     "truncated": truncated, "model": settings.openrouter_model, "citation_check": citations})
 
     return StreamingResponse(stream(), media_type="text/event-stream")
@@ -219,40 +229,27 @@ async def continue_analysis(analysis_id: str):
 
     async def stream():
         prepared, prep_notes = prepare_for_llm(record["raw_email"])
-        chunks: list[str] = []
-        usage = None
-        finish = None
-        async for kind, payload in llm_analyzer.stream_chat(
+        run = _LlmRun()
+        continuation = llm_analyzer.stream_chat(
             _system_prompt(lang),
             _user_message(record["facts"], prepared, prep_notes, lang),
             partial=record["markdown"],
             continue_instruction=CONTINUE_INSTRUCTION.format(language=LANGUAGE_NAMES.get(lang, "English")),
-        ):
-            if kind == "delta":
-                payload = payload.replace(EM_DASH, "-")
-                chunks.append(payload)
-                yield _sse({"type": "delta", "text": payload})
-            elif kind == "usage":
-                usage = payload
-            elif kind == "finish":
-                finish = payload
-            elif kind == "warning":
-                yield _sse({"type": "warning", "message": payload})
-            elif kind == "error":
-                yield _sse({"type": "error", "message": payload, "phase": "llm"})
-                return
-        if not chunks:
+        )
+        async for line in _relay(continuation, run):
+            yield line
+        if run.failed or not run.chunks:
             return
-        markdown = record["markdown"] + "".join(chunks)
-        truncated = finish == "length"
-        total_usage = _sum_usage(record.get("usage"), usage)
+        markdown = record["markdown"] + "".join(run.chunks)
+        truncated = run.finish == "length"
+        total_usage = _sum_usage(record.get("usage"), run.usage)
         citations = _citation_check(markdown, record["raw_email"], prepared, record["facts"])
         try:
             update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage,
                                           "citation_check": citations})
         except OSError as exc:
             logger.error(f"email: saving the finished analysis failed: {exc}")
-        yield _sse({"type": "done", "llm": True, "analysis_id": analysis_id, "lang": lang, "verdict": record.get("verdict"),
+        yield sse({"type": "done", "llm": True, "analysis_id": analysis_id, "lang": lang, "verdict": record.get("verdict"),
                     "confidence": record.get("confidence"), "usage": total_usage, "truncated": truncated,
                     "model": record.get("model"), "citation_check": citations})
 

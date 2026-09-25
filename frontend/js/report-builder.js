@@ -3,7 +3,8 @@
 // Step 2: editable form (IP, categories, timestamp, comment); the hard checks are recomputed by the backend on every
 // change and again when sending, the local checklist is informational only.
 import { api } from "./api.js";
-import { t, tn, fmtSeconds, fmtDateTime, getLocale, registerDirtyCheck } from "./i18n.js";
+import { t, tn, fmtDateTime, registerDirtyCheck } from "./i18n.js";
+import { createTimer, elapsedSeconds, escapeHtml, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
 
 let root;
 let categoriesMap = {};
@@ -11,54 +12,20 @@ let checksDebounce = null;
 let lastChecks = null;
 let lastFacts = null;
 let lastLlmAnalysis = null;
-let timerInterval = null;
-let timerStart = null;
 let cooldownLeft = 0;
 let infoIp = null;
 
-function formatElapsed(ms) {
-  return t("rb.analysis_time", { time: fmtSeconds(ms) });
-}
-
-function startTimer() {
-  timerStart = performance.now();
-  const el = root.querySelector("#rb-timer");
-  el.textContent = formatElapsed(0);
-  clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    el.textContent = formatElapsed(performance.now() - timerStart);
-  }, 100);
-}
-
-function stopTimer() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  root.querySelector("#rb-timer").textContent = formatElapsed(performance.now() - timerStart);
-}
-
-function usageText(usage) {
-  if (!usage || usage.prompt_tokens == null) return "";
-  const parts = [t("common.tokens", { input: usage.prompt_tokens, output: usage.completion_tokens })];
-  if (typeof usage.cost === "number") parts.push(t("common.cost", { cost: usage.cost.toFixed(3) }));
-  return parts.join(", ");
-}
+const timer = createTimer(() => root.querySelector("#rb-timer"), elapsedSeconds("rb.analysis_time"));
+const startTimer = () => timer.start();
+const stopTimer = () => timer.stop();
 
 async function loadFile(file) {
-  const buf = await file.arrayBuffer();
-  let text;
-  try {
-    text = new TextDecoder("utf-8", { fatal: true }).decode(buf);
-  } catch {
-    text = new TextDecoder("windows-1252").decode(buf);
-  }
-  // BOM and line endings (the mbox envelope and the rest of the normalisation happen server-side)
-  text = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   const textarea = root.querySelector("#rb-email");
-  textarea.value = text;
+  textarea.value = await readEmlFile(file);
   textarea.scrollTop = 0;
   root.querySelector("#rb-timer").textContent = "";
   root.querySelector("#rb-usage").textContent = "";
-  root.querySelector("#rb-status").textContent = t("common.file_loaded", { name: file.name, size: (file.size / 1024).toLocaleString(getLocale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
+  root.querySelector("#rb-status").textContent = fileLoadedText(file);
 }
 
 export function initReportBuilder(container) {
@@ -149,28 +116,28 @@ export function prefillReportEmail(rawEmail) {
   root.querySelector("#rb-email").scrollTop = 0;
 }
 
-export function prefillReport(ip) {
+export async function prefillReport(ip) {
   if (!root) return;
   // Data from a previously analysed e-mail does not apply to an IP handed over from another tab.
   lastFacts = null;
   lastLlmAnalysis = null;
   root.querySelector("#rb-form").style.display = "block";
-  ensureCategoriesRendered();
+  await ensureCategoriesRendered();
   root.querySelector("#rb-ip").value = ip;
   renderChecklist(baselineChecklist());
   scheduleChecks();
 }
 
-function ensureCategoriesRendered() {
+// The category table lives in the backend (ABUSEIPDB_CATEGORIES); the analysis response carries it too, this is for the
+// entry from the IP/DMARC tabs where no analysis has run yet.
+async function ensureCategoriesRendered() {
   if (Object.keys(categoriesMap).length) return;
-  categoriesMap = {
-    1: "DNS Compromise", 2: "DNS Poisoning", 3: "Fraud Orders", 4: "DDoS Attack",
-    5: "FTP Brute-Force", 6: "Ping of Death", 7: "Phishing", 8: "Fraud VoIP",
-    9: "Open Proxy", 10: "Web Spam", 11: "Email Spam", 12: "Blog Spam",
-    13: "VPN IP", 14: "Port Scan", 15: "Hacking", 16: "SQL Injection",
-    17: "Spoofing", 18: "Brute-Force", 19: "Bad Web Bot", 20: "Exploited Host",
-    21: "Web App Attack", 22: "SSH", 23: "IoT Targeted",
-  };
+  try {
+    categoriesMap = await api.categories();
+  } catch (err) {
+    root.querySelector("#rb-analysis").innerHTML = `<div class="banner warn">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
+    return;
+  }
   renderCategoryChips([]);
 }
 
@@ -189,10 +156,6 @@ function renderCategoryChips(selected) {
 
 function selectedCategories() {
   return Array.from(root.querySelectorAll("#rb-categories .chip.on")).map((c) => Number(c.dataset.id));
-}
-
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
 function renderAttachmentsList(facts) {
@@ -257,7 +220,7 @@ async function analyze(useLlm) {
   }
 
   stopTimer();
-  usageEl.textContent = usageText(data.usage);
+  usageEl.textContent = formatUsage(data.usage);
   categoriesMap = data.categories;
   const facts = data.facts;
   lastFacts = facts;

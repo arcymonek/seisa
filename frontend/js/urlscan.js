@@ -1,6 +1,7 @@
 import { api } from "./api.js";
 import { renderMarkdown } from "./markdown-render.js";
-import { t, fmtSeconds } from "./i18n.js";
+import { t } from "./i18n.js";
+import { elapsedSeconds, escapeHtml } from "./util.js";
 
 const FIRST_POLL_DELAY_MS = 12000;
 const POLL_INTERVAL_MS = 5000;
@@ -11,13 +12,7 @@ let pollTimer = null;
 let elapsedTimer = null;
 let pollStarted = null;
 
-function escapeHtml(str) {
-  return String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function formatElapsed(ms) {
-  return t("urlscan.seconds", { time: fmtSeconds(ms) });
-}
+const formatElapsed = elapsedSeconds("urlscan.seconds");
 
 export function initUrlscan(container) {
   root = container;

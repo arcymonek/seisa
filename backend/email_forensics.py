@@ -22,7 +22,7 @@ from email.utils import parseaddr, parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
 
-from backend.email_parser import _parse_received_header
+from backend.email_parser import parse_received_header
 from backend.i18n import t
 
 MAX_LLM_SOURCE_CHARS = 120_000
@@ -588,72 +588,84 @@ def decoded_text_parts(src: str) -> str:
         return ""
 
 
-def compute_facts(src: str) -> dict:
-    msg = message_from_string(src)
-    headers = [(n, _unfold(v)) for n, v in msg.items()]
-    lower_names = [n.lower() for n, _ in headers]
-    flags: list[dict] = []  # {"level": "warn"|"info", "text": ...}
+class _Ctx:
+    """State shared by the sections of compute_facts: the parsed message, the unfolded headers and the findings.
 
-    def flag(level: str, text: str) -> None:
-        flags.append({"level": level, "text": text})
+    The sections run in a fixed order and `flags` keeps the order in which findings were raised - that order is part
+    of the output (the scripts/dump_facts.py golden files compare it byte for byte)."""
 
-    def first(name: str) -> str | None:
-        for n, v in headers:
+    def __init__(self, src: str) -> None:
+        self.src = src
+        self.msg = message_from_string(src)
+        self.headers = [(n, _unfold(v)) for n, v in self.msg.items()]
+        self.lower_names = [n.lower() for n, _ in self.headers]
+        self.flags: list[dict] = []  # {"level": "warn"|"info", "text": ...}
+        self.date_dt = _parse_date(self.first("date"))
+
+    def flag(self, level: str, text: str) -> None:
+        self.flags.append({"level": level, "text": text})
+
+    def first(self, name: str) -> str | None:
+        for n, v in self.headers:
             if n.lower() == name:
                 return v
         return None
 
-    def all_of(name: str) -> list[str]:
-        return [v for n, v in headers if n.lower() == name]
+    def all_of(self, name: str) -> list[str]:
+        return [v for n, v in self.headers if n.lower() == name]
 
-    date_dt = _parse_date(first("date"))
 
-    # --- overview ---
-    subject_raw = first("subject") or ""
-    overview = {
+def _overview(ctx: _Ctx) -> dict:
+    subject_raw = ctx.first("subject") or ""
+    return {
         "subject": _decode_words(subject_raw)[:300],
-        "from": _decode_words(first("from") or "")[:300],
-        "to": _decode_words(first("to") or "")[:300],
-        "date": first("date"),
-        "date_utc": _fmt_utc(date_dt),
-        "message_id": first("message-id"),
-        "header_count": len(headers),
-        "received_count": lower_names.count("received"),
-        "source_chars": len(src),
+        "from": _decode_words(ctx.first("from") or "")[:300],
+        "to": _decode_words(ctx.first("to") or "")[:300],
+        "date": ctx.first("date"),
+        "date_utc": _fmt_utc(ctx.date_dt),
+        "message_id": ctx.first("message-id"),
+        "header_count": len(ctx.headers),
+        "received_count": ctx.lower_names.count("received"),
+        "source_chars": len(ctx.src),
     }
 
-    # --- headers: duplicates, letter case, encoding ---
+
+def _header_hygiene(ctx: _Ctx) -> tuple[list, dict, list, list[str]]:
+    """Duplicated single-instance headers, letter-case variants, encoded words, template placeholders in headers."""
     dup = []
     for name in SINGLE_INSTANCE_HEADERS:
-        vals = all_of(name)
+        vals = ctx.all_of(name)
         if len(vals) > 1:
             dup.append({"name": name, "count": len(vals), "values": [v[:80] for v in vals]})
-            flag("warn", t("forensics.flag.duplicate", name=name, n=len(vals)) + (
+            ctx.flag("warn", t("forensics.flag.duplicate", name=name, n=len(vals)) + (
                 t("forensics.flag.duplicate_differ") if len(set(vals)) > 1 else "."))
     casings: dict[str, set[str]] = {}
-    for n, _ in headers:
+    for n, _ in ctx.headers:
         casings.setdefault(n.lower(), set()).add(n)
     casing_variants = {k: sorted(v) for k, v in casings.items() if len(v) > 1}
 
     encoded_words, non_ascii = [], []
-    for n, v in headers:
+    for n, v in ctx.headers:
         if "=?" in v and re.search(r"=\?[\w-]+\?[bBqQ]\?", v):
             encoded_words.append({"header": n, "raw": v[:160], "decoded": _decode_words(v)[:160]})
         elif not v.isascii():
             non_ascii.append(n)
     if non_ascii:
-        flag("info", t("forensics.flag.non_ascii", headers=", ".join(sorted(set(non_ascii))[:6])))
+        ctx.flag("info", t("forensics.flag.non_ascii", headers=", ".join(sorted(set(non_ascii))[:6])))
 
     placeholders: list[str] = []
-    head_blob = "\n".join(f"{n}: {v}" for n, v in headers)
+    head_blob = "\n".join(f"{n}: {v}" for n, v in ctx.headers)
     for rx in PLACEHOLDER_RES:
         placeholders += [m.group(0) for m in rx.finditer(head_blob)][:3]
+    return dup, casing_variants, encoded_words, placeholders
 
-    # --- Received ---
+
+def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
+    """The Received chain with per-hop findings and, when one operator wrote all of it, the trust boundary."""
     received = []
-    recv_raw = all_of("received")
+    recv_raw = ctx.all_of("received")
     for idx, raw in enumerate(recv_raw):
-        hop = _parse_received_header(raw)
+        hop = parse_received_header(raw)
         ts = None
         if ";" in raw:
             ts = _parse_date(raw.rsplit(";", 1)[1])
@@ -668,7 +680,7 @@ def compute_facts(src: str) -> dict:
         m_tz = re.search(r"([+-]\d{4})\s*\((\w+)\)\s*$", raw.strip())
         if m_tz and m_tz.group(2).upper() in TZ_ABBR and TZ_ABBR[m_tz.group(2).upper()] != int(m_tz.group(1)):
             hop_flags.append(t("forensics.hop.tz_mismatch", offset=m_tz.group(1), name=m_tz.group(2)))
-        if ts and date_dt and ts == date_dt and idx == len(recv_raw) - 1 and len(recv_raw) > 1:
+        if ts and ctx.date_dt and ts == ctx.date_dt and idx == len(recv_raw) - 1 and len(recv_raw) > 1:
             same_time = t("forensics.hop.same_time_as_date")
             hop_flags.append(same_time)
             info_hop_flags.add(same_time)
@@ -685,7 +697,7 @@ def compute_facts(src: str) -> dict:
         for f in hop_flags:
             # with direct acceptance by a large operator an identical time is normal - information only
             level = "info" if f in info_hop_flags else "warn"
-            flag(level, t("forensics.flag.hop", idx=idx, text=f))
+            ctx.flag(level, t("forensics.flag.hop", idx=idx, text=f))
     single_operator = None
     trust_note = None
     trust_index = 0
@@ -702,20 +714,23 @@ def compute_facts(src: str) -> dict:
                     else t("forensics.role.internal_hop")
                 )
             trust_note = t("forensics.trust_note", operator=single_operator, index=trust_index)
-            flag("info", trust_note)
+            ctx.flag("info", trust_note)
         else:
             received[0]["role"] = t("forensics.role.top")
             for r in received[1:]:
                 r["role"] = t("forensics.role.below")
+    return received, single_operator, trust_note
 
-    # --- authentication ---
+
+def _authentication(ctx: _Ctx, received: list[dict]) -> list[dict]:
+    """Authentication-Results, ARC-Authentication-Results and Received-SPF headers as structured entries."""
     top_by_domains = set()  # operator families that wrote Received on the recipient's side
     for r in received:
         d = family(registrable_domain((r["by_host"] or "").strip("[]")))
         if d:
             top_by_domains.add(d)
     auth = []
-    for n, v in headers:
+    for n, v in ctx.headers:
         ln = n.lower()
         if ln not in ("authentication-results", "arc-authentication-results", "received-spf"):
             continue
@@ -739,10 +754,12 @@ def compute_facts(src: str) -> dict:
             for m in re.finditer(r"\b(smtp\.mailfrom|smtp\.helo|header\.from|header\.d|header\.i|header\.s)\s*=\s*([^\s;]+)", body, re.IGNORECASE):
                 entry["details"].setdefault(m.group(1).lower(), m.group(2))
         auth.append(entry)
+    return auth
 
-    # --- DKIM / ARC ---
+
+def _dkim_arc(ctx: _Ctx) -> tuple[list[dict], list[dict]]:
     dkim = []
-    for v in all_of("dkim-signature"):
+    for v in ctx.all_of("dkim-signature"):
         tags = _tags(v)
         signed = [h.strip().lower() for h in tags.get("h", "").split(":") if h.strip()]
         bh = tags.get("bh", "")
@@ -754,17 +771,20 @@ def compute_facts(src: str) -> dict:
             "legacy_sha1": (tags.get("a") or "").lower().endswith("sha1"),
         })
         if (tags.get("a") or "").lower().endswith("sha1"):
-            flag("warn", t("forensics.flag.dkim_sha1", d=tags.get("d"), a=tags.get("a")))
-    if "domainkey-signature" in lower_names:
-        flag("warn", t("forensics.flag.domainkey"))
+            ctx.flag("warn", t("forensics.flag.dkim_sha1", d=tags.get("d"), a=tags.get("a")))
+    if "domainkey-signature" in ctx.lower_names:
+        ctx.flag("warn", t("forensics.flag.domainkey"))
     arc = []
-    for n, v in headers:
+    for n, v in ctx.headers:
         if n.lower() == "arc-seal":
             tags = _tags(v)
             arc.append({"i": tags.get("i"), "d": tags.get("d"), "s": tags.get("s"), "cv": tags.get("cv"), "t": tags.get("t")})
+    return dkim, arc
 
-    # --- identity and domain alignment ---
-    from_addr, from_dom = _addr_domain(first("from"))
+
+def _identity(ctx: _Ctx, dkim: list[dict], auth: list[dict]) -> tuple[list[dict], str, list[str]]:
+    """Identity fields and their domain alignment relative to From; also returns the List-Unsubscribe data."""
+    from_addr, from_dom = _addr_domain(ctx.first("from"))
     from_reg = registrable_domain(from_dom)
     identity_rows = []
 
@@ -776,13 +796,13 @@ def compute_facts(src: str) -> dict:
         identity_rows.append({"field": field, "value": (value or "")[:120], "domain": domain, "aligned": aligned})
 
     add_identity("From", from_addr, from_dom)
-    rt = first("reply-to")
+    rt = ctx.first("reply-to")
     if rt:
         add_identity("Reply-To", *_addr_domain(rt))
-    add_identity("Return-Path", *_addr_domain(first("return-path")))
-    if first("sender"):
-        add_identity("Sender", *_addr_domain(first("sender")))
-    mid = first("message-id")
+    add_identity("Return-Path", *_addr_domain(ctx.first("return-path")))
+    if ctx.first("sender"):
+        add_identity("Sender", *_addr_domain(ctx.first("sender")))
+    mid = ctx.first("message-id")
     if mid and "@" in mid:
         add_identity("Message-ID", mid, mid.rsplit("@", 1)[1].strip("> ").lower())
     for d in dkim:
@@ -791,7 +811,7 @@ def compute_facts(src: str) -> dict:
         mf = a["details"].get("smtp.mailfrom")
         if mf:
             add_identity(f"{a['header']} smtp.mailfrom", mf, mf.rsplit("@", 1)[-1].lower())
-    unsub_hdr = first("list-unsubscribe") or ""
+    unsub_hdr = ctx.first("list-unsubscribe") or ""
     unsub_urls = re.findall(r"<([^>]+)>", unsub_hdr)
     for u in unsub_urls[:3]:
         if re.match(r"(?i)https?://", u):
@@ -802,18 +822,20 @@ def compute_facts(src: str) -> dict:
         add_identity("List-Unsubscribe", u[:100], host)
     misaligned = [r for r in identity_rows if r["aligned"] is False and r["field"] != "Message-ID"]
     if misaligned and from_reg:
-        flag("warn", t("forensics.flag.misaligned", domain=from_reg, list=", ".join(sorted({f"{r['field']}={r['domain']}" for r in misaligned})[:6])))
+        ctx.flag("warn", t("forensics.flag.misaligned", domain=from_reg, list=", ".join(sorted({f"{r['field']}={r['domain']}" for r in misaligned})[:6])))
     if rt and _addr_domain(rt)[1] and registrable_domain(_addr_domain(rt)[1]) != from_reg:
-        flag("warn", t("forensics.flag.reply_to"))
+        ctx.flag("warn", t("forensics.flag.reply_to"))
     for dom in [from_dom] + [r["domain"] for r in identity_rows if r["domain"]]:
         if dom and (dom.startswith("xn--") or ".xn--" in dom or not dom.isascii()):
-            flag("warn", t("forensics.flag.punycode", domain=dom))
+            ctx.flag("warn", t("forensics.flag.punycode", domain=dom))
             break
+    return identity_rows, unsub_hdr, unsub_urls
 
-    # --- timeline ---
+
+def _timeline(ctx: _Ctx, received: list[dict]) -> list[dict]:
     timeline = []
-    if date_dt:
-        timeline.append({"event": t("forensics.date_declared"), "raw": first("date"), "_ts": date_dt})
+    if ctx.date_dt:
+        timeline.append({"event": t("forensics.date_declared"), "raw": ctx.first("date"), "_ts": ctx.date_dt})
     for r in reversed(received):
         if r["_ts"]:
             label = f"Received #{r['index']} ({r['by_host'] or '?'})"
@@ -823,18 +845,22 @@ def compute_facts(src: str) -> dict:
         row["utc"] = _fmt_utc(row["_ts"])
         row["delta_s"] = int((row["_ts"] - prev).total_seconds()) if prev else None
         prev = row["_ts"]
-    if date_dt and received and received[0]["_ts"]:
-        total = int((received[0]["_ts"] - date_dt).total_seconds())
+    if ctx.date_dt and received and received[0]["_ts"]:
+        total = int((received[0]["_ts"] - ctx.date_dt).total_seconds())
         if total > 3600:
-            flag("warn", t("forensics.flag.delay", h=total // 3600, m=(total % 3600) // 60))
+            ctx.flag("warn", t("forensics.flag.delay", h=total // 3600, m=(total % 3600) // 60))
         elif total < -300:
-            flag("warn", t("forensics.flag.future_date"))
+            ctx.flag("warn", t("forensics.flag.future_date"))
     for r in received:
         r.pop("_ts", None)
     for row in timeline:
         row.pop("_ts", None)
+    return timeline
 
-    # --- epoch ---
+
+def _epochs(ctx: _Ctx) -> list[dict]:
+    """Unix timestamps found in the Message-ID and in signature headers, converted to UTC."""
+    mid = ctx.first("message-id")
     epochs = []
 
     def epoch_add(where: str, num: str) -> None:
@@ -844,25 +870,28 @@ def compute_facts(src: str) -> dict:
             return
         dt = datetime.fromtimestamp(secs, tz=timezone.utc)
         epochs.append({"where": where, "value": num, "utc": _fmt_utc(dt),
-                       "diff_vs_date_s": int((dt - date_dt).total_seconds()) if date_dt else None,
+                       "diff_vs_date_s": int((dt - ctx.date_dt).total_seconds()) if ctx.date_dt else None,
                        "unit": "ms" if len(num) == 13 else "s"})
 
     if mid:
         for num in re.findall(r"(?<!\d)(\d{13})(?!\d)", mid):
             epoch_add("Message-ID", num)
-    for n, v in headers:
+    for n, v in ctx.headers:
         if n.lower() in ("arc-seal", "arc-message-signature", "dkim-signature"):
             m = re.search(r"(?:^|;)\s*t\s*=\s*(\d{10})\b", v)
             if m:
                 epoch_add(n, m.group(1))
+    return epochs
 
-    # --- MIME and body ---
+
+def _mime_and_body(ctx: _Ctx, placeholders: list[str]) -> tuple[list[dict], list[dict], dict | None, list[str], list[str]]:
+    """MIME tree, attachments, HTML audit, plain-text URLs and the template placeholders of headers plus body."""
     mime_rows: list[dict] = []
     mime_flag_texts: list[str] = []
     leaves: list[Message] = []
-    _walk_mime(msg, 0, mime_rows, mime_flag_texts, leaves)
+    _walk_mime(ctx.msg, 0, mime_rows, mime_flag_texts, leaves)
     for text in mime_flag_texts:
-        flag("warn", text)
+        ctx.flag("warn", text)
 
     attachments = []
     html_parts, text_parts = [], []
@@ -883,16 +912,16 @@ def compute_facts(src: str) -> dict:
                 "extension": ext, "double_extension_as": apparent, "risky_extension": ext in RISKY_EXTENSIONS,
             })
             if apparent:
-                flag("warn", t("forensics.flag.att_double_ext", name=fname[:60], apparent=apparent, ext=ext))
+                ctx.flag("warn", t("forensics.flag.att_double_ext", name=fname[:60], apparent=apparent, ext=ext))
             elif ext in RISKY_EXTENSIONS:
-                flag("warn", t("forensics.flag.att_risky", name=fname[:60], ext=ext))
+                ctx.flag("warn", t("forensics.flag.att_risky", name=fname[:60], ext=ext))
             continue
         if ctype == "text/html":
             html_parts.append(_leaf_text(leaf))
         elif ctype == "text/plain":
             text_parts.append(_leaf_text(leaf))
     if html_parts and not text_parts:
-        flag("info", t("forensics.flag.no_plain"))
+        ctx.flag("info", t("forensics.flag.no_plain"))
 
     html_audit = _audit_html("\n".join(html_parts)) if html_parts else None
     body_blob = "\n".join(text_parts + html_parts)
@@ -900,29 +929,33 @@ def compute_facts(src: str) -> dict:
         placeholders += [m.group(0) for m in rx.finditer(body_blob)][:3]
     placeholders = list(dict.fromkeys(placeholders))[:8]
     if placeholders:
-        flag("warn", t("forensics.flag.placeholders", list=", ".join(f"`{p[:30]}`" for p in placeholders[:5])))
+        ctx.flag("warn", t("forensics.flag.placeholders", list=", ".join(f"`{p[:30]}`" for p in placeholders[:5])))
 
     urls_plain = list(dict.fromkeys(re.findall(r"https?://[^\s<>\"')]+", "\n".join(text_parts))))[:15]
+    return mime_rows, attachments, html_audit, urls_plain, placeholders
 
+
+def _html_flags(ctx: _Ctx, html_audit: dict | None) -> None:
+    """Findings about hidden content, forms, scripts, tracking pixels and links of the HTML part."""
     if html_audit:
         h = html_audit
         if h["hidden"]:
             techs = sorted({tech for rec in h["hidden"] for tech in rec["techniques"]})
-            flag("warn", t("forensics.flag.hidden", n=len(h["hidden"]), chars=h["hidden_text_total"], techniques=", ".join(techs)))
+            ctx.flag("warn", t("forensics.flag.hidden", n=len(h["hidden"]), chars=h["hidden_text_total"], techniques=", ".join(techs)))
         if h["comment_chars"] > 500:
-            flag("warn", t("forensics.flag.big_comment", chars=h["comment_chars"], count=h["comment_count"]))
+            ctx.flag("warn", t("forensics.flag.big_comment", chars=h["comment_chars"], count=h["comment_count"]))
         if h["mixed_case_tags"]:
-            flag("warn", t("forensics.flag.mixed_case", list=", ".join(f"`{tag}`" for tag in h["mixed_case_tags"][:4])))
+            ctx.flag("warn", t("forensics.flag.mixed_case", list=", ".join(f"`{tag}`" for tag in h["mixed_case_tags"][:4])))
         if h["unknown_tag_count"] >= 5:
-            flag("warn", t("forensics.flag.unknown_tags", n=h["unknown_tag_count"], list=", ".join(f"`{tag}`" for tag in h["unknown_tags"][:3])))
+            ctx.flag("warn", t("forensics.flag.unknown_tags", n=h["unknown_tag_count"], list=", ".join(f"`{tag}`" for tag in h["unknown_tags"][:3])))
         if h["wrapped_anchor"]:
-            flag("warn", t("forensics.flag.wrapped_anchor"))
+            ctx.flag("warn", t("forensics.flag.wrapped_anchor"))
         for kind, cnt in ((t("forensics.kind.form"), h["forms"]), (t("forensics.kind.script"), h["scripts"]), ("iframe", h["iframes"]), ("object/embed", h["objects"])):
             if cnt:
-                flag("warn", t("forensics.flag.contains", kind=kind, n=cnt))
+                ctx.flag("warn", t("forensics.flag.contains", kind=kind, n=cnt))
         tracking = [i for i in h["images"] if i["tracking_hint"]]
         if tracking:
-            flag("info", t("forensics.flag.tracking", n=len(tracking)))
+            ctx.flag("info", t("forensics.flag.tracking", n=len(tracking)))
         # Identical findings for repeated links (mailers repeat the same link many times) are reported once with a count.
         link_findings: dict[tuple[str, str], int] = {}
         for link in h["links"]:
@@ -938,40 +971,56 @@ def compute_facts(src: str) -> dict:
             for key in found:
                 link_findings[key] = link_findings.get(key, 0) + 1
         for (level, text), count in link_findings.items():
-            flag(level, text if count == 1 else text.rstrip(".") + " " + t("forensics.flag.times", n=count) + ".")
+            ctx.flag(level, text if count == 1 else text.rstrip(".") + " " + t("forensics.flag.times", n=count) + ".")
         if any(link["query_params"] >= 4 for link in h["links"]):
-            flag("info", t("forensics.flag.link_params"))
+            ctx.flag("info", t("forensics.flag.link_params"))
 
-    if unsub_hdr and not first("list-unsubscribe-post"):
-        flag("info", t("forensics.flag.unsub"))
 
-    filters = _extract_filters(headers, flag)
-
-    # --- IP ---
+def _ips(ctx: _Ctx, received: list[dict]) -> list[dict]:
     ips = []
     for r in received:
         if r["ip"]:
             ips.append({"ip": r["ip"], "where": f"Received #{r['index']}"})
     for name in ("x-originating-ip", "x-sender-ip"):
-        v = first(name)
+        v = ctx.first(name)
         if v:
             ips.append({"ip": v.strip("[] ")[:45], "where": name})
-    if first("x-originating-ip"):
-        flag("info", t("forensics.flag.x_originating"))
+    if ctx.first("x-originating-ip"):
+        ctx.flag("info", t("forensics.flag.x_originating"))
 
-    # headers with names used by the recipient/provider that sit BELOW all the Received headers
+    # ctx.headers with names used by the recipient/provider that sit BELOW all the Received ctx.headers
     if len(received) > 1:
-        last_recv_idx = max(i for i, (n, _) in enumerate(headers) if n.lower() == "received")
+        last_recv_idx = max(i for i, (n, _) in enumerate(ctx.headers) if n.lower() == "received")
         below = {
-            n for n, _ in headers[last_recv_idx + 1:]
+            n for n, _ in ctx.headers[last_recv_idx + 1:]
             if n.lower().startswith(("x-google-", "x-original-sender", "envelope-to", "x-gm-", "delivered-to"))
         }
         if below:
-            flag("warn", t("forensics.flag.below_received", list=", ".join(sorted(below)[:6])))
+            ctx.flag("warn", t("forensics.flag.below_received", list=", ".join(sorted(below)[:6])))
+    return ips
+
+
+def compute_facts(src: str) -> dict:
+    """Deterministic analysis of an e-mail source; the sections below are called in a fixed order (see _Ctx)."""
+    ctx = _Ctx(src)
+    overview = _overview(ctx)
+    dup, casing_variants, encoded_words, placeholders = _header_hygiene(ctx)
+    received, single_operator, trust_note = _received_hops(ctx)
+    auth = _authentication(ctx, received)
+    dkim, arc = _dkim_arc(ctx)
+    identity_rows, unsub_hdr, unsub_urls = _identity(ctx, dkim, auth)
+    timeline = _timeline(ctx, received)
+    epochs = _epochs(ctx)
+    mime_rows, attachments, html_audit, urls_plain, placeholders = _mime_and_body(ctx, placeholders)
+    _html_flags(ctx, html_audit)
+    if unsub_hdr and not ctx.first("list-unsubscribe-post"):
+        ctx.flag("info", t("forensics.flag.unsub"))
+    filters = _extract_filters(ctx.headers, ctx.flag)
+    ips = _ips(ctx, received)
 
     return {
         "overview": overview,
-        "flags": flags,
+        "flags": ctx.flags,
         "received": received,
         "trust_note": trust_note,
         "single_operator": single_operator,
@@ -990,6 +1039,6 @@ def compute_facts(src: str) -> dict:
         "attachments": attachments,
         "html": html_audit,
         "urls_plain": urls_plain,
-        "list_unsubscribe": {"urls": [u[:200] for u in unsub_urls[:5]], "one_click": bool(first("list-unsubscribe-post"))},
+        "list_unsubscribe": {"urls": [u[:200] for u in unsub_urls[:5]], "one_click": bool(ctx.first("list-unsubscribe-post"))},
         "ips": ips,
     }

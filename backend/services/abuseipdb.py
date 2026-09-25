@@ -6,7 +6,7 @@ from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
 from backend.report_builder import ABUSEIPDB_CATEGORIES
-from backend.services.base import IntelService
+from backend.services.base import IntelService, http_error_text
 
 BASE_URL = "https://api.abuseipdb.com/api/v2"
 
@@ -77,6 +77,6 @@ class AbuseIpdbService(IntelService):
         try:
             resp.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            self.logger.error(f"report rejected: HTTP {exc.response.status_code}: {exc.response.text[:300]}")
+            self.logger.error(f"report rejected: {http_error_text(exc)}")
             raise
         return resp.json()
