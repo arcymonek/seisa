@@ -5,7 +5,7 @@ from email.message import Message
 
 from backend.email_parser import extract_addresses
 from backend.i18n import t
-from backend.report_utils import AGE_LIMIT_DAYS, attack_age, is_reportable_ip, sanitize_comment, truncate_chars
+from backend.report_utils import AGE_LIMIT_DAYS, MAX_CATEGORIES, attack_age, is_reportable_ip, sanitize_comment, truncate_chars
 
 ABUSEIPDB_CATEGORIES = {
     1: "DNS Compromise",
@@ -111,7 +111,7 @@ def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list
         except ValueError:
             age_reason = t("report.age_bad_format")
 
-    category_ok = bool(categories) and all(c in ABUSEIPDB_CATEGORIES for c in categories)
+    category_ok = bool(categories) and all(c in ABUSEIPDB_CATEGORIES for c in categories) and len(set(categories)) <= MAX_CATEGORIES
 
     return {
         "ip_ok": ip_ok,

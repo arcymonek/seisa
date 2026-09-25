@@ -64,6 +64,8 @@ socket.socket.connect = _no_connect
 socket.create_connection = _no_connect
 socket.gethostbyaddr = lambda ip: (f"rdns-{ip.replace('.', '-')}.example", [], [ip])
 
+import urllib.parse  # noqa: E402
+
 import httpx  # noqa: E402
 
 XSS = '<img src=x onerror="window.__xss=1">'
@@ -71,6 +73,18 @@ CALLS: list[str] = []
 SCANS: list[dict] = []
 SEARCHES: list[str] = []
 UNHANDLED: list[str] = []
+REPORT_POSTS: list[dict] = []  # what the mocked AbuseIPDB /report received: form fields and the headers that matter
+
+# Mocked AbuseIPDB /report answers by the last octet of the address (the documented shapes: https://docs.abuseipdb.com)
+_RATE = {"X-RateLimit-Limit": "1000", "X-RateLimit-Remaining": "998"}
+_REPORT_ERRORS = {
+    20: (422, {"errors": [{"detail": "The categories field is required.", "status": 422, "source": {"parameter": "categories"}}]}, _RATE),
+    21: (429, {"errors": [{"detail": "Daily rate limit of 1000 requests exceeded for this endpoint. See headers to determine when you can try again.", "status": 429}]},
+         {"X-RateLimit-Limit": "1000", "X-RateLimit-Remaining": "0", "Retry-After": "3600", "X-RateLimit-Reset": "1893456000"}),
+    22: (429, {"errors": [{"detail": "You can only report the same IP address (`185.220.101.22`) once in 15 minutes.", "status": 429}]}, {"X-RateLimit-Limit": "1000", "X-RateLimit-Remaining": "997"}),
+    23: (401, {"errors": [{"detail": "Authentication failed. Your API key is either missing, incorrect, or revoked.", "status": 401}]}, {}),
+    24: (500, None, {}),
+}
 
 
 def _sse(chunks, finish, usage):
@@ -100,7 +114,14 @@ def handler(request: httpx.Request) -> httpx.Response:
             "reports": [{"reportedAt": "2026-09-20T10:00:00+00:00", "comment": "spam " + XSS,
                          "categories": [11, 99], "reporterId": 1, "reporterCountryName": "Poland"}]}})
     if host == "api.abuseipdb.com" and path.endswith("/report"):
-        return httpx.Response(200, json={"data": {"ipAddress": "x", "abuseConfidenceScore": 43}})
+        form = {k: v[0] for k, v in urllib.parse.parse_qs(request.content.decode()).items()}
+        REPORT_POSTS.append({"form": form, "key": request.headers.get("Key"), "accept": request.headers.get("Accept"),
+                             "content_type": request.headers.get("Content-Type", "")})
+        error = _REPORT_ERRORS.get(int(form["ip"].rsplit(".", 1)[-1])) if form.get("ip", "").startswith("185.220.101.") else None
+        if error:
+            status, body, headers = error
+            return httpx.Response(status, json=body, headers=headers) if body else httpx.Response(status, text="<html>Bad gateway</html>")
+        return httpx.Response(200, json={"data": {"ipAddress": form["ip"], "abuseConfidenceScore": 43}}, headers=_RATE)
     if host == "www.virustotal.com":
         return httpx.Response(200, json={"data": {"attributes": {
             "last_analysis_stats": {"malicious": 3, "suspicious": 1, "harmless": 60, "undetected": 20},
@@ -308,6 +329,25 @@ for lang in ("pl", "en"):
     ip_lang = PUBLIC_IP if lang == "pl" else "185.220.101.2"
     rec(p + "report submit ok", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": ip_lang}, headers=H))
     rec(p + "report submit cooldown", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": ip_lang}, headers=H))
+    # the API's own answers (quota, repeat rule, refused data, key, outage) become distinct, readable errors
+    rec(p + "report submit 422", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.20"}, headers=H))
+    rec(p + "report submit daily limit", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.21"}, headers=H))
+    rec(p + "report submit repeat at api", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.22"}, headers=H))
+    rec(p + "report submit bad key", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.23"}, headers=H))
+    rec(p + "report submit outage", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.24"}, headers=H))
+    # what goes over the wire: duplicated categories collapse, the comment is ASCII and at most 1024 characters
+    rec(p + "report submit wire", client.post("/api/abuseipdb/report/submit", json={
+        "ip": "185.220.101.3" + ("0" if lang == "pl" else "1"), "categories": [11, 11, 7], "attack_timestamp": "2026-09-24T10:00:00+02:00",
+        "comment": "za\u017c\u00f3\u0142\u0107 " + "x" * 2000}, headers=H))
+    rec(p + "report submit old", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.40", "attack_timestamp": "2020-01-01T00:00:00Z"}, headers=H))
+    rec(p + "report submit future", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.41", "attack_timestamp": "2099-01-01T00:00:00Z"}, headers=H))
+    rec(p + "report submit no timestamp", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.42", "attack_timestamp": None}, headers=H))
+    rec(p + "report submit unknown category", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.43", "categories": [11, 99]}, headers=H))
+    rec(p + "report submit private ip", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "10.0.0.1"}, headers=H))
+    pii_comment = "Mail to victim@corp.example from spam@bad.example via 10.1.2.3 and 185.220.101.1 corp.example"
+    rec(p + "report preview pii", client.post("/api/abuseipdb/report/preview", json={**fields, "comment": pii_comment, "own_terms": ["victim@corp.example", "corp.example"]}, headers=H))
+    rec(p + "report redact", client.post("/api/abuseipdb/report/redact", json={"comment": pii_comment, "own_terms": ["victim@corp.example", "corp.example"]}, headers=H))
+    rec(p + "report history", client.get("/api/abuseipdb/report/history", headers=H))
     for name, src in FIX.items():
         rec(p + f"email find {name}", client.post("/api/email/find", json={"raw_email": src}, headers=H))
     ev = rec(p + "email analyze phishing", client.post("/api/email/analyze", json={"raw_email": FIX["phishing"]}, headers=H), sse=True)
@@ -366,7 +406,11 @@ EXPECTED_STATUS = {
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
     "report preview": 200, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
-    "report submit cooldown": 409, "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
+    "report submit cooldown": 409, "report submit 422": 422, "report submit daily limit": 429, "report submit repeat at api": 409,
+    "report submit bad key": 401, "report submit outage": 502, "report submit wire": 200, "report submit old": 400,
+    "report submit future": 400, "report submit no timestamp": 400, "report submit unknown category": 400,
+    "report submit private ip": 400, "report preview pii": 200, "report redact": 200, "report history": 200,
+    "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
     "email continue again (not truncated)": 400, "history create dmarc": 200, "history create bad": 400,
     "history entry missing": 404, "static index": 200,
 }
@@ -415,6 +459,54 @@ if build_identity:
         failures.append("identity: a Tor disagreement must be flagged")
     if build_identity({}).fields:
         failures.append("identity: no sources must give no fields")
+# --- AbuseIPDB /report contract (https://docs.abuseipdb.com/#report-endpoint) ---
+def _result(name):
+    return next(r for r in RESULTS if r["name"] == name)
+
+
+_wire = [x for x in REPORT_POSTS if x["form"]["ip"].startswith("185.220.101.3")]
+if len(_wire) != 2:
+    failures.append(f"report wire: expected 2 posts of the wire test, got {len(_wire)}")
+for post in _wire:
+    form = post["form"]
+    if set(form) != {"ip", "categories", "comment", "timestamp"}:
+        failures.append(f"report wire: unexpected fields {sorted(form)}")
+    if form["categories"] != "7,11":
+        failures.append(f"report wire: categories must be a comma-separated list without duplicates, got {form['categories']!r}")
+    if len(form["comment"]) > 1024 or not form["comment"].isascii():
+        failures.append("report wire: the comment is over 1024 characters or not ASCII")
+    if not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", form["timestamp"]) or form["timestamp"] != "2026-09-24T08:00:00+00:00":
+        failures.append(f"report wire: timestamp is not ISO 8601 in UTC of the attack: {form['timestamp']!r}")
+    if not post["key"] or post["accept"] != "application/json" or "x-www-form-urlencoded" not in post["content_type"]:
+        failures.append(f"report wire: headers wrong (Key set: {bool(post['key'])}, Accept: {post['accept']}, {post['content_type']})")
+if any(x["form"]["ip"] in ("10.0.0.1", "185.220.101.40", "185.220.101.41", "185.220.101.42", "185.220.101.43") for x in REPORT_POSTS):
+    failures.append("report: a report that fails the hard checks (private IP, age, no date, unknown category) reached the API")
+for _lang, _needle in (("pl", "dzienny limit"), ("en", "daily report limit")):
+    if _needle not in _result(f"[{_lang}] report submit daily limit")["body"]["detail"]:
+        failures.append(f"report: the daily quota answer is not explained ({_lang})")
+    if "1000" not in _result(f"[{_lang}] report submit daily limit")["body"]["detail"]:
+        failures.append(f"report: the daily limit value is missing from the message ({_lang})")
+    if "categories field is required" not in _result(f"[{_lang}] report submit 422")["body"]["detail"]:
+        failures.append(f"report: the API's 422 detail is not passed on ({_lang})")
+_pii = _result("[en] report preview pii")["body"]["pii"]
+if [f["kind"] for f in _pii] != ["own", "own", "email", "private_ip"] or any(f["value"] == "185.220.101.1" for f in _pii):
+    failures.append(f"report pii scan: {_pii}")
+_red = _result("[en] report redact")["body"]["comment"]
+if any(x in _red for x in ("victim@corp.example", "spam@bad.example", "10.1.2.3", "corp.example")) or "185.220.101.1" not in _red:
+    failures.append(f"report redact left personal data or removed the reported address: {_red!r}")
+_hist = _result("[pl] report history")["body"]
+if _hist["rate_limit"] != {"limit": 1000, "remaining": 998} and _hist["rate_limit"] is not None:
+    failures.append(f"report history: rate limit not taken from the answer headers: {_hist['rate_limit']}")
+if not _hist["entries"] or not any(not e["success"] and e.get("error") for e in _hist["entries"]):
+    failures.append("report history: failed attempts are not logged")
+if not any(e["success"] and e.get("abuse_confidence_score") == 43 for e in _hist["entries"]):
+    failures.append("report history: the score returned by the API is not stored")
+_cand = _result("[en] abuseipdb analyze phishing no-llm")["body"]
+if "ip_candidates" not in _cand or "own_terms" not in _cand:
+    failures.append("analysis result lacks ip_candidates / own_terms")
+_hist_types = {h["type"] for h in _result("[en] history list")["body"]}
+if "report" not in _hist_types:
+    failures.append(f"the History tab does not list accepted reports: {_hist_types}")
 if UNHANDLED:
     failures.append(f"{len(UNHANDLED)} request(s) left the mocks: {UNHANDLED[:3]}")
 if probes["foreign Host header accepted (DNS rebinding)"] != 400:

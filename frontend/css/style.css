@@ -138,6 +138,7 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 .ip-confidence-medium { color: var(--warn); }
 .ip-confidence-low { color: var(--fail); }
 
+.fact-block h4 { margin: 14px 0 4px; font-family: var(--mono); font-size: 12.5px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .hop-chain { margin: 10px 0; }
 .hop-chain summary { cursor: pointer; color: var(--accent); }
 .hop-row {
@@ -153,9 +154,6 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 .banner.bad { border-color: var(--fail); }
 .banner.good { border-color: var(--pass); }
 .banner.bad, .banner.good { color: #fff; }
-/* eligibility verdict (AbuseIPDB tab): green = nothing to report, red = worth reporting */
-.banner.verdict-no { border-color: var(--pass); }
-.banner.verdict-yes { border-color: var(--fail); }
 
 .muted { color: var(--muted); font-size: 14.5px; }
 .dropzone {

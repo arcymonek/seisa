@@ -1,7 +1,7 @@
 import { applyStatic, mountLangSwitch } from "./i18n.js";
 import { initLookup, prefillLookup } from "./lookup.js";
 import { initDmarc, loadDmarcData } from "./dmarc.js";
-import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-builder.js";
+import { initReportBuilder, prefillReport, prefillReportEmail, prefillReportEntry } from "./report-builder.js";
 import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
@@ -60,6 +60,10 @@ window.seisaApp = {
   goToReportWithEmail: (rawEmail) => {
     switchTab("report");
     prefillReportEmail(rawEmail);
+  },
+  goToReportEntry: (id) => {
+    switchTab("report");
+    prefillReportEntry(id);
   },
   goToReport: (ip) => {
     switchTab("report");

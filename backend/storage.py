@@ -88,6 +88,11 @@ def successful_reports(ip: str) -> list[dict[str, Any]]:
     return [e for e in entries if e.get("success") and e.get("ip") == ip]
 
 
+def load_report_log() -> list[dict[str, Any]]:
+    """Every report attempt of the local log (newest first): accepted ones and failed ones."""
+    return _read_json(REPORT_LOG_FILE, {"entries": []}).get("entries", [])
+
+
 def append_report_log(entry: dict[str, Any]) -> None:
     data = _read_json(REPORT_LOG_FILE, {"entries": []})
     data.setdefault("entries", []).insert(0, entry)

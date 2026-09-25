@@ -83,10 +83,10 @@ The IDs and names are those of the AbuseIPDB API; the descriptions are our own s
 
 | API field | Required? | Value in Seisa |
 |---|---|---|
-| **ip** | yes | the IP address (Step 2) |
-| **categories** | yes, at least 1 | the selected categories (Step 2) |
+| **ip** | yes | the IP address (report card) |
+| **categories** | yes, at least 1 | the selected categories (report card) |
 | **timestamp** | no (default "now") | The attack timestamp - a separate field, it does NOT go into the comment text |
-| **comment** | no (but AbuseIPDB recommends a detailed description - see the "Reporting rules" section above) | written by the LLM in Step 1, editable in Step 2 - see below |
+| **comment** | no (but AbuseIPDB recommends a detailed description - see the "Reporting rules" section above) | written by the LLM during the analysis, editable in the report card - see below |
 
 Seisa has no separate field for the port number - if it is known, add it to the comment manually before sending.
 
@@ -96,13 +96,13 @@ Seisa has no separate field for the port number - if it is known, add it to the 
 
 Although `comment` is an optional field in the AbuseIPDB API, the AbuseIPDB policy itself (above) expressly expects a
 detailed, technically justified description of the attack. Seisa does this differently than through a manually filled
-form field: when `OPENROUTER_API_KEY` is configured, during the analysis in Step 1 (`analyze_email`) the model
+form field: when `OPENROUTER_API_KEY` is configured, during the e-mail analysis (`analyze_email`) the model
 receives the facts extracted from the e-mail, the complete raw source of the message (all headers and the whole body) - and on that basis writes a
 ready, detailed comment in English (the `report_comment` field) covering the attack mechanism, the meaning of
 SPF/DKIM/DMARC, malicious attachments (with a detected double extension), a ransom/BTC demand, mass-mailing patterns -
 anything relevant visible in the provided data, within about 900 characters (the hard API limit is 1024).
 
-This text goes straight into the editable "Report comment" field in Step 2 - the user can freely correct it before
+This text goes straight into the editable "Report comment" field of the report card - the user can freely correct it before
 sending (e.g. add the port number). The backend sanitises/truncates the final text right before sending anyway
 (`sanitize_comment`/`truncate_chars` - ASCII, protection against formula injection, a hard limit of 1024
 characters), regardless of who wrote it.
@@ -141,4 +141,4 @@ This text is editable too - it is only a rarer, poorer starting point when the L
 - [ ] The category matches the actual attack mechanism, not "just in case"
 - [ ] If spoofing is confirmed by an SPF/DMARC failure - one confirming sentence is added (Seisa does this automatically)
 - [ ] The timestamp is **not** in the comment text - only in the separate form field
-- [ ] The comment (preview in Step 2) contains no own e-mail address/domain/other PII beyond what is needed to describe the attack mechanism
+- [ ] The comment (the "What will be sent to the API" preview) contains no own e-mail address/domain/other PII beyond what is needed to describe the attack mechanism

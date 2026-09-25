@@ -17,6 +17,7 @@ from backend.storage import (
     delete_history_entry,
     get_history_entry,
     load_history,
+    load_report_log,
 )
 
 router = APIRouter()
@@ -46,6 +47,19 @@ def _email_entry(item: dict) -> dict:
         "label": f"{item.get('subject') or t('history.no_subject')} - {item.get('from') or '?'}",
         "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
         "lang": item.get("lang") or "pl",
+    }
+
+
+def _report_entry(item: dict) -> dict:
+    """An accepted AbuseIPDB report shown as a history entry (the data stays in the local report log)."""
+    cats = ",".join(str(c) for c in item.get("categories") or [])
+    return {
+        "id": item["id"],
+        "type": "report",
+        "created_at": item["submitted_at"],
+        "label": f"{item['ip']} - {cats}",
+        "risk_summary": None,
+        "lang": current_lang(),
     }
 
 
@@ -80,6 +94,7 @@ def list_history():
         for e in load_history()
     ]
     items += [_email_entry(a) for a in list_analyses() if a.get("id") and a.get("created_at")]
+    items += [_report_entry(r) for r in load_report_log() if r.get("success") and r.get("id") and r.get("submitted_at")]
     items.sort(key=lambda i: i["created_at"], reverse=True)
     return items[:HISTORY_MAX_ENTRIES]
 

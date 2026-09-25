@@ -34,6 +34,8 @@ export const api = {
 
   analyzeEmail: (body) => request("/abuseipdb/email/analyze", { method: "POST", body: JSON.stringify(body) }),
   previewReport: (body) => request("/abuseipdb/report/preview", { method: "POST", body: JSON.stringify(body) }),
+  redactReport: (body) => request("/abuseipdb/report/redact", { method: "POST", body: JSON.stringify(body) }),
+  reportHistory: () => request("/abuseipdb/report/history"),
   categories: () => request("/abuseipdb/categories"),
   ipInfo: (ip) => request(`/abuseipdb/ip-info?ip=${encodeURIComponent(ip)}`),
   submitReport: (body) => request("/abuseipdb/report/submit", { method: "POST", body: JSON.stringify(body) }),

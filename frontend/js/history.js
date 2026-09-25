@@ -5,7 +5,7 @@ import { escapeHtml } from "./util.js";
 
 let root;
 
-const TYPE_LABEL = { lookup: "IP", urlscan: "URLScan", dmarc: "DMARC", email: "Email" };
+const TYPE_LABEL = { lookup: "IP", urlscan: "URLScan", dmarc: "DMARC", email: "Email", report: "AbuseIPDB" };
 
 export function initHistory(container) {
   root = container;
@@ -47,7 +47,7 @@ async function load() {
       <td>${escapeHtml(TYPE_LABEL[e.type] || e.type)}${(e.lang || "pl") !== getLang() ? ` <span class="badge lang">${escapeHtml((e.lang || "pl").toUpperCase())}</span>` : ""}</td>
       <td>${escapeHtml(e.label)}</td>
       <td>${e.risk_summary ? `<span class="badge ${escapeHtml(e.risk_summary.toLowerCase())}">${escapeHtml(t("risk." + e.risk_summary.toLowerCase()))}</span>` : "-"}</td>
-      <td><button class="secondary open-btn">${escapeHtml(t("history.reopen"))}</button> <button class="secondary del-btn">${escapeHtml(t("common.delete"))}</button></td>
+      <td><button class="secondary open-btn">${escapeHtml(t("history.reopen"))}</button>${e.type === "report" ? "" : ` <button class="secondary del-btn">${escapeHtml(t("common.delete"))}</button>`}</td>
     </tr>`
       )
       .join("") +
@@ -57,6 +57,7 @@ async function load() {
     btn.addEventListener("click", () => {
       const row = btn.closest("tr");
       if (row.dataset.type === "email") window.seisaApp.goToEmailAnalysis(row.dataset.id);
+      else if (row.dataset.type === "report") window.seisaApp.goToReportEntry(row.dataset.id);
       else openEntry(row.dataset.id);
     });
   });

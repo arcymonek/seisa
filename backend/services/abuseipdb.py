@@ -6,7 +6,7 @@ from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
 from backend.report_builder import ABUSEIPDB_CATEGORIES
-from backend.services.base import IntelService, http_error_text
+from backend.services.base import IntelService
 
 BASE_URL = "https://api.abuseipdb.com/api/v2"
 
@@ -65,7 +65,8 @@ class AbuseIpdbService(IntelService):
     async def query_domain(self, domain: str) -> ServiceResult:
         return self.not_applicable_result()
 
-    async def submit_report(self, ip: str, categories: list[int], comment: str, timestamp: str) -> dict:
+    async def submit_report(self, ip: str, categories: list[int], comment: str, timestamp: str) -> tuple[dict, dict]:
+        """POST /report. Returns (response body, rate-limit info); an error status raises AbuseIpdbError."""
         payload = {
             "ip": ip,
             "categories": ",".join(str(c) for c in categories),
@@ -74,9 +75,49 @@ class AbuseIpdbService(IntelService):
         }
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(f"{BASE_URL}/report", headers=self._headers(), data=payload)
-        try:
-            resp.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            self.logger.error(f"report rejected: {http_error_text(exc)}")
-            raise
-        return resp.json()
+        rate_limit = parse_rate_limit(resp.headers)
+        if resp.status_code >= 400:
+            error = AbuseIpdbError(resp.status_code, api_error_detail(resp), rate_limit)
+            self.logger.error(f"report rejected: HTTP {resp.status_code}: {error.detail}")
+            raise error
+        return resp.json(), rate_limit
+
+
+class AbuseIpdbError(Exception):
+    """An error answer of the AbuseIPDB API: the HTTP status, the detail text and the rate-limit headers."""
+
+    def __init__(self, status: int, detail: str, rate_limit: dict | None = None):
+        super().__init__(f"HTTP {status}: {detail}")
+        self.status = status
+        self.detail = detail
+        self.rate_limit = rate_limit or {}
+
+
+def _int_header(headers, name: str) -> int | None:
+    try:
+        return int(headers.get(name))
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_rate_limit(headers) -> dict:
+    """X-RateLimit-Limit / -Remaining / -Reset (epoch seconds) and Retry-After (seconds) of an API answer."""
+    info = {
+        "limit": _int_header(headers, "X-RateLimit-Limit"),
+        "remaining": _int_header(headers, "X-RateLimit-Remaining"),
+        "reset": _int_header(headers, "X-RateLimit-Reset"),
+        "retry_after": _int_header(headers, "Retry-After"),
+    }
+    return {k: v for k, v in info.items() if v is not None}
+
+
+def api_error_detail(resp: httpx.Response) -> str:
+    """The `errors[].detail` texts of an AbuseIPDB error body (the API documents this shape), else the raw start."""
+    try:
+        errors = resp.json().get("errors") or []
+        texts = [str(e.get("detail")) for e in errors if isinstance(e, dict) and e.get("detail")]
+        if texts:
+            return "; ".join(texts)
+    except (ValueError, AttributeError):
+        pass
+    return resp.text[:300] or resp.reason_phrase
