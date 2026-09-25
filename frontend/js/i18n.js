@@ -1,7 +1,7 @@
 // UI internationalisation: catalogs in /i18n/<lang>.json, plain text only (never HTML).
 // Rule for call sites: wrap the result in escapeHtml() when it goes into innerHTML.
 
-export const SUPPORTED = ["pl", "en"];
+export const SUPPORTED = ["en", "pl"]; // also the order of the footer switch
 const STORAGE_KEY = "seisa.lang";
 const PSEUDO = "qa"; // dev only (?lang=qa): every t() returns [[key]], so untranslated text stands out
 const LOCALES = { pl: "pl-PL", en: "en-GB" };
@@ -13,7 +13,11 @@ function detectLang() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (SUPPORTED.includes(stored)) return stored;
   } catch { /* storage blocked: fall through */ }
-  return "en"; // the default is English whatever the browser language; Polish only after a switch in the footer
+  for (const l of navigator.languages || [navigator.language]) {
+    const short = String(l || "").slice(0, 2).toLowerCase();
+    if (SUPPORTED.includes(short)) return short;
+  }
+  return "en";
 }
 
 const lang = detectLang();
