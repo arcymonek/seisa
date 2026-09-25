@@ -1,4 +1,4 @@
-"""Logs tab: reads the daily WARNING+ log files (logi/*.jsonl), filtered by date range and service."""
+"""Logs tab: reads the daily WARNING+ log files (logs/*.jsonl), filtered by date range and service."""
 from __future__ import annotations
 
 import json
@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Query
 
-from backend.config import LOGI_DIR
+from backend.config import LOGS_DIR
 
 router = APIRouter()
 
@@ -27,15 +27,15 @@ def _normalize_legacy_service(entry: dict) -> dict:
 def get_logs(log_range: str = Query("today", alias="range"), service: str = "all"):
     today = datetime.now().astimezone().date()
 
-    if not LOGI_DIR.exists():
+    if not LOGS_DIR.exists():
         return []
 
     if log_range == "all":
-        files = sorted(LOGI_DIR.glob("*.jsonl"), reverse=True)
+        files = sorted(LOGS_DIR.glob("*.jsonl"), reverse=True)
     else:
         days_back = RANGE_DAYS_BACK.get(log_range, 0)
         candidate_dates = [today - timedelta(days=i) for i in range(days_back + 1)]
-        files = [LOGI_DIR / f"{d.isoformat()}.jsonl" for d in candidate_dates]
+        files = [LOGS_DIR / f"{d.isoformat()}.jsonl" for d in candidate_dates]
         files = [f for f in files if f.exists()]
 
     entries = []

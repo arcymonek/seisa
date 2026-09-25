@@ -1,4 +1,4 @@
-"""Storage of e-mail analyses (the "Email" tab) in a separate subdirectory data/analizy/.
+"""Storage of e-mail analyses (the "Email" tab) in a separate subdirectory data/analyses/.
 
 One JSON file per analysis, together with the raw e-mail (it contains personal data, hence files 0600,
 directory 0700 and an entry in .gitignore). The identifier is validated so that nobody can escape the directory.
@@ -11,7 +11,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
-from backend.config import ANALIZY_DIR
+from backend.config import ANALYSES_DIR
 from backend.storage import atomic_write_json
 from backend.verdict import normalize_confidence, normalize_verdict
 
@@ -21,7 +21,7 @@ _ID_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]{8}$")
 def _path(analysis_id: str):
     if not _ID_RE.match(analysis_id):
         raise ValueError("invalid analysis identifier")
-    return ANALIZY_DIR / f"{analysis_id}.json"
+    return ANALYSES_DIR / f"{analysis_id}.json"
 
 
 def _write(analysis_id: str, record: dict[str, Any]) -> None:
@@ -52,10 +52,10 @@ def source_hash(src: str) -> str:
 def find_by_source(sha256: str) -> list[dict[str, Any]]:
     """Saved analyses of the same source (newest first). Older records without the source_sha256 field are
     matched by the fingerprint of the raw e-mail."""
-    if not ANALIZY_DIR.exists():
+    if not ANALYSES_DIR.exists():
         return []
     matches = []
-    for path in sorted(ANALIZY_DIR.glob("*.json"), reverse=True):
+    for path in sorted(ANALYSES_DIR.glob("*.json"), reverse=True):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -73,10 +73,10 @@ def find_by_source(sha256: str) -> list[dict[str, Any]]:
 
 
 def list_analyses() -> list[dict[str, Any]]:
-    if not ANALIZY_DIR.exists():
+    if not ANALYSES_DIR.exists():
         return []
     items = []
-    for path in sorted(ANALIZY_DIR.glob("*.json"), reverse=True):
+    for path in sorted(ANALYSES_DIR.glob("*.json"), reverse=True):
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):

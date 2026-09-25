@@ -6,8 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DOCS_DIR = BASE_DIR / "docs"
 FRONTEND_DIR = BASE_DIR / "frontend"
-LOGI_DIR = BASE_DIR / "logi"
-ANALIZY_DIR = DATA_DIR / "analizy"
+LOGS_DIR = BASE_DIR / "logs"
+ANALYSES_DIR = DATA_DIR / "analyses"
 
 HISTORY_FILE = DATA_DIR / "history.json"
 VT_USAGE_FILE = DATA_DIR / "vt_usage.json"

@@ -1,0 +1,2 @@
+{"time": "2026-09-24T12:51:02.059802+02:00", "level": "WARNING", "service": "open_router", "message": "OpenRouter: nieprawidłowa odpowiedź OpenRouter (JSONDecodeError: Expecting ',' delimiter: line 3 column 101 (char 123))"}
+{"time": "2026-09-24T13:23:40.116779+02:00", "level": "WARNING", "service": "open_router", "message": "OpenRouter: nieprawidłowa odpowiedź OpenRouter (JSONDecodeError: Expecting value: line 1 column 1 (char 0))"}

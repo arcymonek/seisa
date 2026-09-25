@@ -6,7 +6,7 @@ import json
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.analizy import list_analyses
+from backend.analyses import list_analyses
 from backend.config import HISTORY_MAX_ENTRIES, MAX_HISTORY_DATA_CHARS
 from backend.i18n import current_lang, t
 from backend.models import HistoryEntry
@@ -32,7 +32,7 @@ EMAIL_VERDICT_RISK = {"legit": "Low", "inconclusive": "Medium"}
 
 
 def _email_entry(item: dict) -> dict:
-    """A saved analysis of the Email tab shown as a history entry (the data stays in data/analizy/)."""
+    """A saved analysis of the Email tab shown as a history entry (the data stays in data/analyses/)."""
     verdict = item.get("verdict")
     return {
         "id": item["id"],

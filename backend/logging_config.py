@@ -4,14 +4,14 @@ import json
 import logging
 from datetime import datetime
 
-from backend.config import LOGI_DIR
+from backend.config import LOGS_DIR
 
 
 class DailyJsonlHandler(logging.Handler):
-    """One .jsonl file per day in the logi/ directory. Only WARNING and above gets here at all (the level is set
+    """One .jsonl file per day in the logs/ directory. Only WARNING and above gets here at all (the level is set
     on the handler in setup_logging), so normal operation of Seisa leaves no trace on disk."""
 
-    def __init__(self, directory=LOGI_DIR):
+    def __init__(self, directory=LOGS_DIR):
         super().__init__()
         self.directory = directory
 

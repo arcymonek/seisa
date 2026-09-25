@@ -6,7 +6,7 @@ Usage: python3 scripts/api_harness.py [--root DIR] [--out FILE] [--serve PORT]
 - httpx.AsyncClient is forced onto an httpx.MockTransport; any unknown host raises (proof nothing leaves the box).
 - socket connect / reverse DNS / whois are patched; the real network is never touched.
 - API keys come from the environment (fake values) - they take precedence over the real .env in pydantic-settings.
-- data/ and logi/ paths are redirected to a temp dir, the user's data is not touched.
+- data/ and logs/ paths are redirected to a temp dir, the user's data is not touched.
 - The mock API answers contain HTML/script payloads, so the harness also proves that the server side stays
   well-behaved with hostile third-party data (the browser side is checked by hand: window.__xss must stay 0).
 
@@ -161,15 +161,15 @@ atexit.register(shutil.rmtree, TMP, ignore_errors=True)
 import backend.config as cfg  # noqa: E402
 
 cfg.DATA_DIR = TMP / "data"
-cfg.LOGI_DIR = TMP / "logi"
-cfg.ANALIZY_DIR = cfg.DATA_DIR / "analizy"
 cfg.HISTORY_FILE = cfg.DATA_DIR / "history.json"
 cfg.VT_USAGE_FILE = cfg.DATA_DIR / "vt_usage.json"
 cfg.REPORT_LOG_FILE = cfg.DATA_DIR / "report_log.json"
-# names may change after a rename refactor: patch whatever exists
-for alt, val in (("ANALYSES_DIR", cfg.DATA_DIR / "analyses"), ("LOGS_DIR", TMP / "logi")):
-    if hasattr(cfg, alt):
-        setattr(cfg, alt, val)
+# the directory constants were renamed in 2.0.27 (ANALIZY_DIR / LOGI_DIR): patch whichever exists, so that `--root`
+# can point at an older checkout
+for names, val in ((("ANALYSES_DIR", "ANALIZY_DIR"), cfg.DATA_DIR / "analyses"), (("LOGS_DIR", "LOGI_DIR"), TMP / "logs")):
+    for name in names:
+        if hasattr(cfg, name):
+            setattr(cfg, name, val)
 
 from fastapi.testclient import TestClient  # noqa: E402
 

@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.26</b></p>
+<p align="center"><b>Seisa 2.0.27</b></p>
 
 # Seisa
 
@@ -50,14 +50,14 @@ An educational analysis of the e-mail source: paste the whole source (headers + 
 - Below the separator: a **detailed LLM analysis** (OpenRouter, the same key and model as in AbuseIPDB), streamed live, following the guide `docs/email-analysis-guide.md` (mental model, a line-by-line analysis of both the good and the bad elements, a checklist, traps, an assessment, control questions with answers in collapsible sections). The first line of the answer is the verdict with a confidence level.
 - The response limit of the model is 64000 tokens (counted together with the hidden reasoning of the model, about 45% of the output; it is a ceiling, you pay for the tokens actually generated). If the analysis is cut off anyway, the tab shows a warning and a **"Finish the analysis"** button (the model receives the text so far and writes the missing parts; token usage and cost add up in the saved analysis).
 - **"Save .md"** and **"Copy Markdown"** (the export labels follow the interface language at the moment of export, the text of the LLM analysis stays in the language it was written in) export the whole set: metadata (date, verdict, model, input/output tokens, cost), the whole deterministic analysis (tables) and the LLM analysis.
-- **Duplicate detection:** before a paid analysis Seisa checks the fingerprint (sha256 of the normalised source) in `data/analizy/`. If the message was already analysed, it offers to open the saved analysis (with the date, verdict and cost) or to run it again deliberately.
+- **Duplicate detection:** before a paid analysis Seisa checks the fingerprint (sha256 of the normalised source) in `data/analyses/`. If the message was already analysed, it offers to open the saved analysis (with the date, verdict and cost) or to run it again deliberately.
 - **Citation check (local, free):** after the analysis the code checks whether the IP addresses, the header lines quoted in code blocks, `Header: value` quotes, SCL/BCL numbers and identifiers given by the model appear in the source or in the deterministic analysis (`backend/citation_check.py`). Discrepancies are listed under the analysis and in the `.md` export; this is information, not proof of an error (an example or a paraphrase may be flagged too). It does not check domains or entries such as `spf=pass`, because the analysis also discusses examples of a legitimate message.
 - The LLM analysis does not reproduce the tables visible in the deterministic analysis (timeline, links, Received etc.), it only interprets them, so that you do not pay for repetition; the complete set is in the export.
 - The LLM output is rendered safely: raw HTML from the e-mail and links are neutralised (links are shown as non-clickable, defanged text).
 - **Analysis language:** the analysis is written in the interface language (a directive in the prompt plus a table of literal headings and tags `[Fakt]`/`[Fact]` for both languages in `docs/email-analysis-guide.md`); the language is stored in the record (`lang`; older records = Polish). "Finish the analysis" uses the language of the stored record, not the current interface language. A saved analysis in a language other than the interface is marked with a PL/EN badge, and opening it shows a banner with a paid re-analysis button (the cost of the previous one is given as a guide); the facts and the text stay in the language they were created in, while the labels and the .md export use the interface language. Duplicate detection (sha256 of the source) does not depend on the language: the banner shows the language of the existing analysis.
 - **Verdict protocol:** the first line of the model answer has the form `VERDICT: <legit|phishing|spam|scam|malware|inconclusive> | CONFIDENCE: <high|medium|low>` and always uses these canonical codes, whatever the language of the analysis (`backend/verdict.py`); the interface maps them to labels in the selected language. Analyses saved earlier with Polish tokens (`WERDYKT`/`PEWNOSC`) are read without any file migration.
 - The **"Report to AbuseIPDB"** button (visible only when the verdict is not `legit`, i.e. legitimate) pastes the original source into Step 1 of the AbuseIPDB tab (overwriting the field) and takes the user there.
-- Every completed analysis is saved together with the raw e-mail in `data/analizy/` (files 0600, gitignored); the list of saved analyses (open/delete) is at the bottom of the tab.
+- Every completed analysis is saved together with the raw e-mail in `data/analyses/` (files 0600, gitignored); the list of saved analyses (open/delete) is at the bottom of the tab.
 
 ### AbuseIPDB (reporting)
 A workflow compliant with the [AbuseIPDB reporting policy](docs/abuseipdb-reporting-policy.md) (60-day limit, no reporting based on the confidence score alone, the 1024-character comment limit etc.):
@@ -110,10 +110,10 @@ seisa/
 │   ├── cache.py              # in-memory result cache
 │   ├── storage.py            # atomic JSON storage (history, VirusTotal counter, report log)
 │   ├── sse.py                # Server-Sent Events framing shared by the streaming endpoints
-│   ├── logging_config.py     # WARNING+ logs to logi/*.jsonl
+│   ├── logging_config.py     # WARNING+ logs to logs/*.jsonl
 │   ├── email_parser.py       # fact extraction from the raw e-mail (AbuseIPDB tab)
 │   ├── email_forensics.py    # deterministic analysis of the e-mail source (Email tab)
-│   ├── analizy.py            # storage of e-mail analyses in data/analizy/
+│   ├── analyses.py           # storage of e-mail analyses in data/analyses/
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
@@ -136,14 +136,14 @@ seisa/
 │   ├── api_harness.py         # the only automated test: every API endpoint with all external services mocked (also `--serve PORT` for trying the UI without keys)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   └── check_i18n.py          # checks the PL/EN catalogs (keys, parameters, plurals); `--strict` looks for Polish literals in code
-├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
-├── logi/                    # error logs, one .jsonl file per day (gitignored)
+├── data/                    # history.json, vt_usage.json, report_log.json, analyses/ (gitignored)
+├── logs/                    # error logs, one .jsonl file per day (gitignored)
 └── docs/
     ├── abuseipdb-reporting-policy.md   # the full policy + the AbuseIPDB category table (English, LLM prompt context)
     └── email-analysis-guide.md         # e-mail analysis guide loaded into the LLM prompt (Email tab), English, with a PL/EN label table
 ```
 
-There is no database - all persistence is plain JSON files in `data/` (history limited to 25 entries, the VirusTotal daily limit counter) and logs in `logi/`.
+There is no database - all persistence is plain JSON files in `data/` (history limited to 25 entries, the VirusTotal daily limit counter) and logs in `logs/`. Saved e-mail analyses live in `data/analyses/`. Releases before 2.0.27 used `data/analizy/` and `logi/`; Seisa does not migrate them, so rename them by hand before the first start of a newer release (`mv data/analizy data/analyses`, and move the `*.jsonl` files from `logi/` to `logs/`).
 
 ## Installation
 
@@ -199,7 +199,7 @@ A missing key for any service does not block the rest of the tool - the service 
 - The content of a pasted e-mail goes to OpenRouter **only** after an explicit click on "Analyze" (not "Analyze without LLM") - the interface says so plainly before sending.
 - A report to AbuseIPDB always requires a deliberate click on "Send"; the backend validates the hard checks (age, IP, category) anew regardless of the state of the form in the browser - they, not the informational checklist, decide whether sending is possible. The comment is only sanitised and shortened, not judged.
 - The Email tab sends the whole source of the message (with personal data) to OpenRouter after a click on "Analyze"; this is a deliberate decision (mostly suspicious messages are analysed).
-- History, saved e-mail analyses and logs stay only locally in `data/` and `logi/` (gitignored). The analyses contain raw e-mails, so the files have 0600 permissions.
+- History, saved e-mail analyses and logs stay only locally in `data/` and `logs/` (gitignored). The analyses contain raw e-mails, so the files have 0600 permissions.
 
 ## Versioning and conventions
 

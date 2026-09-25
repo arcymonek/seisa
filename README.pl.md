@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.26</b></p>
+<p align="center"><b>Seisa 2.0.27</b></p>
 
 # Seisa
 
@@ -50,14 +50,14 @@ Edukacyjna analiza źródła e-maila: wklej cały kod źródłowy (nagłówki + 
 - Pod linią rozdzielającą: **szczegółowa analiza LLM** (OpenRouter, ten sam klucz i model co w AbuseIPDB), streamowana na żywo, według przewodnika `docs/email-analysis-guide.md` (model mentalny, analiza linijka po linijce zarówno elementów dobrych, jak i złych, lista kontrolna, pułapki, ocena, pytania kontrolne z odpowiedziami w zwijanych sekcjach). Pierwsza linia odpowiedzi to werdykt (`legalna`/`phishing`/`spam`/`oszustwo`/`malware`/`niejednoznaczna`) z pewnością.
 - Limit odpowiedzi modelu to 64000 tokenów (liczony razem z ukrytym rozumowaniem modelu, ok. 45% wyjścia; to sufit, płaci się za tokeny faktycznie wygenerowane). Jeśli analiza mimo to zostanie ucięta, zakładka pokazuje ostrzeżenie i przycisk **"Dokończ analizę"** (model dostaje dotychczasowy tekst i dopisuje brakujące części; zużycie tokenów i koszt sumują się w zapisanej analizie).
 - **"Zapisz .md"** i **"Kopiuj Markdown"** (etykiety eksportu w języku interfejsu z chwili eksportu, treść analizy LLM w języku, w którym powstała) eksportują komplet: metadane (data, werdykt, model, tokeny wejścia/wyjścia, koszt), całą analizę deterministyczną (tabele) i analizę LLM.
-- **Wykrywanie duplikatów:** przed płatną analizą Seisa sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analizy/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
+- **Wykrywanie duplikatów:** przed płatną analizą Seisa sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analyses/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
 - **Kontrola cytatów (lokalna, bez kosztu):** po analizie kod sprawdza, czy adresy IP, cytowane w blokach kodu linie nagłówków, cytaty `Nagłówek: wartość`, liczby SCL/BCL i identyfikatory podane przez model występują w źródle lub w analizie deterministycznej (`backend/citation_check.py`). Rozbieżności są wypisane pod analizą i w eksporcie `.md`; to informacja, a nie dowód błędu (przykład lub parafraza też mogą zostać oznaczone). Nie sprawdza domen ani zapisów typu `spf=pass`, bo analiza omawia też przykłady wiadomości legalnej.
 - Analiza LLM nie odtwarza tabel widocznych w analizie deterministycznej (oś czasu, linki, Received itd.), tylko je interpretuje, żeby nie płacić za powtórki; komplet jest w eksporcie.
 - Wynik LLM jest renderowany bezpiecznie: surowy HTML z e-maila i linki są neutralizowane (linki pokazywane jako nieklikalny, zdefangowany tekst).
 - **Język analizy:** analiza powstaje w języku interfejsu (dyrektywa w prompcie plus tabela dosłownych nagłówków i tagów `[Fakt]`/`[Fact]` w obu językach w `docs/email-analysis-guide.md`); język zapisuje się w rekordzie (`lang`; starsze rekordy = polski). „Dokończ analizę" używa języka zapisanego rekordu, a nie bieżącego języka interfejsu. Zapisana analiza w innym języku niż interfejs jest oznaczona plakietką PL/EN, a przy jej otwarciu pojawia się baner z płatnym przyciskiem ponownej analizy (koszt poprzedniej podany orientacyjnie); fakty i tekst zostają w języku powstania, etykiety i eksport .md w języku interfejsu. Wykrywanie duplikatów (sha256 źródła) nie zależy od języka: baner pokazuje język istniejącej analizy.
 - **Protokół werdyktu:** pierwsza linia odpowiedzi modelu ma postać `VERDICT: <legit|phishing|spam|scam|malware|inconclusive> | CONFIDENCE: <high|medium|low>` i zawsze używa tych kanonicznych kodów, niezależnie od języka analizy (`backend/verdict.py`); interfejs mapuje je na etykiety w wybranym języku. Analizy zapisane wcześniej z polskimi tokenami (`WERDYKT`/`PEWNOSC`) są odczytywane bez migracji plików.
 - Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legit`, czyli legalna) wkleja oryginalny kod do Kroku 1 zakładki AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
-- Każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analizy/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń) jest na dole zakładki.
+- Każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analyses/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń) jest na dole zakładki.
 
 ### AbuseIPDB (zgłaszanie)
 Workflow zgodny z [polityką raportowania AbuseIPDB](docs/abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.):
@@ -110,10 +110,10 @@ seisa/
 │   ├── cache.py              # cache wyników w pamięci
 │   ├── storage.py            # atomowy zapis JSON (historia, licznik VirusTotal, log zgłoszeń)
 │   ├── sse.py                # ramkowanie Server-Sent Events wspólne dla endpointów strumieniowych
-│   ├── logging_config.py     # logi WARNING+ do logi/*.jsonl
+│   ├── logging_config.py     # logi WARNING+ do logs/*.jsonl
 │   ├── email_parser.py       # ekstrakcja faktów z surowego e-maila (zakładka AbuseIPDB)
 │   ├── email_forensics.py    # analiza deterministyczna źródła e-maila (zakładka Email)
-│   ├── analizy.py            # zapis analiz e-maili w data/analizy/
+│   ├── analyses.py           # zapis analiz e-maili w data/analyses/
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
@@ -136,14 +136,14 @@ seisa/
 │   ├── api_harness.py         # jedyny test automatyczny: każdy endpoint API przy zamockowanych usługach zewnętrznych (także `--serve PORT` do wypróbowania UI bez kluczy)
 │   ├── dump_facts.py          # zrzut analizy deterministycznej fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   └── check_i18n.py          # kontrola katalogów PL/EN (klucze, parametry, liczba mnoga); `--strict` szuka polskich literałów w kodzie
-├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
-├── logi/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
+├── data/                    # history.json, vt_usage.json, report_log.json, analyses/ (gitignored)
+├── logs/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
 └── docs/
     ├── abuseipdb-reporting-policy.md   # pełna polityka + tabela kategorii AbuseIPDB (po angielsku, kontekst promptu LLM)
     └── email-analysis-guide.md         # przewodnik analizy e-maila wczytywany do promptu LLM (zakładka Email), po angielsku, z tabelą etykiet PL/EN
 ```
 
-Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 25 wpisów, licznik dziennego limitu VirusTotal) i logi w `logi/`.
+Brak bazy danych - cała trwałość to proste pliki JSON w `data/` (historia ograniczona do 25 wpisów, licznik dziennego limitu VirusTotal) i logi w `logs/`. Zapisane analizy e-maili są w `data/analyses/`. Wydania przed 2.0.27 używały `data/analizy/` i `logi/`; Seisa ich nie migruje, więc zmień nazwy ręcznie przed pierwszym startem nowszego wydania (`mv data/analizy data/analyses` oraz przeniesienie plików `*.jsonl` z `logi/` do `logs/`).
 
 ## Instalacja
 
@@ -199,7 +199,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
 - Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa. Komentarz jest tylko sanityzowany i skracany, nie oceniany.
 - Zakładka Email wysyła do OpenRouter cały kod źródłowy wiadomości (z danymi osobowymi) po kliknięciu "Analizuj"; jest to świadoma decyzja (analizowane są głównie podejrzane wiadomości).
-- Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logi/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.
+- Historia, zapisane analizy e-maili i logi zostają wyłącznie lokalnie w `data/` i `logs/` (gitignored). Analizy zawierają surowe e-maile, dlatego pliki mają uprawnienia 0600.
 
 ## Wersjonowanie i konwencje
 

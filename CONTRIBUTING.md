@@ -15,7 +15,7 @@ Bug reports and feature ideas are welcome. To make diagnosis easier, include the
 **Do not paste sensitive data into issues:**
 - API keys or the contents of your `.env` file,
 - full e-mails, headers or addresses from private correspondence (anonymise them or replace them with examples),
-- files from the `data/` and `logi/` directories.
+- files from the `data/` and `logs/` directories.
 
 Report security vulnerabilities privately, following [SECURITY.md](SECURITY.md), not as a public issue.
 
@@ -40,7 +40,7 @@ Mile widziane są zgłoszenia błędów i propozycje funkcji. Żeby ułatwić di
 **Nie wklejaj do zgłoszeń danych wrażliwych:**
 - kluczy API ani zawartości pliku `.env`,
 - pełnych e-maili, nagłówków ani adresów z prywatnej korespondencji (zanonimizuj je lub zastąp przykładowymi),
-- plików z katalogów `data/` i `logi/`.
+- plików z katalogów `data/` i `logs/`.
 
 Zgłoszenia dotyczące bezpieczeństwa (podatności) wysyłaj prywatnie, zgodnie z [SECURITY.md](SECURITY.md), a nie jako publiczne issue.
 

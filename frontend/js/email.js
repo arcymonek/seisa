@@ -281,8 +281,12 @@ function analysisBody() {
   return (m ? streamText.slice(m[0].length) : streamText).trimStart();
 }
 
+// Kinds of citation findings (protocol constants of the saved analyses). Analyses saved before 2.0.27 carry the old
+// Polish codes; they are still read (no file migration).
 const CITATION_KIND = {
-  ip: "em.kind.ip", brak_naglowka: "em.kind.missing_header", cytat_naglowka: "em.kind.header_quote", // i18n-ok
+  ip: "em.kind.ip", missing_header: "em.kind.missing_header", header_quote: "em.kind.header_quote",
+  number: "em.kind.number", identifier: "em.kind.identifier",
+  brak_naglowka: "em.kind.missing_header", cytat_naglowka: "em.kind.header_quote", // i18n-ok
   liczba: "em.kind.number", identyfikator: "em.kind.identifier", // i18n-ok
 };
 

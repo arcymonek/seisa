@@ -119,9 +119,9 @@ def verify_citations(markdown: str, source: str, extra_texts: list[str], facts: 
             fragments = [f for f in fragments if len(f) >= 8]
             missing = [f for f in fragments if f not in loose_haystack]
             if name not in header_names and name not in haystack:
-                add("brak_naglowka", line, t("cite.header_missing", name=m.group(1)))
+                add("missing_header", line, t("cite.header_missing", name=m.group(1)))
             elif missing:
-                add("cytat_naglowka", line, t("cite.header_mismatch"))
+                add("header_quote", line, t("cite.header_mismatch"))
 
     # C. `Header: value` quotes in the text (only for headers present in the source)
     outside_fences = _FENCE_RE.sub("", text)
@@ -131,7 +131,7 @@ def verify_citations(markdown: str, source: str, extra_texts: list[str], facts: 
             continue
         checked += 1
         if re.sub(r"\s+", "", span).casefold() not in loose_haystack:
-            add("cytat_naglowka", span.strip(), t("cite.value_differs"))
+            add("header_quote", span.strip(), t("cite.value_differs"))
 
     # D. SCL/BCL numbers
     seen = set()
@@ -142,7 +142,7 @@ def verify_citations(markdown: str, source: str, extra_texts: list[str], facts: 
         seen.add(key)
         checked += 1
         if not re.search(rf"\b{key[0].lower()}\s*[:=]\s*{re.escape(key[1])}\b", haystack):
-            add("liczba", f"{key[0]}={key[1]}", t("cite.number_missing"))
+            add("number", f"{key[0]}={key[1]}", t("cite.number_missing"))
 
     # E. <...@...> identifiers and hex digests in code
     for span in _CODE_SPAN_RE.findall(text):
@@ -150,6 +150,6 @@ def verify_citations(markdown: str, source: str, extra_texts: list[str], facts: 
         if _MSGID_RE.fullmatch(s) or _HEX_RE.fullmatch(s):
             checked += 1
             if s.casefold() not in haystack:
-                add("identyfikator", s, t("cite.identifier_missing"))
+                add("identifier", s, t("cite.identifier_missing"))
 
     return {"checked": checked, "issues": issues}

@@ -13,7 +13,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.analizy import (
+from backend.analyses import (
     delete_analysis,
     find_by_source,
     list_analyses,
