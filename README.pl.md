@@ -1,11 +1,15 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.34</b></p>
+<p align="center"><b>Seisa 2.0.35</b></p>
 
 # Seisa
 
 [English](README.md) | **Polski**
 
-Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL (urlscan.io), raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza jawnymi zapytaniami do wybranych usług threat-intel (oraz, po jawnym kliknięciu przycisku "geo/ASN" w zakładce DMARC, jednego adresu IP do [ipwho.is](https://ipwho.is)).
+Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL, raportów DMARC i przygotowywania zgłoszeń do AbuseIPDB. Działa **wyłącznie lokalnie** (`127.0.0.1`), bez logowania, bez wysyłania czegokolwiek na zewnątrz poza:
+
+- jawnymi zapytaniami do wybranych usług threat-intel, po podaniu kluczy API,
+- jednym adresem IP wysyłanym do [ipwho.is](https://ipwho.is) po jawnym kliknięciu przycisku "geo/ASN" w zakładce DMARC,
+- jawnymi analizami wykonanymi przez LLM za pośrednictwem OpenRouter, po zdefiniowaniu klucza API i modelu.
 
 **Seisa** (精査, *せいさ*, wym. „sejsa") - japońskie słowo oznaczające dokładne, szczegółowe zbadanie, przyjrzenie się czemuś z bliska. 精 (*sei*) = dokładny, precyzyjny, szczegółowy; 査 (*sa*) = badać, kontrolować.
 
@@ -84,7 +88,7 @@ Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie) i po usłudze (domyślnie wszystkie). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
 ### Informacje
-Okrągły przycisk „I” na prawym końcu rzędu zakładek otwiera zakładkę Informacje: nazwa i aktualna wersja (czytana z nagłówka strony), krótki opis Seisy, znaczenie nazwy (精査, *せいさ*), licencja (to samo streszczenie co w sekcji Licencja poniżej) oraz dane kontaktowe autora.
+Okrągły przycisk „I” na prawym końcu rzędu zakładek otwiera zakładkę Informacje: nazwa i aktualna wersja (czytana z nagłówka strony), krótki opis Seisy, znaczenie nazwy (精査, *せいさ*), licencja (to samo streszczenie co w sekcji Licencja poniżej) oraz dane kontaktowe autora (e-mail, GitHub, strona www).
 
 ### Język interfejsu (PL/EN)
 Przełącznik `PL | EN` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`pl` lub `en`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie). Teksty interfejsu są w katalogach `frontend/i18n/pl.json` i `en.json` (klucze płaskie, parametry `{nazwa}`, liczba mnoga przez `Intl.PluralRules`), daty w formacie `pl-PL` lub `en-GB`. Tryb deweloperski `/?lang=qa` pokazuje klucze `[[klucz]]` zamiast tekstów, więc od razu widać miejsca, które nie przechodzą przez tłumaczenia. Frontend wysyła wybrany język w nagłówku `X-Seisa-Lang` (tylko do własnego backendu), a backend tłumaczy po swojej stronie komunikaty błędów, analizę deterministyczną e-maila, uwagi punktacji IP i raporty Markdown (katalogi `backend/locales/pl.json` i `en.json`, moduł `backend/i18n.py`). Zapisane wcześniej analizy i wpisy historii zachowują język, w którym powstały. Logi (zakładka Logi) są po angielsku niezależnie od języka interfejsu. Odpowiedzi LLM (zakładki Email i AbuseIPDB) powstają w języku interfejsu z chwili zapytania; prompty i przewodniki są jedne, po angielsku, a język odpowiedzi ustawia jawna dyrektywa (komentarz zgłoszenia do AbuseIPDB jest zawsze po angielsku - wymóg polityki AbuseIPDB). Koszt zapytań zależy od modelu.
