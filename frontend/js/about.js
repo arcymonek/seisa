@@ -1,6 +1,6 @@
 // Info tab: name and version (read from the page header, so index.html stays the only place in the frontend that
-// carries it), summary tiles, what leaves the machine, the configured integrations (whether a key is set - never the
-// key), the meaning of the name, the licence, the author and the recent releases.
+// carries it), summary tiles, the configured integrations (whether a key is set - never the
+// key), the author, the meaning of the name, the recent releases and the licence.
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
 import { t } from "./i18n.js";
@@ -29,17 +29,15 @@ export function initAbout(container) {
   root.innerHTML = `
     <div class="subtitle">${e(t("about.description"))}</div>
     <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version, "精査 - seisa")}</div></div>
-    <div class="banner info"><strong>${e(t("about.privacy_title"))}</strong>
-      <ul><li>${e(t("about.outbound_1"))}</li><li>${e(t("about.outbound_2"))}</li><li>${e(t("about.outbound_3"))}</li></ul></div>
     <div id="ab-status"></div>
-    ${block(t("about.name_title"), `<p><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</p>
-      <p>精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</p>`, true)}
-    ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}</p>`)}
     ${block(t("about.author_title"), `<p><strong>Arkadiusz Polak</strong></p>
       <p>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}">${AUTHOR_EMAIL}</a><br>
          GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
          ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></p>`, true)}
+    ${block(t("about.name_title"), `<p><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</p>
+      <p>精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</p>`, true)}
     <div id="ab-changes"></div>
+    ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
 }
 
@@ -69,8 +67,7 @@ export async function refreshAbout() {
   rows.push(`<tr><td>OpenRouter (LLM)</td><td>${badge(info.llm.configured)}${info.llm.configured ? ` <span class="muted mono">${e(t("about.status_llm_model", { model: info.llm.model }))}</span>` : ""}</td></tr>`);
   root.querySelector("#ab-status").innerHTML = block(
     t("about.status_title"),
-    `<div class="table-wrap"><table class="fact-table"><tbody>${rows.join("")}</tbody></table></div><div class="muted">${e(t("about.status_hint"))}</div>`,
-    true
+    `<div class="table-wrap"><table class="fact-table"><tbody>${rows.join("")}</tbody></table></div><div class="muted">${e(t("about.status_hint"))}</div>`
   );
 
   root.querySelector("#ab-changes").innerHTML = block(
