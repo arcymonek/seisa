@@ -196,7 +196,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
       openState[role] = det.open;
       saveOpenState(openState);
     });
-    return { det, target, md: null, role, note: summary.querySelector(".em-state") };
+    return { det, target, md: null, title, role, note: summary.querySelector(".em-state") };
   }
 
   function setOpen(det, open) {
@@ -223,6 +223,13 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
           changed = true;
         }
         const c = cards[i];
+        if (c.title !== s.title) {
+          // the heading is streamed too: the title known when the card was created may still be cut off
+          c.title = s.title;
+          c.det.dataset.toc = s.title;
+          c.det.querySelector(".em-card-title").textContent = s.title;
+          changed = true;
+        }
         if (c.md !== s.md) {
           c.md = s.md;
           renderInto(c.target, s.md, { glossaryOwner: i, subsections: c.role === "lines" });
