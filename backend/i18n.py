@@ -71,7 +71,10 @@ def plural_category(lang: str, n: int) -> str:
 
 
 def tn(key: str, n: int, lang: str | None = None, **params) -> str:
-    """Plural-aware translation: picks <key>_one/_few/_many/_other for n; {n} is filled in automatically."""
+    """Plural-aware translation: picks <key>_one/_few/_many/_other for n; {n} is filled in automatically.
+
+    Not used by any message yet, kept on purpose: check_i18n.py already validates plural forms in the backend
+    catalogs, so the first "{n} items" message only needs the catalog entries."""
     lang = lang or _current.get()
     category = plural_category(lang, n)
     for suffix in (f"_{category}", "_other"):

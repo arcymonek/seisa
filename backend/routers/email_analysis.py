@@ -1,3 +1,9 @@
+"""Email tab: educational analysis of an e-mail source, streamed over SSE.
+
+/analyze sends the deterministic facts first, then the LLM analysis chunk by chunk (only on an explicit click),
+saves the result and runs the citation check. /analyses/{id}/continue finishes a truncated analysis; /find detects
+an already analysed message; the remaining endpoints list, open and delete the saved analyses. Nothing is reported.
+"""
 from __future__ import annotations
 
 import json
@@ -8,12 +14,17 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from backend.analizy import (
-    delete_analysis, find_by_source, list_analyses, load_analysis, save_analysis, source_hash, update_analysis,
+    delete_analysis,
+    find_by_source,
+    list_analyses,
+    load_analysis,
+    save_analysis,
+    source_hash,
+    update_analysis,
 )
 from backend.citation_check import verify_citations
-from backend.config import EMAIL_GUIDE_FILE
+from backend.config import EMAIL_GUIDE_FILE, settings
 from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
-from backend.config import settings
 from backend.i18n import current_lang, t
 from backend.services.llm_analyzer import llm_analyzer
 from backend.verdict import parse_verdict
@@ -57,7 +68,7 @@ class EmailAnalysisRequest(BaseModel):
 
 
 @router.post("/find")
-async def find_existing(req: EmailAnalysisRequest):
+def find_existing(req: EmailAnalysisRequest):
     """Was this message analysed before? Avoids paying a second time for the same source."""
     sha = source_hash(normalize_source(req.raw_email))
     return {"sha256": sha, "matches": find_by_source(sha)}
@@ -195,7 +206,7 @@ async def continue_analysis(analysis_id: str):
     try:
         record = load_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
+        raise HTTPException(status_code=400, detail=t("email.invalid_id")) from None
     if record is None:
         raise HTTPException(status_code=404, detail=t("email.not_found"))
     if not record.get("truncated"):
@@ -249,16 +260,16 @@ async def continue_analysis(analysis_id: str):
 
 
 @router.get("/analyses")
-async def analyses():
+def analyses():
     return list_analyses()
 
 
 @router.get("/analyses/{analysis_id}")
-async def analysis(analysis_id: str):
+def analysis(analysis_id: str):
     try:
         record = load_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
+        raise HTTPException(status_code=400, detail=t("email.invalid_id")) from None
     if record is None:
         raise HTTPException(status_code=404, detail=t("email.not_found"))
     return record
@@ -269,7 +280,7 @@ async def remove_analysis(analysis_id: str):
     try:
         ok = delete_analysis(analysis_id)
     except ValueError:
-        raise HTTPException(status_code=400, detail=t("email.invalid_id"))
+        raise HTTPException(status_code=400, detail=t("email.invalid_id")) from None
     if not ok:
         raise HTTPException(status_code=404, detail=t("email.not_found"))
     return {"deleted": True}

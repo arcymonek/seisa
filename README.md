@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.23</b></p>
+<p align="center"><b>Seisa 2.0.24</b></p>
 
 # Seisa
 
@@ -203,6 +203,7 @@ A missing key for any service does not block the rest of the tool - the service 
 - Code, comments, docstrings, log messages and commits are in English. The documentation exists in two versions with the same heading structure: `README.md` (English, the main one on GitHub) and `README.pl.md` (Polish); a change in one means a change in the other (the heading structure is compared by `scripts/check_i18n.py`).
 - Every tab that runs an action shows the timer (always one decimal, e.g. `13.1 s`), the status (e.g. the loaded file) and any related buttons in one row next to the action button, both during and after the run; in the Email tab the tokens and cost sit there too.
 - Texts visible in the interface go exclusively to the `i18n` catalogs (a new key = a PL and an EN entry in the same commit); before a commit `python3 scripts/check_i18n.py` must finish without errors.
+- Python code is checked with `ruff` (configuration in `pyproject.toml`; a development tool, not a dependency): `ruff check backend scripts`.
 - The whole project (code, UI, documentation) avoids the long dash (Unicode U+2014) - only a plain "-".
 
 ## Known open issues

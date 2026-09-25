@@ -1,4 +1,4 @@
-"""Comment sanitising and IP eligibility helpers: sanitize_comment, truncate_bytes, is_reportable_ip."""
+"""Comment sanitising and IP eligibility helpers: sanitize_comment, truncate_chars, is_reportable_ip, attack_age."""
 from __future__ import annotations
 
 import ipaddress
@@ -8,17 +8,9 @@ from backend.i18n import t
 
 AGE_LIMIT_DAYS = 60  # AbuseIPDB: the reported activity must be no older than 60 days
 CLOCK_SKEW = timedelta(hours=1)  # a date this far in the future is treated as "now" (clock offset, not a forged date)
-MAX_COMMENT_BYTES = 1024
 MAX_COMMENT_CHARS = 1024
 
 _FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
-
-
-def truncate_bytes(text: str, limit: int = MAX_COMMENT_BYTES) -> str:
-    raw = text.encode("utf-8")
-    if len(raw) <= limit:
-        return text
-    return raw[:limit].decode("utf-8", errors="ignore")
 
 
 def truncate_chars(text: str, limit: int = MAX_COMMENT_CHARS) -> str:

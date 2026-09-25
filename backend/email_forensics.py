@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from email import message_from_string
 from email.header import decode_header, make_header
 from email.message import Message
-from email.utils import getaddresses, parseaddr, parsedate_to_datetime
+from email.utils import parseaddr, parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
 
@@ -57,14 +57,18 @@ PLACEHOLDER_RES = [
     re.compile(r"\{\{[^}]{1,40}\}\}"), re.compile(r"@@\w{2,30}@@"), re.compile(r"%%\w{2,30}%%"),
     re.compile(r"\[\[\w{2,30}\]\]"), re.compile(r"\$\{\w{2,30}\}"), re.compile(r"\{%\s*\w+[^%]{0,30}%\}"),
 ]
-KNOWN_HTML_TAGS = set(
-    "a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption center cite code "
-    "col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure font footer "
-    "form h1 h2 h3 h4 h5 h6 head header hr html i iframe img input ins kbd label legend li link main map mark meta "
-    "meter nav noscript object ol optgroup option output p param picture pre progress q rp rt ruby s samp script "
-    "section select small source span strike strong style sub summary sup table tbody td template textarea tfoot th "
-    "thead time title tr track u ul var video wbr o:p v:shape xml".split()
-)
+KNOWN_HTML_TAGS = {
+    "a", "abbr", "address", "area", "article", "aside", "audio", "b", "base", "bdi", "bdo", "blockquote",
+    "body", "br", "button", "canvas", "caption", "center", "cite", "code", "col", "colgroup", "data",
+    "datalist", "dd", "del", "details", "dfn", "dialog", "div", "dl", "dt", "em", "embed", "fieldset",
+    "figcaption", "figure", "font", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header",
+    "hr", "html", "i", "iframe", "img", "input", "ins", "kbd", "label", "legend", "li", "link", "main", "map",
+    "mark", "meta", "meter", "nav", "noscript", "object", "ol", "optgroup", "option", "output", "p", "param",
+    "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "script", "section", "select", "small",
+    "source", "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template",
+    "textarea", "tfoot", "th", "thead", "time", "title", "tr", "track", "u", "ul", "var", "video", "wbr", "o:p",
+    "v:shape", "xml",
+}
 VOID_TAGS = {"br", "img", "hr", "meta", "link", "input", "area", "base", "col", "embed", "param", "source", "track", "wbr"}
 HIDDEN_STYLE_RES = {
     "display:none": re.compile(r"display\s*:\s*none"),
@@ -80,16 +84,6 @@ HIDDEN_STYLE_RES = {
 # ---------------------------------------------------------------------------
 # normalisation and preparation of the source
 # ---------------------------------------------------------------------------
-
-def decode_eml_bytes(data: bytes) -> str:
-    """Bytes of an .eml file -> text: UTF-8, and when that fails windows-1252 (bytes are never lost)."""
-    if data.startswith(b"\xef\xbb\xbf"):
-        data = data[3:]
-    try:
-        return data.decode("utf-8")
-    except UnicodeDecodeError:
-        return data.decode("cp1252", errors="replace")
-
 
 def normalize_source(raw: str) -> str:
     """Unifies the source pasted/loaded from a file: BOM, line endings, mbox envelope ("From ..."), leading
@@ -108,7 +102,7 @@ def _unfold(value: str) -> str:
 
 def _b64_decode(lines: list[str]) -> bytes | None:
     try:
-        return base64.b64decode("".join(l.strip() for l in lines), validate=False)
+        return base64.b64decode("".join(line.strip() for line in lines), validate=False)
     except (binascii.Error, ValueError):
         return None
 
@@ -185,9 +179,8 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
             elif ":" in line:
                 last_name = line.split(":", 1)[0].strip().lower()
                 hdrs[last_name] = line.split(":", 1)[1].strip()
-        elif mode == "body":
-            if is_boundary(line):
-                mode, hdrs, last_name = "headers", {}, None
+        elif mode == "body" and is_boundary(line):
+            mode, hdrs, last_name = "headers", {}, None
 
     if mode == "capture" and capture:
         flush_capture(hdrs.get("content-type", "").split(";")[0].strip().lower(), "")
@@ -401,17 +394,17 @@ def _audit_html(html: str) -> dict:
     unknown = sorted({tag.lower() for tag in tag_names if tag.lower() not in KNOWN_HTML_TAGS})
 
     links = []
-    for l in audit.links:
-        href = l["href"].strip()
+    for link in audit.links:
+        href = link["href"].strip()
         host = _url_host(href) if re.match(r"(?i)https?://", href) else None
         text_host = None
-        m = re.search(r"(?i)(?:https?://)?((?:[a-z0-9-]+\.)+[a-z]{2,})", l["text"])
+        m = re.search(r"(?i)(?:https?://)?((?:[a-z0-9-]+\.)+[a-z]{2,})", link["text"])
         if m:
             text_host = m.group(1).lower()
         mismatch = bool(host and text_host and registrable_domain(host) != registrable_domain(text_host))
         params = len(parse_qsl(urlsplit(href).query)) if host else 0
         links.append({
-            "text": l["text"], "href": href[:300], "host": host, "scheme": urlsplit(href).scheme if host else None,
+            "text": link["text"], "href": href[:300], "host": host, "scheme": urlsplit(href).scheme if host else None,
             "text_host_mismatch": mismatch, "query_params": params,
             "abused_host": bool(host and any(host == h or host.endswith("." + h) for h in ABUSED_HOSTS)),
             "shortener": bool(host and host in SHORTENERS),
@@ -526,7 +519,7 @@ def _extract_filters(headers: list[tuple[str, str]], flag) -> dict:
     for item in sender_set:
         if item["header"] in ("return-receipt-to", "disposition-notification-to", "x-message-flag"):
             flag("warn", t("forensics.flag.sender_set", header=item["header"], value=item["value"], note=item["note"]))
-        elif item["header"] == "importance" and item["value"].lower() == "high" or item["header"] == "x-priority" and item["value"][:1] in ("1", "2"):
+        elif (item["header"] == "importance" and item["value"].lower() == "high") or (item["header"] == "x-priority" and item["value"][:1] in ("1", "2")):
             flag("info", t("forensics.flag.high_priority", header=item["header"], value=item["value"]))
 
     return {"microsoft": ms or None, "other": other, "sender_set": sender_set}
@@ -576,7 +569,7 @@ def _leaf_text(part: Message) -> str:
         if payload is None:
             return ""
         return payload.decode(part.get_content_charset() or "utf-8", errors="replace")
-    except (LookupError, Exception):
+    except Exception:
         try:
             return str(part.get_payload())
         except Exception:
@@ -590,7 +583,7 @@ def decoded_text_parts(src: str) -> str:
         msg = message_from_string(src)
         leaves: list[Message] = []
         _walk_mime(msg, 0, [], [], leaves)
-        return "\n".join(_leaf_text(l) for l in leaves if l.get_content_maintype() == "text" and not l.get_filename())
+        return "\n".join(_leaf_text(leaf) for leaf in leaves if leaf.get_content_maintype() == "text" and not leaf.get_filename())
     except Exception:
         return ""
 
@@ -932,27 +925,23 @@ def compute_facts(src: str) -> dict:
             flag("info", t("forensics.flag.tracking", n=len(tracking)))
         # Identical findings for repeated links (mailers repeat the same link many times) are reported once with a count.
         link_findings: dict[tuple[str, str], int] = {}
-        for l in h["links"]:
+        for link in h["links"]:
             found = []
-            if l["text_host_mismatch"]:
-                found.append(("warn", t("forensics.flag.link_mismatch", text=l["text"][:40], host=l["host"])))
-            if l["scheme"] == "http":
-                found.append(("info", t("forensics.flag.link_http", host=(l["host"] or "")[:50])))
-            if l["abused_host"]:
-                found.append(("info", t("forensics.flag.link_abused", host=l["host"])))
-            if l["shortener"]:
-                found.append(("warn", t("forensics.flag.link_shortener", host=l["host"])))
+            if link["text_host_mismatch"]:
+                found.append(("warn", t("forensics.flag.link_mismatch", text=link["text"][:40], host=link["host"])))
+            if link["scheme"] == "http":
+                found.append(("info", t("forensics.flag.link_http", host=(link["host"] or "")[:50])))
+            if link["abused_host"]:
+                found.append(("info", t("forensics.flag.link_abused", host=link["host"])))
+            if link["shortener"]:
+                found.append(("warn", t("forensics.flag.link_shortener", host=link["host"])))
             for key in found:
                 link_findings[key] = link_findings.get(key, 0) + 1
         for (level, text), count in link_findings.items():
             flag(level, text if count == 1 else text.rstrip(".") + " " + t("forensics.flag.times", n=count) + ".")
-        if any(l["query_params"] >= 4 for l in h["links"]):
+        if any(link["query_params"] >= 4 for link in h["links"]):
             flag("info", t("forensics.flag.link_params"))
 
-    all_link_hosts = []
-    for u in unsub_urls:
-        if re.match(r"(?i)https?://", u):
-            all_link_hosts.append(_url_host(u))
     if unsub_hdr and not first("list-unsubscribe-post"):
         flag("info", t("forensics.flag.unsub"))
 

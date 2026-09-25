@@ -47,9 +47,9 @@ window.seisaApp = {
     switchTab("report");
     prefillReportEmail(rawEmail);
   },
-  goToReport: (ip, spoofingConfirmed) => {
+  goToReport: (ip) => {
     switchTab("report");
-    prefillReport(ip, spoofingConfirmed);
+    prefillReport(ip);
   },
 };
 

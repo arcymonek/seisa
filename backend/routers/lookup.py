@@ -1,3 +1,4 @@
+"""IP tab: reputation lookup of one indicator (/lookup) or a batch streamed over SSE (/lookup/batch)."""
 from __future__ import annotations
 
 import asyncio
@@ -76,7 +77,7 @@ async def lookup_batch(req: BatchLookupRequest):
                 try:
                     message = await asyncio.wait_for(wait_queue.get(), timeout=0.5)
                     yield _sse({"type": "wait", "current": indicator, "message": message})
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
             result = await task
             _save_to_history(result)

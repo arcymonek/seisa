@@ -1,3 +1,4 @@
+"""Logs tab: reads the daily WARNING+ log files (logi/*.jsonl), filtered by date range and service."""
 from __future__ import annotations
 
 import json
@@ -23,7 +24,7 @@ def _normalize_legacy_service(entry: dict) -> dict:
 
 
 @router.get("/logs")
-async def get_logs(log_range: str = Query("today", alias="range"), service: str = "all"):
+def get_logs(log_range: str = Query("today", alias="range"), service: str = "all"):
     today = datetime.now().astimezone().date()
 
     if not LOGI_DIR.exists():

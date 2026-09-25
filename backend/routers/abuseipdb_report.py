@@ -1,3 +1,9 @@
+"""AbuseIPDB tab: preparing and sending an abuse report.
+
+Step 1 (/email/analyze): facts from the pasted e-mail, an optional LLM opinion and a comment draft. Then /ip-info
+(what AbuseIPDB already knows), /report/preview (hard checks for the form) and /report/submit. The hard checks
+(age, IP, category) and the 15-minute cooldown are always validated here, never only in the frontend.
+"""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -5,8 +11,8 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.i18n import current_lang, t
 from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
+from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
 from backend.services.abuseipdb import AbuseIpdbService
@@ -162,7 +168,7 @@ async def submit_report(fields: ReportFields):
                 "error": str(exc),
             }
         )
-        raise HTTPException(status_code=502, detail=t("report.api_error", message=exc))
+        raise HTTPException(status_code=502, detail=t("report.api_error", message=exc)) from exc
 
     append_report_log(
         {

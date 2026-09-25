@@ -115,8 +115,8 @@ def check_usage(name: str, cat: dict[str, str], files: list[Path], use_re: re.Pa
                 errors.append(f"[{name}] key used but not defined: {key} ({f.relative_to(ROOT)})")
         for m in dyn_re.finditer(text):
             prefixes.add(m.group(1) or m.group(2))
-        if True:  # keys kept as data (e.g. {desc: "md.service.otx"}) count as used
-            used.update(k for k in QUOTED_KEY.findall(text) if k in cat or any(f"{k}{sfx}" in cat for sfx in PLURAL_SUFFIXES))
+        # keys kept as data (e.g. {desc: "md.service.otx"}) count as used
+        used.update(k for k in QUOTED_KEY.findall(text) if k in cat or any(f"{k}{sfx}" in cat for sfx in PLURAL_SUFFIXES))
     if name == "frontend":  # static markup: data-i18n="key" and data-i18n-attr="attr:key;attr:key"
         for html in (ROOT / "frontend").glob("*.html"):
             text = html.read_text(encoding="utf-8")

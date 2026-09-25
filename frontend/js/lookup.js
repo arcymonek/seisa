@@ -9,8 +9,7 @@ function escapeHtml(str) {
 }
 
 let root;
-let enabledServices = new Set(ALL_SERVICES);
-let lastResult = null;
+const enabledServices = new Set(ALL_SERVICES);
 let timerInterval = null;
 let timerStart = null;
 
@@ -147,7 +146,6 @@ async function onSubmit() {
 }
 
 function renderResult(result) {
-  lastResult = result;
   const wrap = document.createElement("div");
   wrap.className = "card";
 
@@ -188,7 +186,7 @@ function renderResult(result) {
     const reportBtn = document.createElement("button");
     reportBtn.className = "secondary";
     reportBtn.textContent = t("lookup.report_abuseipdb");
-    reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator, false);
+    reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator);
     actions.appendChild(reportBtn);
   }
 

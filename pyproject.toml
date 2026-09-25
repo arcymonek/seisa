@@ -1,0 +1,16 @@
+# Linter configuration only (not a package): `ruff check backend scripts` (a development tool, not a dependency).
+[tool.ruff]
+line-length = 140
+target-version = "py311"
+extend-exclude = [".venv", "reports"]
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "B", "UP", "SIM", "I", "PIE", "RET", "C4", "PERF", "RUF", "ASYNC"]
+
+# E501: long lines are LLM prompt strings and catalog-like text; UP017/PERF401/PERF402: style-only, not worth churn;
+# SIM117: the nested `async with` around the OpenRouter stream is clearer than one combined statement.
+ignore = ["E501", "UP017", "PERF401", "PERF402", "SIM117"]
+
+[tool.ruff.lint.per-file-ignores]
+# dump_facts.py imports backend modules only after sys.path points at the requested checkout.
+"scripts/dump_facts.py" = ["E402"]

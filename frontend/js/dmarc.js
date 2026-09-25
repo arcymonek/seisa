@@ -1,11 +1,12 @@
+// DMARC tab: aggregate reports (XML) are parsed and aggregated entirely in the browser (nothing is uploaded).
+// Rows are grouped by source IP; per IP the tab can fetch geo/ASN (the one call to a third party: ipwho.is, on click)
+// and hand the IP over to the IP tab or to the AbuseIPDB tab. Every value from the XML is untrusted: escapeHtml.
 import { api } from "./api.js";
-import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, compareText } from "./i18n.js";
+import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime } from "./i18n.js";
 
 let root;
 let allRecords = [];
 let reportMeta = [];
-let sortKey = "count";
-let sortDir = -1;
 const geoCache = {};
 const expandedIps = new Set();
 
@@ -275,12 +276,7 @@ function render() {
   }
 
   const agg = aggregate();
-  agg.sort((a, b) => {
-    const va = a[sortKey];
-    const vb = b[sortKey];
-    if (typeof va === "string") return sortDir * compareText(va, vb);
-    return sortDir * ((va || 0) - (vb || 0));
-  });
+  agg.sort((a, b) => (b.count || 0) - (a.count || 0)); // most messages first
 
   const totalMsgs = allRecords.reduce((s, r) => s + r.count, 0);
   const uniqueIps = agg.length;
@@ -301,7 +297,7 @@ function render() {
   html += `<h3>${escapeHtml(t("dmarc.h_sources"))}</h3><table id="dm-ip-table"><thead><tr><th>IP</th><th>${escapeHtml(t("dmarc.col_messages"))}</th><th>SPF</th><th>DKIM</th><th>Reject</th><th>Quarantine</th><th>None</th><th>${escapeHtml(t("dmarc.col_seen"))}</th><th>${escapeHtml(t("dmarc.col_risk"))}</th><th>${escapeHtml(t("dmarc.col_actions"))}</th></tr></thead><tbody>`;
   agg.forEach((row) => {
     const risk = riskLevel(row);
-    html += `<tr data-ip="${escapeHtml(row.sourceIp)}" data-spf-fail="${row.spfFail > 0}" data-dkim-fail="${row.dkimFail > 0}">
+    html += `<tr data-ip="${escapeHtml(row.sourceIp)}">
       <td>${escapeHtml(row.sourceIp)}</td>
       <td>${row.count}</td>
       <td>${row.spfPass ? `<span style="color:var(--pass)">✓${row.spfPass}</span> ` : ""}${row.spfFail ? `<span style="color:var(--fail)">✗${row.spfFail}</span>` : ""}</td>
@@ -341,11 +337,7 @@ function render() {
     btn.addEventListener("click", () => window.seisaApp.goToLookup(btn.closest("tr").dataset.ip));
   });
   resultsEl.querySelectorAll(".report-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tr = btn.closest("tr");
-      const spoofing = tr.dataset.spfFail === "true" || tr.dataset.dkimFail === "true";
-      window.seisaApp.goToReport(tr.dataset.ip, spoofing);
-    });
+    btn.addEventListener("click", () => window.seisaApp.goToReport(btn.closest("tr").dataset.ip));
   });
 }
 

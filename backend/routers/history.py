@@ -1,3 +1,4 @@
+"""History tab: the last lookups and DMARC imports (history.json) together with the saved e-mail analyses."""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
@@ -42,7 +43,7 @@ def _email_entry(item: dict) -> dict:
 
 
 @router.get("/history")
-async def list_history():
+def list_history():
     items = [
         {
             "id": e.id,
@@ -60,7 +61,7 @@ async def list_history():
 
 
 @router.get("/history/{entry_id}")
-async def get_entry(entry_id: str):
+def get_entry(entry_id: str):
     entry = get_history_entry(entry_id)
     if not entry:
         raise HTTPException(status_code=404, detail=t("history.not_found"))

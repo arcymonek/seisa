@@ -1,3 +1,4 @@
+"""URLScan tab: submits a scan to urlscan.io (/scan) and fetches the finished result as a Markdown report (/result)."""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
@@ -21,7 +22,7 @@ async def scan(req: ScanRequest):
     try:
         data = await urlscan_service.submit_scan(req.url)
     except urlscan_service.UrlscanError as exc:
-        raise HTTPException(status_code=502, detail=t("urlscan.submit_failed", message=exc.message))
+        raise HTTPException(status_code=502, detail=t("urlscan.submit_failed", message=exc.message)) from exc
     return {
         "uuid": data.get("uuid"),
         "result_page_url": data.get("result") or f"https://urlscan.io/result/{data.get('uuid')}/",
@@ -33,7 +34,7 @@ async def result(uuid: str):
     try:
         data = await urlscan_service.fetch_result(uuid)
     except urlscan_service.UrlscanError as exc:
-        raise HTTPException(status_code=502, detail=t("urlscan.fetch_failed", message=exc.message))
+        raise HTTPException(status_code=502, detail=t("urlscan.fetch_failed", message=exc.message)) from exc
     if data is None:
         return {"status": "pending"}
 

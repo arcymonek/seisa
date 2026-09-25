@@ -27,6 +27,7 @@ SERVICE_REGISTRY = {
     "greynoise": GreyNoiseService(),
 }
 
+
 def detect_indicator_type(indicator: str) -> IndicatorType:
     try:
         ipaddress.ip_address(indicator)
@@ -42,6 +43,11 @@ async def run_lookup(
     force_refresh: bool,
     progress_cb=None,
 ) -> LookupResult:
+    """Queries the selected services in parallel (all of them when `services` is empty) and builds the report.
+
+    Results are served from the in-memory cache (15 min) unless `force_refresh` is set; `progress_cb(text)` is
+    called with a status line while the VirusTotal throttle makes a request wait.
+    """
     selected = services or list(SERVICE_REGISTRY.keys())
     results: dict[str, ServiceResult] = {}
 

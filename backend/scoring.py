@@ -13,6 +13,7 @@ proof of innocence).
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from itertools import pairwise
 
 from backend.i18n import t
 from backend.models import RiskComponent, RiskScore, ServiceResult
@@ -40,7 +41,7 @@ def interpolate(x: float, anchors: list[tuple[float, float]]) -> float:
     """Linear interpolation between the anchors; outside the range - the edge value."""
     if x <= anchors[0][0]:
         return anchors[0][1]
-    for (x0, y0), (x1, y1) in zip(anchors, anchors[1:]):
+    for (x0, y0), (x1, y1) in pairwise(anchors):
         if x <= x1:
             return y0 + (y1 - y0) * (x - x0) / (x1 - x0)
     return anchors[-1][1]

@@ -22,7 +22,7 @@ class ServiceResult(BaseModel):
     error_message: str | None = None
     queried_at: str = Field(default_factory=utcnow_iso)
 
-    def without_raw(self) -> "ServiceResult":
+    def without_raw(self) -> ServiceResult:
         return self.model_copy(update={"raw": None})
 
 
@@ -55,7 +55,7 @@ class LookupResult(BaseModel):
     talos_url: str
     markdown: str
 
-    def stripped_for_history(self) -> "LookupResult":
+    def stripped_for_history(self) -> LookupResult:
         return self.model_copy(
             update={"services": {k: v.without_raw() for k, v in self.services.items()}}
         )

@@ -1,3 +1,7 @@
+// AbuseIPDB tab: preparing and sending an abuse report.
+// Step 1: e-mail source -> /api/abuseipdb/email/analyze (facts, optional LLM opinion, comment draft).
+// Step 2: editable form (IP, categories, timestamp, comment); the hard checks are recomputed by the backend on every
+// change and again when sending, the local checklist is informational only.
 import { api } from "./api.js";
 import { t, tn, fmtSeconds, fmtDateTime, getLocale, registerDirtyCheck } from "./i18n.js";
 
@@ -145,7 +149,7 @@ export function prefillReportEmail(rawEmail) {
   root.querySelector("#rb-email").scrollTop = 0;
 }
 
-export function prefillReport(ip, spoofingConfirmed) {
+export function prefillReport(ip) {
   if (!root) return;
   // Data from a previously analysed e-mail does not apply to an IP handed over from another tab.
   lastFacts = null;
@@ -357,7 +361,7 @@ async function runChecks() {
     const preview = await api.previewReport(fields);
     lastChecks = preview.checks;
     renderPrevious(preview.previous);
-  } catch (err) {
+  } catch {
     lastChecks = null;
     return;
   }

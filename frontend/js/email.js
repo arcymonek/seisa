@@ -1,3 +1,7 @@
+// Email tab: educational analysis of a pasted or loaded e-mail source.
+// Flow: /api/email/find (duplicate check) -> /api/email/analyze (SSE: deterministic facts first, then the LLM analysis
+// streamed as Markdown, then the verdict, the citation check and the saved analysis id). "Finish the analysis" resumes
+// a truncated answer. The LLM output is rendered through renderMarkdownSafe (links defanged); nothing is reported here.
 import { api } from "./api.js";
 import { t, tn, fmtSeconds, fmtDateTime, getLang, getLocale, registerDirtyCheck } from "./i18n.js";
 import { defangUrl, renderMarkdownSafe } from "./markdown-render.js";
@@ -215,8 +219,6 @@ async function runAnalysis(raw) {
   abortController = new AbortController();
   setBusy(true);
   startTimer();
-  let finished = false;
-  let hadError = false;
 
   try {
     await api.emailAnalyzeStream(
@@ -240,11 +242,9 @@ async function runAnalysis(raw) {
         } else if (evt.type === "warning") {
           statusEl.textContent = evt.message;
         } else if (evt.type === "error") {
-          hadError = true;
           const box = evt.phase === "llm" ? root.querySelector("#em-actions") : root.querySelector("#em-analysis");
           box.innerHTML = `<div class="banner warn">${escapeHtml(t(evt.phase === "llm" ? "em.llm_failed" : "em.error", { message: evt.message }))}</div>`;
         } else if (evt.type === "done") {
-          finished = true;
           finishAnalysis(evt);
         }
       },
@@ -487,7 +487,7 @@ function factsToMarkdown(f) {
     ...mdTable([t("common.field"), t("common.value"), t("em.f.domain"), t("em.f.aligned_q")],
       f.identity.map((r) => [r.field, mdCode(r.value), mdCode(r.domain), r.field === "From" ? t("em.f.reference") : r.aligned === true ? t("common.yes") : r.aligned === false ? t("em.f.no_caps") : "-"])));
 
-  L.push("### " + t("em.f.timeline"), "", ...mdTable([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((t) => [t.event, t.utc, fmtDelta(t.delta_s)])));
+  L.push("### " + t("em.f.timeline"), "", ...mdTable([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((ev) => [ev.event, ev.utc, fmtDelta(ev.delta_s)])));
   if (f.epochs.length) {
     L.push("#### " + t("em.f.epochs"), "", ...mdTable([t("em.f.where"), t("common.value"), t("em.f.unit"), "UTC", t("em.f.diff_date")], f.epochs.map((x) => [x.where, mdCode(x.value), x.unit, x.utc, fmtDelta(x.diff_vs_date_s)])));
   }
@@ -687,7 +687,7 @@ function showFacts(f) {
     table([t("common.field"), t("common.value"), t("em.f.domain"), t("em.f.aligned_q")], f.identity.map((r) => [e(r.field), mono(r.value), mono(r.domain), r.field === "From" ? `<span class="muted">${e(t("em.f.reference"))}</span>` : tick(r.aligned)]))));
 
   parts.push(block(t("em.f.timeline"),
-    table([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((t) => [e(t.event), e(t.utc), e(fmtDelta(t.delta_s))])) +
+    table([t("em.f.event"), t("em.f.time_utc"), t("em.f.delta_prev")], f.timeline.map((ev) => [e(ev.event), e(ev.utc), e(fmtDelta(ev.delta_s))])) +
     (f.epochs.length ? `<h4>${e(t("em.f.epochs"))}</h4>` + table([t("em.f.where"), t("common.value"), t("em.f.unit"), "UTC", t("em.f.diff_date")],
       f.epochs.map((x) => [e(x.where), mono(x.value), e(x.unit), e(x.utc), e(fmtDelta(x.diff_vs_date_s))])) : "")));
 

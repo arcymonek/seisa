@@ -76,10 +76,6 @@ export function fmtDate(value) {
   return new Date(value).toLocaleDateString(getLocale(), { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-export function compareText(a, b) {
-  return String(a).localeCompare(String(b), getLocale());
-}
-
 // Static markup: data-i18n="key" sets textContent, data-i18n-attr="title:key;alt:key2" sets attributes.
 export function applyStatic(scope = document) {
   document.documentElement.lang = getLang();

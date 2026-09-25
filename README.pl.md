@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.23</b></p>
+<p align="center"><b>Seisa 2.0.24</b></p>
 
 # Seisa
 
@@ -203,6 +203,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Kod, komentarze, docstringi, komunikaty logów i commity są po angielsku. Dokumentacja jest w dwóch wersjach o tej samej strukturze nagłówków: `README.md` (angielski, główny na GitHubie) i `README.pl.md` (polski); zmiana w jednej oznacza zmianę w drugiej (strukturę nagłówków porównuje `scripts/check_i18n.py`).
 - Każda zakładka z akcją pokazuje licznik czasu (zawsze jedno miejsce po przecinku, np. `13,1 s`), status (np. wczytany plik) i powiązane przyciski w jednym wierszu obok przycisku akcji, zarówno w trakcie, jak i po zakończeniu; w zakładce Email są tam także tokeny i koszt.
 - Teksty widoczne w interfejsie trafiają wyłącznie do katalogów `i18n` (nowy klucz = wpis PL i EN w tym samym commicie); przed commitem `python3 scripts/check_i18n.py` musi kończyć się bez błędów.
+- Kod Pythona jest sprawdzany narzędziem `ruff` (konfiguracja w `pyproject.toml`; narzędzie deweloperskie, nie zależność): `ruff check backend scripts`.
 - W całym projekcie (kod, UI, dokumentacja) nie używa się długiego myślnika (znak Unicode U+2014) - tylko zwykły "-".
 
 ## Znane otwarte kwestie

@@ -32,7 +32,7 @@ def status_label(status: str) -> str:
 
 def _format_scalar(value) -> str:
     """URLs as clickable autolinks (CommonMark <url> syntax), everything else unchanged."""
-    if isinstance(value, str) and (value.startswith("http://") or value.startswith("https://")):
+    if isinstance(value, str) and (value.startswith(("http://", "https://"))):
         return f"<{value}>"
     return str(value)
 
