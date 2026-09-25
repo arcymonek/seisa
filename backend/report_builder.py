@@ -65,7 +65,8 @@ def build_comment(
             parts.append(f"BTC/crypto wallet: {ransom['wallet']}")
 
     if message_id:
-        parts.append(f"Message-ID: {message_id}")
+        # only the local part: the domain after "@" usually is the reporter's own (personal data, see the policy)
+        parts.append(f"Message-ID: {message_id.strip().strip('<>').split('@')[0]}")
 
     sanitized_parts = [sanitize_comment(p) for p in parts]
     comment = "\n\n".join(sanitized_parts)

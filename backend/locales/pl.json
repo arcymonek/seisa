@@ -81,6 +81,7 @@
   "report.ip_private": "adres prywatny/zarezerwowany",
   "report.hard_checks_failed": "twarde sprawdzenia nie przeszły",
   "report.no_key": "brak klucza AbuseIPDB API",
+  "report.cooldown": "ten adres IP był zgłoszony mniej niż {limit} minut temu - AbuseIPDB przyjmuje kolejne zgłoszenie tego samego IP dopiero po {limit} minutach (zostało {minutes} min)",
   "report.api_error": "błąd AbuseIPDB API: {message}",
   "report.age_missing": "brak daty ataku",
   "report.age_too_old": "atak ma {days} dni (limit {limit})",

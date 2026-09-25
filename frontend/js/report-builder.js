@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { t, tn, fmtSeconds, getLocale, registerDirtyCheck } from "./i18n.js";
+import { t, tn, fmtSeconds, fmtDateTime, getLocale, registerDirtyCheck } from "./i18n.js";
 
 let root;
 let categoriesMap = {};
@@ -9,6 +9,8 @@ let lastFacts = null;
 let lastLlmAnalysis = null;
 let timerInterval = null;
 let timerStart = null;
+let cooldownLeft = 0;
+let infoIp = null;
 
 function formatElapsed(ms) {
   return t("rb.analysis_time", { time: fmtSeconds(ms) });
@@ -81,6 +83,8 @@ export function initReportBuilder(container) {
       <h3>${escapeHtml(t("rb.step2"))}</h3>
       <label>${escapeHtml(t("lookup.ip_address"))}</label>
       <input type="text" id="rb-ip">
+      <div class="muted" id="rb-ip-info"></div>
+      <div id="rb-previous"></div>
 
       <label>${escapeHtml(t("rb.categories"))}</label>
       <div class="chip-row" id="rb-categories"></div>
@@ -350,12 +354,56 @@ async function runChecks() {
   const fields = buildFields();
   if (!fields.ip) return;
   try {
-    lastChecks = (await api.previewReport(fields)).checks;
+    const preview = await api.previewReport(fields);
+    lastChecks = preview.checks;
+    renderPrevious(preview.previous);
   } catch (err) {
     lastChecks = null;
     return;
   }
   updateSubmitState(lastChecks);
+  loadIpInfo(fields.ip, lastChecks.ip_ok);
+}
+
+// what AbuseIPDB already knows about the address (one query per address, only for reportable IPs)
+async function loadIpInfo(ip, ipOk) {
+  const el = root.querySelector("#rb-ip-info");
+  if (!ipOk) {
+    infoIp = null;
+    el.textContent = "";
+    return;
+  }
+  if (ip === infoIp) return;
+  infoIp = ip;
+  el.textContent = "";
+  let info;
+  try {
+    info = await api.ipInfo(ip);
+  } catch {
+    return;
+  }
+  if (ip !== infoIp || info.status !== "ok") return;
+  el.textContent = info.total_reports
+    ? t("rb.ip_info", {
+        reports: info.total_reports,
+        users: info.num_distinct_users,
+        score: info.abuse_confidence_score,
+        date: fmtDateTime(info.last_reported_at),
+      })
+    : t("rb.ip_info_none");
+}
+
+function renderPrevious(previous) {
+  const el = root.querySelector("#rb-previous");
+  cooldownLeft = previous ? previous.cooldown_left_minutes : 0;
+  if (!previous || !previous.count) {
+    el.innerHTML = "";
+    return;
+  }
+  const text = cooldownLeft
+    ? t("rb.cooldown", { minutes: cooldownLeft })
+    : t("rb.prev_reports", { n: previous.count, date: fmtDateTime(previous.last_submitted_at) });
+  el.innerHTML = `<div class="banner ${cooldownLeft ? "warn" : ""}">${escapeHtml(text)}</div>`;
 }
 
 const CHECKLIST_LABELS = {
@@ -444,18 +492,21 @@ function renderHardChecks(checks) {
 }
 
 function updateSubmitState(checks) {
-  root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed) || llmBlockers().length > 0;
+  root.querySelector("#rb-submit").disabled = !(checks && checks.all_passed) || llmBlockers().length > 0 || cooldownLeft > 0;
   if (checks) renderHardChecks(checks);
 }
 
 async function submit() {
   const fields = buildFields();
   const resultEl = root.querySelector("#rb-submit-result");
+  const submitBtn = root.querySelector("#rb-submit");
+  submitBtn.disabled = true; // no double click: the same IP cannot be reported twice within 15 minutes
   resultEl.textContent = t("rb.sending");
   try {
     await api.submitReport(fields);
-    resultEl.innerHTML = `<div class="banner info">${escapeHtml(t("rb.sent"))}</div>`;
+    resultEl.innerHTML = `<div class="banner good">${escapeHtml(t("rb.sent"))}</div>`;
   } catch (err) {
     resultEl.innerHTML = `<div class="banner warn">${escapeHtml(t("rb.send_error", { message: err.message }))}</div>`;
   }
+  runChecks();
 }

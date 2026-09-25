@@ -76,6 +76,12 @@ def save_vt_usage(data: dict[str, Any]) -> None:
     _atomic_write(VT_USAGE_FILE, data)
 
 
+def successful_reports(ip: str) -> list[dict[str, Any]]:
+    """Reports of this IP that AbuseIPDB accepted (newest first), from the local report log."""
+    entries = _read_json(REPORT_LOG_FILE, {"entries": []}).get("entries", [])
+    return [e for e in entries if e.get("success") and e.get("ip") == ip]
+
+
 def append_report_log(entry: dict[str, Any]) -> None:
     data = _read_json(REPORT_LOG_FILE, {"entries": []})
     data.setdefault("entries", []).insert(0, entry)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -8,14 +8,29 @@ from pydantic import BaseModel
 from backend.i18n import current_lang, t
 from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
-from backend.report_utils import sanitize_comment, truncate_chars
+from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
 from backend.services.abuseipdb import AbuseIpdbService
 from backend.services.llm_analyzer import llm_analyzer
-from backend.storage import append_report_log
+from backend.storage import append_report_log, successful_reports
 
 router = APIRouter()
 
 abuseipdb_service = AbuseIpdbService()
+
+
+# AbuseIPDB accepts a repeated report of the same IP from the same account only after this many minutes
+REPORT_COOLDOWN_MINUTES = 15
+
+
+def _previous_reports(ip: str) -> dict:
+    """Own earlier reports of this IP (from the local log) and whether the AbuseIPDB cooldown still applies."""
+    entries = successful_reports(ip)
+    if not entries:
+        return {"count": 0, "last_submitted_at": None, "cooldown_left_minutes": 0}
+    last = entries[0]["submitted_at"]
+    elapsed = datetime.now(timezone.utc) - datetime.fromisoformat(last)
+    left = max(0, REPORT_COOLDOWN_MINUTES - int(elapsed / timedelta(minutes=1)))
+    return {"count": len(entries), "last_submitted_at": last, "cooldown_left_minutes": left}
 
 
 class EmailAnalyzeRequest(BaseModel):
@@ -96,7 +111,26 @@ async def analyze_email(req: EmailAnalyzeRequest):
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
-    return {"checks": checks}
+    return {"checks": checks, "previous": _previous_reports(fields.ip)}
+
+
+@router.get("/ip-info")
+async def ip_info(ip: str):
+    """What AbuseIPDB already knows about the IP (last 90 days), shown before reporting it."""
+    ok, _ = is_reportable_ip(ip)
+    if not ok or not abuseipdb_service.is_configured():
+        return {"status": "unavailable"}
+    result = await abuseipdb_service.query_ip(ip)
+    if result.status != "ok":
+        return {"status": "unavailable"}
+    s = result.summary
+    return {
+        "status": "ok",
+        "total_reports": s.get("total_reports"),
+        "num_distinct_users": s.get("num_distinct_users"),
+        "abuse_confidence_score": s.get("abuse_confidence_score"),
+        "last_reported_at": s.get("last_reported_at"),
+    }
 
 
 @router.post("/report/submit")
@@ -107,6 +141,10 @@ async def submit_report(fields: ReportFields):
 
     if not abuseipdb_service.is_configured():
         raise HTTPException(status_code=400, detail=t("report.no_key"))
+
+    left = _previous_reports(fields.ip)["cooldown_left_minutes"]
+    if left:
+        raise HTTPException(status_code=409, detail=t("report.cooldown", minutes=left, limit=REPORT_COOLDOWN_MINUTES))
 
     comment = truncate_chars(sanitize_comment(fields.comment))
     timestamp = _api_timestamp(fields.attack_timestamp)

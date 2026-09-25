@@ -81,6 +81,7 @@
   "report.ip_private": "private/reserved address",
   "report.hard_checks_failed": "the hard checks did not pass",
   "report.no_key": "no AbuseIPDB API key",
+  "report.cooldown": "this IP was reported less than {limit} minutes ago - AbuseIPDB accepts the next report of the same IP only after {limit} minutes ({minutes} min left)",
   "report.api_error": "AbuseIPDB API error: {message}",
   "report.age_missing": "no attack date",
   "report.age_too_old": "the attack is {days} days old (limit {limit})",
