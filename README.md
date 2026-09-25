@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.44</b></p>
+<p align="center"><b>Seisa 2.0.45</b></p>
 
 # Seisa
 
@@ -37,12 +37,14 @@ It supports batch mode (many IP addresses at once, with a visible VirusTotal thr
 The report can be saved as `.md` (the browser's native save dialog) or copied.
 
 ### URLScan
-Orders a live scan of the given URL through the [urlscan.io API](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, then polling `GET /api/v1/result/{uuid}/` every 5 seconds until the result is ready - urlscan.io returns 404 while the scan is running). Every scan is submitted with:
+Orders a live scan of the given URL through the [urlscan.io API](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, then polling `GET /api/v1/result/{uuid}/` every 5 seconds until the result is ready - urlscan.io returns 404 while the scan is running; a three-step indicator shows the progress). The address is cleaned by the backend first: a defanged link (`hxxps://evil[.]example`) is restored, a missing scheme becomes `https://`, and what urlscan.io can never scan is refused with a clear message (non-HTTP schemes, `localhost`, private and local addresses, intranet names). The scan is submitted with:
 
-- **`unlisted` visibility** - it does not appear on the urlscan.io front page or in the public search results, but stays visible to verified security researchers in urlscan Pro,
+- **the visibility you choose** - `unlisted` by default (not on the urlscan.io front page or in public search, but visible to verified security researchers in urlscan Pro), or `private` (only your account) or `public` (anyone; the tab warns about it),
 - **the default user agent** (no `customagent`) and **automatic choice of the scan country** (no `country`) - both fields are deliberately left out of the request.
 
-The result shows the API response in as much detail as possible, formatted as readable text: a page summary (final URL after redirects, title, domain, IP, ASN, geolocation, HTTP server, status), the TLS certificate, the urlscan.io verdict (malicious score, categories, detected brands), statistics (number of requests, unique domains/IPs/countries/ASNs, cookies), detected technologies, the list of contacted IP addresses and domains, and the links found on the page. At the end, in a collapsible "Full API response" section, the whole raw response as code with line numbers - the same as in the IP tab.
+The result is laid out like the IP tab: a verdict banner (colour from the urlscan.io score and the engine and community verdicts; "no verdict" is shown neutrally and explicitly not as "safe"), summary tiles (score, HTTP status, server country, ASN, requests, certificate age with a "new" mark below 7 days, redirects), the page screenshot, a "Page identity" card (submitted and final URL, the redirect chain, title, domain, main IP with a **Check IP** button that only puts the address into the IP tab, location, PTR, server, MIME type, scan time and visibility) and collapsible detail cards - urlscan.io verdict (open only when it signals a risk), TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links - with the whole raw response under "Full API response". The screenshot is fetched by the backend from urlscan.io and served from your own origin, so neither the browser nor the Content-Security-Policy ever touch urlscan.io or the scanned page. Addresses found on the scanned page are shown defanged and are never clickable, also in the Markdown export ("Save .md", "Copy Markdown"). "Scan again" repeats the scan.
+
+Every finished scan is saved in the History tab as a structured summary plus a small JPEG thumbnail of the screenshot (640 px wide, tens of KB); "Reopen" shows it again in this tab, and "Load full report" fetches the complete result from urlscan.io by its identifier.
 
 ### DMARC
 Drag and drop aggregate DMARC reports (from Google, Microsoft etc.; plain `.xml` as well as `.gz` and `.zip` archives exactly as the providers send them) - the tool unpacks and parses them 100% in the browser (no files are sent anywhere) and shows everything the reports contain. A report loaded twice (the same provider and report ID) is skipped and marked in the file list. At the top: a verdict banner (red when a source fails both SPF and DKIM, amber when only one of them fails, green otherwise; report errors get their own banner) followed by hints on the latest published policy of each domain (`p=none` only monitors, a policy that can probably be tightened, `pct` below 100), summary tiles (messages, unique IPs, suspicious sources, share of messages that pass DMARC, and a bar of the policy decisions reject/quarantine/none) and, with more than one report, a table by provider (reports, messages, share passing DMARC). Each uploaded report is an expandable block with every field of its metadata and published policy: provider, contact and additional contact, report ID and version, period, domain, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, with defaults marked), report errors and any other element the report carries (for example `np`, `testing` or vendor tags). Below, the sources aggregated by IP address, riskiest first, filterable (all / suspicious / passing), with SPF and DKIM pass/fail counts and the policy decisions (an override such as `forwarded` is noted there, so legitimate forwarding is not mistaken for an attack); a click on a row expands every single record - header/envelope from and to, the reason of a policy override (`policy_evaluated > reason`), the raw `auth_results` outcome (domain/selector/result/`human_result` for DKIM, domain/scope/result for SPF) and any extra fields - exactly what lets you diagnose *why* alignment failed, not just that it did. The optional "geo/ASN" button in the expanded row sends that single IP address to the external service [ipwho.is](https://ipwho.is) (from your browser, only on click) and shows the country and ASN; from there you can also jump straight to a full reputation check (IP tab) or to preparing an AbuseIPDB report. A short glossary of SPF, DKIM, the policy terms and the table closes the tab. "Save .md" and "Copy Markdown" export the whole analysis (summary, reports, sources and every record; values from the XML sit in code spans). Every import is saved in the History tab with its records, and "Reopen" restores the full analysis. The risk rating is unchanged: high = SPF and DKIM both failed, medium = one of them failed.
@@ -82,7 +84,7 @@ Further details of this tab:
 - Detection of the sender IP: when the first hop outside the recipient's domain is only a relay of an operator (e.g. Microsoft Exchange Online), the parser walks through the operator's internal hops to the hop where the address of the connecting sender was recorded. If the message originated inside a shared provider (e.g. a hotmail account) and there is no public sender IP, the IP stays empty (confidence low). Authentication results are also read from `X-MS-Exchange-Authentication-Results` and `ARC-Authentication-Results`. After an analysis with an LLM the tab shows how much of the content the model saw (the first 2000 characters), and the hard checks (IP, age) take precedence over the opinion of the model.
 
 ### History
-The last 25 actions: IP lookups, DMARC imports and saved e-mail analyses (reopened in the Email tab), which you can reopen or delete. "Clear history" removes only IP and DMARC entries; e-mail analyses (with the raw messages) are deleted one by one.
+The last 25 actions: IP lookups, URL scans (reopened in the URLScan tab, with a thumbnail of the screenshot), DMARC imports and saved e-mail analyses (reopened in the Email tab), which you can reopen or delete. "Clear history" removes only IP, URL scan and DMARC entries; e-mail analyses (with the raw messages) are deleted one by one.
 
 ### Logs
 Errors and warnings (WARNING level and above) from every service - normal, error-free operation of the tool leaves no trace on disk. Filtering by date range (today / 3 days / week / month / all; the default is all) and by service (the default is all). All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
@@ -128,7 +130,8 @@ seisa/
 │   ├── identity.py           # merged address identity (ASN, owner, country, network) with per-field source agreement
 │   ├── report_builder.py     # AbuseIPDB comment builder + policy validation
 │   ├── report_utils.py       # text sanitisation, IP checks
-│   ├── urlscan_report.py     # Markdown report builder for a urlscan.io scan result
+│   ├── urlscan_report.py     # structured summary + Markdown report of a urlscan.io scan result
+│   ├── urlscan_input.py      # cleaning and validation of the URL to scan (refang, scheme, private hosts)
 │   ├── routers/               # /api/* endpoints
 │   └── services/               # a client for every service (common IntelService interface; urlscan.py separately - submit+poll, not an IntelService)
 ├── frontend/
@@ -137,7 +140,7 @@ seisa/
 │   ├── logo.png               # round logo (page header and README)
 │   ├── css/style.css          # dark theme
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
-│   ├── js/                    # modules: app, i18n, util (shared helpers), lookup (+ lookup-result: the report view), urlscan, dmarc, archive (unpacking .gz/.zip), email, report-builder, history, logs, about
+│   ├── js/                    # modules: app, i18n, util (shared helpers), lookup (+ lookup-result: the report view), urlscan (+ urlscan-result: the report view), dmarc, archive (unpacking .gz/.zip), email, report-builder, history, logs, about
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
 ├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 ├── scripts/

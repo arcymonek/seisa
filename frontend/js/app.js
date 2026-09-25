@@ -5,7 +5,7 @@ import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-b
 import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
-import { initUrlscan } from "./urlscan.js";
+import { initUrlscan, prefillUrlscan, showSavedScan } from "./urlscan.js";
 import { initAbout } from "./about.js";
 
 const panels = {
@@ -44,6 +44,14 @@ window.seisaApp = {
   goToDmarc: (data) => {
     switchTab("dmarc");
     loadDmarcData(data);
+  },
+  goToUrlscan: (data) => {
+    switchTab("urlscan");
+    showSavedScan(data);
+  },
+  scanUrl: (url) => {
+    switchTab("urlscan");
+    prefillUrlscan(url);
   },
   goToEmailAnalysis: (id) => {
     switchTab("email");

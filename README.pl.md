@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.44</b></p>
+<p align="center"><b>Seisa 2.0.45</b></p>
 
 # Seisa
 
@@ -37,12 +37,14 @@ Obsługuje tryb wsadowy (wiele adresów IP naraz, z widocznym throttlem VirusTot
 Raport można zapisać jako `.md` (natywne okno wyboru miejsca zapisu w przeglądarce) albo skopiować.
 
 ### URLScan
-Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, potem odpytywanie `GET /api/v1/result/{uuid}/` co 5 sekund, aż wynik będzie gotowy - urlscan.io zwraca 404, dopóki skan trwa). Każdy skan jest zgłaszany z:
+Zleca żywy skan podanego adresu URL przez [API urlscan.io](https://urlscan.io/docs/api/) (`POST /api/v1/scan/`, potem odpytywanie `GET /api/v1/result/{uuid}/` co 5 sekund, aż wynik będzie gotowy - urlscan.io zwraca 404, dopóki skan trwa; postęp pokazuje trzyetapowy wskaźnik). Adres jest najpierw czyszczony przez backend: zdefangowany link (`hxxps://evil[.]example`) zostaje przywrócony, brakujący schemat zamieniany jest na `https://`, a to, czego urlscan.io nigdy nie zeskanuje, jest odrzucane z czytelnym komunikatem (schematy inne niż HTTP, `localhost`, adresy prywatne i lokalne, nazwy z sieci wewnętrznej). Skan jest zgłaszany z:
 
-- **widocznością `unlisted`** - nie trafia na stronę główną ani do publicznych wyników wyszukiwania urlscan.io, ale pozostaje widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro,
+- **widocznością, którą wybierasz** - domyślnie `unlisted` (nie trafia na stronę główną ani do publicznego wyszukiwania urlscan.io, ale jest widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro), albo `private` (tylko Twoje konto) lub `public` (każdy; zakładka ostrzega o tym),
 - **domyślnym user-agentem** (bez `customagent`) i **automatycznym doborem kraju skanowania** (bez `country`) - oba pola celowo pominięte w zapytaniu.
 
-Wynik pokazuje maksymalnie szczegółowe dane z odpowiedzi API sformatowane jako czytelny tekst: podsumowanie strony (URL końcowy po przekierowaniach, tytuł, domena, IP, ASN, geolokalizacja, serwer HTTP, status), certyfikat TLS, werdykt urlscan.io (wynik złośliwości, kategorie, wykryte marki), statystyki (liczba żądań, unikalnych domen/IP/krajów/ASN, cookies), wykryte technologie, listę kontaktowanych adresów IP i domen oraz linki znalezione na stronie. Na końcu, w zwijanej sekcji "Pełna odpowiedź API", cała surowa odpowiedź jako kod z numeracją linii - tak samo jak w zakładce IP.
+Wynik ma układ jak w zakładce IP: baner z werdyktem (kolor z wyniku urlscan.io oraz werdyktów silników i społeczności; "brak werdyktu" jest pokazany neutralnie i wprost nie jako "bezpieczne"), kafelki podsumowania (wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu ze znacznikiem "nowy" poniżej 7 dni, przekierowania), zrzut ekranu strony, karta "Tożsamość strony" (zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena, główne IP z przyciskiem **Sprawdź IP**, który tylko wstawia adres do zakładki IP, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność) oraz zwijane karty szczegółów - werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), certyfikat TLS, technologie, kontaktowane adresy IP (każdy z przyciskiem **Sprawdź IP**), kontaktowane domeny i linki - a cała surowa odpowiedź pod "Pełna odpowiedź API". Zrzut ekranu pobiera z urlscan.io backend i serwuje z Twojego własnego źródła, więc ani przeglądarka, ani Content-Security-Policy nie mają styczności z urlscan.io ani ze skanowaną stroną. Adresy znalezione na skanowanej stronie są pokazywane w postaci zdefangowanej i nigdy nie są klikalne, także w eksporcie Markdown ("Zapisz .md", "Kopiuj Markdown"). "Skanuj ponownie" powtarza skan.
+
+Każdy zakończony skan trafia do zakładki Historia jako ustrukturyzowane podsumowanie oraz mała miniatura zrzutu w JPEG (640 px szerokości, dziesiątki KB); "Otwórz ponownie" pokazuje go znów w tej zakładce, a "Wczytaj pełny raport" pobiera z urlscan.io kompletny wynik po identyfikatorze.
 
 ### DMARC
 Przeciągnij i upuść raporty zbiorcze DMARC (od Google, Microsoft itd.; zwykłe `.xml` oraz archiwa `.gz` i `.zip` dokładnie takie, jakie wysyłają dostawcy) - narzędzie rozpakowuje i parsuje je w 100% po stronie przeglądarki (bez wysyłki plików gdziekolwiek) i pokazuje wszystko, co zawierają raporty. Raport wgrany dwa razy (ten sam dostawca i ID raportu) jest pomijany i oznaczony na liście plików. Na górze: baner z wnioskiem (czerwony, gdy jakieś źródło nie przechodzi ani SPF, ani DKIM; żółty, gdy zawodzi tylko jedna z metod; w innym razie zielony; błędy zgłoszone w raporcie mają osobny baner), a pod nim wskazówki o ostatniej opublikowanej polityce każdej domeny (`p=none` tylko monitoruje, politykę można prawdopodobnie zaostrzyć, `pct` poniżej 100), kafelki podsumowania (wiadomości, unikalne IP, źródła podejrzane, odsetek wiadomości zgodnych z DMARC oraz pasek decyzji polityki reject/quarantine/none) i, przy więcej niż jednym raporcie, tabela według dostawcy (raporty, wiadomości, odsetek zgodnych z DMARC). Każdy wgrany raport to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy). Niżej źródła zagregowane wg adresu IP, od najbardziej ryzykownych, z filtrem (wszystkie / podejrzane / przechodzące), licznikami SPF i DKIM pass/fail oraz decyzjami polityki (override, np. `forwarded`, jest tam odnotowany, żeby prawowite przekazywanie poczty nie wyglądało jak atak); kliknięcie wiersza rozwija każdy pojedynczy rekord - header/envelope from i to, powód nadpisania polityki (`policy_evaluated > reason`), surowy wynik `auth_results` (domena/selektor/wynik/`human_result` dla DKIM, domena/scope/wynik dla SPF) i ewentualne dodatkowe pola - czyli dokładnie to, co pozwala zdiagnozować *dlaczego* dopasowanie nie przeszło, nie tylko że nie przeszło. Opcjonalny przycisk "geo/ASN" w rozwiniętym wierszu wysyła ten jeden adres IP do zewnętrznej usługi [ipwho.is](https://ipwho.is) (z przeglądarki, wyłącznie po kliknięciu) i pokazuje kraj oraz ASN; stamtąd można też od razu przejść do pełnego sprawdzenia reputacji (zakładka IP) albo do przygotowania zgłoszenia AbuseIPDB. Zakładkę zamyka krótka legenda pojęć SPF, DKIM, polityki i tabeli. "Zapisz .md" i "Kopiuj Markdown" eksportują całą analizę (podsumowanie, raporty, źródła i każdy rekord; wartości z XML trafiają do bloków kodu). Każdy import trafia do zakładki Historia razem z rekordami, a "Otwórz ponownie" przywraca pełną analizę. Ocena ryzyka bez zmian: wysokie = SPF i DKIM oba niezgodne, średnie = jedna z metod niezgodna.
@@ -82,7 +84,7 @@ Dalsze szczegóły tej zakładki:
 - Wykrywanie IP nadawcy: gdy pierwszy hop spoza domeny odbiorcy jest tylko przekaźnikiem operatora (np. Microsoft Exchange Online), parser przechodzi wewnętrznymi hopami operatora do hopu, w którym zapisano adres łączącego się nadawcy. Jeśli wiadomość powstała wewnątrz współdzielonego dostawcy (np. konto hotmail) i brak publicznego IP nadawcy, IP zostaje puste (pewność low). Wyniki uwierzytelniania są czytane też z `X-MS-Exchange-Authentication-Results` i `ARC-Authentication-Results`. Po analizie z LLM zakładka pokazuje, ile treści zobaczył model (pierwsze 2000 znaków), a twarde sprawdzenia (IP, wiek) mają pierwszeństwo przed opinią modelu.
 
 ### Historia
-Ostatnie 25 działań: wyszukiwania IP, importy DMARC i zapisane analizy e-maili (otwierane z powrotem w zakładce Email), z możliwością ponownego otwarcia lub usunięcia. "Wyczyść historię" usuwa tylko wpisy IP i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo.
+Ostatnie 25 działań: wyszukiwania IP, skany URL (otwierane z powrotem w zakładce URLScan, z miniaturą zrzutu ekranu), importy DMARC i zapisane analizy e-maili (otwierane z powrotem w zakładce Email), z możliwością ponownego otwarcia lub usunięcia. "Wyczyść historię" usuwa tylko wpisy IP, skanów URL i DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo.
 
 ### Logi
 Błędy i ostrzeżenia (poziom WARNING i wyżej) z każdej usługi - zwykła, bezbłędna praca narzędzia nie zostawia żadnego śladu na dysku. Filtrowanie po zakresie dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie) i po usłudze (domyślnie wszystkie). Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
@@ -128,7 +130,8 @@ seisa/
 │   ├── identity.py           # scalona tożsamość adresu (ASN, właściciel, kraj, sieć) ze zgodnością źródeł per pole
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP
-│   ├── urlscan_report.py     # budowa raportu Markdown z wyniku skanu urlscan.io
+│   ├── urlscan_report.py     # ustrukturyzowane podsumowanie + raport Markdown z wyniku skanu urlscan.io
+│   ├── urlscan_input.py      # czyszczenie i walidacja skanowanego URL (refang, schemat, hosty prywatne)
 │   ├── routers/               # endpointy /api/*
 │   └── services/               # klient dla każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - submit+poll, nie IntelService)
 ├── frontend/
@@ -137,7 +140,7 @@ seisa/
 │   ├── logo.png               # okrągłe logo (nagłówek strony i README)
 │   ├── css/style.css          # ciemny motyw
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
-│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup (+ lookup-result: widok raportu), urlscan, dmarc, archive (rozpakowywanie .gz/.zip), email, report-builder, history, logs, about
+│   ├── js/                    # moduły: app, i18n, util (wspólne funkcje), lookup (+ lookup-result: widok raportu), urlscan (+ urlscan-result: widok raportu), dmarc, archive (rozpakowywanie .gz/.zip), email, report-builder, history, logs, about
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
 ├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 ├── scripts/

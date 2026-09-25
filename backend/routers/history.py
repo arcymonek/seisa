@@ -1,7 +1,8 @@
-"""History tab: the last lookups and DMARC imports (history.json) together with the saved e-mail analyses."""
+"""History tab: the last lookups, DMARC imports and URL scans (history.json) together with the saved e-mail analyses."""
 from __future__ import annotations
 
 import json
+import re
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
@@ -28,6 +29,10 @@ class HistoryCreateRequest(BaseModel):
     data: dict
 
 
+THUMBNAIL_PREFIX = "data:image/jpeg;base64,"
+MAX_THUMBNAIL_CHARS = 200_000  # a 640 px JPEG thumbnail is about 30-60 KB; nothing larger is stored
+_THUMBNAIL_BASE64 = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
+
 EMAIL_VERDICT_RISK = {"legit": "Low", "inconclusive": "Medium"}
 
 
@@ -42,6 +47,23 @@ def _email_entry(item: dict) -> dict:
         "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
         "lang": item.get("lang") or "pl",
     }
+
+
+def _check_urlscan_data(data: dict) -> None:
+    """A scan entry is the structured summary plus an optional thumbnail; the thumbnail is shown through an <img>, so
+    only a plain base64 JPEG data URI of a bounded size is accepted."""
+    if not isinstance(data.get("summary"), dict):
+        raise HTTPException(status_code=400, detail=t("history.invalid_data"))
+    thumbnail = data.get("thumbnail")
+    if thumbnail is None:
+        return
+    if (
+        not isinstance(thumbnail, str)
+        or not thumbnail.startswith(THUMBNAIL_PREFIX)
+        or len(thumbnail) > MAX_THUMBNAIL_CHARS
+        or not _THUMBNAIL_BASE64.match(thumbnail[len(THUMBNAIL_PREFIX):])
+    ):
+        raise HTTPException(status_code=400, detail=t("history.invalid_thumbnail"))
 
 
 @router.get("/history")
@@ -72,10 +94,12 @@ def get_entry(entry_id: str):
 
 @router.post("/history")
 async def create_entry(req: HistoryCreateRequest):
-    if req.type not in ("lookup", "dmarc"):
+    if req.type not in ("lookup", "dmarc", "urlscan"):
         raise HTTPException(status_code=400, detail=t("history.invalid_type"))
     if len(json.dumps(req.data)) > MAX_HISTORY_DATA_CHARS:
         raise HTTPException(status_code=413, detail=t("history.too_large"))
+    if req.type == "urlscan":
+        _check_urlscan_data(req.data)
     entry = HistoryEntry(type=req.type, label=req.label, risk_summary=req.risk_summary, lang=current_lang(), data=req.data)
     append_history(entry)
     return entry

@@ -85,7 +85,7 @@ class LookupResult(BaseModel):
 
 class HistoryEntry(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
-    type: Literal["lookup", "dmarc"]
+    type: Literal["lookup", "dmarc", "urlscan"]
     created_at: str = Field(default_factory=utcnow_iso)
     label: str
     risk_summary: str | None = None

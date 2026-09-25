@@ -117,7 +117,7 @@ function fmtDate(value) {
 }
 
 // "NL" -> "Netherlands (NL)" in the interface language (the browser knows the names; falls back to the bare code).
-function countryName(code, withCode = true) {
+export function countryName(code, withCode = true) {
   try {
     const name = new Intl.DisplayNames([getLocale()], { type: "region" }).of(code);
     return name && name !== code ? (withCode ? `${name} (${code})` : name) : code;
@@ -126,7 +126,7 @@ function countryName(code, withCode = true) {
   }
 }
 
-function chips(items, limit = CHIP_LIMIT) {
+export function chips(items, limit = CHIP_LIMIT) {
   const shown = items.map((x) => String(x));
   const tags = shown.map((x, i) => `<span class="tag${i >= limit ? " extra" : ""}" ${i >= limit ? "hidden" : ""}>${e(x)}</span>`);
   if (shown.length > limit) {
@@ -168,7 +168,7 @@ function renderValue(def, v) {
   }
 }
 
-function kvHtml(rows) {
+export function kvHtml(rows) {
   return `<dl class="kv">${rows.map(([label, html]) => `<dt>${e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
 }
 
@@ -184,7 +184,7 @@ function bannerHtml(result) {
   return `<div class="banner ${BANNER_TONE[rs.level] || "info"}"><strong>${e(title)}</strong>${basis}${detail ? `<div>${e(detail)}</div>` : ""}${notes}</div>`;
 }
 
-function tileHtml(label, value, sub, mark) {
+export function tileHtml(label, value, sub, mark) {
   return `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}${mark ? ` ${mark}` : ""}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
 }
 
@@ -278,7 +278,7 @@ function identityHtml(identity) {
 
 // ---- source cards ----
 
-function numberedJson(data) {
+export function numberedJson(data) {
   const lines = JSON.stringify(data, null, 2).split("\n");
   const width = String(lines.length).length;
   return lines.map((line, i) => `${String(i + 1).padStart(width)} | ${line}`).join("\n");
@@ -333,6 +333,16 @@ function sourcesHtml(result) {
   return `<h3>${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id])).join("")}`;
 }
 
+// The "show N more" button of a chip list (shared with the URLScan report); false when the button is something else.
+export function toggleMoreChips(target) {
+  if (!target.classList.contains("more")) return false;
+  const open = target.getAttribute("aria-expanded") !== "true";
+  target.parentElement.querySelectorAll(".tag.extra").forEach((tag) => (tag.hidden = !open));
+  target.setAttribute("aria-expanded", String(open));
+  target.textContent = open ? t("lookup.show_less") : t("lookup.show_more", { n: target.dataset.more });
+  return true;
+}
+
 // ---- entry point ----
 
 export function renderLookupResult(result) {
@@ -347,12 +357,7 @@ export function renderLookupResult(result) {
     if (!target || !wrap.contains(target)) return;
     if (target.dataset.copy !== undefined) navigator.clipboard.writeText(result.indicator);
     else if (target.dataset.url) window.open(target.dataset.url, "_blank", "noopener");
-    else if (target.classList.contains("more")) {
-      const open = target.getAttribute("aria-expanded") !== "true";
-      target.parentElement.querySelectorAll(".tag.extra").forEach((tag) => (tag.hidden = !open));
-      target.setAttribute("aria-expanded", String(open));
-      target.textContent = open ? t("lookup.show_less") : t("lookup.show_more", { n: target.dataset.more });
-    }
+    else toggleMoreChips(target);
   });
 
   // The raw response can be large (hundreds of pulses, WHOIS dumps): the text is built when the section is first opened.

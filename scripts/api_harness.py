@@ -43,6 +43,19 @@ for k in ("URLSCAN", "VIRUSTOTAL", "OTX", "CLOUDFLARE_RADAR", "ABUSEIPDB", "GREY
 os.environ["OPENROUTER_MODEL"] = "mock/model"
 
 
+def _png(width=1280, height=800):
+    """A valid gradient PNG (the screenshot mock, so that the browser can decode it and build a thumbnail)."""
+    import struct
+    import zlib
+
+    rows = b"".join(b"\x00" + bytes(v for x in range(width) for v in (x * 255 // width, y * 255 // height, 160)) for y in range(height))
+
+    def chunk(kind, body):
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
+
+
 def _no_connect(*a, **kw):
     raise RuntimeError(f"HARNESS: real socket connect attempted: {a!r}")
 
@@ -55,6 +68,7 @@ import httpx  # noqa: E402
 
 XSS = '<img src=x onerror="window.__xss=1">'
 CALLS: list[str] = []
+SCANS: list[dict] = []
 UNHANDLED: list[str] = []
 
 
@@ -109,13 +123,30 @@ def handler(request: httpx.Request) -> httpx.Response:
             {"roles": ["abuse"], "vcardArray": ["vcard", [["fn", {}, "text", "Abuse"], ["email", {}, "text", "abuse@example.net"]]]}],
             "events": [{"eventAction": "registration", "eventDate": "2020-01-01"}]})
     if host == "urlscan.io" and "/scan/" in path:
+        SCANS.append(json.loads(request.content))
         return httpx.Response(200, json={"uuid": "11111111-2222-3333-4444-555555555555", "result": "https://urlscan.io/result/1/"})
+    if host == "urlscan.io" and "/screenshots/" in path:
+        return httpx.Response(200, content=_png(), headers={"Content-Type": "image/png"})
     if host == "urlscan.io" and "/result/" in path:
-        return httpx.Response(200, json={"task": {"url": "https://phish.example/login"},
-                                         "page": {"url": "https://phish.example/login", "title": "Login " + XSS, "domain": "phish.example", "ip": "198.51.100.9"},
-                                         "verdicts": {"urlscan": {"score": 100, "categories": ["phishing"]}},
-                                         "lists": {"ips": ["198.51.100.9"], "domains": ["phish.example"]},
-                                         "data": {"links": [{"href": "https://x.example/", "text": "click " + XSS}]}})
+        return httpx.Response(200, json={"task": {"url": "http://phish.example/", "time": "2026-09-25T10:00:00.000Z", "visibility": "unlisted"},
+                                         "page": {"url": "https://phish.example/login", "title": "Login " + XSS, "domain": "phish.example",
+                                                  "apexDomain": "phish.example", "ip": "198.51.100.9", "country": "NL", "asn": "AS64500",
+                                                  "asnname": "EXAMPLE-AS", "status": "200", "server": "nginx", "mimeType": "text/html",
+                                                  "tlsIssuer": "R3", "tlsValidFrom": "2026-09-24T00:00:00.000Z", "tlsValidDays": 90, "tlsAgeDays": 1},
+                                         "verdicts": {"overall": {"score": 100, "malicious": True, "hasVerdicts": True, "categories": ["phishing"],
+                                                                  "brands": ["Contoso"]},
+                                                      "urlscan": {"score": 100, "categories": ["phishing"], "brands": [{"name": "Contoso", "vertical": ["email"], "country": ["US"]}]},
+                                                      "engines": {"maliciousTotal": 3, "benignTotal": 60},
+                                                      "community": {"votesTotal": 2, "votesMalicious": 2}},
+                                         "stats": {"malicious": 1},
+                                         "lists": {"ips": ["198.51.100.9"], "domains": ["phish.example"], "countries": ["NL"], "asns": ["AS64500"]},
+                                         "meta": {"processors": {"wappa": {"data": [{"app": "nginx", "version": "1.24", "categories": [{"name": "Web servers"}]}]}}},
+                                         "data": {"requests": [{"request": {"request": {"url": "http://phish.example/"}}, "response": {"dataLength": 1000}},
+                                                               {"request": {"request": {"url": "https://phish.example/login"},
+                                                                            "redirectResponse": {"url": "http://phish.example/", "status": 301}},
+                                                                "response": {"dataLength": 2048}}],
+                                                  "cookies": [{"name": "a"}],
+                                                  "links": [{"href": "https://x.example/", "text": "click " + XSS}]}})
     if host == "openrouter.ai":
         payload = json.loads(request.content)
         usage = {"prompt_tokens": 1000, "completion_tokens": 200, "total_tokens": 1200, "cost": 0.0123}
@@ -234,6 +265,13 @@ for lang in ("pl", "en"):
     rec(p + "urlscan scan", client.post("/api/urlscan/scan", json={"url": "https://phish.example/login"}, headers=H))
     rec(p + "urlscan result", client.get("/api/urlscan/result/11111111-2222-3333-4444-555555555555", headers=H))
     rec(p + "urlscan result bad uuid", client.get("/api/urlscan/result/not-a-uuid", headers=H))
+    rec(p + "urlscan scan defanged", client.post("/api/urlscan/scan", json={"url": "hxxps://phish[.]example/login", "visibility": "private"}, headers=H))
+    rec(p + "urlscan scan private host", client.post("/api/urlscan/scan", json={"url": "http://192.168.1.10/admin"}, headers=H))
+    rec(p + "urlscan scan bad scheme", client.post("/api/urlscan/scan", json={"url": "javascript:alert(1)"}, headers=H))
+    rec(p + "urlscan scan bad visibility", client.post("/api/urlscan/scan", json={"url": "https://phish.example/", "visibility": "everyone"}, headers=H))
+    rec(p + "urlscan screenshot bad uuid", client.get("/api/urlscan/screenshot/not-a-uuid", headers=H))
+    shot = client.get("/api/urlscan/screenshot/11111111-2222-3333-4444-555555555555", headers=H)
+    SHOT_PROBE = (shot.status_code, shot.headers.get("content-type"), shot.content[:4])
     for name, src in FIX.items():
         rec(p + f"abuseipdb analyze {name} no-llm", client.post("/api/abuseipdb/email/analyze", json={"raw_email": src, "use_llm": False}, headers=H))
         rec(p + f"abuseipdb analyze {name} llm", client.post("/api/abuseipdb/email/analyze", json={"raw_email": src, "use_llm": True}, headers=H))
@@ -259,6 +297,11 @@ for lang in ("pl", "en"):
     rec(p + "email bad id", client.get("/api/email/analyses/..%2F..%2Fetc", headers=H))
     rec(p + "email bad id2", client.get("/api/email/analyses/bad-id", headers=H))
     rec(p + "history create dmarc", client.post("/api/history", json={"type": "dmarc", "label": "d", "data": {"x": XSS}}, headers=H))
+    thumb = "data:image/jpeg;base64," + "/9j/4AAQ"
+    summary_stub = client.get("/api/urlscan/result/11111111-2222-3333-4444-555555555555", headers=H).json()["summary"]
+    rec(p + "history create urlscan", client.post("/api/history", json={"type": "urlscan", "label": "hxxps://phish[.]example", "risk_summary": "High", "data": {"summary": summary_stub, "thumbnail": thumb}}, headers=H))
+    rec(p + "history create urlscan bad thumbnail", client.post("/api/history", json={"type": "urlscan", "label": "x", "data": {"summary": summary_stub, "thumbnail": "data:image/svg+xml;base64,PHN2Zz4="}}, headers=H))
+    rec(p + "history create urlscan no summary", client.post("/api/history", json={"type": "urlscan", "label": "x", "data": {"thumbnail": thumb}}, headers=H))
     rec(p + "history create bad", client.post("/api/history", json={"type": "evil", "label": "d", "data": {}}, headers=H))
     hist = rec(p + "history list", client.get("/api/history", headers=H))
     lookup_entry = next((h for h in hist if h["type"] == "lookup"), None)
@@ -284,11 +327,15 @@ probes["CORS preflight status"] = r.status_code
 probes["CORS allow-origin header"] = r.headers.get("access-control-allow-origin")
 probes["CSP header on /"] = client.get("/").headers.get("content-security-policy")
 probes["urlscan uuid path injection"] = client.get("/api/urlscan/result/..%2F..%2Fuser%2Fquotas").status_code
+probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
     "lookup ip": 200, "lookup domain": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
+    "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
+    "urlscan screenshot bad uuid": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
+    "history create urlscan no summary": 400,
     "report preview": 200, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
     "report submit cooldown": 409, "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
     "email continue again (not truncated)": 400, "history create dmarc": 200, "history create bad": 400,
@@ -347,6 +394,16 @@ if not (probes["CSP header on /"] or "").startswith("default-src 'self'"):
     failures.append("the Content-Security-Policy header is missing")
 if probes["urlscan uuid path injection"] not in (400, 404):
     failures.append("urlscan result accepts a path-traversal identifier")
+if probes["urlscan screenshot"] != (200, "image/png", b"\x89PNG"):
+    failures.append(f"urlscan screenshot proxy answered {probes['urlscan screenshot']}")
+_defanged = [x for x in SCANS if x["url"] == "https://phish.example/login" and x["visibility"] == "private"]
+if len(_defanged) != 2 or any(x["url"].startswith("hxxp") for x in SCANS) or any(x["visibility"] not in ("unlisted", "private", "public") for x in SCANS):
+    failures.append(f"urlscan submissions were not normalised (defanged URL, visibility): {SCANS}")
+if any("192.168" in x["url"] or x["url"].startswith("javascript") for x in SCANS):
+    failures.append("urlscan accepted a private host or a non-HTTP scheme")
+_summary = summary_stub
+if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) == 2 and _summary["tls"]["age_days"] == 1 and _summary["verdict"]["brands"]):
+    failures.append(f"urlscan summary is wrong: {_summary['verdict']}, redirects={_summary['redirects']}")
 if probes["CORS allow-origin header"]:
     failures.append("a cross-origin preflight is allowed")
 

@@ -5,7 +5,7 @@ import { escapeHtml } from "./util.js";
 
 let root;
 
-const TYPE_LABEL = { lookup: "IP", dmarc: "DMARC", email: "Email" };
+const TYPE_LABEL = { lookup: "IP", urlscan: "URLScan", dmarc: "DMARC", email: "Email" };
 
 export function initHistory(container) {
   root = container;
@@ -77,6 +77,7 @@ async function load() {
 async function openEntry(id) {
   const entry = await api.historyEntry(id);
   if (entry.type === "dmarc" && entry.data.records) return window.seisaApp.goToDmarc(entry.data);
+  if (entry.type === "urlscan" && entry.data.summary) return window.seisaApp.goToUrlscan(entry.data);
   const detail = root.querySelector("#hi-detail");
   detail.innerHTML = "";
   const card = document.createElement("div");

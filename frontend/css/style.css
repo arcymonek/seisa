@@ -257,3 +257,19 @@ button.tag.more { color: var(--accent); border-color: var(--accent); cursor: poi
 td.mono { font-family: var(--mono); font-size: 13px; }
 .src-body { padding: 2px 0 8px 18px; }
 .raw-json { background: #14171a; border-radius: 4px; padding: 12px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; font-family: var(--mono); font-size: 13px; max-height: 600px; overflow: auto; }
+
+/* --- zakładka URLScan --- */
+#us-visibility { max-width: 320px; }
+button.mini.inline, .src-body button.mini.inline { display: inline-block; margin: 0 0 0 8px; }
+.us-row { padding: 3px 0; overflow-wrap: anywhere; }
+.us-row .mono, .kv .mono { font-family: var(--mono); font-size: 13.5px; }
+.us-shot { margin: 12px 0; }
+.us-shot img { display: block; max-width: 100%; max-height: 420px; object-fit: cover; object-position: top; border: 1px solid var(--hair); border-radius: 6px; cursor: zoom-in; background: #fff; }
+.us-shot.expanded img { max-height: none; object-fit: contain; cursor: zoom-out; }
+.us-shot figcaption { margin-top: 4px; font-size: 13px; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px 24px; list-style: none; padding: 0; margin: 16px 0; font-family: var(--mono); font-size: 14px; color: var(--muted); }
+.steps li::before { content: "○ "; }
+.steps li.done { color: var(--pass); }
+.steps li.done::before { content: "✓ "; }
+.steps li.active { color: var(--text); }
+.steps li.active::before { content: "● "; color: var(--accent); }
