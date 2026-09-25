@@ -164,11 +164,21 @@ def handler(request: httpx.Request) -> httpx.Response:
         if payload.get("stream"):
             STREAM_COUNT["n"] += 1
             if len(payload["messages"]) > 2:  # continuation
-                return httpx.Response(200, content=_sse(["\n\n## Part 6\nRest \u2014 done."], "stop", usage),
+                return httpx.Response(200, content=_sse(["\n\n## Part 6: Assessment\nRest \u2014 done. Do not click; report `203.0.113.45`.\n\n",
+                                                         "## Control questions\n1. Why is SPF fail not enough?\n\n<details><summary>Answer</summary>\n\n",
+                                                         "Because DMARC decides.\n\n</details>\n"], "stop", usage),
+                                      headers={"content-type": "text/event-stream"})
+            if payload["messages"][0]["content"].startswith("You answer a follow-up question"):
+                return httpx.Response(200, content=_sse(["The `Received-SPF` line says ", "the check failed [x](https://evil.example/) <b>b</b>."], "stop", usage),
                                       headers={"content-type": "text/event-stream"})
             return httpx.Response(200, content=_sse(
-                ["VERDICT: phishing | CONFIDENCE: high\n\n# Analysis\n", "IP 203.0.113.45 and 192.0.2.99 \u2014 ",
-                 "`Received-SPF: fail`\n\n```\nX-Fake-Header: nothing\n```\n", "SCL=9 <b>bold</b> [link](https://evil.example/)"],
+                ["VERDICT: phishing | CONFIDENCE: high\n\n# Analysis: a fake bank message\nA phishing message: SPF failed, Reply-To points elsewhere. ",
+                 "IP 203.0.113.45 and 192.0.2.99 \u2014 ", "`Received-SPF: fail`\n\n",
+                 "## Part 1: Mental model\nEnvelope vs letter, see `X-Originating-IP: [198.51.100.7]`.\n\n```\nsender -> mx.recipient.example -> mailbox\n```\n\n",
+                 "## Part 2: Line by line\n### A. Headers of the recipient's server\n```\nReceived-SPF: fail (bank.example: domain does not designate 203.0.113.45 as permitted sender) client-ip=203.0.113.45;\n```\n",
+                 "Trusted by nobody. `Return-Path` is missing.\n\n### B. Authentication\n```\nAuthentication-Results: mx.recipient.example; spf=fail smtp.mailfrom=bank.example; (...) dmarc=fail\n```\n```\nX-Fake-Header: nothing\n```\n\n",
+                 "## Part 3: Checklist\n| # | Check | Result | Rating |\n|---|---|---|---|\n| 1 | Context | unexpected | \u26a0 |\n| 2 | SPF | fail | \u2717 |\n| 3 | Times | consistent | \u2713 |\n\n",
+                 "## Part 4: Legitimate vs hostile\nSCL=9 <b>bold</b> [link](https://evil.example/)\n\n## Part 5: Traps\nDo not trust display names."],
                 "length", usage), headers={"content-type": "text/event-stream"})
         content = json.dumps({"qualifies": True, "reasoning": "r " + XSS, "suggested_categories": [7, 11],
                               "report_comment": "Phishing from 203.0.113.45 \u2014 test", "alternatives": "",
@@ -308,6 +318,11 @@ for lang in ("pl", "en"):
         rec(p + "email analysis get", client.get(f"/api/email/analyses/{aid}", headers=H))
         rec(p + "email continue", client.post(f"/api/email/analyses/{aid}/continue", headers=H), sse=True)
         rec(p + "email continue again (not truncated)", client.post(f"/api/email/analyses/{aid}/continue", headers=H))
+        rec(p + "email ask", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "Why did SPF fail?", "fragment": "Received-SPF: fail"}, headers=H), sse=True)
+        rec(p + "email ask blank", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "  "}, headers=H))
+        rec(p + "email ask too long", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "x" * 601}, headers=H))
+        rec(p + "email analysis after ask", client.get(f"/api/email/analyses/{aid}", headers=H))
+    rec(p + "email ask bad id", client.post("/api/email/analyses/bad-id/ask", json={"question": "q"}, headers=H))
     rec(p + "email bad id", client.get("/api/email/analyses/..%2F..%2Fetc", headers=H))
     rec(p + "email bad id2", client.get("/api/email/analyses/bad-id", headers=H))
     rec(p + "history create dmarc", client.post("/api/history", json={"type": "dmarc", "label": "d", "data": {"x": XSS}}, headers=H))

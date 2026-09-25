@@ -223,6 +223,7 @@
   "email.not_found": "nie znaleziono analizy",
   "email.not_truncated": "ta analiza nie jest ucięta",
   "email.no_key": "brak klucza OpenRouter",
+  "email.empty_question": "Pytanie jest puste.",
   "history.not_found": "nie znaleziono wpisu",
   "history.no_subject": "(brak tematu)",
   "history.invalid_type": "nieprawidłowy typ wpisu",

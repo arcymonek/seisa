@@ -223,6 +223,7 @@
   "email.not_found": "analysis not found",
   "email.not_truncated": "this analysis is not truncated",
   "email.no_key": "no OpenRouter key",
+  "email.empty_question": "The question is empty.",
   "history.not_found": "entry not found",
   "history.no_subject": "(no subject)",
   "history.invalid_type": "invalid entry type",
