@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from backend.email_parser import extract_addresses
 from backend.i18n import t
 from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
 
@@ -69,6 +70,22 @@ def build_comment(
     sanitized_parts = [sanitize_comment(p) for p in parts]
     comment = "\n\n".join(sanitized_parts)
     return truncate_chars(comment)
+
+
+def local_assessment(raw_email: str, facts: dict) -> dict:
+    """Cheap deterministic pre-assessment used without the LLM. It never says that a message qualifies - it only
+    recognises the obvious case of a test sent from the user's own account to themselves: the sender, the envelope
+    sender and a recipient are the same address, and there is no sign of an attack in the headers."""
+    addr = extract_addresses(raw_email)
+    sender = addr["from"][0] if len(addr["from"]) == 1 else None
+    same_party = bool(sender) and addr["return_path"] == [sender] and sender in addr["recipients"]
+    no_attack_signs = not (
+        facts.get("spoofing_suspected")
+        or facts.get("attachments")
+        or facts.get("btc_addresses_found")
+        or facts.get("ransom_keywords_found")
+    )
+    return {"self_sent": same_party and no_attack_signs, "address": sender if same_party else None}
 
 
 def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list[int]) -> dict:

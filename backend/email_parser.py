@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone
 from email import message_from_string
 from email.message import Message
-from email.utils import parsedate_to_datetime
+from email.utils import getaddresses, parsedate_to_datetime
 
 from backend.i18n import t
 
@@ -338,6 +338,21 @@ def extract_body_excerpt(raw_email: str, limit: int = BODY_EXCERPT_LIMIT) -> str
     if len(body) > limit:
         body = body[:limit] + "...(truncated)"
     return body
+
+
+def extract_addresses(raw_email: str) -> dict:
+    """Lower-cased addresses from From, Return-Path (envelope sender) and Delivered-To/To (recipients)."""
+    msg = message_from_string(_refold_headers(raw_email))
+
+    def addrs(*names: str) -> list[str]:
+        values = [v for name in names for v in (msg.get_all(name) or [])]
+        return [a.lower() for _, a in getaddresses([str(v) for v in values]) if a]
+
+    return {
+        "from": addrs("From"),
+        "return_path": addrs("Return-Path"),
+        "recipients": addrs("Delivered-To", "X-Original-To", "To"),
+    }
 
 
 def parse_email(raw_email: str) -> dict:

@@ -129,6 +129,7 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 .checklist-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 15px; }
 .checklist-item.auto-pass::before { content: "✓"; color: var(--pass); font-weight: 700; }
 .checklist-item.auto-fail::before { content: "✗"; color: var(--fail); font-weight: 700; }
+.checklist-item.auto-none::before { content: "-"; color: var(--muted); font-weight: 700; }
 
 .ip-confidence { font-size: 12.5px; }
 .ip-confidence-high { color: var(--pass); }
@@ -143,9 +144,12 @@ td { padding: 8px; border-bottom: 1px solid #2a2c30; vertical-align: top; }
 }
 .hop-row.hop-boundary { border-left-color: var(--accent); color: var(--text); }
 
-.banner { border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; }
-.banner.warn { background: #3a3220; border: 1px solid var(--warn); }
-.banner.info { background: #1c2a30; border: 1px solid var(--accent); }
+/* One background for every banner; the border carries the meaning: bad = red, good = green, neutral = no colour */
+.banner { background: #1c2a30; border: 1px solid var(--hair); border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; }
+.banner.warn { border-color: var(--warn); }
+.banner.info { border-color: var(--accent); }
+.banner.bad { border-color: var(--fail); }
+.banner.good { border-color: var(--pass); }
 
 .muted { color: var(--muted); font-size: 14.5px; }
 .dropzone {

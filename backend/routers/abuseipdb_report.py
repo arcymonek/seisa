@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from backend.i18n import current_lang, t
 from backend.email_parser import BODY_EXCERPT_LIMIT, body_text_length, extract_body_excerpt, extract_relevant_headers, parse_email
-from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, validate_hard_checks
+from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import sanitize_comment, truncate_chars
 from backend.services.abuseipdb import AbuseIpdbService
 from backend.services.llm_analyzer import llm_analyzer
@@ -47,6 +47,17 @@ def _fallback_comment(facts: dict) -> str:
     )
 
 
+def _api_timestamp(value: str | None) -> str:
+    """ISO 8601 in UTC without fractions (e.g. 2026-09-25T07:04:00+00:00) - the plainest form the API accepts."""
+    if value:
+        ts = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+    else:
+        ts = datetime.now(timezone.utc)
+    return ts.astimezone(timezone.utc).replace(microsecond=0).isoformat()
+
+
 @router.post("/email/analyze")
 async def analyze_email(req: EmailAnalyzeRequest):
     facts = parse_email(req.raw_email)
@@ -72,6 +83,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
 
     return {
         "facts": facts,
+        "local_assessment": local_assessment(req.raw_email, facts),
         "categories": ABUSEIPDB_CATEGORIES,
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
@@ -97,7 +109,7 @@ async def submit_report(fields: ReportFields):
         raise HTTPException(status_code=400, detail=t("report.no_key"))
 
     comment = truncate_chars(sanitize_comment(fields.comment))
-    timestamp = fields.attack_timestamp or datetime.now(timezone.utc).isoformat()
+    timestamp = _api_timestamp(fields.attack_timestamp)
 
     try:
         result = await abuseipdb_service.submit_report(fields.ip, fields.categories, comment, timestamp)

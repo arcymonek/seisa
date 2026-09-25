@@ -232,7 +232,7 @@ async function analyze(useLlm) {
   const rawEmail = root.querySelector("#rb-email").value.trim();
   if (!rawEmail) return;
   const analysisEl = root.querySelector("#rb-analysis");
-  analysisEl.innerHTML = `<div class="muted">${escapeHtml(t("rb.analyzing"))}</div>`;
+  analysisEl.innerHTML = "";
   const timerEl = root.querySelector("#rb-timer");
   const usageEl = root.querySelector("#rb-usage");
   usageEl.textContent = "";
@@ -256,22 +256,28 @@ async function analyze(useLlm) {
   const llm = data.llm_analysis;
   lastLlmAnalysis = llm && !llm.error ? llm : null;
   const hardOk = facts.ip_ok && facts.age_ok;
+  const llmOk = !!(llm && !llm.error);
   // hard checks (IP, age) take precedence - the model opinion cannot override them
-  const qualifies = hardOk && (llm && !llm.error ? llm.qualifies : true);
+  const reasons = [];
+  if (!facts.ip_ok) reasons.push(facts.ip_reject_reason);
+  if (!facts.age_ok) reasons.push(facts.age_days === null ? t("rb.no_reliable_date") : t("rb.age_reason", { days: facts.age_days }));
+  const local = data.local_assessment || {};
 
   let html = "";
-  if (!qualifies) {
-    const reasons = [];
-    if (!facts.ip_ok) reasons.push(facts.ip_reject_reason);
-    if (!facts.age_ok) reasons.push(facts.age_days === null ? t("rb.no_reliable_date") : t("rb.age_reason", { days: facts.age_days }));
-    html += `<div class="banner warn"><strong>${escapeHtml(t("rb.not_qualifying"))}</strong><br>${escapeHtml(reasons.join("; "))}`;
-    if (llm && !llm.error && llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
-    if (llm && !llm.error && llm.alternatives) html += `<br><strong>${escapeHtml(t("rb.alternatives"))}</strong> ${escapeHtml(llm.alternatives)}`;
+  if (!hardOk || (llmOk && !llm.qualifies)) {
+    html += `<div class="banner bad"><strong>${escapeHtml(t("rb.not_qualifying"))}</strong>`;
+    if (reasons.length) html += `<br>${escapeHtml(reasons.join("; "))}`;
+    if (llmOk && llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
+    if (llmOk && llm.alternatives) html += `<br><strong>${escapeHtml(t("rb.alternatives"))}</strong> ${escapeHtml(llm.alternatives)}`;
     html += "</div>";
+  } else if (llmOk) {
+    html += `<div class="banner good"><strong>${escapeHtml(t("rb.qualifying"))}</strong>`;
+    if (llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
+    html += "</div>";
+  } else if (local.self_sent) {
+    html += `<div class="banner bad"><strong>${escapeHtml(t("rb.self_sent_title"))}</strong><br>${escapeHtml(t("rb.self_sent_body", { address: local.address }))}</div>`;
   } else {
-    html += `<div class="banner info"><strong>${escapeHtml(t("rb.qualifying"))}</strong>`;
-    if (llm && !llm.error && llm.reasoning) html += `<br>${escapeHtml(llm.reasoning)}`;
-    html += "</div>";
+    html += `<div class="banner"><strong>${escapeHtml(t("rb.hard_only_title"))}</strong><br>${escapeHtml(t("rb.hard_only_body"))}</div>`;
   }
   if (llm && llm.error) {
     html += `<div class="banner warn">${escapeHtml(t("rb.llm_failed", { error: llm.error }))}</div>`;
@@ -300,7 +306,7 @@ async function analyze(useLlm) {
   root.querySelector("#rb-form").style.display = "block";
   root.querySelector("#rb-ip").value = facts.trusted_source_ip || "";
   if (facts.date_parsed) {
-    root.querySelector("#rb-timestamp").value = facts.date_parsed.slice(0, 16);
+    root.querySelector("#rb-timestamp").value = toLocalInput(facts.date_parsed);
   }
   root.querySelector("#rb-comment").value = data.report_comment || "";
   updateCharCount();
@@ -308,6 +314,13 @@ async function analyze(useLlm) {
   renderCategoryChips((llm && !llm.error && llm.suggested_categories) || []);
   renderChecklist(baselineChecklist());
   scheduleChecks();
+}
+
+// datetime-local wants the browser's local time; date_parsed carries the offset of the message's own Date header
+function toLocalInput(iso) {
+  const d = new Date(iso);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function scheduleChecks() {
@@ -351,7 +364,7 @@ const CHECKLIST_LABELS = {
   category_confirmed: "rb.check.category_confirmed",
   received_verified: "rb.check.received_verified",
   not_spoofed_source: "rb.check.not_spoofed_source",
-  spoofing_confirmed: "rb.check.spoofing_confirmed",
+  spoofing: "rb.check.spoofing",
   category_matches: "rb.check.category_matches",
   pii_redacted: "rb.check.pii_redacted",
 };
@@ -368,32 +381,21 @@ function baselineChecklist() {
         : { status: "unknown", note: t("rb.note.no_email_manual") },
     not_spoofed_source: llm && llm.not_spoofed_source
       ? llm.not_spoofed_source
-      : hasFacts
-        ? { status: "pass", note: t("rb.note.smtp_ok") }
-        : { status: "unknown", note: t("rb.note.no_email_auto") },
-    spoofing_confirmed: hasFacts
-      ? { status: lastFacts.spoofing_suspected ? "pass" : "fail", note: lastFacts.spoofing_suspected ? t("rb.note.spoofing_found") : noSpoofingNote(lastFacts) }
-      : { status: "unknown", note: t("rb.note.no_email") },
+      : { status: "unknown", note: hasFacts ? noLlmNote : t("rb.note.no_email_auto") },
+    spoofing: hasFacts ? spoofingCheck(lastFacts) : { status: "unknown", note: t("rb.note.no_email") },
     category_matches: llm && llm.category_matches ? llm.category_matches : { status: "unknown", note: noLlmNote },
     pii_redacted: llm && llm.pii_redacted ? llm.pii_redacted : { status: "unknown", note: noLlmNote },
   };
 }
 
-function noSpoofingNote(facts) {
-  const spf = facts.spf, dmarc = facts.dmarc;
+// Spoofing is either detected, not detected, or impossible to assess from the pasted source.
+function spoofingCheck(facts) {
   const none = t("common.none");
-  const state = `SPF: ${spf || none}, DKIM: ${facts.dkim || none}, DMARC: ${dmarc || none}`;
-  let cause;
-  if (!spf && !facts.dkim && !dmarc) {
-    cause = t("rb.cause.no_auth_headers");
-  } else if (spf === "pass" || dmarc === "pass") {
-    cause = t("rb.cause.auth_passed");
-  } else if (spf === "softfail" || spf === "neutral" || spf === "none" || dmarc === "none") {
-    cause = t("rb.cause.weak_policy");
-  } else {
-    cause = t("rb.cause.ambiguous");
-  }
-  return t("rb.note.no_spoofing", { state, cause });
+  const state = `SPF: ${facts.spf || none}, DKIM: ${facts.dkim || none}, DMARC: ${facts.dmarc || none}`;
+  if (facts.spoofing_suspected) return { status: "pass", note: t("rb.note.spoofing_detected", { state }) };
+  if (!facts.spf && !facts.dkim && !facts.dmarc) return { status: "unknown", note: t("rb.note.spoofing_nodata") };
+  if (facts.spf === "pass" || facts.dmarc === "pass") return { status: "none", note: t("rb.note.spoofing_none", { state }) };
+  return { status: "unknown", note: t("rb.note.spoofing_unclear", { state }) };
 }
 
 const BLOCKING_KEYS = ["received_verified", "not_spoofed_source"];
@@ -407,6 +409,7 @@ function llmBlockers() {
 function statusClass(status) {
   if (status === "pass") return "auto-pass";
   if (status === "fail") return "auto-fail";
+  if (status === "none") return "auto-none";
   return "auto-pending";
 }
 
