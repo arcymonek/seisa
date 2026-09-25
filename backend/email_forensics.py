@@ -930,15 +930,22 @@ def compute_facts(src: str) -> dict:
         tracking = [i for i in h["images"] if i["tracking_hint"]]
         if tracking:
             flag("info", t("forensics.flag.tracking", n=len(tracking)))
+        # Identical findings for repeated links (mailers repeat the same link many times) are reported once with a count.
+        link_findings: dict[tuple[str, str], int] = {}
         for l in h["links"]:
+            found = []
             if l["text_host_mismatch"]:
-                flag("warn", t("forensics.flag.link_mismatch", text=l["text"][:40], host=l["host"]))
+                found.append(("warn", t("forensics.flag.link_mismatch", text=l["text"][:40], host=l["host"])))
             if l["scheme"] == "http":
-                flag("info", t("forensics.flag.link_http", host=(l["host"] or "")[:50]))
+                found.append(("info", t("forensics.flag.link_http", host=(l["host"] or "")[:50])))
             if l["abused_host"]:
-                flag("info", t("forensics.flag.link_abused", host=l["host"]))
+                found.append(("info", t("forensics.flag.link_abused", host=l["host"])))
             if l["shortener"]:
-                flag("warn", t("forensics.flag.link_shortener", host=l["host"]))
+                found.append(("warn", t("forensics.flag.link_shortener", host=l["host"])))
+            for key in found:
+                link_findings[key] = link_findings.get(key, 0) + 1
+        for (level, text), count in link_findings.items():
+            flag(level, text if count == 1 else text.rstrip(".") + " " + t("forensics.flag.times", n=count) + ".")
         if any(l["query_params"] >= 4 for l in h["links"]):
             flag("info", t("forensics.flag.link_params"))
 

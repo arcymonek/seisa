@@ -203,5 +203,6 @@
   "history.not_found": "entry not found",
   "history.invalid_type": "invalid entry type",
   "score.basis_single": "a single source ({source})",
-  "score.basis_nodata": "no data from any source"
+  "score.basis_nodata": "no data from any source",
+  "forensics.flag.times": "(x{n})"
 }

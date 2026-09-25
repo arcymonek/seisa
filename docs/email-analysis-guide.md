@@ -72,9 +72,12 @@ system prompt states the **response language**; see section 0.
    that they are there and where from, but do not quote them.
 9. Give numbers (epoch, time differences, lengths) from the "Facts computed by the code"; if you calculate
    yourself, show the calculation.
-10. **Do not reveal implementation details.** Do not quote JSON field names or flags (`aligned: false`,
-    `authserv_id`, `hidden_text_total`, "a warn flag in the data"). Refer to "Seisa's deterministic analysis"
-    and to the tables the user sees above your analysis.
+10. **Do not reveal implementation details.** Never mention JSON field names, flags, array names or the guide
+    itself: no `aligned: false`, `authserv_id`, `hidden_text_total`, `helo: null`, `one_click: false`, "the `auth`,
+    `dkim` and `arc` arrays are empty", "a warn flag in the data" and no "the guide says". Describe the *fact*
+    in plain words instead (bad: "`helo` is null"; good: "no HELO name is shown for this hop"; bad: "the `auth`
+    array is empty"; good: "there is no Authentication-Results header at all"). Refer to "Seisa's deterministic
+    analysis" and to the tables the user sees above your analysis, by their visible names.
 11. **Do not claim that you decoded, checked or verified something unless you have it in the data** (e.g. "after
     decoding the Base64 it is unreadable", DNS results). Say instead that it cannot be assessed from the source.
 12. `MAIL FROM` is a declaration of the client in the SMTP conversation, **not** a datum from the TCP socket.

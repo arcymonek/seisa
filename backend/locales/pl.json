@@ -203,5 +203,6 @@
   "history.not_found": "nie znaleziono wpisu",
   "history.invalid_type": "nieprawidłowy typ wpisu",
   "score.basis_single": "jednym źródle ({source})",
-  "score.basis_nodata": "braku danych z jakiegokolwiek źródła"
+  "score.basis_nodata": "braku danych z jakiegokolwiek źródła",
+  "forensics.flag.times": "(x{n})"
 }
