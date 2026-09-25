@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import ipaddress
+from datetime import datetime, timedelta, timezone
 
 from backend.i18n import t
 
+AGE_LIMIT_DAYS = 60  # AbuseIPDB: the reported activity must be no older than 60 days
+CLOCK_SKEW = timedelta(hours=1)  # a date this far in the future is treated as "now" (clock offset, not a forged date)
 MAX_COMMENT_BYTES = 1024
 MAX_COMMENT_CHARS = 1024
 
@@ -45,3 +48,17 @@ def is_reportable_ip(ip_str: str) -> tuple[bool, str | None]:
     ):
         return False, t("report.ip_private")
     return True, None
+
+
+def attack_age(ts: datetime) -> tuple[int, bool]:
+    """Age of the event in whole days and whether it is within the AbuseIPDB limit (timezone-aware `ts`).
+
+    The one age rule of both the analysis step and the hard checks before sending. A date up to CLOCK_SKEW in the
+    future counts as age 0 (otherwise `.days` would give -1 for a few minutes of clock offset); a date further in
+    the future gives a negative age and fails.
+    """
+    delta = datetime.now(timezone.utc) - ts
+    if -CLOCK_SKEW <= delta < timedelta(0):
+        delta = timedelta(0)
+    days = delta.days
+    return days, 0 <= days <= AGE_LIMIT_DAYS

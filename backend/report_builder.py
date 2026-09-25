@@ -4,9 +4,7 @@ from datetime import datetime, timezone
 
 from backend.email_parser import extract_addresses
 from backend.i18n import t
-from backend.report_utils import is_reportable_ip, sanitize_comment, truncate_chars
-
-AGE_LIMIT_DAYS = 60
+from backend.report_utils import AGE_LIMIT_DAYS, attack_age, is_reportable_ip, sanitize_comment, truncate_chars
 
 ABUSEIPDB_CATEGORIES = {
     1: "DNS Compromise",
@@ -102,9 +100,13 @@ def validate_hard_checks(ip: str, attack_timestamp: str | None, categories: list
             ts = datetime.fromisoformat(attack_timestamp.replace("Z", "+00:00"))
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
-            age_days = (datetime.now(timezone.utc) - ts).days
-            age_ok = 0 <= age_days <= AGE_LIMIT_DAYS
-            age_reason = None if age_ok else t("report.age_too_old", days=age_days, limit=AGE_LIMIT_DAYS)
+            age_days, age_ok = attack_age(ts)
+            if age_ok:
+                age_reason = None
+            elif age_days < 0:
+                age_reason = t("report.age_future")
+            else:
+                age_reason = t("report.age_too_old", days=age_days, limit=AGE_LIMIT_DAYS)
         except ValueError:
             age_reason = t("report.age_bad_format")
 

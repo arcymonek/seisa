@@ -225,6 +225,8 @@ async def continue_analysis(analysis_id: str):
                 usage = payload
             elif kind == "finish":
                 finish = payload
+            elif kind == "warning":
+                yield _sse({"type": "warning", "message": payload})
             elif kind == "error":
                 yield _sse({"type": "error", "message": payload, "phase": "llm"})
                 return

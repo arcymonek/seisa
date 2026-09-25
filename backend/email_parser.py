@@ -3,12 +3,13 @@ from __future__ import annotations
 import html as html_module
 import ipaddress
 import re
-from datetime import datetime, timezone
+from datetime import timezone
 from email import message_from_string
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 
 from backend.i18n import t
+from backend.report_utils import attack_age, is_reportable_ip
 
 _BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
 _RANSOM_KEYWORDS = ("bitcoin", "btc", "ransom", "payment", "wallet", "crypto", "decrypt")
@@ -22,7 +23,6 @@ _HTML_BLOCK_CLOSE_RE = re.compile(r"</(p|div|tr|li|h[1-6]|table)>|<br\s*/?>", re
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 _BLANK_LINES_RE = re.compile(r"\n{3,}")
 
-AGE_LIMIT_DAYS = 60
 
 
 def _html_to_text(html: str) -> str:
@@ -374,12 +374,13 @@ def parse_email(raw_email: str) -> dict:
     date_header = msg.get("Date")
     date_parsed = None
     age_days = None
+    age_ok = False
     if date_header:
         try:
             date_parsed = parsedate_to_datetime(date_header)
             if date_parsed.tzinfo is None:
                 date_parsed = date_parsed.replace(tzinfo=timezone.utc)
-            age_days = (datetime.now(timezone.utc) - date_parsed).days
+            age_days, age_ok = attack_age(date_parsed)
         except (TypeError, ValueError):
             pass
 
@@ -387,18 +388,10 @@ def parse_email(raw_email: str) -> dict:
     btc_matches = sorted(set(_BTC_RE.findall(body)))
     ransom_hint = any(kw in body.lower() for kw in _RANSOM_KEYWORDS)
 
-    ip_ok, ip_reject_reason = (True, None)
     if trusted_ip:
-        try:
-            ip = ipaddress.ip_address(trusted_ip)
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-                ip_ok, ip_reject_reason = False, t("report.ip_private")
-        except ValueError:
-            ip_ok, ip_reject_reason = False, t("report.ip_invalid")
+        ip_ok, ip_reject_reason = is_reportable_ip(trusted_ip)
     else:
         ip_ok, ip_reject_reason = False, t("parser.no_public_ip")
-
-    age_ok = age_days is not None and age_days <= AGE_LIMIT_DAYS
 
     return {
         "trusted_source_ip": trusted_ip,

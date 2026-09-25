@@ -3,6 +3,7 @@ from __future__ import annotations
 import httpx
 
 from backend.config import settings
+from backend.i18n import t
 from backend.models import ServiceResult
 from backend.report_builder import ABUSEIPDB_CATEGORIES
 from backend.services.base import IntelService
@@ -35,7 +36,7 @@ class AbuseIpdbService(IntelService):
             r = reports[0]
             reporter_id = r.get("reporterId")
             cat_ids = r.get("categories") or []
-            categories_label = ", ".join(f"{c} ({ABUSEIPDB_CATEGORIES.get(c, 'nieznana')})" for c in cat_ids)
+            categories_label = ", ".join(f"{c} ({ABUSEIPDB_CATEGORIES.get(c, t('svc.unknown_category'))})" for c in cat_ids)
             latest_report = {
                 "reportedAt": r.get("reportedAt"),
                 "comment": r.get("comment"),

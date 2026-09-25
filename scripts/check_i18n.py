@@ -23,6 +23,13 @@ PAIRS = {
 PLURAL_SUFFIXES = ("_zero", "_one", "_two", "_few", "_many", "_other")
 PLURALS_REQUIRED = {"pl": {"_one", "_few", "_many", "_other"}, "en": {"_one", "_other"}}
 DIACRITICS = re.compile("[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]")
+# Polish words that carry no diacritics (a diacritic-only check missed a literal 'nieznana'); matched as whole words
+# in string literals, reported as warnings because a few of them may be legitimate identifiers.
+POLISH_WORDS = re.compile(
+    r"\b(nieznan\w*|brak|blad|bledy|zapis\w*|wyslij|wysylk\w*|temat|tytul|uzytkownik\w*|wiadomosc|plik\w*|dane|wynik\w*"
+    r"|ostrzezeni\w*|szukaj|usun|otworz|zamknij|anuluj|pokaz|ukryj|tak|nie wiem)\b",
+    re.IGNORECASE,
+)
 PLACEHOLDER = re.compile(r"\{(\w+)\}")
 EM_DASH = "\u2014"
 
@@ -133,9 +140,13 @@ def check_hardcoded_python() -> None:
                 if isinstance(first, ast.Expr) and isinstance(getattr(first, "value", None), ast.Constant):
                     docs.add(id(first.value))
         for node in ast.walk(tree):
-            if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs and DIACRITICS.search(node.value):
+            if not (isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docs):
+                continue
+            if DIACRITICS.search(node.value):
                 hits += 1
                 errors.append(f"[strict] Polish literal in {f.relative_to(ROOT)}:{node.lineno}: {node.value[:60]!r}")
+            elif POLISH_WORDS.search(node.value):
+                warnings.append(f"[strict] possible Polish literal in {f.relative_to(ROOT)}:{node.lineno}: {node.value[:60]!r}")
     if not hits:
         print("strict: no Polish literals in backend/ (docstrings excluded)")
 

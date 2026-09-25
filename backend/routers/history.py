@@ -35,7 +35,7 @@ def _email_entry(item: dict) -> dict:
         "id": item["id"],
         "type": "email",
         "created_at": item["created_at"],
-        "label": f"{item.get('subject') or '(no subject)'} - {item.get('from') or '?'}",
+        "label": f"{item.get('subject') or t('history.no_subject')} - {item.get('from') or '?'}",
         "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
         "lang": item.get("lang") or "pl",
     }
