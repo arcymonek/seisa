@@ -12,6 +12,9 @@ logger = logging.getLogger("urlscan")
 SCAN_URL = "https://urlscan.io/api/v1/scan/"
 RESULT_URL = "https://urlscan.io/api/v1/result/{uuid}/"
 SCREENSHOT_URL = "https://urlscan.io/screenshots/{uuid}.png"
+DOM_URL = "https://urlscan.io/dom/{uuid}/"
+SEARCH_URL = "https://urlscan.io/api/v1/search/"
+SEARCH_SIZE = 10
 VISIBILITIES = ("unlisted", "private", "public")
 DEFAULT_VISIBILITY = "unlisted"
 MAX_SCREENSHOT_BYTES = 6_000_000
@@ -87,3 +90,31 @@ async def fetch_screenshot(uuid: str) -> bytes | None:
         logger.error("screenshot rejected: not a PNG or too large (%d bytes)", len(body))
         raise UrlscanError("the screenshot is not a valid PNG image")
     return body
+
+
+async def fetch_dom(uuid: str) -> str | None:
+    """The rendered DOM of the scanned page as text (None when urlscan.io has none). It is only ever parsed, never
+    served to the browser."""
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(DOM_URL.format(uuid=uuid), headers={"API-Key": settings.urlscan_api_key})
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.text
+    except httpx.HTTPError as exc:
+        logger.warning(f"fetching the DOM failed: {http_error_text(exc)}")
+        return None
+
+
+async def search_scans(query: str) -> list[dict]:
+    """Earlier scans matching a urlscan.io search query (public scans plus the ones of this account)."""
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(SEARCH_URL, params={"q": query, "size": SEARCH_SIZE}, headers=_headers())
+        resp.raise_for_status()
+        return resp.json().get("results") or []
+    except httpx.HTTPError as exc:
+        message = http_error_text(exc)
+        logger.error(f"search failed: {message}")
+        raise UrlscanError(message) from exc

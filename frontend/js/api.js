@@ -48,6 +48,7 @@ export const api = {
   emailAnalysisDelete: (id) => request(`/email/analyses/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   urlscanSubmit: (url, visibility) => request("/urlscan/scan", { method: "POST", body: JSON.stringify({ url, visibility }) }),
+  urlscanSearch: (url) => request(`/urlscan/search?url=${encodeURIComponent(url)}`),
   urlscanResult: (uuid) => request(`/urlscan/result/${encodeURIComponent(uuid)}`),
 };
 

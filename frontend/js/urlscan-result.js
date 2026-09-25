@@ -38,7 +38,9 @@ function bannerHtml(summary) {
   if (v.engines) parts.push(t("usr.b_engines", { malicious: v.engines.malicious, total: v.engines.total }));
   if (v.community) parts.push(t("usr.b_community", { malicious: v.community.malicious, total: v.community.total }));
   if (v.flagged_requests) parts.push(tn("usr.b_flagged", v.flagged_requests));
+  if (v.form_signal) parts.push(t("usr.b_form"));
   const notes = [];
+  if (v.form_signal && (v.score == null || v.score < 25)) notes.push(t("usr.note_form"));
   if (v.level === "unknown") notes.push(t("usr.note_unknown"));
   else if (v.level === "low") notes.push(t("usr.note_low"));
   const extra = notes.map((n) => `<div class="muted">${e(n)}</div>`).join("");
@@ -156,6 +158,24 @@ function tlsCard(summary) {
   return card(t("usr.c_tls"), { key: "tls", fact: tls.issuer || "", body: kvHtml(rows) });
 }
 
+function formsCard(summary) {
+  const forms = summary.forms;
+  if (!forms || !forms.length) return "";
+  const rows = forms.map((f) => {
+    const flags = [
+      f.password && `<span class="badge sm ${f.external || f.insecure ? "conflict" : "single"}">${e(t("usr.form_password"))}</span>`,
+      f.external && `<span class="badge sm conflict">${e(t("usr.form_external"))}</span>`,
+      f.insecure && `<span class="badge sm conflict">${e(t("usr.form_insecure"))}</span>`,
+    ].filter(Boolean).join(" ");
+    return `<div class="us-row">${monoUrl(f.action || "-")} <span class="muted">${e(f.method.toUpperCase())}</span> ${flags}${f.fields.length ? `<div class="muted">${e(f.fields.join(", "))}</div>` : ""}</div>`;
+  });
+  return card(`${t("usr.c_forms")} (${forms.length})`, {
+    key: "forms",
+    open: summary.verdict.form_signal,
+    body: `<div class="muted">${e(t("usr.d_forms"))}</div>${rows.join("")}`,
+  });
+}
+
 function listCard(key, title, total, items, renderItem) {
   if (!items.length) return "";
   const clipped = total > items.length ? `<div class="muted">${e(t("usr.clipped", { shown: items.length, total }))}</div>` : "";
@@ -163,7 +183,7 @@ function listCard(key, title, total, items, renderItem) {
 }
 
 function detailCards(summary) {
-  const out = [verdictCard(summary), tlsCard(summary)];
+  const out = [verdictCard(summary), formsCard(summary), tlsCard(summary)];
   if (summary.technologies.length) {
     out.push(
       card(`${t("usr.c_tech")} (${summary.technologies.length})`, {

@@ -105,9 +105,15 @@ def _redirect_chain(data: dict, final_url: str | None, final_status) -> list[dic
     return deduped if len(deduped) > 1 else []
 
 
-def build_urlscan_summary(submitted_url: str, uuid: str, data: dict) -> dict:
+def _form_signal(forms: list[dict] | None) -> bool:
+    """A password field whose form posts to another domain (or over plain HTTP) - the classic phishing kit."""
+    return any(f["password"] and (f["external"] or f["insecure"]) for f in forms or [])
+
+
+def build_urlscan_summary(submitted_url: str, uuid: str, data: dict, forms: list[dict] | None = None) -> dict:
     """The structured result: everything the UI shows, without the raw API response (which is large and is not kept in
-    the History)."""
+    the History). `forms` are the facts about the forms of the page (None = the DOM was not available); a risky form
+    lifts a "low" or "unknown" urlscan.io verdict to "medium" - fresh phishing pages often have no verdict yet."""
     page = data.get("page", {}) or {}
     task = data.get("task", {}) or {}
     stats = data.get("stats", {}) or {}
@@ -131,6 +137,10 @@ def build_urlscan_summary(submitted_url: str, uuid: str, data: dict) -> dict:
     transfer = sum(int(_get(r, "response.dataLength", 0) or 0) for r in requests) or stats.get("dataLength") or stats.get("totalSize")
     domains = [str(d) for d in (lists.get("domains") or [])]
     final_url = page.get("url")
+    verdict = _verdict(data)
+    verdict["form_signal"] = _form_signal(forms)
+    if verdict["form_signal"] and verdict["level"] in ("low", "unknown"):
+        verdict["level"] = "medium"
 
     return {
         "uuid": uuid,
@@ -138,7 +148,8 @@ def build_urlscan_summary(submitted_url: str, uuid: str, data: dict) -> dict:
         "result_url": f"https://urlscan.io/result/{uuid}/",
         "scanned_at": task.get("time"),
         "visibility": task.get("visibility"),
-        "verdict": _verdict(data),
+        "verdict": verdict,
+        "forms": forms,
         "page": {
             "final_url": final_url,
             "redirected": bool(page.get("redirected")) or bool(_redirect_chain(data, final_url, page.get("status"))),
@@ -238,6 +249,8 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
     lines.append(f"- **{t('us.malice_score')}**: {score if score is not None else t('common.none')} ({t('us.malice_scale')})")
     if verdict["categories"]:
         lines.append(f"- **{t('us.categories')}**: {', '.join(verdict['categories'])}")
+    if verdict.get("form_signal"):
+        lines.append(f"- **{t('us.form_signal')}**")
     if verdict["engines"]:
         lines.append(f"- **{t('us.engines')}**: {verdict['engines']['malicious']}/{verdict['engines']['total']}")
     if verdict["community"]:
@@ -265,6 +278,16 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
         _bullet(t("us.transfer_size"), stats.get("transfer_bytes")),
     ])
     lines.append("")
+
+    forms = summary.get("forms")
+    if forms:
+        lines += [f"## {t('us.forms', n=len(forms))}", ""]
+        for form in forms:
+            flags = [x for x in (t("us.form_password") if form["password"] else "", t("us.form_external") if form["external"] else "",
+                                 t("us.form_insecure") if form["insecure"] else "") if x]
+            fields = f" [{', '.join(form['fields'])}]" if form["fields"] else ""
+            lines.append(f"- `{defang(form['action'] or '-')}` ({form['method'].upper()}){fields}" + (f" - {'; '.join(flags)}" if flags else ""))
+        lines.append("")
 
     if summary["technologies"]:
         lines += [f"## {t('us.technologies')}", ""]

@@ -21,6 +21,8 @@ const MEDIUM_FROM = 25;
 const HIGH_FROM = 60;
 const riskLevel = (risk) => (risk >= HIGH_FROM ? "high" : risk >= MEDIUM_FROM ? "medium" : "low");
 const BANNER_TONE = { high: "bad", medium: "warn", low: "good" };
+// Ceiling for a known good IP (BENIGN_CAP in backend/scoring.py); only quoted in the legend.
+const BENIGN_CAP = 15;
 const CHIP_LIMIT = 12;
 
 // What each source card shows: [label id (lookup.f.<id>), path in the service summary, format, options]. Identity data
@@ -181,7 +183,7 @@ function bannerHtml(result) {
   const title = `${t("risk." + rs.level).toUpperCase()} - ${rs.score}/100`;
   const basis = rs.sources_possible ? ` <span class="muted">${e(t("lookup.basis", { used: rs.sources_used, possible: rs.sources_possible }))}</span>` : "";
   const detail = components.map((c) => `${serviceTitle(c.source)}: ${c.value}`).join("; ");
-  return `<div class="banner ${BANNER_TONE[rs.level] || "info"}"><strong>${e(title)}</strong>${basis}${detail ? `<div>${e(detail)}</div>` : ""}${notes}</div>`;
+  return `<div class="banner ${BANNER_TONE[rs.level] || "info"}" data-sec="summary"><strong>${e(title)}</strong>${basis}${detail ? `<div>${e(detail)}</div>` : ""}${notes}</div>`;
 }
 
 export function tileHtml(label, value, sub, mark) {
@@ -238,7 +240,7 @@ function componentsHtml(rs) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("lookup.col_source"))}</th><th>${e(t("lookup.col_signal"))}</th><th>${e(t("lookup.col_value"))}</th><th>${e(t("lookup.col_risk"))}</th><th>${e(t("lookup.col_credibility"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : "";
   const excluded = excludedSources.length ? `<div class="excluded-sources">${e(t("lookup.excluded"))}: ${e(excludedSources.join("; "))}</div>` : "";
-  return `<h3>${e(t("lookup.h_components"))}</h3>${table}${excluded}`;
+  return `<h3 data-sec="components">${e(t("lookup.h_components"))}</h3>${table}${excluded}`;
 }
 
 // ---- identity card ----
@@ -273,7 +275,7 @@ function identityHtml(identity) {
     ? `<div class="banner warn">${e(tn("lookup.identity_disagree", off.length, { fields: off.map((f) => t("lookup.fi." + f.key)).join(", ") }))}</div>`
     : "";
   const notes = identity.notes.map((n) => `<div class="muted">${e(n)}</div>`).join("");
-  return `<h3>${e(t("lookup.h_identity"))}</h3>${banner}<div class="card">${kvHtml(identity.fields.map(identityRow))}${notes}</div>`;
+  return `<h3 data-sec="identity">${e(t("lookup.h_identity"))}</h3>${banner}<div class="card">${kvHtml(identity.fields.map(identityRow))}${notes}</div>`;
 }
 
 // ---- source cards ----
@@ -330,7 +332,7 @@ function sourcesHtml(result) {
     const rb = comps[b] ? comps[b].risk : -1;
     return rb - ra || SERVICE_ORDER.indexOf(a) - SERVICE_ORDER.indexOf(b);
   });
-  return `<h3>${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id])).join("")}`;
+  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id])).join("")}`;
 }
 
 // The "show N more" button of a chip list (shared with the URLScan report); false when the button is something else.
@@ -343,19 +345,55 @@ export function toggleMoreChips(target) {
   return true;
 }
 
+// ---- navigation and legend ----
+
+// Sticky row of jump links: the sections that exist, then one link per source (opens its card).
+function navHtml(result, sections) {
+  const comps = Object.fromEntries((result.risk_score.components || []).map((c) => [c.source, c]));
+  const ids = Object.keys(result.services).sort((a, b) => SERVICE_ORDER.indexOf(a) - SERVICE_ORDER.indexOf(b));
+  const links = [
+    ...sections.map((sec) => `<button type="button" class="tag" data-jump="${sec}">${e(t("lookup.nav." + sec))}</button>`),
+    ...ids.map((id) => `<button type="button" class="tag${comps[id] && comps[id].risk >= MEDIUM_FROM ? " hot" : ""}" data-jump-service="${e(id)}">${e(serviceTitle(id))}</button>`),
+  ];
+  return `<nav class="result-nav" aria-label="${e(t("lookup.nav_label"))}">${links.join("")}</nav>`;
+}
+
+// Glossary at the bottom, like in the DMARC tab: terms are data, texts live in the catalog (lookup.legend.<id>).
+const LEGEND = ["score", "risk", "signal", "identity", "priority", "country", "confidence", "greynoise", "riot", "pulses", "whitelisted"];
+
+function legendHtml() {
+  const rows = LEGEND.map((id) => [t("lookup.legend_term." + id), e(t("lookup.legend." + id, { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP }))]);
+  return `<details class="fact-block legend"><summary>${e(t("lookup.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
+}
+
 // ---- entry point ----
 
-export function renderLookupResult(result) {
+// `actions` (optional element with the report buttons) is placed right under the title, so it is reachable without
+// scrolling through a long report.
+export function renderLookupResult(result, actions = null) {
   const wrap = document.createElement("div");
   wrap.className = "lookup-result";
+  const components = componentsHtml(result.risk_score);
+  const identity = identityHtml(result.identity);
+  const sections = ["summary", ...(components ? ["components"] : []), ...(identity ? ["identity"] : [])];
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary mini" data-copy>${e(t("common.copy"))}</button></h2>
-    ${bannerHtml(result)}${tilesHtml(result)}${componentsHtml(result.risk_score)}${identityHtml(result.identity)}${sourcesHtml(result)}`;
+    <div data-actions></div>${navHtml(result, sections)}
+    ${bannerHtml(result)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
+  const slot = wrap.querySelector("[data-actions]");
+  if (actions) slot.replaceWith(actions);
+  else slot.remove();
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button");
     if (!target || !wrap.contains(target)) return;
     if (target.dataset.copy !== undefined) navigator.clipboard.writeText(result.indicator);
+    else if (target.dataset.jump || target.dataset.jumpService) {
+      const card = target.dataset.jumpService ? wrap.querySelector(`details.src[data-service="${target.dataset.jumpService}"]`) : null;
+      const dest = card || wrap.querySelector(`[data-sec="${target.dataset.jump}"]`);
+      if (card) card.open = true;
+      if (dest) dest.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     else if (target.dataset.url) window.open(target.dataset.url, "_blank", "noopener");
     else toggleMoreChips(target);
   });

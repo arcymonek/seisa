@@ -548,6 +548,12 @@ function table(headers, rows) {
 
 const e = escapeHtml;
 const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : '<span class="muted">-</span>');
+// Puts the address into the URLScan tab (nothing is opened or scanned until the user clicks Scan there); the address
+// stays displayed defanged.
+const scanBtn = (url) =>
+  /^https?:\/\//i.test(url || "")
+    ? ` <button type="button" class="secondary mini inline" data-scan-url="${e(url)}" title="${e(t("em.f.scan_title"))}">${e(t("em.f.scan_url"))}</button>`
+    : "";
 const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : '<span class="muted">-</span>');
 const resultClass = (r) => (r === "pass" ? "ok" : ["fail", "softfail", "permerror", "temperror"].includes(r) ? "bad" : "warnc");
 
@@ -672,7 +678,7 @@ function showFacts(f) {
       [t("em.f.wrapped_anchor"), h.wrapped_anchor ? t("common.yes") : t("common.no")],
     ].map(([k, v]) => [e(k), e(v)]);
     const linkRows = h.links.map((l) => [
-      e(l.text || t("em.f.no_text")), mono(defangUrl(l.href || "")),
+      e(l.text || t("em.f.no_text")), mono(defangUrl(l.href || "")) + scanBtn(l.href),
       (l.text_host_mismatch ? `<span class="bad">${e(t("em.f.text_ne_href"))}</span> ` : "") + (l.scheme === "http" ? '<span class="warnc">http</span> ' : "") +
       (l.abused_host ? `<span class="warnc">${e(t("em.f.abused"))}</span> ` : "") + (l.shortener ? `<span class="bad">${e(t("em.f.shortener"))}</span> ` : "") +
       (l.idn ? '<span class="bad">IDN/punycode</span> ' : "") + (l.query_params >= 4 ? `<span class="muted">${e(t("em.f.params", { n: l.query_params }))}</span>` : ""),
@@ -691,12 +697,16 @@ function showFacts(f) {
   if (casing.length) other.push([t("em.f.casing"), e(casing.map(([, v]) => v.join(" / ")).join("; "))]);
   if (f.encoded_words.length) other.push(["Encoded-words (RFC 2047)", f.encoded_words.map((w) => `${e(w.header)}: <span class="mono">${e(w.raw)}</span> → ${e(w.decoded)}`).join("<br>")]);
   if (f.placeholders.length) other.push([t("em.f.placeholders"), f.placeholders.map((p) => `<code>${e(p)}</code>`).join(" ")]);
-  if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mono(defangUrl(u))).join(" ") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
-  if (f.urls_plain.length) other.push([t("em.f.urls_plain"), f.urls_plain.map((u) => mono(defangUrl(u))).join("<br>")]);
+  if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mono(defangUrl(u)) + scanBtn(u)).join("<br>") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
+  if (f.urls_plain.length) other.push([t("em.f.urls_plain"), f.urls_plain.map((u) => mono(defangUrl(u)) + scanBtn(u)).join("<br>")]);
   if (f.ips.length) other.push([t("em.f.ips"), f.ips.map((i) => `${mono(i.ip)} <span class="muted">(${e(i.where)})</span>`).join("<br>")]);
   if (other.length) parts.push(block(t("em.f.other"), table([t("em.f.what"), t("common.value")], other)));
 
   root.querySelector("#em-facts").innerHTML = parts.join("");
+  root.querySelector("#em-facts").onclick = (ev) => {
+    const btn = ev.target.closest("[data-scan-url]");
+    if (btn) window.seisaApp.scanUrl(btn.dataset.scanUrl);
+  };
   root.querySelector("#em-sep").style.display = "block";
 }
 

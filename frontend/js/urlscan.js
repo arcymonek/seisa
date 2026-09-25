@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { registerDirtyCheck, t } from "./i18n.js";
+import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";
 import { defangUrl } from "./markdown-render.js";
 import { renderUrlscanResult } from "./urlscan-result.js";
 import { downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
@@ -30,12 +30,14 @@ export function initUrlscan(container) {
     <div class="banner info" id="us-hint"></div>
     <div class="action-row">
       <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
+      <button class="secondary" id="us-existing">${escapeHtml(t("urlscan.existing"))}</button>
       <span class="action-info" id="us-status"></span>
     </div>
     <div id="us-error"></div>
     <div id="us-result"></div>
   `;
   root.querySelector("#us-submit").addEventListener("click", onSubmit);
+  root.querySelector("#us-existing").addEventListener("click", onExisting);
   root.querySelector("#us-url").addEventListener("keydown", (e) => {
     if (e.key === "Enter") onSubmit();
   });
@@ -95,6 +97,7 @@ function button(text, cls, onClick) {
 
 function setBusy(busy) {
   root.querySelector("#us-submit").disabled = busy;
+  root.querySelector("#us-existing").disabled = busy;
 }
 
 function stopTimers() {
@@ -200,6 +203,68 @@ async function poll(uuid, resultPageUrl) {
   setBusy(false);
   updateStatusText(t("urlscan.ready"));
   showReport(data, { save: true });
+}
+
+// ---- earlier scans of the same domain ----
+
+async function onExisting() {
+  const urlInput = root.querySelector("#us-url");
+  const url = urlInput.value.trim();
+  if (!url) return;
+  stopTimers();
+  clearOutput();
+  const statusEl = root.querySelector("#us-status");
+  statusEl.textContent = t("urlscan.searching");
+  setBusy(true);
+  try {
+    const data = await api.urlscanSearch(url);
+    statusEl.textContent = "";
+    if (data.url !== url) urlInput.value = data.url;
+    root.querySelector("#us-result").appendChild(existingList(data));
+  } catch (err) {
+    statusEl.textContent = "";
+    showError(t("urlscan.search_error", { message: err.message }));
+  } finally {
+    setBusy(false);
+  }
+}
+
+function existingList(data) {
+  const wrap = document.createElement("div");
+  const rows = data.results.map((r) => {
+    const level = r.level ? ` <span class="badge sm ${r.level}">${escapeHtml(t("risk." + r.level))}</span>` : "";
+    const exact = r.exact ? ` <span class="badge sm single">${escapeHtml(t("urlscan.same_url"))}</span>` : "";
+    const meta = [r.ip, r.country, r.visibility].filter(Boolean).join(" - ");
+    return `<div class="saved-row" data-uuid="${escapeHtml(r.uuid)}">
+      <span class="muted">${escapeHtml(r.time ? fmtDateTime(r.time) : "?")}</span>
+      <span class="grow"><span class="mono">${escapeHtml(defangUrl(r.url))}</span>${level}${exact}${meta ? `<div class="muted">${escapeHtml(meta)}</div>` : ""}</span>
+      <button type="button" class="secondary" data-open>${escapeHtml(t("urlscan.open_report"))}</button>
+      <button type="button" class="secondary" data-ext>${escapeHtml(t("urlscan.open"))}</button>
+    </div>`;
+  });
+  wrap.innerHTML = `<h3>${escapeHtml(t("urlscan.existing_title", { host: defangUrl(data.host) }))}</h3>
+    <div class="card">${rows.length ? rows.join("") : `<div class="muted">${escapeHtml(t("urlscan.existing_none"))}</div>`}
+    <div class="muted">${escapeHtml(t("urlscan.existing_note"))}</div></div>`;
+  wrap.addEventListener("click", async (ev) => {
+    const btn = ev.target.closest("button");
+    if (!btn) return;
+    const uuid = btn.closest(".saved-row").dataset.uuid;
+    if (btn.hasAttribute("data-ext")) return window.open(`https://urlscan.io/result/${uuid}/`, "_blank", "noopener");
+    btn.disabled = true;
+    try {
+      const full = await api.urlscanResult(uuid);
+      if (full.status === "pending") showError(t("urlscan.full_pending"));
+      else {
+        root.querySelector("#us-error").innerHTML = "";
+        showReport(full, { save: false });
+      }
+    } catch (err) {
+      showError(t("urlscan.result_error", { message: err.message }));
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  return wrap;
 }
 
 // ---- report ----

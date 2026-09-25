@@ -273,3 +273,10 @@ button.mini.inline, .src-body button.mini.inline { display: inline-block; margin
 .steps li.done::before { content: "✓ "; }
 .steps li.active { color: var(--text); }
 .steps li.active::before { content: "● "; color: var(--accent); }
+.result-nav { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; margin: 6px 0 4px; background: var(--bg); border-bottom: 1px solid var(--hair); }
+.result-nav button.tag { color: var(--muted); cursor: pointer; }
+.result-nav button.tag:hover { color: var(--text); border-color: var(--accent); }
+.result-nav button.tag.hot { color: var(--warn); border-color: var(--warn); }
+.lookup-result [data-sec], .lookup-result details.src { scroll-margin-top: 90px; }
+.lookup-result > .action-row { margin-top: 0; }
+details.legend { margin-top: 24px; }

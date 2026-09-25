@@ -131,9 +131,8 @@ async function onSubmit() {
 }
 
 function renderResult(result) {
-  const wrap = renderLookupResult(result);
-
   const actions = document.createElement("div");
+  actions.className = "action-row";
   const talosBtn = document.createElement("button");
   talosBtn.type = "button";
   talosBtn.className = "secondary";
@@ -174,7 +173,7 @@ function renderResult(result) {
     actions.appendChild(reportBtn);
   }
 
-  wrap.appendChild(actions);
+  const wrap = renderLookupResult(result, actions);
   return wrap;
 }
 
