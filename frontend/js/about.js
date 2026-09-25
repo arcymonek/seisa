@@ -4,6 +4,7 @@ import { t } from "./i18n.js";
 import { escapeHtml } from "./util.js";
 
 const AUTHOR_EMAIL = "kontakt@arkadiuszpolak.pl";
+const LICENSE_URL = "https://polyformproject.org/licenses/noncommercial/1.0.0";
 const AUTHOR_SITE = "https://arkadiuszpolak.pl";
 
 export function initAbout(root) {
@@ -18,6 +19,11 @@ export function initAbout(root) {
       <p><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${escapeHtml(t("about.name_meaning"))}</p>
       <p>精 (<em>sei</em>) - ${escapeHtml(t("about.kanji_sei"))}<br>
          査 (<em>sa</em>) - ${escapeHtml(t("about.kanji_sa"))}</p>
+    </div>
+
+    <h3>${escapeHtml(t("about.license_title"))}</h3>
+    <div class="card">
+      <p>${escapeHtml(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${escapeHtml(t("about.license_after"))}</p>
     </div>
 
     <h3>${escapeHtml(t("about.author_title"))}</h3>
