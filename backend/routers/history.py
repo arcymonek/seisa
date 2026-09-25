@@ -1,11 +1,13 @@
 """History tab: the last lookups and DMARC imports (history.json) together with the saved e-mail analyses."""
 from __future__ import annotations
 
+import json
+
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.analizy import list_analyses
-from backend.config import HISTORY_MAX_ENTRIES
+from backend.config import HISTORY_MAX_ENTRIES, MAX_HISTORY_DATA_CHARS
 from backend.i18n import current_lang, t
 from backend.models import HistoryEntry
 from backend.storage import (
@@ -21,8 +23,8 @@ router = APIRouter()
 
 class HistoryCreateRequest(BaseModel):
     type: str
-    label: str
-    risk_summary: str | None = None
+    label: str = Field(max_length=1000)
+    risk_summary: str | None = Field(default=None, max_length=50)
     data: dict
 
 
@@ -72,6 +74,8 @@ def get_entry(entry_id: str):
 async def create_entry(req: HistoryCreateRequest):
     if req.type not in ("lookup", "dmarc"):
         raise HTTPException(status_code=400, detail=t("history.invalid_type"))
+    if len(json.dumps(req.data)) > MAX_HISTORY_DATA_CHARS:
+        raise HTTPException(status_code=413, detail=t("history.too_large"))
     entry = HistoryEntry(type=req.type, label=req.label, risk_summary=req.risk_summary, lang=current_lang(), data=req.data)
     append_history(entry)
     return entry

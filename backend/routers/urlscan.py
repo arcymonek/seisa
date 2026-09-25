@@ -1,6 +1,8 @@
 """URLScan tab: submits a scan to urlscan.io (/scan) and fetches the finished result as a Markdown report (/result)."""
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -29,8 +31,13 @@ async def scan(req: ScanRequest):
     }
 
 
+_UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
+
+
 @router.get("/result/{uuid}")
 async def result(uuid: str):
+    if not _UUID_RE.match(uuid):
+        raise HTTPException(status_code=400, detail=t("urlscan.invalid_uuid"))
     try:
         data = await urlscan_service.fetch_result(uuid)
     except urlscan_service.UrlscanError as exc:

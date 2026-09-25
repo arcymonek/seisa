@@ -98,6 +98,11 @@ async function onSubmit() {
           batchStatusEl.textContent = `${evt.current}: ${evt.message}`;
         } else if (evt.type === "result") {
           resultsEl.appendChild(renderResult(evt.result));
+        } else if (evt.type === "invalid") {
+          const banner = document.createElement("div");
+          banner.className = "banner warn";
+          banner.textContent = evt.message;
+          resultsEl.appendChild(banner);
         }
       });
       batchStatusEl.textContent = t("lookup.done");
@@ -157,8 +162,12 @@ function renderResult(result) {
   refreshBtn.className = "secondary";
   refreshBtn.textContent = t("common.refresh");
   refreshBtn.onclick = async () => {
-    const fresh = await api.lookup({ indicator: result.indicator, type: result.indicator_type, force_refresh: true });
-    wrap.replaceWith(renderResult(fresh));
+    try {
+      const fresh = await api.lookup({ indicator: result.indicator, type: result.indicator_type, force_refresh: true });
+      wrap.replaceWith(renderResult(fresh));
+    } catch (err) {
+      root.querySelector("#lk-batch-status").textContent = t("common.error", { message: err.message });
+    }
   };
   actions.appendChild(refreshBtn);
 

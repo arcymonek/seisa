@@ -9,8 +9,9 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from backend.config import MAX_SOURCE_CHARS
 from backend.email_parser import (
     BODY_EXCERPT_LIMIT,
     body_text_length,
@@ -47,7 +48,7 @@ def _previous_reports(ip: str) -> dict:
 
 
 class EmailAnalyzeRequest(BaseModel):
-    raw_email: str
+    raw_email: str = Field(max_length=MAX_SOURCE_CHARS)
     use_llm: bool = True
 
 

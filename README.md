@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.25</b></p>
+<p align="center"><b>Seisa 2.0.26</b></p>
 
 # Seisa
 
@@ -133,6 +133,7 @@ seisa/
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
 ├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 ├── scripts/
+│   ├── api_harness.py         # the only automated test: every API endpoint with all external services mocked (also `--serve PORT` for trying the UI without keys)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   └── check_i18n.py          # checks the PL/EN catalogs (keys, parameters, plurals); `--strict` looks for Polish literals in code
 ├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
@@ -151,7 +152,7 @@ Requires Python 3.11+ on **macOS** or **Linux**. On Debian/Ubuntu install the ve
 ```bash
 cd seisa
 python3 -m venv .venv
-./.venv/bin/pip install -r requirements.txt
+./.venv/bin/pip install -r requirements.txt   # or requirements.lock for the exact tested versions
 cp .env.example .env
 ```
 
@@ -193,6 +194,7 @@ A missing key for any service does not block the rest of the tool - the service 
 - API keys are kept only in `.env` (gitignored), never in the frontend code.
 - DMARC XML parsing happens entirely in the browser. The only call the frontend makes to a third party is the optional "geo/ASN" button, which sends a single IP address to ipwho.is on click.
 - The server accepts only loopback `Host` headers (`127.0.0.1`, `localhost`), which blocks DNS-rebinding attacks from other web pages. Every response carries a Content-Security-Policy (scripts only from the tool's own origin).
+- Indicators are validated before they reach the URL paths of the intel services (only real IP addresses and host names), scan identifiers must be UUIDs, and request sizes are bounded (e-mail source 3 million characters, 200 indicators per batch).
 - Reports contain text from third-party APIs (e.g. comments from other AbuseIPDB users), so the rendered HTML goes through an allow-list: only the tags the reports use survive, links only with `http(s)`, and any other markup is shown as inert text.
 - The content of a pasted e-mail goes to OpenRouter **only** after an explicit click on "Analyze" (not "Analyze without LLM") - the interface says so plainly before sending.
 - A report to AbuseIPDB always requires a deliberate click on "Send"; the backend validates the hard checks (age, IP, category) anew regardless of the state of the form in the browser - they, not the informational checklist, decide whether sending is possible. The comment is only sanitised and shortened, not judged.
@@ -205,6 +207,7 @@ A missing key for any service does not block the rest of the tool - the service 
 - Code, comments, docstrings, log messages and commits are in English. The documentation exists in two versions with the same heading structure: `README.md` (English, the main one on GitHub) and `README.pl.md` (Polish); a change in one means a change in the other (the heading structure is compared by `scripts/check_i18n.py`).
 - Every tab that runs an action shows the timer (always one decimal, e.g. `13.1 s`), the status (e.g. the loaded file) and any related buttons in one row next to the action button, both during and after the run; in the Email tab the tokens and cost sit there too.
 - Texts visible in the interface go exclusively to the `i18n` catalogs (a new key = a PL and an EN entry in the same commit); before a commit `python3 scripts/check_i18n.py` must finish without errors.
+- Verification: `python3 scripts/api_harness.py` runs every endpoint against mocked services (no keys, no network) and fails on unexpected answers; `scripts/dump_facts.py` and `--out` of the harness allow comparing two versions byte for byte after a refactor; the interface is checked by hand.
 - Python code is checked with `ruff` (configuration in `pyproject.toml`; a development tool, not a dependency): `ruff check backend scripts`.
 - The whole project (code, UI, documentation) avoids the long dash (Unicode U+2014) - only a plain "-".
 

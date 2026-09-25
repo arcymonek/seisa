@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.25</b></p>
+<p align="center"><b>Seisa 2.0.26</b></p>
 
 # Seisa
 
@@ -133,6 +133,7 @@ seisa/
 │   └── vendor/marked.min.js   # renderowanie Markdown, wgrany lokalnie (bez CDN)
 ├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; dane fikcyjne (domeny .example, adresy z zakresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 ├── scripts/
+│   ├── api_harness.py         # jedyny test automatyczny: każdy endpoint API przy zamockowanych usługach zewnętrznych (także `--serve PORT` do wypróbowania UI bez kluczy)
 │   ├── dump_facts.py          # zrzut analizy deterministycznej fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   └── check_i18n.py          # kontrola katalogów PL/EN (klucze, parametry, liczba mnoga); `--strict` szuka polskich literałów w kodzie
 ├── data/                    # history.json, vt_usage.json, report_log.json, analizy/ (gitignored)
@@ -151,7 +152,7 @@ Wymaga Python 3.11+ na **macOS** lub **Linuksie**. Na Debianie/Ubuntu najpierw z
 ```bash
 cd seisa
 python3 -m venv .venv
-./.venv/bin/pip install -r requirements.txt
+./.venv/bin/pip install -r requirements.txt   # albo requirements.lock dla dokładnie przetestowanych wersji
 cp .env.example .env
 ```
 
@@ -193,6 +194,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Klucze API trzymane tylko w `.env` (gitignored), nigdy w kodzie frontendu.
 - Parsowanie DMARC XML dzieje się w całości w przeglądarce. Jedyne wywołanie strony trzeciej z frontendu to opcjonalny przycisk "geo/ASN", który po kliknięciu wysyła jeden adres IP do ipwho.is.
 - Serwer przyjmuje tylko nagłówki `Host` z pętli zwrotnej (`127.0.0.1`, `localhost`), co blokuje ataki DNS rebinding z innych stron. Każda odpowiedź ma nagłówek Content-Security-Policy (skrypty tylko z własnego originu narzędzia).
+- Wskaźniki są walidowane, zanim trafią do ścieżek URL usług threat-intel (tylko prawdziwe adresy IP i nazwy hostów), identyfikatory skanów muszą być UUID-ami, a rozmiary żądań są ograniczone (źródło e-maila 3 mln znaków, 200 wskaźników w trybie wsadowym).
 - Raporty zawierają tekst z zewnętrznych API (np. komentarze innych użytkowników AbuseIPDB), dlatego renderowany HTML przechodzi przez allow-listę: zostają tylko tagi używane w raportach, linki tylko z `http(s)`, a każdy inny znacznik jest pokazywany jako nieszkodliwy tekst.
 - Treść wklejonego e-maila trafia do OpenRouter **tylko** po jawnym kliknięciu "Analizuj" (nie "Analizuj bez LLM") - interfejs informuje o tym wprost przed wysyłką.
 - Zgłoszenie do AbuseIPDB wymaga zawsze świadomego kliknięcia "Wyślij"; backend waliduje twarde sprawdzenia (wiek, IP, kategoria) od nowa niezależnie od stanu formularza w przeglądarce - to one, nie checklist informacyjny, decydują czy wysyłka jest możliwa. Komentarz jest tylko sanityzowany i skracany, nie oceniany.
@@ -205,6 +207,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 - Kod, komentarze, docstringi, komunikaty logów i commity są po angielsku. Dokumentacja jest w dwóch wersjach o tej samej strukturze nagłówków: `README.md` (angielski, główny na GitHubie) i `README.pl.md` (polski); zmiana w jednej oznacza zmianę w drugiej (strukturę nagłówków porównuje `scripts/check_i18n.py`).
 - Każda zakładka z akcją pokazuje licznik czasu (zawsze jedno miejsce po przecinku, np. `13,1 s`), status (np. wczytany plik) i powiązane przyciski w jednym wierszu obok przycisku akcji, zarówno w trakcie, jak i po zakończeniu; w zakładce Email są tam także tokeny i koszt.
 - Teksty widoczne w interfejsie trafiają wyłącznie do katalogów `i18n` (nowy klucz = wpis PL i EN w tym samym commicie); przed commitem `python3 scripts/check_i18n.py` musi kończyć się bez błędów.
+- Weryfikacja: `python3 scripts/api_harness.py` uruchamia każdy endpoint na zamockowanych usługach (bez kluczy i bez sieci) i kończy się błędem przy nieoczekiwanych odpowiedziach; `scripts/dump_facts.py` oraz `--out` harnessu pozwalają porównać dwie wersje bajt w bajt po refaktorze; interfejs sprawdza się ręcznie.
 - Kod Pythona jest sprawdzany narzędziem `ruff` (konfiguracja w `pyproject.toml`; narzędzie deweloperskie, nie zależność): `ruff check backend scripts`.
 - W całym projekcie (kod, UI, dokumentacja) nie używa się długiego myślnika (znak Unicode U+2014) - tylko zwykły "-".
 

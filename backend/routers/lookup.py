@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from backend.aggregator import detect_indicator_type, run_lookup
-from backend.i18n import current_lang
+from backend.aggregator import detect_indicator_type, is_valid_indicator, run_lookup
+from backend.config import MAX_BATCH_INDICATORS
+from backend.i18n import current_lang, t
 from backend.models import HistoryEntry, IndicatorType
 from backend.sse import sse
 from backend.storage import append_history
@@ -17,14 +18,14 @@ router = APIRouter()
 
 
 class LookupRequest(BaseModel):
-    indicator: str
+    indicator: str = Field(max_length=253)
     type: str = "auto"
     services: list[str] | None = None
     force_refresh: bool = False
 
 
 class BatchLookupRequest(BaseModel):
-    indicators: list[str]
+    indicators: list[str] = Field(max_length=MAX_BATCH_INDICATORS)
     services: list[str] | None = None
     force_refresh: bool = False
 
@@ -49,6 +50,8 @@ def _save_to_history(result) -> None:
 @router.post("/lookup")
 async def lookup(req: LookupRequest):
     indicator_type = _resolve_type(req.indicator, req.type)
+    if not is_valid_indicator(req.indicator, indicator_type):
+        raise HTTPException(status_code=400, detail=t("lookup.invalid_indicator", indicator=req.indicator[:80]))
     result = await run_lookup(req.indicator, indicator_type, req.services, req.force_refresh)
     _save_to_history(result)
     return result
@@ -62,8 +65,11 @@ async def lookup_batch(req: BatchLookupRequest):
             indicator = indicator.strip()
             if not indicator:
                 continue
-            yield sse({"type": "progress", "completed": i - 1, "total": total, "current": indicator})
             indicator_type = detect_indicator_type(indicator)
+            if not is_valid_indicator(indicator, indicator_type):
+                yield sse({"type": "invalid", "indicator": indicator[:80], "message": t("lookup.invalid_indicator", indicator=indicator[:80])})
+                continue
+            yield sse({"type": "progress", "completed": i - 1, "total": total, "current": indicator})
 
             wait_queue: asyncio.Queue[str] = asyncio.Queue()
 

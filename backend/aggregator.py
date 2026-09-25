@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import ipaddress
+import re
 from urllib.parse import quote
 
 from backend.cache import get as cache_get
@@ -26,6 +27,21 @@ SERVICE_REGISTRY = {
     "virustotal": VirusTotalService(),
     "greynoise": GreyNoiseService(),
 }
+
+
+_DOMAIN_RE = re.compile(r"(?:[\w-]{1,63}\.)+[\w-]{1,63}\.?")
+
+
+def is_valid_indicator(indicator: str, indicator_type: IndicatorType) -> bool:
+    """The indicator ends up in URL paths of the intel services, so only a real IP address or a plain host name is
+    accepted (no slashes, colons, dots-only labels, whitespace)."""
+    if indicator_type == "ip":
+        try:
+            ipaddress.ip_address(indicator)
+        except ValueError:
+            return False
+        return True
+    return len(indicator) <= 253 and _DOMAIN_RE.fullmatch(indicator) is not None
 
 
 def detect_indicator_type(indicator: str) -> IndicatorType:

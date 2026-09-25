@@ -77,6 +77,7 @@
   "urlscan.no_key": "brak klucza API (URLSCAN_API_KEY)",
   "urlscan.submit_failed": "zgłoszenie skanu nie powiodło się: {message}",
   "urlscan.fetch_failed": "pobranie wyniku skanu nie powiodło się: {message}",
+  "urlscan.invalid_uuid": "niepoprawny identyfikator skanu",
   "report.ip_invalid": "nieprawidłowy adres IP",
   "report.ip_private": "adres prywatny/zarezerwowany",
   "report.hard_checks_failed": "twarde sprawdzenia nie przeszły",
@@ -88,6 +89,7 @@
   "report.age_future": "data ataku jest z przyszłości",
   "report.age_bad_format": "nieprawidłowy format daty",
   "lookup.vt_wait": "oczekiwanie na limit VirusTotal ({seconds}s)",
+  "lookup.invalid_indicator": "to nie jest poprawny adres IP ani nazwa domeny: {indicator}",
   "parser.relay_note": "Pierwszy hop spoza domeny odbiorcy to przekaźnik operatora '{relay}', a nie nadawca, więc przeszedłem dalej łańcuchem ({chain}) do hopu, w którym operator zapisał adres faktycznie łączącego się nadawcy.",
   "parser.no_received": "Brak nagłówków Received w e-mailu.",
   "parser.origin_inside_provider": "Wiadomość powstała wewnątrz współdzielonego dostawcy poczty (np. poczta webowa lub konto Microsoft/Google) - w łańcuchu Received nie ma publicznego adresu IP nadawcy, są tylko adresy przekaźników dostawcy, których nie należy zgłaszać do AbuseIPDB. Nadużycie zgłoś do działu abuse dostawcy.",
@@ -206,6 +208,7 @@
   "history.not_found": "nie znaleziono wpisu",
   "history.no_subject": "(brak tematu)",
   "history.invalid_type": "nieprawidłowy typ wpisu",
+  "history.too_large": "dane wpisu historii są zbyt duże",
   "score.basis_single": "jednym źródle ({source})",
   "score.basis_nodata": "braku danych z jakiegokolwiek źródła",
   "forensics.flag.times": "(x{n})"

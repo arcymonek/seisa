@@ -17,6 +17,11 @@ EMAIL_GUIDE_FILE = DOCS_DIR / "email-analysis-guide.md"
 
 HISTORY_MAX_ENTRIES = 25
 
+# Request size limits (a local tool, but nothing should be able to make it parse or store unbounded input).
+MAX_SOURCE_CHARS = 3_000_000  # e-mail source
+MAX_BATCH_INDICATORS = 200
+MAX_HISTORY_DATA_CHARS = 10_000_000
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
