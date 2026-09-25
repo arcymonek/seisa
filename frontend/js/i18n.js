@@ -13,11 +13,7 @@ function detectLang() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (SUPPORTED.includes(stored)) return stored;
   } catch { /* storage blocked: fall through */ }
-  for (const l of navigator.languages || [navigator.language]) {
-    const short = String(l || "").slice(0, 2).toLowerCase();
-    if (SUPPORTED.includes(short)) return short;
-  }
-  return "en";
+  return "en"; // the default is English whatever the browser language; Polish only after a switch in the footer
 }
 
 const lang = detectLang();
