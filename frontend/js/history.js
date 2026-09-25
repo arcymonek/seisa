@@ -93,7 +93,10 @@ async function openEntry(id) {
     btn.onclick = () => window.seisaApp.goToLookup(entry.data.indicator);
     card.appendChild(btn);
   } else {
-    card.innerHTML = `<pre style="white-space:pre-wrap">${JSON.stringify(entry.data, null, 2)}</pre>`;
+    const pre = document.createElement("pre");
+    pre.style.whiteSpace = "pre-wrap";
+    pre.textContent = JSON.stringify(entry.data, null, 2);
+    card.appendChild(pre);
   }
   detail.appendChild(card);
 }

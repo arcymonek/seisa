@@ -301,8 +301,8 @@ function render() {
   html += `<h3>${escapeHtml(t("dmarc.h_sources"))}</h3><table id="dm-ip-table"><thead><tr><th>IP</th><th>${escapeHtml(t("dmarc.col_messages"))}</th><th>SPF</th><th>DKIM</th><th>Reject</th><th>Quarantine</th><th>None</th><th>${escapeHtml(t("dmarc.col_seen"))}</th><th>${escapeHtml(t("dmarc.col_risk"))}</th><th>${escapeHtml(t("dmarc.col_actions"))}</th></tr></thead><tbody>`;
   agg.forEach((row) => {
     const risk = riskLevel(row);
-    html += `<tr data-ip="${row.sourceIp}" data-spf-fail="${row.spfFail > 0}" data-dkim-fail="${row.dkimFail > 0}">
-      <td>${row.sourceIp}</td>
+    html += `<tr data-ip="${escapeHtml(row.sourceIp)}" data-spf-fail="${row.spfFail > 0}" data-dkim-fail="${row.dkimFail > 0}">
+      <td>${escapeHtml(row.sourceIp)}</td>
       <td>${row.count}</td>
       <td>${row.spfPass ? `<span style="color:var(--pass)">✓${row.spfPass}</span> ` : ""}${row.spfFail ? `<span style="color:var(--fail)">✗${row.spfFail}</span>` : ""}</td>
       <td>${row.dkimPass ? `<span style="color:var(--pass)">✓${row.dkimPass}</span> ` : ""}${row.dkimFail ? `<span style="color:var(--fail)">✗${row.dkimFail}</span>` : ""}</td>
@@ -318,7 +318,7 @@ function render() {
         <button class="secondary report-btn">AbuseIPDB</button>
       </td>
     </tr>
-    <tr class="detail-row" data-detail-for="${row.sourceIp}" style="display:${expandedIps.has(row.sourceIp) ? "table-row" : "none"}">
+    <tr class="detail-row" data-detail-for="${escapeHtml(row.sourceIp)}" style="display:${expandedIps.has(row.sourceIp) ? "table-row" : "none"}">
       <td colspan="10">${expandedIps.has(row.sourceIp) ? renderRecordDetail(row) : ""}</td>
     </tr>`;
   });

@@ -28,9 +28,16 @@ const SERVICE_INFO = {
   },
 };
 
+// Server-built reports (IP lookup, URLScan) embed untrusted text from third-party APIs (AbuseIPDB comments, OTX pulse
+// names, WHOIS, page titles), so the HTML produced by marked is never inserted as is. It is parsed by an inert
+// DOMParser and passed through an allow-list: only the tags and attributes the reports really use survive, links only
+// with http(s) and rel=noopener, and everything else becomes visible, inert text.
 export function renderMarkdown(container, markdownText) {
   container.className = "md-render";
-  container.innerHTML = window.marked.parse(markdownText || "");
+  const html = window.marked.parse(markdownText || "");
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  sanitizeReportNode(doc.body);
+  container.innerHTML = doc.body.innerHTML;
   enhanceServiceHeadings(container);
   enhanceReportHeading(container);
   scoreHeadingToBadge(container);
@@ -105,6 +112,36 @@ function sanitizeNode(node) {
     }
     Array.from(child.attributes).forEach((attr) => child.removeAttribute(attr.name));
     sanitizeNode(child);
+  });
+}
+
+const REPORT_TAGS = new Set([...SAFE_TAGS, "DIV", "A"]);
+const ALIGN_VALUES = new Set(["left", "center", "right"]);
+
+function sanitizeReportNode(node) {
+  Array.from(node.childNodes).forEach((child) => {
+    if (child.nodeType === Node.TEXT_NODE) return;
+    if (child.nodeType !== Node.ELEMENT_NODE) {
+      child.remove();
+      return;
+    }
+    if (!REPORT_TAGS.has(child.tagName)) {
+      child.replaceWith(document.createTextNode(child.outerHTML));
+      return;
+    }
+    const attrs = Object.fromEntries(Array.from(child.attributes, (a) => [a.name, a.value]));
+    Array.from(child.attributes).forEach((a) => child.removeAttribute(a.name));
+    if (child.tagName === "A") {
+      if (/^https?:\/\//i.test(attrs.href || "")) {
+        child.setAttribute("href", attrs.href);
+        child.setAttribute("rel", "noopener noreferrer");
+      }
+    } else if (child.tagName === "DIV") {
+      if (attrs.class === "excluded-sources") child.className = "excluded-sources";
+    } else if ((child.tagName === "TH" || child.tagName === "TD") && ALIGN_VALUES.has(attrs.align)) {
+      child.setAttribute("align", attrs.align);
+    }
+    sanitizeReportNode(child);
   });
 }
 

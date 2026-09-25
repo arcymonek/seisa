@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from backend.config import FRONTEND_DIR
 from backend.i18n import reset_lang, set_lang, t
@@ -18,13 +19,26 @@ app_logger = logging.getLogger("app")
 app = FastAPI(title="Seisa")
 
 
+# Second line of defence next to the HTML sanitising in the frontend: scripts only from our own origin, no plugins,
+# no framing. style-src needs 'unsafe-inline' because the UI uses style= attributes; connect-src lists the one
+# external host the frontend calls itself (geo/ASN lookup in the DMARC tab).
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+    "connect-src 'self' https://ipwho.is; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+)
+
+
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
-    """Single-user local tool: the browser should not keep old HTML/JS/CSS between our changes."""
+    """Single-user local tool: the browser should not keep old HTML/JS/CSS between our changes.
+
+    Also sets the Content-Security-Policy on every response.
+    """
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         if not request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
         return response
 
 
@@ -41,6 +55,9 @@ class LanguageMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(NoCacheStaticMiddleware)
 app.add_middleware(LanguageMiddleware)
+# Only loopback names are accepted in the Host header: a page on another domain that was re-pointed (DNS rebinding)
+# to 127.0.0.1 would otherwise be treated as the same origin and could read the whole API.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 
 
 @app.exception_handler(Exception)
