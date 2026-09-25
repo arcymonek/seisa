@@ -42,6 +42,7 @@ export const api = {
   submitReport: (body) => request("/abuseipdb/report/submit", { method: "POST", body: JSON.stringify(body) }),
 
   logs: (range) => request(`/logs?range=${encodeURIComponent(range)}`),
+  about: () => request("/about"),
   logsClear: () => request("/logs", { method: "DELETE" }),
 
   emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),

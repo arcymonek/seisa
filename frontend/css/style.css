@@ -420,3 +420,5 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .hi-cmp-bar { align-items: center; gap: 6px 12px; margin: 10px 0 0; }
 .hi-cmp-bar button.mini { margin: 0; }
 .hi-compare h3 { margin-top: 0; }
+.ab-changes { padding-left: 20px; margin: 8px 0 2px; }
+.ab-changes li { margin: 4px 0; font-size: 14.5px; overflow-wrap: anywhere; }

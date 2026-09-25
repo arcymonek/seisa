@@ -251,6 +251,14 @@ from backend.ratelimit import vt_rate_limiter  # noqa: E402
 
 vt_rate_limiter._minute_limiter.max_calls = 10_000
 
+# the Info tab reads the release list from `git log`; the harness serves a fixed one (with an XSS probe) instead
+try:
+    from backend.routers import about as _about_router  # absent in checkouts older than 2.0.51 (`--root`)
+
+    _about_router._recent_changes = lambda: [{"version": "9.9.9", "summary": "mock <img src=x onerror=window.__xss=1>"}]
+except ImportError:
+    pass
+
 if _args.serve:
     import uvicorn
 
@@ -382,6 +390,7 @@ for lang in ("pl", "en"):
     rec(p + "history pin missing", client.patch("/api/history/nope", json={"pinned": True}, headers=H))
     rec(p + "logs all", client.get("/api/logs?range=all&service=all", headers=H))
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
+    rec(p + "about", client.get("/api/about", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
     rec(p + "logs after clear", client.get("/api/logs?range=all", headers=H))
     if aid:
@@ -514,6 +523,9 @@ _hist_types = {h["type"] for h in _result("[en] history list")["body"]}
 if "report" not in _hist_types:
     failures.append(f"the History tab does not list accepted reports: {_hist_types}")
 _after_clear = _result("[en] history after clear")["body"]
+_about_body = _result("[en] about")["body"]
+if "FAKE-" in json.dumps(_about_body) or sum(1 for x in _about_body["services"] if x["configured"]) != 6:
+    failures.append(f"the Info endpoint leaks an API key or misreports the configuration: {_about_body}")
 _kept = [h for h in _after_clear if h["type"] in ("lookup", "urlscan", "dmarc")]
 if not _kept or not all(h["pinned"] for h in _kept):
     failures.append(f"History clear must keep exactly the pinned entries: {_after_clear}")

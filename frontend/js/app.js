@@ -6,7 +6,7 @@ import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
 import { initUrlscan, prefillUrlscan, repeatUrlscan, showSavedScan } from "./urlscan.js";
-import { initAbout } from "./about.js";
+import { initAbout, refreshAbout } from "./about.js";
 
 const panels = {
   lookup: document.getElementById("panel-lookup"),
@@ -28,6 +28,7 @@ export function switchTab(name) {
   });
   if (name === "history") refreshHistory();
   if (name === "logs") refreshLogs();
+  if (name === "about") refreshAbout();
 }
 
 document.getElementById("tabs").addEventListener("click", (e) => {
