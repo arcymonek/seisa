@@ -1,11 +1,12 @@
-// DMARC tab: aggregate reports (XML) are parsed and aggregated entirely in the browser (nothing is uploaded).
-// Rows are grouped by source IP; per IP the tab can fetch geo/ASN (the one call to a third party: ipwho.is, on click)
-// and hand the IP over to the IP tab or to the AbuseIPDB tab. Every field of the report is shown somewhere: the
-// known ones with labels, anything else through the generic "other fields" lists. Every value from the XML is
-// untrusted: escapeHtml.
+// DMARC tab: aggregate reports (XML, also .gz/.zip) are unpacked, parsed and aggregated entirely in the browser
+// (nothing is uploaded). Rows are grouped by source IP; per IP the tab can fetch geo/ASN (the one call to a third
+// party: ipwho.is, on click) and hand the IP over to the IP tab or to the AbuseIPDB tab. Every field of the report is
+// shown somewhere: the known ones with labels, anything else through the generic "other fields" lists.
+// Every value from the XML is untrusted: escapeHtml in the page, code spans in the Markdown export.
 import { api } from "./api.js";
+import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
-import { escapeHtml as e } from "./util.js";
+import { downloadMarkdown, escapeHtml as e } from "./util.js";
 
 const SOURCE_LIMIT = 50; // rows shown before the "show all" button
 const RISK_RANK = { high: 0, medium: 1, low: 2 };
@@ -18,11 +19,12 @@ const ROW_KNOWN = ["source_ip", "count", "policy_evaluated"];
 const RECORD_KNOWN = ["row", "identifiers", "auth_results"];
 
 let root;
-let allRecords = [];
+let allRecords = []; // one entry per <record>; the report it came from is reportMeta[record.reportIdx]
 let reportMeta = [];
 let sources = [];
 let filter = "all";
 let showAll = false;
+const seenReports = new Map(); // "org|report_id" -> file name, to skip a report loaded twice
 const geoCache = {};
 const expandedIps = new Set();
 
@@ -31,14 +33,16 @@ export function initDmarc(container) {
   root.innerHTML = `
     <div class="subtitle">${e(t("dmarc.subtitle"))}</div>
     <div class="dropzone" id="dm-dropzone">
-      <div class="muted">.xml</div>
+      <div class="muted">.xml .gz .zip</div>
       <p><strong>${e(t("dmarc.drop_click"))}</strong> ${e(t("dmarc.drop_or_drag"))}</p>
       <p class="muted dz-hint">${e(t("dmarc.drop_multiple"))}</p>
-      <input type="file" id="dm-file-input" accept=".xml" multiple style="display:none">
+      <input type="file" id="dm-file-input" accept=".xml,.gz,.zip" multiple style="display:none">
       <div class="muted" id="dm-file-list"></div>
     </div>
     <div class="action-row" id="dm-actions" style="display:none">
       <button class="secondary" id="dm-clear">${e(t("dmarc.btn_clear"))}</button>
+      <button class="secondary" id="dm-save">${e(t("common.save_md"))}</button>
+      <button class="secondary" id="dm-copy">${e(t("common.copy_markdown"))}</button>
       <span class="action-info" id="dm-info"></span>
     </div>
     <div id="dm-results"></div>
@@ -65,15 +69,22 @@ export function initDmarc(container) {
     fileInput.value = ""; // the same file can be chosen again
   });
   root.querySelector("#dm-clear").addEventListener("click", clearAll);
+  root.querySelector("#dm-save").addEventListener("click", saveMarkdown);
+  root.querySelector("#dm-copy").addEventListener("click", () => navigator.clipboard.writeText(buildMarkdown()));
 }
 
-function clearAll() {
+function resetState() {
   allRecords = [];
   reportMeta = [];
   sources = [];
   filter = "all";
   showAll = false;
+  seenReports.clear();
   expandedIps.clear();
+}
+
+function clearAll() {
+  resetState();
   root.querySelector("#dm-results").innerHTML = "";
   root.querySelector("#dm-file-list").innerHTML = "";
   root.querySelector("#dm-info").textContent = "";
@@ -81,39 +92,62 @@ function clearAll() {
   root.querySelector("#dm-dropzone").classList.remove("compact");
 }
 
-async function handleFiles(files) {
-  const xmlFiles = Array.from(files).filter((f) => f.name.toLowerCase().endsWith(".xml"));
-  if (!xmlFiles.length) return;
-  const started = performance.now();
-  allRecords = [];
-  reportMeta = [];
-  filter = "all";
-  showAll = false;
-  expandedIps.clear();
-  const fileList = root.querySelector("#dm-file-list");
-  fileList.innerHTML = "";
-
-  for (const file of xmlFiles) {
-    try {
-      parseXML(await file.text(), file.name);
-      fileList.appendChild(logLine("✓ " + file.name));
-    } catch (err) {
-      const line = logLine("✗ " + t("dmarc.parse_error", { file: file.name, message: err.message }));
-      line.style.color = "var(--fail)";
-      fileList.appendChild(line);
-    }
-  }
+function showResults() {
   root.querySelector("#dm-dropzone").classList.add("compact");
   root.querySelector("#dm-actions").style.display = "";
   render();
+}
+
+function logLine(text, color) {
+  const d = document.createElement("div");
+  d.textContent = text;
+  if (color) d.style.color = color;
+  return d;
+}
+
+async function handleFiles(files) {
+  const picked = Array.from(files).filter((f) => /\.(xml|gz|zip)$/i.test(f.name));
+  if (!picked.length) return;
+  const started = performance.now();
+  resetState();
+  const fileList = root.querySelector("#dm-file-list");
+  fileList.innerHTML = "";
+  const fail = (name, err) => fileList.appendChild(logLine("✗ " + t("dmarc.parse_error", { file: name, message: err.message }), "var(--fail)"));
+
+  for (const file of picked) {
+    let reports;
+    try {
+      reports = await readReports(file);
+    } catch (err) {
+      fail(file.name, err);
+      continue;
+    }
+    for (const rep of reports) {
+      try {
+        parseXML(rep.text, rep.name);
+        fileList.appendChild(logLine("✓ " + rep.name));
+      } catch (err) {
+        if (err.duplicateOf) fileList.appendChild(logLine("= " + t("dmarc.duplicate_skipped", { file: rep.name, first: err.duplicateOf }), "var(--warn)"));
+        else fail(rep.name, err);
+      }
+    }
+  }
+  showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.parsed", { time: fmtSeconds(performance.now() - started) });
   saveSummaryToHistory();
 }
 
-function logLine(text) {
-  const d = document.createElement("div");
-  d.textContent = text;
-  return d;
+// Re-opens a report set saved in the history (see saveSummaryToHistory).
+export function loadDmarcData(data) {
+  resetState();
+  const day = (v) => (v ? new Date(v) : null);
+  reportMeta = data.reportMeta.map((m) => ({ ...m, begin: day(m.begin), end: day(m.end) }));
+  allRecords = data.records;
+  const fileList = root.querySelector("#dm-file-list");
+  fileList.innerHTML = "";
+  reportMeta.forEach((m) => fileList.appendChild(logLine("✓ " + m.filename)));
+  showResults();
+  root.querySelector("#dm-info").textContent = t("dmarc.restored");
 }
 
 function txt(el, sel) {
@@ -125,6 +159,8 @@ function epoch(value) {
   const n = parseInt(value, 10);
   return Number.isFinite(n) ? new Date(n * 1000) : null;
 }
+
+const lower = (v, fallback) => (v || fallback).toLowerCase();
 
 // Leaf child elements not in `known`, as {name, value}: fields the schema (or a newer draft of it) has and we do not label.
 function extraFields(el, known) {
@@ -139,8 +175,12 @@ function parseXML(xmlString, filename) {
   if (doc.querySelector("parsererror")) throw new Error(t("dmarc.invalid_xml"));
 
   const org = txt(doc, "report_metadata > org_name") || t("dmarc.unknown");
+  const reportId = txt(doc, "report_metadata > report_id");
+  const dupKey = reportId ? `${org}|${reportId}` : null;
+  if (dupKey && seenReports.has(dupKey)) throw Object.assign(new Error("duplicate"), { duplicateOf: seenReports.get(dupKey) });
+  if (dupKey) seenReports.set(dupKey, filename);
+
   const domain = txt(doc, "policy_published > domain") || "?";
-  const policy = txt(doc, "policy_published > p") || "?";
   const begin = epoch(txt(doc, "report_metadata > date_range > begin"));
   const end = epoch(txt(doc, "report_metadata > date_range > end"));
   const reportIdx = reportMeta.length;
@@ -151,11 +191,11 @@ function parseXML(xmlString, filename) {
     org,
     email: txt(doc, "report_metadata > email"),
     extraContact: txt(doc, "report_metadata > extra_contact_info"),
-    reportId: txt(doc, "report_metadata > report_id"),
+    reportId,
     version: txt(doc, "feedback > version"),
     errors: Array.from(doc.querySelectorAll("report_metadata > error")).map((x) => x.textContent.trim()).filter(Boolean),
     domain,
-    policy,
+    policy: txt(doc, "policy_published > p") || "?",
     subdomainPolicy: txt(doc, "policy_published > sp"),
     pct: txt(doc, "policy_published > pct"),
     adkim: txt(doc, "policy_published > adkim"),
@@ -176,9 +216,9 @@ function parseXML(xmlString, filename) {
       reportIdx,
       sourceIp: txt(rec, "row > source_ip") || "?",
       count: Number.isFinite(count) ? count : 1,
-      disposition: txt(rec, "row > policy_evaluated > disposition") || "unknown",
-      dkimEval: txt(rec, "row > policy_evaluated > dkim") || "fail",
-      spfEval: txt(rec, "row > policy_evaluated > spf") || "fail",
+      disposition: lower(txt(rec, "row > policy_evaluated > disposition"), "unknown"),
+      dkimEval: lower(txt(rec, "row > policy_evaluated > dkim"), "fail"),
+      spfEval: lower(txt(rec, "row > policy_evaluated > spf"), "fail"),
       headerFrom: txt(rec, "identifiers > header_from") || domain,
       envelopeFrom: txt(rec, "identifiers > envelope_from"),
       envelopeTo: txt(rec, "identifiers > envelope_to"),
@@ -204,10 +244,6 @@ function parseXML(xmlString, filename) {
         ...extraFields(rec.querySelector("row"), ROW_KNOWN),
         ...extraFields(rec, RECORD_KNOWN),
       ],
-      org,
-      filename,
-      begin,
-      end,
     });
   });
 }
@@ -215,6 +251,7 @@ function parseXML(xmlString, filename) {
 function aggregate() {
   const byIp = {};
   allRecords.forEach((r) => {
+    const m = reportMeta[r.reportIdx];
     if (!byIp[r.sourceIp]) {
       byIp[r.sourceIp] = {
         sourceIp: r.sourceIp,
@@ -240,8 +277,8 @@ function aggregate() {
     if (r.disposition === "none") b.none += r.count;
     else if (r.disposition === "quarantine") b.quarantine += r.count;
     else if (r.disposition === "reject") b.reject += r.count;
-    if (r.begin && (!b.earliestSeen || r.begin < b.earliestSeen)) b.earliestSeen = r.begin;
-    if (r.end && (!b.latestSeen || r.end > b.latestSeen)) b.latestSeen = r.end;
+    if (m.begin && (!b.earliestSeen || m.begin < b.earliestSeen)) b.earliestSeen = m.begin;
+    if (m.end && (!b.latestSeen || m.end > b.latestSeen)) b.latestSeen = m.end;
     b.records.push(r);
   });
   return Object.values(byIp);
@@ -253,12 +290,22 @@ function riskLevel(row) {
   return "low";
 }
 
+const isPass = (r) => r.spfEval === "pass" || r.dkimEval === "pass"; // DMARC passes when SPF or DKIM is aligned
+
 function fmtDate(d) {
   return d ? i18nDate(d) : "-";
 }
 
 function fmtDateTime(d) {
   return d ? i18nDateTime(d) : "-";
+}
+
+function fmtPct(part, total) {
+  return total ? `${(Math.floor((part / total) * 1000) / 10).toLocaleString(getLocale(), { maximumFractionDigits: 1 })}%` : "-";
+}
+
+function sumBy(rows, key) {
+  return rows.reduce((s, r) => s + r[key], 0);
 }
 
 async function lookupGeo(ip, btn) {
@@ -285,10 +332,6 @@ function geoText(ip) {
 
 // ---- rendering: summary ----
 
-function sumBy(rows, key) {
-  return rows.reduce((s, r) => s + r[key], 0);
-}
-
 function bannersHtml() {
   let html = "";
   const high = sources.filter((s) => riskLevel(s) === "high");
@@ -314,10 +357,30 @@ function bannersHtml() {
   return html;
 }
 
+// What the latest published policy of each domain means for the results (p=none only monitors, pct < 100, ...).
+function policyHintsHtml() {
+  const latest = new Map();
+  reportMeta.forEach((m) => {
+    const cur = latest.get(m.domain);
+    if (!cur || (m.begin && (!cur.begin || m.begin > cur.begin))) latest.set(m.domain, m);
+  });
+  let html = "";
+  const add = (cls, text) => (html += `<div class="banner ${cls}">${e(text)}</div>`);
+  latest.forEach((m, domain) => {
+    const failing = allRecords.some((r) => reportMeta[r.reportIdx].domain === domain && (r.spfEval !== "pass" || r.dkimEval !== "pass"));
+    const p = m.policy.toLowerCase();
+    if (p === "none" && failing) add("warn", t("dmarc.hint_none_risky", { domain }));
+    else if (p === "none") add("info", t("dmarc.hint_none_ready", { domain }));
+    else if (p === "quarantine" && !failing) add("info", t("dmarc.hint_quarantine_ready", { domain }));
+    const pct = parseInt(m.pct, 10);
+    if (Number.isFinite(pct) && pct < 100) add("info", t("dmarc.hint_pct", { domain, pct }));
+  });
+  return html;
+}
+
 function kpiHtml() {
   const totalMsgs = sumBy(allRecords, "count");
-  const passed = allRecords.filter((r) => r.spfEval === "pass" || r.dkimEval === "pass").reduce((s, r) => s + r.count, 0);
-  const passPct = totalMsgs ? `${(Math.floor((passed / totalMsgs) * 1000) / 10).toLocaleString(getLocale(), { maximumFractionDigits: 1 })}%` : "-";
+  const passed = sumBy(allRecords.filter(isPass), "count");
   const suspicious = sources.filter((s) => riskLevel(s) !== "low").length;
   const disp = { reject: sumBy(sources, "reject"), quarantine: sumBy(sources, "quarantine"), none: sumBy(sources, "none") };
   const dispTotal = disp.reject + disp.quarantine + disp.none;
@@ -329,9 +392,32 @@ function kpiHtml() {
     ${tile(t("dmarc.kpi_messages"), totalMsgs)}
     ${tile(t("dmarc.kpi_ips"), sources.length)}
     ${tile(t("dmarc.kpi_suspicious"), suspicious)}
-    ${tile(t("dmarc.kpi_pass"), passPct)}
+    ${tile(t("dmarc.kpi_pass"), fmtPct(passed, totalMsgs))}
     <div class="kpi wide"><span class="kpi-label">${e(t("dmarc.kpi_decisions"))}</span>${bar}<div class="muted">reject ${disp.reject} · quarantine ${disp.quarantine} · none ${disp.none}</div></div>
   </div>`;
+}
+
+// One row per report provider (org_name): how much mail each of them saw and how much of it passed DMARC.
+function providerStats() {
+  const by = new Map();
+  reportMeta.forEach((m) => {
+    if (!by.has(m.org)) by.set(m.org, { org: m.org, reports: 0, messages: 0, failed: 0 });
+    by.get(m.org).reports++;
+  });
+  allRecords.forEach((r) => {
+    const g = by.get(reportMeta[r.reportIdx].org);
+    g.messages += r.count;
+    if (!isPass(r)) g.failed += r.count;
+  });
+  return Array.from(by.values()).sort((a, b) => b.messages - a.messages);
+}
+
+function providersHtml() {
+  if (reportMeta.length < 2) return "";
+  const rows = providerStats()
+    .map((g) => `<tr><td>${e(g.org)}</td><td>${g.reports}</td><td>${g.messages}</td><td>${e(fmtPct(g.messages - g.failed, g.messages))}</td><td class="${g.failed ? "bad" : ""}">${g.failed}</td></tr>`)
+    .join("");
+  return `<h3>${e(t("dmarc.h_providers"))}</h3><div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // ---- rendering: reports ----
@@ -342,39 +428,58 @@ function alignWord(v) {
   return v;
 }
 
-function token(name, value, isDefault) {
-  return `<span class="mono">${e(name)}=${e(value)}</span>${isDefault ? ` <span class="muted">(${e(t("dmarc.default"))})</span>` : ""}`;
+function policyTokens(m) {
+  const tokens = [
+    { name: "p", value: m.policy },
+    { name: "sp", value: m.subdomainPolicy || m.policy, def: !m.subdomainPolicy },
+    { name: "pct", value: m.pct || "100", def: !m.pct },
+  ];
+  if (m.fo) tokens.push({ name: "fo", value: m.fo });
+  m.policyExtras.forEach((x) => tokens.push({ name: x.name, value: x.value }));
+  return tokens;
+}
+
+function tokenHtml(x) {
+  return `<span class="mono">${e(x.name)}=${e(x.value)}</span>${x.def ? ` <span class="muted">(${e(t("dmarc.default"))})</span>` : ""}`;
+}
+
+const tokenText = (x) => `${x.name}=${x.value}${x.def ? ` (${t("dmarc.default")})` : ""}`;
+
+// Every field of one report as {label, html, text}; the page uses html, the Markdown export text.
+function reportFields(m) {
+  const recs = allRecords.filter((r) => r.reportIdx === m.idx);
+  const fields = [];
+  const add = (label, html, text) => fields.push({ label, html, text });
+  const plain = (label, value) => add(label, e(value), value);
+
+  add(t("dmarc.f_file"), `<span class="mono">${e(m.filename)}</span>`, m.filename);
+  plain(t("dmarc.f_provider"), m.org);
+  if (m.email) plain(t("dmarc.f_contact"), m.email);
+  if (m.extraContact) plain(t("dmarc.f_extra_contact"), m.extraContact);
+  if (m.reportId) add(t("dmarc.f_report_id"), `<span class="mono">${e(m.reportId)}</span>`, m.reportId);
+  if (m.version) plain(t("dmarc.f_version"), m.version);
+  plain(t("dmarc.f_period"), `${fmtDateTime(m.begin)} - ${fmtDateTime(m.end)}`);
+  plain(t("dmarc.f_domain"), m.domain);
+  const policy = policyTokens(m);
+  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "));
+  const align = [
+    { name: "adkim", label: "DKIM", value: m.adkim },
+    { name: "aspf", label: "SPF", value: m.aspf },
+  ];
+  const alignPart = (x) => `${x.label} (${x.name}): ${alignWord(x.value || "r")}`;
+  add(
+    t("dmarc.f_alignment"),
+    align.map((x) => `${e(alignPart(x))}${x.value ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`}`).join(" · "),
+    align.map((x) => alignPart(x) + (x.value ? "" : ` (${t("dmarc.default")})`)).join(", "),
+  );
+  plain(t("dmarc.f_contents"), `${tn("dmarc.records", recs.length)}, ${tn("dmarc.messages", sumBy(recs, "count"))}`);
+  if (m.errors.length) add(t("dmarc.f_errors"), m.errors.map((x) => `<div class="bad">${e(x)}</div>`).join(""), m.errors.join("; "));
+  if (m.extras.length) add(t("dmarc.f_extra"), m.extras.map((x) => `<div>${tokenHtml(x)}</div>`).join(""), m.extras.map(tokenText).join(", "));
+  return fields;
 }
 
 function reportHtml(m, open) {
-  const recs = allRecords.filter((r) => r.reportIdx === m.idx);
-  const kv = [];
-  const add = (label, valueHtml) => kv.push(`<dt>${e(label)}</dt><dd>${valueHtml}</dd>`);
-
-  add(t("dmarc.f_file"), `<span class="mono">${e(m.filename)}</span>`);
-  add(t("dmarc.f_provider"), e(m.org));
-  if (m.email) add(t("dmarc.f_contact"), e(m.email));
-  if (m.extraContact) add(t("dmarc.f_extra_contact"), e(m.extraContact));
-  if (m.reportId) add(t("dmarc.f_report_id"), `<span class="mono">${e(m.reportId)}</span>`);
-  if (m.version) add(t("dmarc.f_version"), e(m.version));
-  add(t("dmarc.f_period"), `${e(fmtDateTime(m.begin))} - ${e(fmtDateTime(m.end))}`);
-  add(t("dmarc.f_domain"), e(m.domain));
-  const policy = [
-    token("p", m.policy),
-    token("sp", m.subdomainPolicy || m.policy, !m.subdomainPolicy),
-    token("pct", m.pct || "100", !m.pct),
-  ];
-  if (m.fo) policy.push(token("fo", m.fo));
-  m.policyExtras.forEach((x) => policy.push(token(x.name, x.value)));
-  add(t("dmarc.f_policy"), policy.join(" · "));
-  add(
-    t("dmarc.f_alignment"),
-    `DKIM (adkim): ${e(alignWord(m.adkim || "r"))}${m.adkim ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`} · SPF (aspf): ${e(alignWord(m.aspf || "r"))}${m.aspf ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`}`,
-  );
-  add(t("dmarc.f_contents"), e(`${tn("dmarc.records", recs.length)}, ${tn("dmarc.messages", sumBy(recs, "count"))}`));
-  if (m.errors.length) add(t("dmarc.f_errors"), m.errors.map((x) => `<div class="bad">${e(x)}</div>`).join(""));
-  if (m.extras.length) add(t("dmarc.f_extra"), m.extras.map((x) => `<div>${token(x.name, x.value)}</div>`).join(""));
-
+  const kv = reportFields(m).map((f) => `<dt>${e(f.label)}</dt><dd>${f.html}</dd>`);
   const flag = m.errors.length ? ` · <span class="bad">⚠ ${e(t("dmarc.f_errors"))}</span>` : "";
   return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary><dl class="kv">${kv.join("")}</dl></details>`;
 }
@@ -384,14 +489,16 @@ function legendHtml() {
     <dt>SPF</dt><dd>${e(t("dmarc.legend_spf"))}</dd>
     <dt>DKIM</dt><dd>${e(t("dmarc.legend_dkim"))}</dd>
     <dt>${e(t("dmarc.legend_policy_term"))}</dt><dd>${e(t("dmarc.legend_policy"))}</dd>
+    <dt>${e(t("dmarc.legend_table_term"))}</dt><dd>${e(t("dmarc.legend_table"))}</dd>
   </dl></div>`;
 }
 
 // ---- rendering: sources ----
 
 function resSpan(v) {
-  const cls = v === "pass" ? "ok" : v === "fail" ? "bad" : "warnc";
-  return `<span class="${cls}">${e(v || "?")}</span>`;
+  const k = String(v || "").toLowerCase();
+  const cls = k === "pass" ? "ok" : k === "fail" ? "bad" : "warnc";
+  return `<span class="${cls}">${e(v || "-")}</span>`;
 }
 
 function line(label, valueHtml) {
@@ -403,12 +510,13 @@ function authLines(list, kind, extraKey) {
   return list
     .map((a) => {
       const human = a.humanResult ? ` <span class="muted">(${e(a.humanResult)})</span>` : "";
-      return `<div class="mono">${e(a.domain || "?")} <span class="muted">${e(extraKey)}=${e(a[extraKey] || "?")}</span> ${resSpan(a.result)}${human}</div>`;
+      return `<div class="mono">${e(a.domain || "-")} <span class="muted">${e(extraKey)}=${e(a[extraKey] || "-")}</span> ${resSpan(a.result)}${human}</div>`;
     })
     .join("");
 }
 
 function recordRowHtml(r) {
+  const m = reportMeta[r.reportIdx];
   const ids = [line("Header From", `<span class="mono">${e(r.headerFrom || "?")}</span>`)];
   if (r.envelopeFrom) ids.push(line("Envelope From", `<span class="mono">${e(r.envelopeFrom)}</span>`));
   if (r.envelopeTo) ids.push(line("Envelope To", `<span class="mono">${e(r.envelopeTo)}</span>`));
@@ -418,7 +526,7 @@ function recordRowHtml(r) {
   r.extras.forEach((x) => policy.push(line(x.name, `<span class="mono">${e(x.value)}</span>`)));
   return `<tr>
     <td>${ids.join("")}</td>
-    <td>${e(tn("dmarc.messages", r.count))}<div class="muted">${e(t("dmarc.record_meta", { file: r.filename, from: fmtDateTime(r.begin), to: fmtDateTime(r.end) }))}</div></td>
+    <td>${e(tn("dmarc.messages", r.count))}<div class="muted">${e(t("dmarc.record_meta", { file: m.filename, from: fmtDateTime(m.begin), to: fmtDateTime(m.end) }))}</div></td>
     <td>${line("policy_evaluated", resSpan(r.spfEval))}${line("auth_results", "")}${authLines(r.spfResults, "spf", "scope")}</td>
     <td>${line("policy_evaluated", resSpan(r.dkimEval))}${line("auth_results", "")}${authLines(r.dkimResults, "dkim", "selector")}</td>
     <td>${policy.join("")}</td>
@@ -440,12 +548,16 @@ function detailHtml(row) {
   </div>`;
 }
 
+const overrideTypes = (row) => [...new Set(row.records.flatMap((r) => r.reasons.map((x) => x.type).filter(Boolean)))];
+
 function decisionHtml(row) {
   const parts = [];
   if (row.reject) parts.push(`<span class="bad">reject ${row.reject}</span>`);
   if (row.quarantine) parts.push(`<span class="warnc">quarantine ${row.quarantine}</span>`);
   if (row.none) parts.push(`<span class="ok">none ${row.none}</span>`);
-  return parts.join(" · ") || "-";
+  const types = overrideTypes(row);
+  const note = types.length ? `<div class="muted">${e(t("dmarc.override_note", { types: types.join(", ") }))}</div>` : "";
+  return (parts.join(" · ") || "-") + note;
 }
 
 function counts(pass, fail) {
@@ -539,7 +651,9 @@ function render() {
 
   resultsEl.innerHTML =
     bannersHtml() +
+    policyHintsHtml() +
     kpiHtml() +
+    providersHtml() +
     `<h3>${e(t("dmarc.h_reports"))}</h3>` +
     reportMeta.map((m) => reportHtml(m, reportMeta.length === 1)).join("") +
     `<div id="dm-sources"></div>` +
@@ -556,16 +670,84 @@ function render() {
   });
 }
 
+// ---- Markdown export ----
+
+// Every value that came from the XML goes into a code span, so nothing in it can act as Markdown or HTML.
+const mdCode = (v) => "`" + String(v ?? "-").replace(/`/g, "'").replace(/\s+/g, " ").trim() + "`";
+const mdCell = (v) => mdCode(v).replace(/\|/g, "\\|");
+
+function authText(list, extraKey, kind) {
+  if (!list.length) return t("dmarc.no_auth_data", { section: kind });
+  return list.map((a) => `${mdCode(a.domain || "-")} ${extraKey}=${mdCode(a[extraKey] || "-")} ${mdCode(a.result || "-")}${a.humanResult ? ` (${mdCode(a.humanResult)})` : ""}`).join("; ");
+}
+
+function buildMarkdown() {
+  const domains = [...new Set(reportMeta.map((m) => m.domain))].join(", ");
+  const totalMsgs = sumBy(allRecords, "count");
+  const out = [`# ${t("dmarc.md_title")}: ${mdCode(domains)}`, ""];
+  out.push(`- ${t("dmarc.kpi_messages")}: ${totalMsgs}`);
+  out.push(`- ${t("dmarc.kpi_ips")}: ${sources.length}`);
+  out.push(`- ${t("dmarc.kpi_suspicious")}: ${sources.filter((s) => riskLevel(s) !== "low").length}`);
+  out.push(`- ${t("dmarc.kpi_pass")}: ${fmtPct(sumBy(allRecords.filter(isPass), "count"), totalMsgs)}`, "");
+
+  if (reportMeta.length > 1) {
+    out.push(`## ${t("dmarc.h_providers")}`, "");
+    out.push(`| ${t("dmarc.f_provider")} | ${t("dmarc.col_reports")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|---|");
+    providerStats().forEach((g) => out.push(`| ${mdCell(g.org)} | ${g.reports} | ${g.messages} | ${fmtPct(g.messages - g.failed, g.messages)} | ${g.failed} |`));
+    out.push("");
+  }
+
+  out.push(`## ${t("dmarc.h_reports")}`, "");
+  reportMeta.forEach((m) => {
+    out.push(`### ${mdCode(m.org)} - ${mdCode(m.domain)} - ${fmtDate(m.begin)} - ${fmtDate(m.end)}`, "");
+    reportFields(m).forEach((f) => out.push(`- ${f.label}: ${mdCode(f.text)}`));
+    out.push("");
+  });
+
+  out.push(`## ${t("dmarc.h_sources")}`, "");
+  out.push(`| IP | ${t("dmarc.col_messages")} | SPF | DKIM | ${t("dmarc.col_decision")} | ${t("dmarc.col_risk")} |`, "|---|---|---|---|---|---|");
+  sources.forEach((s) => {
+    const decision = [s.reject && `reject ${s.reject}`, s.quarantine && `quarantine ${s.quarantine}`, s.none && `none ${s.none}`].filter(Boolean).join(", ") || "-";
+    out.push(`| ${mdCell(s.sourceIp)} | ${s.count} | pass ${s.spfPass} / fail ${s.spfFail} | pass ${s.dkimPass} / fail ${s.dkimFail} | ${decision} | ${t("risk." + riskLevel(s))} |`);
+  });
+  out.push("");
+
+  sources.forEach((s) => {
+    out.push(`### ${mdCode(s.sourceIp)} - ${t("risk." + riskLevel(s))}`, "");
+    s.records.forEach((r) => {
+      const m = reportMeta[r.reportIdx];
+      const ids = [`Header From ${mdCode(r.headerFrom)}`];
+      if (r.envelopeFrom) ids.push(`Envelope From ${mdCode(r.envelopeFrom)}`);
+      if (r.envelopeTo) ids.push(`Envelope To ${mdCode(r.envelopeTo)}`);
+      out.push(`- ${ids.join(", ")} - ${tn("dmarc.messages", r.count)} (${mdCode(t("dmarc.record_meta", { file: m.filename, from: fmtDateTime(m.begin), to: fmtDateTime(m.end) }))})`);
+      out.push(`  - SPF: policy_evaluated ${mdCode(r.spfEval)}; auth_results: ${authText(r.spfResults, "scope", "spf")}`);
+      out.push(`  - DKIM: policy_evaluated ${mdCode(r.dkimEval)}; auth_results: ${authText(r.dkimResults, "selector", "dkim")}`);
+      const reasons = r.reasons.map((rs) => `${t("dmarc.override_reason")} ${mdCode(`${rs.type || "?"}${rs.comment ? " - " + rs.comment : ""}`)}`);
+      out.push(`  - ${t("dmarc.policy_decision")}: ${mdCode(r.disposition)}${reasons.length ? `; ${reasons.join("; ")}` : ""}`);
+      r.extras.forEach((x) => out.push(`  - ${x.name}: ${mdCode(x.value)}`));
+    });
+    out.push("");
+  });
+  return out.join("\n");
+}
+
+function saveMarkdown() {
+  const domains = [...new Set(reportMeta.map((m) => m.domain))].join("_").replace(/[^a-zA-Z0-9.-]+/g, "_").slice(0, 60) || "report";
+  return downloadMarkdown(`dmarc-${domains}-${new Date().toISOString().slice(0, 10)}.md`, buildMarkdown(), { native: true });
+}
+
+// ---- history ----
+
+// The raw records are saved (not the aggregate), so the History tab can reopen the full analysis (loadDmarcData).
 async function saveSummaryToHistory() {
-  const agg = aggregate();
-  const totalMsgs = allRecords.reduce((s, r) => s + r.count, 0);
+  const totalMsgs = sumBy(allRecords, "count");
   const domains = [...new Set(reportMeta.map((m) => m.domain))].join(", ");
   try {
     await api.historyCreate({
       type: "dmarc",
       label: `${domains} - ${tn("dmarc.reports", reportMeta.length)}, ${tn("dmarc.messages", totalMsgs)}`,
-      risk_summary: agg.some((r) => riskLevel(r) === "high") ? "High" : null,
-      data: { reportMeta, aggregate: agg },
+      risk_summary: aggregate().some((r) => riskLevel(r) === "high") ? "High" : null,
+      data: { reportMeta, records: allRecords },
     });
   } catch {
     /* a missing history entry must not block the analysis */

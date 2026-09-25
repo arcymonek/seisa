@@ -1,6 +1,6 @@
 import { applyStatic, mountLangSwitch } from "./i18n.js";
 import { initLookup, prefillLookup } from "./lookup.js";
-import { initDmarc } from "./dmarc.js";
+import { initDmarc, loadDmarcData } from "./dmarc.js";
 import { initReportBuilder, prefillReport, prefillReportEmail } from "./report-builder.js";
 import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
@@ -40,6 +40,10 @@ window.seisaApp = {
   goToLookup: (indicator) => {
     switchTab("lookup");
     prefillLookup(indicator);
+  },
+  goToDmarc: (data) => {
+    switchTab("dmarc");
+    loadDmarcData(data);
   },
   goToEmailAnalysis: (id) => {
     switchTab("email");

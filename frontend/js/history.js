@@ -76,6 +76,7 @@ async function load() {
 
 async function openEntry(id) {
   const entry = await api.historyEntry(id);
+  if (entry.type === "dmarc" && entry.data.records) return window.seisaApp.goToDmarc(entry.data);
   const detail = root.querySelector("#hi-detail");
   detail.innerHTML = "";
   const card = document.createElement("div");
