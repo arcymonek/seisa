@@ -34,10 +34,9 @@ export function initDmarc(container) {
     <div class="subtitle">${e(t("dmarc.subtitle"))}</div>
     <div class="dropzone" id="dm-dropzone">
       <div class="muted">.xml .gz .zip</div>
-      <p><strong>${e(t("dmarc.drop_click"))}</strong> ${e(t("dmarc.drop_or_drag"))}</p>
+      <p class="dz-main"><strong>${e(t("dmarc.drop_click"))}</strong> ${e(t("dmarc.drop_or_drag"))}</p>
       <p class="muted dz-hint">${e(t("dmarc.drop_multiple"))}</p>
       <input type="file" id="dm-file-input" accept=".xml,.gz,.zip" multiple style="display:none">
-      <div class="muted" id="dm-file-list"></div>
     </div>
     <div class="action-row" id="dm-actions" style="display:none">
       <button class="secondary" id="dm-clear">${e(t("dmarc.btn_clear"))}</button>
@@ -45,6 +44,7 @@ export function initDmarc(container) {
       <button class="secondary" id="dm-copy">${e(t("common.copy_markdown"))}</button>
       <span class="action-info" id="dm-info"></span>
     </div>
+    <details class="fact-block" id="dm-files" style="display:none"><summary id="dm-files-summary"></summary><div class="muted" id="dm-file-list"></div></details>
     <div id="dm-results"></div>
   `;
 
@@ -86,7 +86,7 @@ function resetState() {
 function clearAll() {
   resetState();
   root.querySelector("#dm-results").innerHTML = "";
-  root.querySelector("#dm-file-list").innerHTML = "";
+  root.querySelector("#dm-files").style.display = "none";
   root.querySelector("#dm-info").textContent = "";
   root.querySelector("#dm-actions").style.display = "none";
   root.querySelector("#dm-dropzone").classList.remove("compact");
@@ -98,11 +98,22 @@ function showResults() {
   render();
 }
 
-function logLine(text, color) {
-  const d = document.createElement("div");
-  d.textContent = text;
-  if (color) d.style.color = color;
-  return d;
+// items: [{text, kind: "ok" | "skip" | "fail"}]; the list is folded unless something was skipped or failed.
+function showFiles(items) {
+  const list = root.querySelector("#dm-file-list");
+  list.innerHTML = "";
+  const n = { ok: 0, skip: 0, fail: 0 };
+  items.forEach((it) => {
+    n[it.kind]++;
+    const d = document.createElement("div");
+    d.textContent = it.text;
+    if (it.kind !== "ok") d.style.color = it.kind === "fail" ? "var(--fail)" : "var(--warn)";
+    list.appendChild(d);
+  });
+  root.querySelector("#dm-files-summary").textContent = t("dmarc.files_summary", { ok: n.ok, skipped: n.skip, failed: n.fail });
+  const box = root.querySelector("#dm-files");
+  box.open = n.skip + n.fail > 0;
+  box.style.display = "";
 }
 
 async function handleFiles(files) {
@@ -110,9 +121,8 @@ async function handleFiles(files) {
   if (!picked.length) return;
   const started = performance.now();
   resetState();
-  const fileList = root.querySelector("#dm-file-list");
-  fileList.innerHTML = "";
-  const fail = (name, err) => fileList.appendChild(logLine("✗ " + t("dmarc.parse_error", { file: name, message: err.message }), "var(--fail)"));
+  const items = [];
+  const fail = (name, err) => items.push({ kind: "fail", text: "✗ " + t("dmarc.parse_error", { file: name, message: err.message }) });
 
   for (const file of picked) {
     let reports;
@@ -125,13 +135,14 @@ async function handleFiles(files) {
     for (const rep of reports) {
       try {
         parseXML(rep.text, rep.name);
-        fileList.appendChild(logLine("✓ " + rep.name));
+        items.push({ kind: "ok", text: "✓ " + rep.name });
       } catch (err) {
-        if (err.duplicateOf) fileList.appendChild(logLine("= " + t("dmarc.duplicate_skipped", { file: rep.name, first: err.duplicateOf }), "var(--warn)"));
+        if (err.duplicateOf) items.push({ kind: "skip", text: "= " + t("dmarc.duplicate_skipped", { file: rep.name, first: err.duplicateOf }) });
         else fail(rep.name, err);
       }
     }
   }
+  showFiles(items);
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.parsed", { time: fmtSeconds(performance.now() - started) });
   saveSummaryToHistory();
@@ -143,9 +154,7 @@ export function loadDmarcData(data) {
   const day = (v) => (v ? new Date(v) : null);
   reportMeta = data.reportMeta.map((m) => ({ ...m, begin: day(m.begin), end: day(m.end) }));
   allRecords = data.records;
-  const fileList = root.querySelector("#dm-file-list");
-  fileList.innerHTML = "";
-  reportMeta.forEach((m) => fileList.appendChild(logLine("✓ " + m.filename)));
+  showFiles(reportMeta.map((m) => ({ kind: "ok", text: "✓ " + m.filename })));
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.restored");
 }
@@ -393,7 +402,7 @@ function kpiHtml() {
     ${tile(t("dmarc.kpi_ips"), sources.length)}
     ${tile(t("dmarc.kpi_suspicious"), suspicious)}
     ${tile(t("dmarc.kpi_pass"), fmtPct(passed, totalMsgs))}
-    <div class="kpi wide"><span class="kpi-label">${e(t("dmarc.kpi_decisions"))}</span>${bar}<div class="muted">reject ${disp.reject} · quarantine ${disp.quarantine} · none ${disp.none}</div></div>
+    <div class="kpi wide"><span class="kpi-label">${e(t("dmarc.kpi_decisions"))}</span><div>${bar}<div class="muted">reject ${disp.reject} · quarantine ${disp.quarantine} · none ${disp.none}</div></div></div>
   </div>`;
 }
 

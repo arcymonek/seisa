@@ -92,6 +92,7 @@
   "dmarc.drop_multiple": "Można wgrać kilka raportów naraz; obsługiwane są pliki .xml, .gz i .zip",
   "dmarc.btn_clear": "Wyczyść",
   "dmarc.parsed": "Wczytano w {time} s",
+  "dmarc.files_summary": "Pliki: wczytano {ok}, pominięto {skipped}, błędów {failed}",
   "dmarc.parse_error": "{file} - błąd parsowania: {message}",
   "dmarc.invalid_xml": "nieprawidłowy XML",
   "dmarc.unknown": "nieznany",

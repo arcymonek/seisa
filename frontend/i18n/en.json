@@ -92,6 +92,7 @@
   "dmarc.drop_multiple": "You can upload several reports at once; .xml, .gz and .zip files are accepted",
   "dmarc.btn_clear": "Clear",
   "dmarc.parsed": "Parsed in {time} s",
+  "dmarc.files_summary": "Files: {ok} loaded, {skipped} skipped, {failed} failed",
   "dmarc.parse_error": "{file} - parse error: {message}",
   "dmarc.invalid_xml": "invalid XML",
   "dmarc.unknown": "unknown",
