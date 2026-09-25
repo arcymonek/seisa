@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 
+from backend.api_limits import observe
 from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
@@ -75,6 +76,7 @@ class AbuseIpdbService(IntelService):
         }
         async with httpx.AsyncClient(timeout=30) as client:
             resp = await client.post(f"{BASE_URL}/report", headers=self._headers(), data=payload)
+        observe(self.name, resp)
         rate_limit = parse_rate_limit(resp.headers)
         if resp.status_code >= 400:
             error = AbuseIpdbError(resp.status_code, api_error_detail(resp), rate_limit)

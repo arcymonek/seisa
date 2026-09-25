@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from backend.config import HISTORY_FILE, HISTORY_MAX_ENTRIES, REPORT_LOG_FILE, VT_USAGE_FILE
+from backend.config import API_USAGE_FILE, HISTORY_FILE, HISTORY_MAX_ENTRIES, REPORT_LOG_FILE, VT_USAGE_FILE
 from backend.models import HistoryEntry
 
 
@@ -98,6 +98,14 @@ def load_vt_usage() -> dict[str, Any]:
 
 def save_vt_usage(data: dict[str, Any]) -> None:
     atomic_write_json(VT_USAGE_FILE, data)
+
+
+def load_api_usage() -> dict[str, Any]:
+    return _read_json(API_USAGE_FILE, {})
+
+
+def save_api_usage(data: dict[str, Any]) -> None:
+    atomic_write_json(API_USAGE_FILE, data)
 
 
 def successful_reports(ip: str) -> list[dict[str, Any]]:

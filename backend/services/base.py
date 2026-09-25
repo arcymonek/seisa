@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 import httpx
 
+from backend.api_limits import observe
 from backend.i18n import t
 from backend.models import ServiceResult
 
@@ -63,6 +64,7 @@ class IntelService(ABC):
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.request(method, url, **kwargs)
+            observe(self.name, resp)
             resp.raise_for_status()
             return resp.json(), None
         except httpx.HTTPError as exc:

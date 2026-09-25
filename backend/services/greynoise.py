@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 
+from backend.api_limits import observe
 from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
@@ -29,6 +30,7 @@ class GreyNoiseService(IntelService):
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.get(f"{IP_URL}/{ip}", headers=headers)
+            observe(self.name, resp)
             if resp.status_code == 403:
                 # The key has no access to the full IP Lookup (a higher plan level) - fall back to the free
                 # community endpoint instead of returning an error.
@@ -55,6 +57,7 @@ class GreyNoiseService(IntelService):
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.get(f"{COMMUNITY_URL}/{ip}", headers=headers)
+            observe(self.name, resp)
             if resp.status_code == 404:
                 return ServiceResult(
                     service=self.name,

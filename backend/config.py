@@ -12,6 +12,7 @@ ANALYSES_DIR = DATA_DIR / "analyses"
 HISTORY_FILE = DATA_DIR / "history.json"
 VT_USAGE_FILE = DATA_DIR / "vt_usage.json"
 REPORT_LOG_FILE = DATA_DIR / "report_log.json"
+API_USAGE_FILE = DATA_DIR / "api_usage.json"
 ABUSEIPDB_POLICY_FILE = DOCS_DIR / "abuseipdb-reporting-policy.md"
 EMAIL_GUIDE_FILE = DOCS_DIR / "email-analysis-guide.md"
 

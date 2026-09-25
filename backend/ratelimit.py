@@ -43,7 +43,7 @@ class VirusTotalRateLimiter:
         self._minute_limiter = SlidingWindowLimiter(VT_PER_MINUTE, 60.0)
 
     def _today(self) -> str:
-        return datetime.now(timezone.utc).astimezone().date().isoformat()
+        return datetime.now(timezone.utc).date().isoformat()  # VirusTotal resets its daily quota at 00:00 UTC
 
     def daily_count(self) -> int:
         usage = load_vt_usage()

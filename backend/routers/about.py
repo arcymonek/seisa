@@ -1,5 +1,5 @@
-"""Info tab: which integrations have an API key (never the keys themselves), today's VirusTotal usage and the recent
-releases from the git log (empty when Seisa does not run from a git checkout)."""
+"""Info tab: which integrations have an API key (never the keys themselves), the usage of their API limits and the
+recent releases from the git log (empty when Seisa does not run from a git checkout)."""
 from __future__ import annotations
 
 import re
@@ -7,8 +7,8 @@ import subprocess
 
 from fastapi import APIRouter
 
+from backend.api_limits import limits_snapshot, refresh_live
 from backend.config import BASE_DIR, settings
-from backend.ratelimit import VT_PER_DAY, vt_rate_limiter
 
 router = APIRouter()
 
@@ -43,6 +43,13 @@ def about():
         "services": [{"id": name, "configured": bool(key)} for name, key in keyed.items()]
         + [{"id": "whois_rdns", "configured": None}],
         "llm": {"configured": llm_on, "model": settings.openrouter_model if llm_on else None},
-        "virustotal_usage": {"used": vt_rate_limiter.daily_count(), "limit": VT_PER_DAY},
+        "limits": limits_snapshot(),
         "changes": _recent_changes(),
     }
+
+
+@router.post("/about/limits/refresh")
+async def refresh_limits():
+    """Asks the services that report their quota (VirusTotal, urlscan, OpenRouter) - only on an explicit click."""
+    errors = await refresh_live()
+    return {"limits": limits_snapshot(), "errors": errors}

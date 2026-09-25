@@ -27,6 +27,7 @@ import shutil
 import socket
 import sys
 import tempfile
+import time
 from pathlib import Path
 
 _ap = argparse.ArgumentParser()
@@ -105,8 +106,21 @@ STREAM_COUNT = {"n": 0}
 def handler(request: httpx.Request) -> httpx.Response:
     host, path = request.url.host, request.url.path
     CALLS.append(f"{request.method} {host}{path}")
+    if host == "www.virustotal.com" and path.endswith("/overall_quotas"):
+        return httpx.Response(200, json={"data": {"api_requests_hourly": {"user": {"allowed": 240, "used": 1}},
+                                                  "api_requests_daily": {"user": {"allowed": 500, "used": 8}},
+                                                  "api_requests_monthly": {"user": {"allowed": 15500, "used": 32}},
+                                                  "private_scans_monthly": {"user": {"allowed": 0, "used": 0}}}})
+    if host == "urlscan.io" and path == "/user/quotas/":
+        day = {"limit": 1000, "used": 3, "remaining": 997, "reset": "2026-09-26T00:00:00.000Z"}
+        return httpx.Response(200, json={"limits": {a: {"day": dict(day), "hour": dict(day), "minute": dict(day)}
+                                                    for a in ("public", "unlisted", "private", "search", "retrieve", "files.public")}})
+    if host == "openrouter.ai" and path == "/api/v1/key":
+        return httpx.Response(200, json={"data": {"label": "sk-or-v1-abc...xyz", "limit": 25, "limit_remaining": 20.5, "limit_reset": None,
+                                                  "usage": 4.5, "is_free_tier": False,
+                                                  "free_model_daily_requests": {"used": 0, "limit": 1000, "remaining": 1000}}})
     if host == "api.abuseipdb.com" and path.endswith("/check"):
-        return httpx.Response(200, json={"data": {
+        return httpx.Response(200, headers={"X-RateLimit-Limit": "5000", "X-RateLimit-Remaining": "4982", "X-RateLimit-Reset": str(int(time.time()) + 3600)}, json={"data": {
             "ipAddress": request.url.params.get("ipAddress"), "abuseConfidenceScore": 42, "totalReports": 7,
             "numDistinctUsers": 3, "isWhitelisted": False, "isTor": False, "isPublic": True, "countryCode": "NL",
             "domain": "example.net", "hostnames": [], "isp": "Example ISP", "usageType": "Data Center",
@@ -133,7 +147,8 @@ def handler(request: httpx.Request) -> httpx.Response:
             {"name": "Bulk list", "created": "2024-01-01T00:00:00", "indicator_type_counts": {"IPv4": 500}}]},
             "country_name": "Netherlands", "country_code": "NL", "asn": "AS64500"})
     if host == "api.cloudflare.com":
-        return httpx.Response(200, json={"success": True, "result": {"ip": {"asn": 64500, "location": "DE", "asnName": "EXAMPLE-AS"}}})
+        return httpx.Response(200, headers={"ratelimit": '"default";r=1190;t=300', "ratelimit-policy": '"default";q=1200;w=300'},
+                              json={"success": True, "result": {"ip": {"asn": 64500, "location": "DE", "asnName": "EXAMPLE-AS"}}})
     if host == "api.greynoise.io":
         return httpx.Response(200, json={"internet_scanner_intelligence": {
             "found": True, "classification": "malicious", "actor": "unknown", "tags": [{"name": "SSH Bruteforcer"}],
@@ -237,6 +252,7 @@ cfg.DATA_DIR = TMP / "data"
 cfg.HISTORY_FILE = cfg.DATA_DIR / "history.json"
 cfg.VT_USAGE_FILE = cfg.DATA_DIR / "vt_usage.json"
 cfg.REPORT_LOG_FILE = cfg.DATA_DIR / "report_log.json"
+cfg.API_USAGE_FILE = cfg.DATA_DIR / "api_usage.json"
 # the directory constants were renamed in 2.0.27 (ANALIZY_DIR / LOGI_DIR): patch whichever exists, so that `--root`
 # can point at an older checkout
 for names, val in ((("ANALYSES_DIR", "ANALIZY_DIR"), cfg.DATA_DIR / "analyses"), (("LOGS_DIR", "LOGI_DIR"), TMP / "logs")):
@@ -391,6 +407,8 @@ for lang in ("pl", "en"):
     rec(p + "logs all", client.get("/api/logs?range=all&service=all", headers=H))
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
     rec(p + "about", client.get("/api/about", headers=H))
+    rec(p + "limits refresh", client.post("/api/about/limits/refresh", headers=H))
+    rec(p + "about after refresh", client.get("/api/about", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
     rec(p + "logs after clear", client.get("/api/logs?range=all", headers=H))
     if aid:
@@ -526,6 +544,24 @@ _after_clear = _result("[en] history after clear")["body"]
 _about_body = _result("[en] about")["body"]
 if "FAKE-" in json.dumps(_about_body) or sum(1 for x in _about_body["services"] if x["configured"]) != 6:
     failures.append(f"the Info endpoint leaks an API key or misreports the configuration: {_about_body}")
+_lim = _result("[en] about after refresh")["body"]["limits"]["rows"]
+_lim_by = {(r["service"], r["scope"], r["window"]): r for r in _lim}
+if _lim_by.get(("abuseipdb", "check", "day"), {}).get("used") != 18 or _lim_by[("abuseipdb", "check", "day")]["source"] != "headers":
+    failures.append(f"limits: AbuseIPDB usage not taken from the rate-limit headers: {_lim_by.get(('abuseipdb', 'check', 'day'))}")
+if _lim_by.get(("virustotal", "requests", "month"), {}).get("limit") != 15500 or _lim_by[("virustotal", "requests", "day")]["source"] != "api":
+    failures.append("limits: VirusTotal quotas not read from the quota endpoint")
+if _lim_by.get(("cloudflare_radar", "requests", "5min"), {}).get("used") != 10:
+    failures.append(f"limits: Cloudflare usage not taken from the Ratelimit headers: {_lim_by.get(('cloudflare_radar', 'requests', '5min'))}")
+if ("urlscan", "scan_private", "day") not in _lim_by or ("openrouter", "credits", "total") not in _lim_by or ("openrouter", "free_models", "day") not in _lim_by:
+    failures.append(f"limits: urlscan / OpenRouter rows missing: {sorted(_lim_by)}")
+_g = _lim_by.get(("greynoise", "searches", "week"), {})
+if not _g or _g["source"] != "local" or _g["limit"] != 50 or not _g["used"]:
+    failures.append(f"limits: GreyNoise searches are not counted locally: {_g}")
+_o = _lim_by.get(("otx", "requests", "hour"), {})
+if not _o or not _o["used"]:
+    failures.append(f"limits: OTX requests are not counted locally: {_o}")
+if "sk-or-v1" in json.dumps(_result("[en] limits refresh")["body"]):
+    failures.append("limits: a key label leaked into the answer")
 _kept = [h for h in _after_clear if h["type"] in ("lookup", "urlscan", "dmarc")]
 if not _kept or not all(h["pinned"] for h in _kept):
     failures.append(f"History clear must keep exactly the pinned entries: {_after_clear}")

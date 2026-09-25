@@ -43,6 +43,7 @@ export const api = {
 
   logs: (range) => request(`/logs?range=${encodeURIComponent(range)}`),
   about: () => request("/about"),
+  aboutLimitsRefresh: () => request("/about/limits/refresh", { method: "POST" }),
   logsClear: () => request("/logs", { method: "DELETE" }),
 
   emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),
