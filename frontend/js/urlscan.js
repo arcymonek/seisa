@@ -53,6 +53,13 @@ export function prefillUrlscan(url) {
   root.querySelector("#us-url").focus();
 }
 
+// Scans the address again from another tab (History).
+export function repeatUrlscan(url) {
+  if (!root) return;
+  prefillUrlscan(url);
+  root.querySelector("#us-submit").click();
+}
+
 // Shows a scan kept in the History (the summary and the thumbnail; the full report can be fetched again).
 export function showSavedScan(data) {
   if (!root || !data || !data.summary) return;

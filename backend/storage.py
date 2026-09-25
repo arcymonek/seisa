@@ -50,8 +50,15 @@ def save_history(entries: list[HistoryEntry]) -> None:
 def append_history(entry: HistoryEntry) -> None:
     entries = load_history()
     entries.insert(0, entry)
-    entries = entries[:HISTORY_MAX_ENTRIES]
-    save_history(entries)
+    kept: list[HistoryEntry] = []
+    unpinned = 0
+    for e in entries:  # newest first; the limit counts only the entries that are not pinned
+        if e.pinned:
+            kept.append(e)
+        elif unpinned < HISTORY_MAX_ENTRIES:
+            kept.append(e)
+            unpinned += 1
+    save_history(kept)
 
 
 def delete_history_entry(entry_id: str) -> bool:
@@ -64,7 +71,18 @@ def delete_history_entry(entry_id: str) -> bool:
 
 
 def clear_history() -> None:
-    save_history([])
+    """Removes every entry except the pinned ones."""
+    save_history([e for e in load_history() if e.pinned])
+
+
+def set_history_pinned(entry_id: str, pinned: bool) -> bool:
+    entries = load_history()
+    for e in entries:
+        if e.id == entry_id:
+            e.pinned = pinned
+            save_history(entries)
+            return True
+    return False
 
 
 def get_history_entry(entry_id: str) -> HistoryEntry | None:

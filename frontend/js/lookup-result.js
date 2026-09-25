@@ -14,7 +14,7 @@ const SERVICES = {
   greynoise: { title: "GreyNoise", desc: "md.service.greynoise", url: "https://www.greynoise.io" },
 };
 const SERVICE_ORDER = Object.keys(SERVICES);
-const serviceTitle = (id) => (SERVICES[id] ? SERVICES[id].title : id);
+export const serviceTitle = (id) => (SERVICES[id] ? SERVICES[id].title : id);
 
 // Same thresholds as backend/scoring.py (MEDIUM_FROM, HIGH_FROM).
 const MEDIUM_FROM = 25;

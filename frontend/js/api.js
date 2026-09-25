@@ -29,6 +29,7 @@ export const api = {
   history: () => request("/history"),
   historyEntry: (id) => request(`/history/${id}`),
   historyCreate: (body) => request("/history", { method: "POST", body: JSON.stringify(body) }),
+  historyPin: (id, pinned) => request(`/history/${id}`, { method: "PATCH", body: JSON.stringify({ pinned }) }),
   historyDelete: (id) => request(`/history/${id}`, { method: "DELETE" }),
   historyClear: () => request("/history", { method: "DELETE" }),
 

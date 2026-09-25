@@ -403,3 +403,20 @@ button.secondary.armed { border-color: var(--fail); color: var(--fail); }
 .log-entry[open] .log-line { white-space: normal; overflow-wrap: anywhere; }
 .log-body { padding: 0 12px 10px; }
 .log-body .raw-json { margin-top: 2px; }
+button.kpi { font: inherit; color: inherit; text-align: left; }
+.kpi.click { cursor: pointer; }
+.kpi.click:hover { border-color: var(--accent); }
+.kpi.on { border-color: var(--accent); }
+.hi-day { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 6px; font-weight: 400; }
+.hi-card { border: 1px solid var(--hair); border-radius: 6px; background: var(--bg-raised); padding: 8px 12px; margin: 6px 0; }
+.hi-card.pinned { border-color: var(--accent); }
+.hi-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.hi-label { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; font-size: 14.5px; }
+.hi-date { margin-left: auto; font-size: 13px; }
+.hi-change { color: var(--warn); border-color: var(--warn); }
+.hi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 6px; }
+.hi-actions button.mini { margin: 0; }
+.hi-detail { margin-top: 10px; padding-top: 6px; border-top: 1px solid var(--hair); }
+.hi-cmp-bar { align-items: center; gap: 6px 12px; margin: 10px 0 0; }
+.hi-cmp-bar button.mini { margin: 0; }
+.hi-compare h3 { margin-top: 0; }

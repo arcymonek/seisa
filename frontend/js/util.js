@@ -62,14 +62,14 @@ export function formatUsage(usage) {
   return parts.join(", ");
 }
 
-// Saves Markdown text as a file. With `native` the browser's save dialog is tried first (Chromium); a cancelled dialog
+// Saves text as a file. With `native` the browser's save dialog is tried first (Chromium); a cancelled dialog
 // ends quietly, any other failure or a missing API falls back to a plain download.
-export async function downloadMarkdown(filename, text, { native = false } = {}) {
+export async function downloadText(filename, text, { native = false, mime = "text/markdown", ext = ".md", description = "Markdown" } = {}) {
   if (native && window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
         suggestedName: filename,
-        types: [{ description: "Markdown", accept: { "text/markdown": [".md"] } }],
+        types: [{ description, accept: { [mime]: [ext] } }],
       });
       const writable = await handle.createWritable();
       await writable.write(text);
@@ -79,13 +79,15 @@ export async function downloadMarkdown(filename, text, { native = false } = {}) 
       if (err.name === "AbortError") return;
     }
   }
-  const url = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export const downloadMarkdown = (filename, text, opts = {}) => downloadText(filename, text, opts);
 
 // "3 minutes ago" / "2 days ago" in the interface language (falls back to the full date after a month).
 export function fmtRelative(value) {

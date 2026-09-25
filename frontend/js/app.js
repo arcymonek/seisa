@@ -1,11 +1,11 @@
 import { applyStatic, mountLangSwitch } from "./i18n.js";
-import { initLookup, prefillLookup } from "./lookup.js";
+import { initLookup, prefillLookup, repeatLookup } from "./lookup.js";
 import { initDmarc, loadDmarcData } from "./dmarc.js";
 import { initReportBuilder, prefillReport, prefillReportEmail, prefillReportEntry } from "./report-builder.js";
 import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
-import { initUrlscan, prefillUrlscan, showSavedScan } from "./urlscan.js";
+import { initUrlscan, prefillUrlscan, repeatUrlscan, showSavedScan } from "./urlscan.js";
 import { initAbout } from "./about.js";
 
 const panels = {
@@ -40,6 +40,14 @@ window.seisaApp = {
   goToLookup: (indicator) => {
     switchTab("lookup");
     prefillLookup(indicator);
+  },
+  repeatLookup: (indicator) => {
+    switchTab("lookup");
+    repeatLookup(indicator);
+  },
+  repeatUrlscan: (url) => {
+    switchTab("urlscan");
+    repeatUrlscan(url);
   },
   goToDmarc: (data) => {
     switchTab("dmarc");

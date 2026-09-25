@@ -377,6 +377,9 @@ for lang in ("pl", "en"):
     if lookup_entry:
         rec(p + "history entry", client.get(f"/api/history/{lookup_entry['id']}", headers=H))
     rec(p + "history entry missing", client.get("/api/history/nope", headers=H))
+    if lookup_entry:
+        rec(p + "history pin", client.patch(f"/api/history/{lookup_entry['id']}", json={"pinned": True}, headers=H))
+    rec(p + "history pin missing", client.patch("/api/history/nope", json={"pinned": True}, headers=H))
     rec(p + "logs all", client.get("/api/logs?range=all&service=all", headers=H))
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
@@ -384,6 +387,7 @@ for lang in ("pl", "en"):
     if aid:
         rec(p + "email delete", client.delete(f"/api/email/analyses/{aid}", headers=H))
     rec(p + "history clear", client.delete("/api/history", headers=H))
+    rec(p + "history after clear", client.get("/api/history", headers=H))
 
 rec("static index", client.get("/"))
 rec("i18n catalog", client.get("/i18n/en.json"))
@@ -509,6 +513,10 @@ if "ip_candidates" not in _cand or "own_terms" not in _cand:
 _hist_types = {h["type"] for h in _result("[en] history list")["body"]}
 if "report" not in _hist_types:
     failures.append(f"the History tab does not list accepted reports: {_hist_types}")
+_after_clear = _result("[en] history after clear")["body"]
+_kept = [h for h in _after_clear if h["type"] in ("lookup", "urlscan", "dmarc")]
+if not _kept or not all(h["pinned"] for h in _kept):
+    failures.append(f"History clear must keep exactly the pinned entries: {_after_clear}")
 if UNHANDLED:
     failures.append(f"{len(UNHANDLED)} request(s) left the mocks: {UNHANDLED[:3]}")
 if probes["foreign Host header accepted (DNS rebinding)"] != 400:

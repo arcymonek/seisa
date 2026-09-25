@@ -70,6 +70,19 @@ export function prefillLookup(indicator) {
   root.querySelector("#lk-indicator").value = indicator;
 }
 
+// Runs the check again from another tab (History): single mode, cache skipped so the result is fresh.
+export function repeatLookup(indicator) {
+  if (!root) return;
+  const batch = root.querySelector("#lk-batch");
+  if (batch.checked) {
+    batch.checked = false;
+    batch.dispatchEvent(new Event("change"));
+  }
+  root.querySelector("#lk-force").checked = true;
+  prefillLookup(indicator);
+  root.querySelector("#lk-submit").click();
+}
+
 async function onSubmit() {
   const batch = root.querySelector("#lk-batch").checked;
   const forceRefresh = root.querySelector("#lk-force").checked;

@@ -17,7 +17,7 @@ let query = "";
 let timer = null;
 const openKeys = new Set(); // cards the user expanded, kept across re-renders and refreshes
 
-const RANGE_KEY = { today: "logs.range_today", "3d": "logs.range_3d", week: "logs.range_week", month: "logs.range_month", all: "logs.range_all" };
+const RANGE_KEY = { today: "common.range_today", "3d": "common.range_3d", week: "common.range_week", month: "common.range_month", all: "common.range_all" };
 const LEVELS = ["all", "ERROR", "WARNING"];
 const LEVEL_KEY = { all: "logs.level_all", ERROR: "logs.level_error", WARNING: "logs.level_warning" };
 const LEVEL_BADGE = { ERROR: "high", WARNING: "medium" };

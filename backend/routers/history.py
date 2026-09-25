@@ -1,4 +1,5 @@
-"""History tab: the last lookups, DMARC imports and URL scans (history.json) together with the saved e-mail analyses."""
+"""History tab: the last lookups, DMARC imports and URL scans (history.json, entries can be pinned) together with the saved
+e-mail analyses and the accepted AbuseIPDB reports."""
 from __future__ import annotations
 
 import json
@@ -18,9 +19,14 @@ from backend.storage import (
     get_history_entry,
     load_history,
     load_report_log,
+    set_history_pinned,
 )
 
 router = APIRouter()
+
+
+class HistoryPinRequest(BaseModel):
+    pinned: bool
 
 
 class HistoryCreateRequest(BaseModel):
@@ -47,6 +53,7 @@ def _email_entry(item: dict) -> dict:
         "label": f"{item.get('subject') or t('history.no_subject')} - {item.get('from') or '?'}",
         "risk_summary": EMAIL_VERDICT_RISK.get(verdict, "High") if verdict else None,
         "lang": item.get("lang") or "pl",
+        "pinned": False,
     }
 
 
@@ -60,6 +67,7 @@ def _report_entry(item: dict) -> dict:
         "label": f"{item['ip']} - {cats}",
         "risk_summary": None,
         "lang": current_lang(),
+        "pinned": False,
     }
 
 
@@ -90,13 +98,22 @@ def list_history():
             "label": e.label,
             "risk_summary": e.risk_summary,
             "lang": e.lang,
+            "pinned": e.pinned,
         }
         for e in load_history()
     ]
     items += [_email_entry(a) for a in list_analyses() if a.get("id") and a.get("created_at")]
     items += [_report_entry(r) for r in load_report_log() if r.get("success") and r.get("id") and r.get("submitted_at")]
     items.sort(key=lambda i: i["created_at"], reverse=True)
-    return items[:HISTORY_MAX_ENTRIES]
+    shown: list[dict] = []
+    unpinned = 0
+    for item in items:  # the size limit counts only the entries that are not pinned
+        if item["pinned"]:
+            shown.append(item)
+        elif unpinned < HISTORY_MAX_ENTRIES:
+            shown.append(item)
+            unpinned += 1
+    return shown
 
 
 @router.get("/history/{entry_id}")
@@ -118,6 +135,13 @@ async def create_entry(req: HistoryCreateRequest):
     entry = HistoryEntry(type=req.type, label=req.label, risk_summary=req.risk_summary, lang=current_lang(), data=req.data)
     append_history(entry)
     return entry
+
+
+@router.patch("/history/{entry_id}")
+async def pin_entry(entry_id: str, req: HistoryPinRequest):
+    if not set_history_pinned(entry_id, req.pinned):
+        raise HTTPException(status_code=404, detail=t("history.not_found"))
+    return {"id": entry_id, "pinned": req.pinned}
 
 
 @router.delete("/history/{entry_id}")

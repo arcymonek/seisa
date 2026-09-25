@@ -89,5 +89,6 @@ class HistoryEntry(BaseModel):
     created_at: str = Field(default_factory=utcnow_iso)
     label: str
     risk_summary: str | None = None
-    lang: str = "pl"  # UI language the entry was created in (entries saved before this field are Polish)
+    lang: str = "pl"  # UI language the entry was created in
+    pinned: bool = False  # pinned entries are never dropped by the size limit and survive "Clear history"
     data: dict[str, Any]
