@@ -10,3 +10,5 @@ data/*
 !data/.gitkeep
 logs/*
 !logs/.gitkeep
+# directory name used before 2.0.27 (until it is renamed by hand)
+logi/
