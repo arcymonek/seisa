@@ -32,12 +32,12 @@ export function initAbout(container) {
     <div class="subtitle">${e(t("about.description"))}</div>
     <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version)}</div></div>
     <div class="kpi-row">
-      <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong>Arkadiusz Polak</strong>
-        <span>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
+      <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
+        <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
         GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
         ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></span></div>
-      <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</span>
-        <span>精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
+      <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</span>
+        <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>
     ${block(t("about.status_title"), '<div id="ab-status"></div>', { id: "ab-status-card" })}
     ${block(t("about.limits_title"), `

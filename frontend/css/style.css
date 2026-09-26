@@ -307,6 +307,8 @@ mark.em-hit.cur { background: var(--warn); color: #12181c; }
 .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
 .kpi { flex: 1 1 130px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; }
 .kpi.about-card { flex: 1 1 320px; justify-content: flex-start; gap: 8px; }
+.about-name { font-size: 20px; }
+.about-small { font-size: 16px; }
 .about-card a { font-style: normal; text-decoration: none; }
 .kpi.wide { flex: 2 1 260px; }
 .kpi-label { display: block; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
