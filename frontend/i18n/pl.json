@@ -15,7 +15,7 @@
   "about.status_hint": "Widać tylko, czy klucz jest ustawiony - same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki.",
   "about.status_set": "ustawiony",
   "about.status_missing": "brak",
-  "about.status_none": "klucz niepotrzebny",
+  "about.status_none": "niepotrzebny",
   "about.status_limits_title": "Status i limity API",
   "about.env_address": "Adres",
   "about.env_dotenv": "Plik .env",
