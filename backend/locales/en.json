@@ -71,6 +71,7 @@
   "forensics.flag.x_originating": "The `X-Originating-IP` header may be an infrastructure leak or a decoy - it is not suitable for reports without confirmation in a trusted Received.",
   "forensics.flag.below_received": "Headers with names used by the recipient/provider are BELOW all the Received headers (text written by the sender, not by the server): {list}.",
   "error.internal": "internal Seisa error",
+  "error.cross_site_blocked": "request from another web page blocked",
   "common.yes": "yes",
   "common.no": "no",
   "common.none": "none",

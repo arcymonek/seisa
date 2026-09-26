@@ -48,7 +48,7 @@ seisa/
 ├── SECURITY.md              # how to report a vulnerability
 ├── .github/ISSUE_TEMPLATE/  # bug report template
 ├── backend/
-│   ├── main.py               # FastAPI, routing, no-cache/CSP and language middleware, Host check, error handling
+│   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env
 │   ├── models.py             # Pydantic models
 │   ├── aggregator.py         # fan-out to the services, aggregate risk score

@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.59</b></p>
+<p align="center"><b>Seisa 2.0.60</b></p>
 
 # Seisa
 
@@ -128,7 +128,7 @@ Seisa's requests to OpenRouter identify the application as Seisa. Everything els
 
 ### Threat model
 
-Seisa defends against untrusted content running code in the interface or making the tool fetch something, against another web page talking to your local API, and against leaking data by accident (the LLM is called only after an explicit click, the AbuseIPDB comment gets a personal-data scan, the hard checks are re-computed in the backend). It does not defend against someone with access to your machine or account (there is no authentication), against exposing port 54321 to a network, against what you send to third parties, or against a wrong LLM answer. The full model, what stays local, the LLM cost table and the security invariants: [Privacy, threat model and security](docs/en/privacy-and-security.md).
+Seisa defends against untrusted content running code in the interface or making the tool fetch something, against another web page talking to your local API through your browser (an origin guard refuses cross-site requests), and against leaking data by accident (the LLM is called only after an explicit click, the AbuseIPDB comment gets a personal-data scan, the hard checks are re-computed in the backend). It does not defend against someone with access to your machine or account (there is no authentication: any local process can call the API and read what Seisa stores, including raw e-mails), against exposing port 54321 to a network, against what you send to third parties, or against a wrong LLM answer. The full model, what stays local, the LLM cost table and the security invariants: [Privacy, threat model and security](docs/en/privacy-and-security.md).
 
 ## Documentation
 
@@ -146,6 +146,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 The latest releases; every release is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the recent ones from the git log.
 
+- **2.0.60** - an origin guard for `/api/`: requests that the browser marks as cross-site (`Sec-Fetch-Site`) or that carry a foreign `Origin` get 403, so another web page can no longer use up your API quotas or LLM budget; the docs state plainly that a local process is not stopped.
 - **2.0.59** - DMARC tab: the geo button asks the backend (RDAP, as in the IP tab) instead of `ipwho.is`; the Content-Security-Policy allows only `connect-src 'self'`. RDAP has no ASN, so none is shown.
 - **2.0.58** - the README split into a short README and a documentation set in `docs/en/` and `docs/pl/`; `check_i18n.py` checks the docs parity and dead links.
 - **2.0.57** - the README (EN and PL) rebuilt: structure, privacy table, threat model, developer and fork guide, endpoints and data files; the full [CHANGELOG.md](CHANGELOG.md) added.

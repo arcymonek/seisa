@@ -71,6 +71,7 @@
   "forensics.flag.x_originating": "Nagłówek `X-Originating-IP` może być wyciekiem infrastruktury albo przynętą - nie nadaje się do zgłoszeń bez potwierdzenia w zaufanym Received.",
   "forensics.flag.below_received": "Nagłówki o nazwach używanych przez odbiorcę/dostawcę są PONIŻEJ wszystkich Received (tekst nadawcy, nie serwera): {list}.",
   "error.internal": "wewnętrzny błąd Seisy",
+  "error.cross_site_blocked": "zablokowano żądanie z innej strony WWW",
   "common.yes": "tak",
   "common.no": "nie",
   "common.none": "brak",

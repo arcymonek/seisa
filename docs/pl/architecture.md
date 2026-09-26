@@ -48,7 +48,7 @@ seisa/
 ├── SECURITY.md              # jak zgłosić podatność
 ├── .github/ISSUE_TEMPLATE/  # szablon zgłoszenia błędu
 ├── backend/
-│   ├── main.py               # FastAPI, routing, middleware no-cache/CSP i języka, kontrola Host, obsługa błędów
+│   ├── main.py               # FastAPI, routing, middleware no-cache/CSP, strażnika originu i języka, kontrola Host, obsługa błędów
 │   ├── config.py             # ścieżki, limity, ustawienia z .env
 │   ├── models.py             # modele Pydantic
 │   ├── aggregator.py         # rozesłanie do usług, wynik ryzyka zbiorczy

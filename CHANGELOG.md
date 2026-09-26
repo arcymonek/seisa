@@ -4,6 +4,11 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.60 - 2026-09-26
+- **Origin guard for `/api/`** (`OriginGuardMiddleware` in `backend/main.py`): a request with `Sec-Fetch-Site` other than `same-origin`/`none` (so also `same-site`), or with an `Origin` whose host is not `127.0.0.1`/`localhost` (including `null`), gets 403. Before, a page in another browser tab could fire a plain GET (an `<img>` tag) or a body-less POST at the API without a preflight and use up the urlscan/AbuseIPDB/RDAP quotas or the LLM budget (it could not read the answers). Requests without these headers (curl, scripts, older browsers) still pass, and static files stay open. The log gets at most one warning a minute about blocked requests.
+- The harness (`scripts/api_harness.py`) probes the guard (blocked and allowed cases, a preflight, a body-less POST) and asserts that a `text/plain` cross-site POST never reaches a handler.
+- The docs now say plainly that there is no authentication: any local process can call the API and read what Seisa stores, and the origin guard is not a defence against it (`docs/{en,pl}/privacy-and-security.md`, README). New troubleshooting entry for the 403.
+
 ## 2.0.59 - 2026-09-26
 - **DMARC tab:** the "geo" button no longer makes the browser call `ipwho.is`. A new `GET /api/dmarc/geo` (`backend/routers/dmarc.py`) asks RDAP through the same service as the IP tab and returns the registration country, the owner and the network name (only global addresses; private ones get 400). RDAP has no ASN, so it is no longer shown. The button is labelled "geo (RDAP)".
 - The Content-Security-Policy is now `connect-src 'self'`: the frontend calls no third-party host. The privacy tables, the tab description and the API list (README, `docs/{en,pl}`) are updated.

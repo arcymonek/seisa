@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -53,7 +55,40 @@ class LanguageMiddleware(BaseHTTPMiddleware):
             reset_lang(token)
 
 
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost"}
+SAME_ORIGIN_FETCH_SITES = {"same-origin", "none"}
+_last_block_log = 0.0
+
+
+class OriginGuardMiddleware(BaseHTTPMiddleware):
+    """Refuses /api/ requests that another web page makes through the user's browser.
+
+    The Host check stops DNS rebinding, but a page in another tab can still fire a plain GET (an <img> tag) or a
+    body-less POST at 127.0.0.1 without a preflight and burn the API quotas. Browsers label such requests with
+    Sec-Fetch-Site (anything but same-origin/none, so same-site too: another port on this host is another application)
+    and Origin. Requests without either header (curl, scripts, older browsers) pass: this is not authentication, a
+    local process can send any header. Static files stay open so that a link to the tool does not give a 403.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        global _last_block_log
+        if request.url.path.startswith("/api/"):
+            site = request.headers.get("sec-fetch-site")
+            origin = request.headers.get("origin")
+            foreign = (site is not None and site not in SAME_ORIGIN_FETCH_SITES) or (
+                origin is not None and urlsplit(origin).hostname not in LOOPBACK_HOSTS
+            )
+            if foreign:
+                now = time.monotonic()
+                if now - _last_block_log > 60:  # a hostile page could otherwise flood the log
+                    _last_block_log = now
+                    app_logger.warning(f"blocked a cross-site request to {request.url.path}")
+                return JSONResponse(status_code=403, content={"detail": t("error.cross_site_blocked")})
+        return await call_next(request)
+
+
 app.add_middleware(NoCacheStaticMiddleware)
+app.add_middleware(OriginGuardMiddleware)
 app.add_middleware(LanguageMiddleware)
 # Only loopback names are accepted in the Host header: a page on another domain that was re-pointed (DNS rebinding)
 # to 127.0.0.1 would otherwise be treated as the same origin and could read the whole API.

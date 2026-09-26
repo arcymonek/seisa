@@ -14,7 +14,7 @@ Usage: python3 scripts/api_harness.py [--root DIR] [--out FILE] [--serve PORT]
 temporary data directory - for trying the interface by hand without real API keys or traffic.
 
 It exits with 1 when an endpoint answers with an unexpected status, when a request left the mocks, or when a
-security probe (foreign Host header, CSP header, path injection) fails. `--out` writes the normalised answers
+security probe (foreign Host header, cross-site requests, CSP header, path injection) fails. `--out` writes the normalised answers
 (ids, timestamps and the version number masked), so two versions of the code can be compared with `--root` pointing at
 an older checkout (`git archive`) and `diff`: refactors must not change the answers.
 """
@@ -430,6 +430,22 @@ probes["text/plain cross-site POST (CSRF without preflight)"] = r.status_code
 r = client.options("/api/abuseipdb/report/submit", headers={"Origin": "https://attacker.example", "Access-Control-Request-Method": "POST"})
 probes["CORS preflight status"] = r.status_code
 probes["CORS allow-origin header"] = r.headers.get("access-control-allow-origin")
+_XSITE_GET = "/api/urlscan/search?url=https://phish.example/"
+for _name, _hdr in {
+    "Sec-Fetch-Site cross-site": {"Sec-Fetch-Site": "cross-site"},
+    "Sec-Fetch-Site same-site": {"Sec-Fetch-Site": "same-site"},
+    "foreign Origin": {"Origin": "https://attacker.example"},
+    "Origin null": {"Origin": "null"},
+    "Sec-Fetch-Site same-origin": {"Sec-Fetch-Site": "same-origin"},
+    "Sec-Fetch-Site none": {"Sec-Fetch-Site": "none"},
+    "loopback Origin": {"Origin": "http://localhost:54321"},
+    "no fetch metadata": {},
+}.items():
+    probes[f"guard GET {_name}"] = client.get(_XSITE_GET, headers=_hdr).status_code
+probes["guard GET dmarc geo cross-site"] = client.get("/api/dmarc/geo?ip=8.8.8.8", headers={"Sec-Fetch-Site": "cross-site"}).status_code
+probes["guard body-less POST cross-site"] = client.post("/api/about/limits/refresh", headers={"Sec-Fetch-Site": "cross-site"}).status_code
+probes["guard static index cross-site"] = client.get("/", headers={"Sec-Fetch-Site": "cross-site"}).status_code
+probes["guard preflight foreign Origin"] = client.options("/api/history", headers={"Origin": "https://attacker.example", "Access-Control-Request-Method": "DELETE"}).status_code
 probes["CSP header on /"] = client.get("/").headers.get("content-security-policy")
 probes["urlscan uuid path injection"] = client.get("/api/urlscan/result/..%2F..%2Fuser%2Fquotas").status_code
 probes["urlscan screenshot"] = SHOT_PROBE
@@ -591,6 +607,18 @@ if not (len(_forms) == 2 and _forms[0]["password"] and _forms[0]["external"] and
     failures.append(f"urlscan form extraction is wrong: {_forms}")
 if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) == 2 and _summary["tls"]["age_days"] == 1 and _summary["verdict"]["brands"]):
     failures.append(f"urlscan summary is wrong: {_summary['verdict']}, redirects={_summary['redirects']}")
+if probes["text/plain cross-site POST (CSRF without preflight)"] not in (403, 422):
+    failures.append("a text/plain cross-site POST reached the handler")
+_blocked = ["guard GET Sec-Fetch-Site cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
+            "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin"]
+_allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET no fetch metadata",
+            "guard static index cross-site"]
+for _k in _blocked:
+    if probes[_k] != 403:
+        failures.append(f"the origin guard let through: {_k} -> {probes[_k]}")
+for _k in _allowed:
+    if probes[_k] != 200:
+        failures.append(f"the origin guard blocked a legitimate request: {_k} -> {probes[_k]}")
 if probes["CORS allow-origin header"]:
     failures.append("a cross-origin preflight is allowed")
 

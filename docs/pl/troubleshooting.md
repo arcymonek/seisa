@@ -16,6 +16,8 @@
 
 **Przeglądarka pokazuje "Invalid host header".** Seisa przyjmuje jako nazwę hosta tylko `127.0.0.1` i `localhost` (ochrona przed DNS rebinding). Otwórz `http://127.0.0.1:54321`.
 
+**Wywołanie API zwraca 403 "zablokowano żądanie z innej strony WWW".** Strażnik originu odrzuca żądania do `/api/` z `Sec-Fetch-Site: cross-site`/`same-site` albo z `Origin` innym niż `127.0.0.1`/`localhost`, np. z rozszerzenia przeglądarki lub strony serwowanej z innego portu. Korzystaj ze strony Seisy albo wołaj API ze skryptu, który nie wysyła nagłówka `Origin` (curl).
+
 **Port 54321 jest zajęty.** Uruchom `uvicorn` samodzielnie z innym `--port` (zobacz [Instalacja i uruchomienie](../../README.pl.md#instalacja-i-uruchomienie)).
 
 **Przeglądarka się nie otworzyła (Linux bez pulpitu).** Skrypt startowy tylko wypisuje adres; otwórz go ręcznie.
