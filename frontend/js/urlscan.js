@@ -16,6 +16,7 @@ let root;
 let pollTimer = null;
 let elapsedTimer = null;
 let pollStarted = null;
+let visibility = "unlisted";
 
 const formatElapsed = elapsedSeconds("urlscan.seconds");
 
@@ -25,12 +26,14 @@ export function initUrlscan(container) {
     <div class="subtitle">${escapeHtml(t("urlscan.subtitle"))}</div>
     <label for="us-url">${escapeHtml(t("urlscan.url_label"))}</label>
     <input type="text" id="us-url" placeholder="${escapeHtml(t("urlscan.url_placeholder"))}" autocomplete="off" spellcheck="false">
-    <label for="us-visibility">${escapeHtml(t("urlscan.visibility_label"))}</label>
-    <select id="us-visibility">${VISIBILITIES.map((v) => `<option value="${v}">${escapeHtml(t("urlscan.vis." + v))}</option>`).join("")}</select>
+    <div class="chip-row" id="us-visibility" role="group" aria-label="${escapeHtml(t("urlscan.visibility_label"))}">${VISIBILITIES.map(
+      (v) => `<button type="button" class="chip${v === visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
+    ).join("")}</div>
     <div class="banner info" id="us-hint"></div>
     <div class="action-row">
       <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
       <button class="secondary" id="us-existing">${escapeHtml(t("urlscan.existing"))}</button>
+      <span class="us-actions" id="us-actions"></span>
       <span class="action-info" id="us-status"></span>
     </div>
     <div id="us-error"></div>
@@ -41,7 +44,16 @@ export function initUrlscan(container) {
   root.querySelector("#us-url").addEventListener("keydown", (e) => {
     if (e.key === "Enter") onSubmit();
   });
-  root.querySelector("#us-visibility").addEventListener("change", updateHint);
+  root.querySelector("#us-visibility").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-vis]");
+    if (!btn) return;
+    visibility = btn.dataset.vis;
+    root.querySelectorAll("#us-visibility [data-vis]").forEach((b) => {
+      b.classList.toggle("on", b === btn);
+      b.setAttribute("aria-pressed", String(b === btn));
+    });
+    updateHint();
+  });
   updateHint();
   registerDirtyCheck(() => pollTimer !== null);
 }
@@ -68,7 +80,6 @@ export function showSavedScan(data) {
   clearOutput();
   root.querySelector("#us-url").value = data.summary.submitted_url;
   const report = renderUrlscanResult(data.summary, { thumbnail: data.thumbnail });
-  const actions = actionRow(data.summary);
   const fullBtn = button(t("urlscan.load_full"), "secondary", async () => {
     fullBtn.disabled = true;
     try {
@@ -81,13 +92,11 @@ export function showSavedScan(data) {
       fullBtn.disabled = false;
     }
   });
-  actions.prepend(fullBtn);
-  report.appendChild(actions);
+  setActions([fullBtn, ...actionButtons(data.summary)]);
   root.querySelector("#us-result").appendChild(report);
 }
 
 function updateHint() {
-  const visibility = root.querySelector("#us-visibility").value;
   const hint = root.querySelector("#us-hint");
   hint.className = `banner ${visibility === "public" ? "warn" : "info"}`;
   hint.textContent = t("urlscan.hint." + visibility);
@@ -118,6 +127,11 @@ function clearOutput() {
   root.querySelector("#us-result").innerHTML = "";
   root.querySelector("#us-error").innerHTML = "";
   root.querySelector("#us-status").textContent = "";
+  root.querySelector("#us-actions").innerHTML = "";
+}
+
+function setActions(buttons) {
+  root.querySelector("#us-actions").replaceChildren(...buttons);
 }
 
 async function onSubmit() {
@@ -132,7 +146,7 @@ async function onSubmit() {
 
   let submitted;
   try {
-    submitted = await api.urlscanSubmit(url, root.querySelector("#us-visibility").value);
+    submitted = await api.urlscanSubmit(url, visibility);
   } catch (err) {
     statusEl.textContent = "";
     showError(t("urlscan.submit_error", { message: err.message }));
@@ -169,7 +183,7 @@ function renderSteps(active) {
 function renderStatus(resultPageUrl, message) {
   const statusEl = root.querySelector("#us-status");
   statusEl.innerHTML = '<span id="us-status-text"></span>';
-  statusEl.appendChild(button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener")));
+  setActions([button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener"))]);
   updateStatusText(message);
 }
 
@@ -276,21 +290,21 @@ function existingList(data) {
 
 // ---- report ----
 
-function actionRow(summary, markdown) {
-  const row = document.createElement("div");
-  row.appendChild(button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener")));
+function actionButtons(summary, markdown) {
+  const buttons = [];
   if (markdown) {
     const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;
-    row.appendChild(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
-    row.appendChild(button(t("common.copy_markdown"), "secondary", () => navigator.clipboard.writeText(markdown)));
+    buttons.push(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
+    buttons.push(button(t("common.copy_markdown"), "secondary", () => navigator.clipboard.writeText(markdown)));
   }
-  row.appendChild(
+  buttons.push(
     button(t("urlscan.scan_again"), "secondary", () => {
       root.querySelector("#us-url").value = summary.submitted_url;
       onSubmit();
     })
   );
-  return row;
+  buttons.push(button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener")));
+  return buttons;
 }
 
 function showReport(data, { save }) {
@@ -302,7 +316,7 @@ function showReport(data, { save }) {
     raw: data.raw,
     onShot: save ? (img, ok) => saveToHistory(summary, ok ? makeThumbnail(img) : null) : undefined,
   });
-  report.appendChild(actionRow(summary, data.markdown));
+  setActions(actionButtons(summary, data.markdown));
   resultEl.appendChild(report);
 }
 

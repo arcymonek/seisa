@@ -72,7 +72,7 @@ Co dostajesz:
 
 **Stałe wybory przy zlecaniu.**
 
-- **Widoczność, którą wybierasz:** domyślnie `unlisted` (nie trafia na stronę główną ani do publicznego wyszukiwania urlscan.io, ale jest widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro), `private` (tylko Twoje konto) lub `public` (każdy; zakładka ostrzega o tym).
+- **Widoczność, którą wybierasz (trzy przyciski pod polem URL):** domyślnie `unlisted` (nie trafia na stronę główną ani do publicznego wyszukiwania urlscan.io, ale jest widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro), `private` (tylko Twoje konto) lub `public` (każdy; zakładka ostrzega o tym).
 - **Wcześniejsze skany:** najpierw przeszukiwane jest urlscan.io pod kątem wcześniejszych skanów tej samej domeny (publicznych oraz z Twojego konta); trafienie jest oznaczone, gdy to dokładnie ten sam URL.
 - **Domyślny user-agent** (bez `customagent`) i **automatyczny dobór kraju skanowania** (bez `country`): oba pola są celowo pominięte w zapytaniu.
 

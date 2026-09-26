@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.69 - 2026-09-26
+- **URLScan tab:** the scan visibility drop-down is replaced by three buttons (unlisted, private, public; the description banner stays). The action line now holds all the buttons - Scan, Earlier scans, Save .md, Copy Markdown, Scan again, Open in urlscan.io - with the state and the time always at its end; the buttons below the report are gone.
+
 ## 2.0.68 - 2026-09-26
 - **IP tab:** the description is shorter and split into three lines (what it does, the sources for an IP address, the sources for a domain).
 

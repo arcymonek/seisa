@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.68</b></p>
+<p align="center"><b>Seisa 2.0.69</b></p>
 
 # Seisa
 

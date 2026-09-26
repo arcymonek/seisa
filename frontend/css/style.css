@@ -370,7 +370,8 @@ td.mono { font-family: var(--mono); font-size: 13px; }
 .raw-json { background: #14171a; border-radius: 4px; padding: 12px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; font-family: var(--mono); font-size: 13px; max-height: 600px; overflow: auto; }
 
 /* --- zakładka URLScan --- */
-#us-visibility { max-width: 320px; }
+#us-visibility { margin: 10px 0; }
+.us-actions { display: contents; }
 button.mini.inline, .src-body button.mini.inline { display: inline-block; margin: 0 0 0 8px; }
 .us-row { padding: 3px 0; overflow-wrap: anywhere; }
 .us-row .mono, .kv .mono { font-family: var(--mono); font-size: 13.5px; }

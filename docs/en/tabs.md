@@ -72,7 +72,7 @@ What you get:
 
 **Fixed submission choices.**
 
-- **Visibility, your choice:** `unlisted` by default (not on the urlscan.io front page or in public search, but visible to verified security researchers in urlscan Pro), `private` (only your account) or `public` (anyone; the tab warns about it).
+- **Visibility, your choice (three buttons under the URL field):** `unlisted` by default (not on the urlscan.io front page or in public search, but visible to verified security researchers in urlscan Pro), `private` (only your account) or `public` (anyone; the tab warns about it).
 - **Earlier scans:** urlscan.io is first searched for earlier scans of the same domain (public ones plus those of your account); a hit is marked when it is the very same URL.
 - **The default user agent** (no `customagent`) and **automatic choice of the scan country** (no `country`): both fields are deliberately left out of the request.
 
