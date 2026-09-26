@@ -285,14 +285,12 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 <!-- Screenshot to add: docs/img/tab-info.png -->
 
-Collapsible cards in this order (a card you opened stays open when you come back to the tab):
+Below the summary tiles, two tiles side by side: **Author** (e-mail, GitHub, website) and **Name** (the meaning of the name, 精査, *せいさ*). Then collapsible cards in this order (a card you opened stays open when you come back to the tab):
 
-1. **Author:** e-mail, GitHub, website (open).
-2. **Name:** the meaning of the name (精査, *せいさ*; open).
-3. **Service status** (collapsed): the status of every integration - only whether a key is set; the keys are never shown or sent to the browser.
-4. **API limits** (collapsed): described below.
-5. **Recent changes** (collapsed): the recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
-6. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
+1. **Service status** (collapsed): the status of every integration - only whether a key is set; the keys are never shown or sent to the browser.
+2. **API limits** (collapsed): described below.
+3. **Recent changes** (collapsed): the recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
+4. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
 
 <details>
 <summary>Details: the API limits card</summary>

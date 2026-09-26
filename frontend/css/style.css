@@ -306,6 +306,7 @@ mark.em-hit.cur { background: var(--warn); color: #12181c; }
 #dm-file-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 0 24px; overflow-wrap: anywhere; margin-top: 6px; font-size: 14px; }
 .kpi-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
 .kpi { flex: 1 1 130px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; }
+.kpi.about-card { flex: 1 1 320px; justify-content: flex-start; gap: 8px; }
 .kpi.wide { flex: 2 1 260px; }
 .kpi-label { display: block; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .kpi-value { display: block; font-size: 24px; line-height: 1.35; }

@@ -285,14 +285,12 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-info.png -->
 
-Zwijane karty w tej kolejności (karta, którą otworzysz, zostaje otwarta po powrocie do zakładki):
+Pod kafelkami podsumowania dwa kafelki obok siebie: **Autor** (e-mail, GitHub, strona www) i **Nazwa** (znaczenie nazwy, 精査, *せいさ*). Dalej zwijane karty w tej kolejności (karta, którą otworzysz, zostaje otwarta po powrocie do zakładki):
 
-1. **Autor:** e-mail, GitHub, strona www (otwarta).
-2. **Nazwa:** znaczenie nazwy (精査, *せいさ*; otwarta).
-3. **Status usług** (zwinięta): status każdej integracji - widać tylko, czy klucz jest ustawiony; same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki.
-4. **Limity API** (zwinięta): opisane niżej.
-5. **Ostatnie zmiany** (zwinięta): ostatnie wydania z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
-6. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
+1. **Status usług** (zwinięta): status każdej integracji - widać tylko, czy klucz jest ustawiony; same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki.
+2. **Limity API** (zwinięta): opisane niżej.
+3. **Ostatnie zmiany** (zwinięta): ostatnie wydania z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
+4. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
 
 <details>
 <summary>Szczegóły: karta Limity API</summary>

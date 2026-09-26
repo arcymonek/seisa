@@ -30,13 +30,15 @@ export function initAbout(container) {
   version = versionEl ? versionEl.textContent.trim() : "";
   root.innerHTML = `
     <div class="subtitle">${e(t("about.description"))}</div>
-    <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version, "精査 - seisa")}</div></div>
-    ${block(t("about.author_title"), `<p><strong>Arkadiusz Polak</strong></p>
-      <p>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}">${AUTHOR_EMAIL}</a><br>
-         GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
-         ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></p>`, { open: true })}
-    ${block(t("about.name_title"), `<p><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</p>
-      <p>精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</p>`, { open: true })}
+    <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version)}</div></div>
+    <div class="kpi-row">
+      <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong>Arkadiusz Polak</strong>
+        <span>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}">${AUTHOR_EMAIL}</a><br>
+        GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
+        ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></span></div>
+      <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</span>
+        <span>精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
+    </div>
     ${block(t("about.status_title"), '<div id="ab-status"></div>', { id: "ab-status-card" })}
     ${block(t("about.limits_title"), `
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
@@ -134,7 +136,7 @@ export async function refreshAbout() {
   const keyed = info.services.filter((s) => s.configured !== null);
   const set = keyed.filter((s) => s.configured).length;
   root.querySelector("#ab-tiles").innerHTML = `<div class="kpi-row">
-    ${tile(t("about.kpi_version"), version, "精査 - seisa")}
+    ${tile(t("about.kpi_version"), version)}
     ${tile(t("about.kpi_keys"), `${set}/${keyed.length}`, t("about.kpi_keys_sub"))}
     ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
   </div>`;
