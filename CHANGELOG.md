@@ -4,6 +4,11 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.58 - 2026-09-26
+- **Documentation:** the single-page README (758 lines) split into a short `README.md` / `README.pl.md` (landing, quick start, keys, privacy overview, documentation index) and a documentation set in `docs/en/` and `docs/pl/` (`index`, `tabs`, `configuration`, `privacy-and-security`, `architecture`, `api`, `extending`, `troubleshooting`). This reverses the "everything on one page" decision of 2.0.57. The two prompt-context files directly in `docs/` are unchanged.
+- `scripts/check_i18n.py` checks the parity of `docs/en` and `docs/pl` (the same files, the same heading levels) and dead relative links and anchors in the Markdown files.
+- The start script message and a code comment point to the current sections.
+
 ## 2.0.57 - 2026-09-25
 - **Documentation:** `README.md` and `README.pl.md` rebuilt with one structure: a landing section, a quick start, a configuration and limits section, a privacy table ("what leaves your machine", including `rdap.org` and WHOIS lookups that the old text left out), a threat model, an LLM cost table, one section per tab with the details in collapsible blocks, a walkthrough, a guide for developers and forks (design decisions, endpoints, data files, security invariants, how to extend), troubleshooting and a changelog summary.
 - The full `CHANGELOG.md` (this file) added. `SECURITY.md` now names `logs/` instead of the pre-2.0.27 `logi/`.

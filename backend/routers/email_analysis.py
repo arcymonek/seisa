@@ -113,7 +113,7 @@ CONTINUE_INSTRUCTION = (
     "Keep writing in {language}."
 )
 
-EM_DASH = "\u2014"  # the project does not use the long dash (see README, "Versioning and conventions")
+EM_DASH = "\u2014"  # the project does not use the long dash (see docs/en/extending.md, "Workflow, tests and conventions")
 
 
 def _citation_check(markdown: str, src: str, prepared: str, facts: dict) -> dict:

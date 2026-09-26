@@ -6,7 +6,7 @@ cd "$(dirname "$0")" || exit 1
 URL="http://127.0.0.1:54321"
 
 if [ ! -x ./.venv/bin/uvicorn ]; then
-  echo "Seisa is not installed yet: .venv/ is missing. See the Installation section of README.md." >&2
+  echo "Seisa is not installed yet: .venv/ is missing. See "Install and run" in the Quick start section of README.md." >&2
   exit 1
 fi
 

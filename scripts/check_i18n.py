@@ -4,7 +4,8 @@
 Usage: python3 scripts/check_i18n.py [--strict]
 
 Checks: key parity pl/en, {placeholder} parity, plural-suffix completeness, forbidden characters (HTML, U+2014),
-keys used in code but missing from the catalog, unused keys, README heading parity, the same version in all five places and (with --strict) user-facing
+keys used in code but missing from the catalog, unused keys, README heading parity, docs/en <-> docs/pl parity (same files, same heading levels 1-4),
+dead relative links and anchors in the Markdown files, the same version in all five places and (with --strict) user-facing
 literals with Polish diacritics that bypass t(). Exit code 1 on errors. Warnings never fail the run.
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
 PAIRS = {
@@ -173,6 +175,97 @@ def check_readme_parity() -> None:
         errors.append(f"README.md and README.pl.md have different heading structure ({len(headings(en))} vs {len(headings(pl))} headings)")
 
 
+MD_LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+MD_SRC = re.compile(r"""\bsrc=["']([^"']+)["']""")
+DOC_DIRS = (ROOT / "docs" / "en", ROOT / "docs" / "pl")
+LINKED_MD = ("README.md", "README.pl.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md")
+
+
+def md_lines(p: Path) -> list[tuple[int, str]]:
+    """(line number, text) of a Markdown file without fenced code blocks."""
+    out, in_code = [], False
+    for n, line in enumerate(p.read_text(encoding="utf-8").splitlines(), 1):
+        if line.startswith("```"):
+            in_code = not in_code
+            continue
+        if not in_code:
+            out.append((n, line))
+    return out
+
+
+def md_headings(p: Path) -> list[tuple[int, str]]:
+    return [(len(m.group(1)), m.group(2).strip()) for _, line in md_lines(p) if (m := re.match(r"(#{1,6}) (.*)", line))]
+
+
+def slugify(title: str) -> str:
+    """The GitHub/Forgejo anchor rule: lower case, drop punctuation (keep letters incl. diacritics, digits, '-', '_'), spaces to '-'."""
+    return re.sub(r"[^\w\- ]", "", title.lower()).replace(" ", "-")
+
+
+def anchors_of(p: Path) -> set[str]:
+    seen: dict[str, int] = {}
+    res: set[str] = set()
+    for _, title in md_headings(p):
+        title = re.sub(r"`|\*|\[([^\]]*)\]\([^)]*\)", lambda m: m.group(1) or "", title)
+        slug = slugify(title)
+        n = seen.get(slug, 0)
+        seen[slug] = n + 1
+        res.add(slug if n == 0 else f"{slug}-{n}")
+    return res
+
+
+def check_docs_parity() -> None:
+    """docs/en and docs/pl: the same file names, the same heading levels (1-4) in every pair, no version number."""
+    en_dir, pl_dir = DOC_DIRS
+    if not (en_dir.is_dir() and pl_dir.is_dir()):
+        return
+    en_files = {p.name for p in en_dir.glob("*.md")}
+    pl_files = {p.name for p in pl_dir.glob("*.md")}
+    for name in sorted(en_files - pl_files):
+        errors.append(f"docs/pl/{name} is missing (docs/en/{name} exists)")
+    for name in sorted(pl_files - en_files):
+        errors.append(f"docs/en/{name} is missing (docs/pl/{name} exists)")
+    for name in sorted(en_files & pl_files):
+        lv_en = [lvl for lvl, _ in md_headings(en_dir / name) if lvl <= 4]
+        lv_pl = [lvl for lvl, _ in md_headings(pl_dir / name) if lvl <= 4]
+        if lv_en != lv_pl:
+            errors.append(f"docs/en/{name} and docs/pl/{name} have different heading structure ({len(lv_en)} vs {len(lv_pl)} headings)")
+    for d in DOC_DIRS:
+        for p in sorted(d.glob("*.md")):
+            text = p.read_text(encoding="utf-8")
+            if re.search(r"Seisa \d+\.\d+\.\d+", text):
+                errors.append(f"{p.relative_to(ROOT)} contains a version number (docs must not carry one)")
+
+
+def check_markdown_links() -> None:
+    """Relative links and #anchors in the documentation Markdown files must resolve (external URLs are not fetched)."""
+    files = [ROOT / n for n in LINKED_MD if (ROOT / n).exists()]
+    for d in DOC_DIRS:
+        files += sorted(d.glob("*.md"))
+    cache: dict[Path, set[str]] = {}
+    for f in files:
+        rel_f = f.relative_to(ROOT)
+        text = f.read_text(encoding="utf-8")
+        if EM_DASH in text:
+            errors.append(f"{rel_f}: long dash (U+2014), use '-'")
+        for n, line in md_lines(f):
+            line = re.sub(r"`[^`]*`", "", line)
+            targets = MD_LINK.findall(line) + MD_SRC.findall(line)
+            for target in targets:
+                if re.match(r"[a-z][a-z0-9+.-]*:", target, re.I) or target.startswith("//"):
+                    continue
+                path_part, _, frag = target.partition("#")
+                dest = (f.parent / path_part).resolve() if path_part else f
+                if not dest.exists():
+                    errors.append(f"{rel_f}:{n}: dead link {target}")
+                    continue
+                if frag and dest.suffix == ".md":
+                    if dest not in cache:
+                        cache[dest] = anchors_of(dest)
+                    if unquote(frag).lower() not in cache[dest]:
+                        errors.append(f"{rel_f}:{n}: dead anchor {target}")
+
+
 def check_versions() -> None:
     """The visible version must be identical everywhere: 3x index.html (title, header, footer) + 2x README."""
     found: dict[str, str] = {}
@@ -197,6 +290,8 @@ def main() -> int:
     check_usage("frontend", cats["frontend"]["en"], source_files("frontend/js", (".js",)), FRONT_USE, FRONT_DYN)
     check_usage("backend", cats["backend"]["en"], source_files("backend", (".py",)), BACK_USE, BACK_DYN)
     check_readme_parity()
+    check_docs_parity()
+    check_markdown_links()
     check_versions()
     if strict:
         check_hardcoded_python()

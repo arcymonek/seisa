@@ -1,0 +1,120 @@
+# Architecture and design
+
+**English** | [Polski](../pl/architecture.md) · [Documentation index](index.md) · [README](../../README.md)
+
+## Design decisions and non-goals
+
+- **Local, single user, no login.** The attack surface stays small because nothing is exposed; the price is that you must never expose the port.
+- **No database.** All persistence is plain JSON files in `data/` with atomic writes. They are easy to read, back up and delete; the price is no concurrency and a capped history (25 unpinned entries).
+- **No frontend framework and no build step.** Plain ES modules; you edit a file and refresh (the server sends no-cache headers).
+- **Deterministic first, LLM second.** Facts, hard checks and scores are computed in Python; the LLM explains and drafts and cannot unblock a report the code has blocked.
+- **Every user-visible string goes through the catalogs** (PL and EN together).
+- **Untrusted content is data.** Nothing from an e-mail, a scanned page or an API answer is executed, opened or downloaded.
+- **Non-goals:** multi-user access, authentication, remote hosting, native Windows, bulk or automatic reporting, background jobs.
+
+## Stack
+
+Python 3.11+ with FastAPI, uvicorn, pydantic and pydantic-settings, httpx and python-whois (`requirements.txt`; `requirements.lock` pins the tested versions). Frontend: plain JavaScript (ES modules), CSS, and `marked.min.js` bundled locally. Development tools (not dependencies): `ruff`. The only automated test is the API harness.
+
+## Architecture
+
+A single Python FastAPI process serves both the API and the static frontend on `127.0.0.1:54321`.
+
+```mermaid
+flowchart LR
+  B[Browser: ES modules, one per tab] -->|/api/*| R[FastAPI routers]
+  R --> A[aggregator and scoring]
+  R --> L[LLM analyzer: OpenRouter]
+  A --> S[services: one client per external service]
+  R --> P[storage: JSON files in data/]
+  S --> X[(external APIs)]
+  L --> X
+```
+
+In words: the browser talks to routers (`backend/routers/`); a lookup goes through the aggregator, which queries the services in `backend/services/` in parallel and computes the score in `backend/scoring.py`; the e-mail and AbuseIPDB tabs use `email_forensics.py`, `email_parser.py` and `report_builder.py` for the deterministic part and `services/llm_analyzer.py` for the LLM part; everything persistent goes through `storage.py`, `analyses.py` and `logging_config.py`.
+
+<details>
+<summary>The file tree</summary>
+
+```
+seisa/
+├── .env                    # API keys (gitignored, see .env.example)
+├── seisa.sh                 # start script (starts the server and opens the browser)
+├── README.md / README.pl.md  # the short README in English (the main one) and in Polish
+├── CHANGELOG.md             # every release, newest first
+├── pyproject.toml           # ruff configuration (linter only, not a package)
+├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
+├── CONTRIBUTING.md          # contribution rules (no external code changes)
+├── SECURITY.md              # how to report a vulnerability
+├── .github/ISSUE_TEMPLATE/  # bug report template
+├── backend/
+│   ├── main.py               # FastAPI, routing, no-cache/CSP and language middleware, Host check, error handling
+│   ├── config.py             # paths, limits, settings from .env
+│   ├── models.py             # Pydantic models
+│   ├── aggregator.py         # fan-out to the services, aggregate risk score
+│   ├── markdown_report.py    # Markdown report builder
+│   ├── ratelimit.py          # VirusTotal throttle
+│   ├── api_limits.py         # usage of the API limits (Info tab): headers, own counters, quota endpoints
+│   ├── cache.py              # in-memory result cache
+│   ├── storage.py            # atomic JSON storage (history, VirusTotal counter, report log)
+│   ├── sse.py                # Server-Sent Events framing shared by the streaming endpoints
+│   ├── logging_config.py     # WARNING+ logs to logs/*.jsonl
+│   ├── email_parser.py       # fact extraction from the raw e-mail (AbuseIPDB tab)
+│   ├── email_forensics.py    # deterministic analysis of the e-mail source (Email tab)
+│   ├── citation_check.py     # local check of the LLM's quotes against the source
+│   ├── analyses.py           # storage of e-mail analyses in data/analyses/
+│   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
+│   ├── locales/              # backend text catalogs: pl.json, en.json
+│   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
+│   ├── scoring.py            # aggregate IP reputation score (noisy-OR)
+│   ├── identity.py           # merged address identity (ASN, owner, country, network) with per-field source agreement
+│   ├── report_builder.py     # AbuseIPDB comment builder + policy validation
+│   ├── report_utils.py       # text sanitisation, IP checks, personal-data scan and masking
+│   ├── urlscan_report.py     # structured summary + Markdown report of a urlscan.io scan result
+│   ├── urlscan_input.py      # cleaning and validation of the URL to scan (refang, scheme, private hosts)
+│   ├── urlscan_forms.py      # forms of a scanned page (from its DOM): action, method, fields, password/external flags
+│   ├── routers/               # /api/* endpoints: lookup, urlscan, email_analysis, abuseipdb_report, history, logs, about
+│   └── services/               # a client for every service (common IntelService interface; urlscan.py separately - submit+poll; llm_analyzer.py - OpenRouter)
+├── frontend/
+│   ├── index.html
+│   ├── favicon.ico            # icon: the kanji 査 (16/32/48/64 px)
+│   ├── logo.png               # round logo (page header and README)
+│   ├── css/style.css          # dark theme
+│   ├── i18n/                  # interface text catalogs: pl.json, en.json
+│   ├── js/                    # one module per tab and shared helpers, listed below
+│   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
+├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
+├── scripts/
+│   ├── api_harness.py         # the only automated test: every API endpoint with all external services mocked (also `--serve PORT`)
+│   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
+│   └── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
+├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
+├── logs/                    # error logs, one .jsonl file per day (gitignored)
+└── docs/
+    ├── en/, pl/                        # the documentation in English and Polish (the same file names in both, index.md is the table of contents)
+    ├── abuseipdb-reporting-policy.md   # policy summary + AbuseIPDB category table (English, LLM prompt context)
+    └── email-analysis-guide.md         # e-mail analysis guide loaded into the LLM prompt (Email tab), English, with a PL/EN label table
+```
+
+Frontend modules in `frontend/js/`:
+
+- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list);
+- `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js`, `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
+- `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-ask.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips, follow-up questions, comparison and exports);
+- `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);
+- `history.js` + `history-compare.js`, `logs.js`, `about.js`.
+
+</details>
+
+## Data files
+
+| Path | Holds | Notes |
+|---|---|---|
+| `data/history.json` | the history (IP lookups, URL scans with thumbnails, DMARC imports, pins) | 25 unpinned entries; atomic writes |
+| `data/vt_usage.json` | the VirusTotal daily counter | resets at 00:00 UTC |
+| `data/api_usage.json` | counters and last known limits (Info tab) | |
+| `data/report_log.json` | the log of every AbuseIPDB report attempt | an audit trail, not deleted by "Clear history" |
+| `data/analyses/` | saved e-mail analyses with the raw messages | files `0600`, directory `0700` |
+| `logs/*.jsonl` | WARNING and above, one file per day | |
+
+All of `data/` and `logs/` is gitignored (the directories are kept by `.gitkeep`). To reset Seisa, stop it and delete their contents. Releases before 2.0.27 used `data/analizy/` and `logi/`; Seisa does not migrate them, so rename them by hand before the first start of a newer release (`mv data/analizy data/analyses`, and move the `*.jsonl` files from `logi/` to `logs/`).
