@@ -4,7 +4,7 @@
   "tab.history": "Historia",
   "tab.logs": "Logi",
   "tab.info": "Informacje",
-  "about.description": "Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL, raportów DMARC, analizy źródła e-maili i przygotowywania zgłoszeń do AbuseIPDB. Działa wyłącznie lokalnie (127.0.0.1), bez logowania.",
+  "about.description": "Lokalne narzędzie do analizy reputacji adresów IP, skanowania URL, raportów DMARC, analizy źródła e-maili i przygotowywania zgłoszeń do AbuseIPDB.",
   "about.kpi_version": "Wersja",
   "about.kpi_keys": "Klucze API",
   "about.kpi_keys_sub": "usług z ustawionym kluczem",
