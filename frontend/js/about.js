@@ -17,6 +17,7 @@ const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
 let root;
 let version = "";
 let releaseDate = "";
+let services = []; // integrations (id, whether a key is set) for the combined status and limits table
 
 const tile = (label, value, sub) =>
   `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
@@ -42,10 +43,11 @@ export function initAbout(container) {
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}<br>${e(t("about.name_pron"))}</span>
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>
-    ${block(t("about.status_title"), '<div id="ab-status"></div>', { id: "ab-status-card" })}
-    ${block(t("about.limits_title"), `
+    ${block(t("about.status_limits_title"), `
+      <div class="env-grid" id="ab-env"></div>
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
       <div id="ab-limits-errors"></div><div id="ab-limits"></div>
+      <div class="muted">${e(t("about.status_hint"))}</div>
       <div class="muted">${e(t("about.limits_hint"))}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
     ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
@@ -53,7 +55,20 @@ export function initAbout(container) {
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
 }
 
-// ---- API limits ----
+// ---- environment ----
+
+function renderEnvironment(env) {
+  const item = (label, value, cls = "") => `<div><span class="muted">${e(label)}:</span> <span class="mono${cls ? " " + cls : ""}">${value}</span></div>`;
+  root.querySelector("#ab-env").innerHTML = [
+    item(t("about.env_address"), e(env.host && env.port ? `${env.host}:${env.port}` : "-")),
+    item(t("about.env_dotenv"), e(t(env.dotenv ? "about.env_dotenv_yes" : "about.env_dotenv_no")), env.dotenv ? "ok" : "warnc"),
+    item(t("about.env_os"), e(env.os)),
+    item(t("about.env_python"), e(env.python)),
+    item(t("about.env_fastapi"), e(env.fastapi)),
+  ].join("");
+}
+
+// ---- API limits and status ----
 
 const number = (n) => n.toLocaleString(getLocale(), { maximumFractionDigits: 0 });
 const amount = (n, unit) => (unit === "usd" ? `$${n.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : number(n));
@@ -73,17 +88,33 @@ function usageCell(row) {
 }
 
 function renderLimits(limits) {
+  const byService = new Map();
+  for (const r of limits.rows) byService.set(r.service, [...(byService.get(r.service) || []), r]);
+  const badge = (configured) =>
+    configured === null
+      ? `<span class="badge sm single">${e(t("about.status_none"))}</span>`
+      : `<span class="badge sm ${configured ? "agree" : "single"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
+  const dash = `<span class="muted">-</span>`;
+  const body = services
+    .map((svc) => {
+      const rows = byService.get(svc.id) || [null];
+      const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id);
+      const model = svc.model ? ` <span class="muted mono">${e(t("about.status_llm_model", { model: svc.model }))}</span>` : "";
+      return rows
+        .map((r, i) => {
+          const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}${model}</td>` : `<td></td><td></td>`;
+          if (!r) return `<tr>${head}<td>${dash}</td><td>${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
+          const resets = r.resets_at
+            ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtRelative(r.resets_at))}</span>`
+            : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : dash;
+          return `<tr>${head}<td>${e(t("about.scope." + r.scope))} / ${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td><td>${resets}</td>
+            <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`;
+        })
+        .join("");
+    })
+    .join("");
+  root.querySelector("#ab-limits").innerHTML = `<div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("about.lim_col_service"))}</th><th>${e(t("about.lim_col_key"))}</th><th>${e(t("about.lim_col_window"))}</th><th>${e(t("about.lim_col_usage"))}</th><th>${e(t("about.lim_col_resets"))}</th><th>${e(t("about.lim_col_source"))}</th></tr></thead><tbody>${body}</tbody></table></div>`;
   const rows = limits.rows;
-  root.querySelector("#ab-limits").innerHTML = rows.length
-    ? `<div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("about.lim_col_service"))}</th><th>${e(t("about.lim_col_window"))}</th><th>${e(t("about.lim_col_usage"))}</th><th>${e(t("about.lim_col_resets"))}</th><th>${e(t("about.lim_col_source"))}</th></tr></thead><tbody>${rows
-        .map(
-          (r) => `<tr><td>${e(serviceName(r.service))} <span class="muted">${e(t("about.scope." + r.scope))}</span></td>
-          <td>${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td>
-          <td>${r.resets_at ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtRelative(r.resets_at))}</span>` : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : `<span class="muted">-</span>`}</td>
-          <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`
-        )
-        .join("")}</tbody></table></div>`
-    : `<div class="muted">${e(t("about.limits_empty"))}</div>`;
 
   // the summary line names the entry closest to its limit
   const state = root.querySelector("#ab-limits-state");
@@ -144,13 +175,8 @@ export async function refreshAbout() {
     ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
   </div>`;
 
-  const badge = (configured) =>
-    configured === null
-      ? `<span class="badge sm single">${e(t("about.status_none"))}</span>`
-      : `<span class="badge sm ${configured ? "agree" : "single"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
-  const rows = info.services.map((s) => `<tr><td>${e(serviceName(s.id))}</td><td>${badge(s.configured)}</td></tr>`);
-  rows.push(`<tr><td>OpenRouter (LLM)</td><td>${badge(info.llm.configured)}${info.llm.configured ? ` <span class="muted mono">${e(t("about.status_llm_model", { model: info.llm.model }))}</span>` : ""}</td></tr>`);
-  root.querySelector("#ab-status").innerHTML = `<div class="table-wrap"><table class="fact-table"><tbody>${rows.join("")}</tbody></table></div><div class="muted">${e(t("about.status_hint"))}</div>`;
+  services = [...info.services, { id: "openrouter", configured: info.llm.configured, llm: true, model: info.llm.model }];
+  renderEnvironment(info.environment);
 
   renderLimits(info.limits);
 

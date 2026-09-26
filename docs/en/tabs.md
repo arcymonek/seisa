@@ -287,15 +287,14 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 Below the summary tiles, two tiles side by side: **Author** (e-mail, GitHub, website) and **Name** (the meaning of the name, 精査, *せいさ*). Then collapsible cards in this order (a card you opened stays open when you come back to the tab):
 
-1. **Service status** (collapsed): the status of every integration - only whether a key is set; the keys are never shown or sent to the browser.
-2. **API limits** (collapsed): described below.
-3. **Recent changes** (collapsed): the 10 most recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
-4. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
+1. **Status and API limits** (collapsed): a grid with the address and port Seisa listens on, whether the `.env` file exists (only its existence is checked, it is never read) and the versions of the system, Python and FastAPI, then one table with a row per integration: whether a key is set (the keys are never shown or sent to the browser) and its limits, described below.
+2. **Recent changes** (collapsed): the 10 most recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
+3. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
 
 <details>
-<summary>Details: the API limits card</summary>
+<summary>Details: the limits in the status card</summary>
 
-The card shows the usage of the limits of the *free plans* for every service that has a key, one row per service and window: a bar and "used / limit", when the window resets and where the number comes from.
+The table shows the usage of the limits of the *free plans* for every service that has a key, one row per service and window (the service name and key status stand in its first row; a service without limits has dashes): a bar and "used / limit", when the window resets and where the number comes from.
 
 - **Real quota, on demand:** VirusTotal (per hour, day and month), urlscan (per day, per kind of scan, search and retrieval) and OpenRouter (credits of the key, free-model requests). Seisa asks for it only when you click "Refresh limits" (one request to each; none of these calls uses up quota, and the last answer is remembered).
 - **From rate-limit headers** of your latest requests: AbuseIPDB (`check` and `report` separately; the limit is read from the answer, 5,000/day assumed until the first request) and Cloudflare Radar (1,200 requests per 5 minutes).

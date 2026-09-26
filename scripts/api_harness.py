@@ -619,6 +619,9 @@ _after_clear = _result("[en] history after clear")["body"]
 _about_body = _result("[en] about")["body"]
 if "FAKE-" in json.dumps(_about_body) or sum(1 for x in _about_body["services"] if x["configured"]) != 6:
     failures.append(f"the Info endpoint leaks an API key or misreports the configuration: {_about_body}")
+_env = _about_body.get("environment") or {}
+if not all(_env.get(k) for k in ("os", "python", "fastapi")) or not isinstance(_env.get("dotenv"), bool) or "FAKE-" in json.dumps(_env):
+    failures.append(f"the Info endpoint misreports the environment: {_env}")
 _lim = _result("[en] about after refresh")["body"]["limits"]["rows"]
 _lim_by = {(r["service"], r["scope"], r["window"]): r for r in _lim}
 if _lim_by.get(("abuseipdb", "check", "day"), {}).get("used") != 18 or _lim_by[("abuseipdb", "check", "day")]["source"] != "headers":

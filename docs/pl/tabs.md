@@ -287,15 +287,14 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 Pod kafelkami podsumowania dwa kafelki obok siebie: **Autor** (e-mail, GitHub, strona www) i **Nazwa** (znaczenie nazwy, 精査, *せいさ*). Dalej zwijane karty w tej kolejności (karta, którą otworzysz, zostaje otwarta po powrocie do zakładki):
 
-1. **Status usług** (zwinięta): status każdej integracji - widać tylko, czy klucz jest ustawiony; same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki.
-2. **Limity API** (zwinięta): opisane niżej.
-3. **Ostatnie zmiany** (zwinięta): 10 ostatnich wydań z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
-4. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
+1. **Status i limity API** (zwinięta): siatka z adresem i portem, na którym nasłuchuje Seisa, informacją, czy istnieje plik `.env` (sprawdzane jest tylko jego istnienie, plik nie jest czytany), oraz wersjami systemu, Pythona i FastAPI, a pod nią jedna tabela z wierszem na integrację: czy klucz jest ustawiony (same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki) i jej limity, opisane niżej.
+2. **Ostatnie zmiany** (zwinięta): 10 ostatnich wydań z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
+3. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
 
 <details>
-<summary>Szczegóły: karta Limity API</summary>
+<summary>Szczegóły: limity w karcie statusu</summary>
 
-Karta pokazuje zużycie limitów *planów darmowych* dla każdej usługi z kluczem, po jednym wierszu na usługę i okno: pasek i "zużyto / limit", kiedy okno się zeruje i skąd pochodzi liczba.
+Tabela pokazuje zużycie limitów *planów darmowych* dla każdej usługi z kluczem, po jednym wierszu na usługę i okno (nazwa usługi i status klucza stoją w jej pierwszym wierszu; usługa bez limitów ma myślniki): pasek i "zużyto / limit", kiedy okno się zeruje i skąd pochodzi liczba.
 
 - **Prawdziwa kwota, na żądanie:** VirusTotal (na godzinę, dobę i miesiąc), urlscan (na dobę, osobno dla rodzajów skanów, wyszukiwania i pobierania) i OpenRouter (kredyty klucza, zapytania do modeli darmowych). Seisa pyta o nią wyłącznie po kliknięciu "Odśwież limity" (po jednym zapytaniu do każdej; żadne z nich nie zużywa limitu, a ostatnia odpowiedź jest zapamiętywana).
 - **Z nagłówków rate-limit** ostatnich zapytań: AbuseIPDB (`check` i `report` osobno; limit czytany z odpowiedzi, do pierwszego zapytania przyjmowane 5 000/dobę) i Cloudflare Radar (1 200 zapytań na 5 minut).
