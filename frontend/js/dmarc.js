@@ -347,14 +347,13 @@ function bannersHtml() {
   const medium = sources.filter((s) => riskLevel(s) === "medium");
   if (high.length) {
     const ips = high.slice(0, 5).map((s) => s.sourceIp).join(", ") + (high.length > 5 ? ", ..." : "");
-    const detail = t("dmarc.banner_bad_detail", {
-      ips,
+    const actions = t("dmarc.banner_bad_actions", {
       reject: sumBy(high, "reject"),
       quarantine: sumBy(high, "quarantine"),
       none: sumBy(high, "none"),
     });
     const head = tn("dmarc.banner_bad", high.length, { messages: tn("dmarc.messages", sumBy(high, "count")) });
-    html += `<div class="banner bad"><strong>${e(head)}</strong><div>${e(detail)}</div></div>`;
+    html += `<div class="banner bad"><strong>${e(head)}</strong><div>${e(t("dmarc.banner_bad_ips", { ips }))}</div><div>${e(actions)}</div><div>${e(t("dmarc.banner_bad_hint"))}</div></div>`;
   } else if (medium.length) {
     html += `<div class="banner warn">${e(tn("dmarc.banner_warn", medium.length))}</div>`;
   } else if (sources.length) {
