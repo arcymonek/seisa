@@ -205,6 +205,8 @@
   "svc.vt_daily_limit": "przekroczono dzienny limit VirusTotal (500/dzień)",
   "svc.greynoise_no_data_message": "brak informacji w usłudze",
   "svc.greynoise_community": "community (klucz bez dostępu do pełnego IP Lookup /v3/ip)",
+  "svc.greynoise_limit": "Limit wyszukiwań GreyNoise w Twoim planie został wyczerpany - odpowiedź będzie znów dostępna po odnowieniu limitu.",
+  "svc.greynoise_limit_reset": "Limit wyszukiwań GreyNoise w Twoim planie został wyczerpany - odnowi się {date}. Wynik jest liczony bez tego źródła.",
   "cite.ip_missing": "adres IP nie występuje w źródle ani w analizie deterministycznej",
   "cite.header_missing": "nagłówka „{name}” nie ma w źródle (może to przykład z wiadomości legalnej)",
   "cite.header_mismatch": "cytowany fragment nagłówka nie zgadza się ze źródłem",

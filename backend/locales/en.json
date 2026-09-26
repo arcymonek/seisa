@@ -205,6 +205,8 @@
   "svc.vt_daily_limit": "VirusTotal daily limit exceeded (500/day)",
   "svc.greynoise_no_data_message": "no information in the service",
   "svc.greynoise_community": "community (the key has no access to the full IP Lookup /v3/ip)",
+  "svc.greynoise_limit": "GreyNoise search limit of your plan is used up - the answer will be available again after the limit resets.",
+  "svc.greynoise_limit_reset": "GreyNoise search limit of your plan is used up - it resets on {date}. The score is computed without this source.",
   "cite.ip_missing": "the IP address does not appear in the source or in the deterministic analysis",
   "cite.header_missing": "the header \"{name}\" is not in the source (it may be an example from a legitimate message)",
   "cite.header_mismatch": "the quoted header fragment does not match the source",

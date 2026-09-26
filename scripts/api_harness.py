@@ -151,6 +151,8 @@ def handler(request: httpx.Request) -> httpx.Response:
     if host == "api.cloudflare.com":
         return httpx.Response(200, headers={"ratelimit": '"default";r=1190;t=300', "ratelimit-policy": '"default";q=1200;w=300'},
                               json={"success": True, "result": {"ip": {"asn": 64500, "location": "DE", "asnName": "EXAMPLE-AS"}}})
+    if host == "api.greynoise.io" and path.endswith("/185.220.101.77"):
+        return httpx.Response(429, json={"error": "We love that you love GreyNoise! Your searches will reset on September 29. Request a free trial."})
     if host == "api.greynoise.io":
         return httpx.Response(200, json={"internet_scanner_intelligence": {
             "found": True, "classification": "malicious", "actor": "unknown", "tags": [{"name": "SSH Bruteforcer"}],
@@ -344,6 +346,7 @@ for lang in ("pl", "en"):
     rec(p + "lookup defanged ip", client.post("/api/lookup", json={"indicator": "185[.]220[.]101[.]1:443", "force_refresh": True}, headers=H))
     rec(p + "lookup private ip", client.post("/api/lookup", json={"indicator": "192.168.1.10"}, headers=H))
     rec(p + "lookup domain dangling", client.post("/api/lookup", json={"indicator": "dangling.example", "force_refresh": True}, headers=H))
+    rec(p + "lookup greynoise limit", client.post("/api/lookup", json={"indicator": "185.220.101.77", "force_refresh": True}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
     rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", "HTTPS://Example.com/x", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
@@ -472,7 +475,7 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
+    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup greynoise limit": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
@@ -511,6 +514,11 @@ if isinstance(_dang, dict) and "identity" in _dang and not any("ns9.gone.example
 _batch = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup batch"), None)
 if isinstance(_batch, list) and len([ev for ev in _batch if ev.get("type") == "result"]) != 2:
     failures.append(f"lookup batch: duplicates (URL and plain form of one host) should be one result: {[ev.get('type') for ev in _batch]}")
+_gn = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup greynoise limit"), None)
+if isinstance(_gn, dict) and "services" in _gn:
+    _g = _gn["services"]["greynoise"]
+    if _g["status"] != "rate_limited_daily" or "HTTP 429" in (_g.get("error_message") or "") or "September 29" not in (_g.get("error_message") or ""):
+        failures.append(f"greynoise 429: not turned into a friendly limit message: {_g}")
 _ip = next((r["body"] for r in RESULTS if r["name"].endswith("lookup defanged ip")), None)
 if isinstance(_ip, dict) and _ip.get("indicator") != PUBLIC_IP:
     failures.append(f"lookup defanged ip: not normalised: {_ip.get('indicator')}")

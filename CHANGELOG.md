@@ -4,6 +4,11 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.64 - 2026-09-26
+- **GreyNoise HTTP 429** (search limit of the plan used up) is shown as a plain message with the reset date instead of the raw JSON; the full answer stays in the log. The status is `rate_limited_daily`, so the source is excluded from the score and listed in the "sources without a result" bar.
+- **Component scores** are open by default again.
+- **Legend** brought up to date: domains (voters, identity fields, DNS/WHOIS terms, dangling NS, popularity), local heuristics, comparison with the previous scan, the collapsed identity card and the failed-sources bar.
+
 ## 2.0.63 - 2026-09-26
 - **Comparison with the previous scan** (`comparison` in the `/api/lookup` answer, built from the History before the new entry is saved and never stored in it): previous score, difference, sources whose risk moved by 10 or more, and a bar per earlier scan.
 - **Batch mode:** duplicates are dropped after normalisation, a summary table sorted by score, and "Save CSV" (spreadsheet-formula safe).

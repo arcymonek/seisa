@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import httpx
 
 from backend.api_limits import observe
@@ -31,6 +33,8 @@ class GreyNoiseService(IntelService):
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.get(f"{IP_URL}/{ip}", headers=headers)
             observe(self.name, resp)
+            if resp.status_code == 429:
+                return self._limit_result(resp)
             if resp.status_code == 403:
                 # The key has no access to the full IP Lookup (a higher plan level) - fall back to the free
                 # community endpoint instead of returning an error.
@@ -58,6 +62,8 @@ class GreyNoiseService(IntelService):
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.get(f"{COMMUNITY_URL}/{ip}", headers=headers)
             observe(self.name, resp)
+            if resp.status_code == 429:
+                return self._limit_result(resp)
             if resp.status_code == 404:
                 return ServiceResult(
                     service=self.name,
@@ -82,6 +88,14 @@ class GreyNoiseService(IntelService):
             "last_seen": data.get("last_seen"),
         }
         return ServiceResult(service=self.name, status="ok", summary=summary, raw=data)
+
+    def _limit_result(self, resp: httpx.Response) -> ServiceResult:
+        """HTTP 429: the search quota of the plan is used up. The full answer goes to the log; the user gets a plain
+        message (with the reset date when GreyNoise names one) instead of the raw JSON."""
+        self.logger.error(f"HTTP 429: {resp.text[:300]}")
+        match = re.search(r"reset on ([A-Za-z]+ \d{1,2})", resp.text)
+        message = t("svc.greynoise_limit_reset", date=match.group(1)) if match else t("svc.greynoise_limit")
+        return ServiceResult(service=self.name, status="rate_limited_daily", error_message=message)
 
     async def query_domain(self, domain: str) -> ServiceResult:
         return self.not_applicable_result()

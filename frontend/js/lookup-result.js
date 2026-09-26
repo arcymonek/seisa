@@ -296,8 +296,8 @@ function componentsHtml(rs) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("lookup.col_source"))}</th><th>${e(t("lookup.col_signal"))}</th><th>${e(t("lookup.col_value"))}</th><th>${e(t("lookup.col_risk"))}</th><th>${e(t("lookup.col_credibility"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : "";
   const excluded = excludedSources.length ? `<div class="excluded-sources">${e(t("lookup.excluded"))}: ${e(excludedSources.join("; "))}</div>` : "";
-  // Collapsed: the banner already names the sources that drive the score; this is the arithmetic behind it.
-  return `<details class="fact-block" data-sec="components"><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
+  // A collapsible card like the others (open by default); it can be folded away once the arithmetic is understood.
+  return `<details class="fact-block" data-sec="components" open><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
 }
 
 // ---- identity card ----
@@ -451,7 +451,7 @@ function navHtml(result, sections) {
 }
 
 // Glossary at the bottom, like in the DMARC tab: terms are data, texts live in the catalog (lookup.legend.<id>).
-const LEGEND = ["score", "risk", "signal", "identity", "priority", "country", "confidence", "greynoise", "riot", "pulses", "whitelisted"];
+const LEGEND = ["score", "risk", "signal", "identity", "priority", "country", "confidence", "greynoise", "riot", "pulses", "whitelisted", "domain", "heuristics", "comparison"];
 
 function legendHtml() {
   const rows = LEGEND.map((id) => [t("lookup.legend_term." + id), e(t("lookup.legend." + id, { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP }))]);
