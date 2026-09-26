@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.88 - 2026-09-26
+- **History tab:** new layout. The description is split into two lines; the action buttons (Refresh, Export, Clear history, count) sit between rules under the tiles; the date chips are on the left and the risk chips on the right of one row; the search box is above the list with the compare hint and button beside it.
+
 ## 2.0.87 - 2026-09-26
 - **History tab:** the description is reworded into shorter sentences (what is stored, what "Clear history" removes, how e-mail analyses and AbuseIPDB reports are handled).
 

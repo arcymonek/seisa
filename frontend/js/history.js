@@ -29,19 +29,20 @@ const riskText = (risk) => (risk ? t("risk." + risk) : t("history.risk_none"));
 export function initHistory(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${escapeHtml(t("history.subtitle"))}</div>
+    <div class="subtitle">${escapeHtml(t("history.subtitle"))}<br>${escapeHtml(t("history.subtitle_2"))}</div>
     <div id="hi-tiles"></div>
-    <div class="chip-row" id="hi-range">${Object.keys(RANGE_KEY).map((r) => `<span class="chip${r === range ? " on" : ""}" role="button" tabindex="0" data-range="${r}">${escapeHtml(t(RANGE_KEY[r]))}</span>`).join("")}</div>
-    <div class="chip-row" id="hi-risks">${RISKS.map((r) => `<span class="chip${r === riskFilter ? " on" : ""}" role="button" tabindex="0" data-risk="${r}">${escapeHtml(t(RISK_KEY[r]))}</span>`).join("")}</div>
-    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}"></div>
-    <div class="action-row">
+    <div class="action-row hi-bar">
       <button class="secondary" id="hi-refresh">${escapeHtml(t("common.refresh"))}</button>
       <button class="secondary" id="hi-export-json">${escapeHtml(t("history.export_json"))}</button>
       <button class="secondary" id="hi-export-csv">${escapeHtml(t("history.export_csv"))}</button>
       <button class="secondary" id="hi-clear">${escapeHtml(t("history.clear"))}</button>
       <span class="action-info" id="hi-info"></span>
     </div>
-    <div id="hi-compare-bar"></div>
+    <div class="hi-filters">
+      <div class="chip-row" id="hi-range">${Object.keys(RANGE_KEY).map((r) => `<span class="chip${r === range ? " on" : ""}" role="button" tabindex="0" data-range="${r}">${escapeHtml(t(RANGE_KEY[r]))}</span>`).join("")}</div>
+      <div class="chip-row" id="hi-risks">${RISKS.map((r) => `<span class="chip${r === riskFilter ? " on" : ""}" role="button" tabindex="0" data-risk="${r}">${escapeHtml(t(RISK_KEY[r]))}</span>`).join("")}</div>
+    </div>
+    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}"><span id="hi-compare-bar"></span></div>
     <div id="hi-compare"></div>
     <div id="hi-list"></div>`;
 
@@ -296,9 +297,9 @@ function renderCompareBar() {
     bar.innerHTML = "";
     return;
   }
-  bar.innerHTML = `<div class="action-row hi-cmp-bar"><span class="muted">${escapeHtml(t("history.compare_hint"))}</span>
-    <button class="secondary mini" id="hi-cmp-go"${compareIds.length === 2 ? "" : " disabled"}>${escapeHtml(t("history.compare_go"))}</button>
-    ${compareIds.length ? `<button class="secondary mini" id="hi-cmp-clear">${escapeHtml(t("history.compare_clear"))}</button>` : ""}</div>`;
+  bar.innerHTML = `<span class="muted">${escapeHtml(t("history.compare_hint"))}</span>
+    <button class="secondary" id="hi-cmp-go"${compareIds.length === 2 ? "" : " disabled"}>${escapeHtml(t("history.compare_go"))}</button>
+    ${compareIds.length ? `<button class="secondary" id="hi-cmp-clear">${escapeHtml(t("history.compare_clear"))}</button>` : ""}`;
   const go = bar.querySelector("#hi-cmp-go");
   go.addEventListener("click", showComparison);
   const clear = bar.querySelector("#hi-cmp-clear");
