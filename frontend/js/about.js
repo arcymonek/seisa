@@ -103,16 +103,15 @@ function renderLimits(limits) {
   const badge = (configured) =>
     configured === null
       ? `<span class="badge sm single">${e(t("about.status_none"))}</span>`
-      : `<span class="badge sm ${configured ? "agree" : "single"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
+      : `<span class="badge sm ${configured ? "agree" : "conflict"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
   const dash = `<span class="muted">-</span>`;
   const body = services
     .map((svc) => {
       const rows = byService.get(svc.id) || [null];
       const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id).replace(" / ", "/");
-      const model = svc.model ? `<span class="muted mono key-model">${e(t("about.status_llm_model", { model: svc.model }))}</span>` : "";
       return rows
         .map((r, i) => {
-          const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}${model}</td>` : `<td></td><td></td>`;
+          const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}</td>` : `<td></td><td></td>`;
           if (!r) return `<tr>${head}<td>${dash}</td><td class="usage-cell">${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
           const resets = r.resets_at
             ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtReset(r.resets_at))}</span>`
@@ -185,7 +184,7 @@ export async function refreshAbout() {
     ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
   </div>`;
 
-  const llm = { id: "openrouter", configured: info.llm.configured, llm: true, model: info.llm.model };
+  const llm = { id: "openrouter", configured: info.llm.configured, llm: true };
   services = [...info.services.filter((s) => s.configured !== null), llm, ...info.services.filter((s) => s.configured === null)]; // services without a key last
   renderEnvironment(info.environment);
 

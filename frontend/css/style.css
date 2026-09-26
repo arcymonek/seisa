@@ -454,7 +454,6 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .env-grid .mono { overflow-wrap: anywhere; }
 .status-table td { white-space: nowrap; }
 .status-table td.usage-cell { width: 100%; min-width: 200px; }
-.status-table .key-model { display: block; max-width: 12em; white-space: normal; overflow-wrap: anywhere; }
 .usage { display: flex; align-items: center; gap: 12px; }
 .usage-val { flex: none; }
 .usage .riskbar { flex: 1; width: auto; min-width: 40px; }
