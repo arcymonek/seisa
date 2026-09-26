@@ -18,7 +18,7 @@ const stopTimer = () => timer.stop();
 export function initLookup(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${escapeHtml(t("lookup.subtitle"))}</div>
+    <div class="subtitle">${escapeHtml(t("lookup.subtitle")).replace(/\n/g, "<br>")}</div>
     <label>${escapeHtml(t("lookup.ip_address"))}</label>
     <input type="text" id="lk-indicator" placeholder="1.2.3.4 / example.com">
 

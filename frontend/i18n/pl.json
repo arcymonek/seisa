@@ -146,7 +146,7 @@
   "common.copy": "Kopiuj",
   "lookup.checking": "Sprawdzanie: {time} s",
   "lookup.checked": "Sprawdzono: {time} s",
-  "lookup.subtitle": "Sprawdź reputację adresu IP lub domeny jednocześnie w kilku niezależnych źródłach threat-intelligence i zobacz jeden zbiorczy wynik ryzyka. Dla adresu IP: VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise i WHOIS/rDNS. Dla domeny (wklejony URL jest sprowadzany do nazwy hosta): VirusTotal, AlienVault OTX, Cloudflare Radar (popularność i kategoria), WHOIS oraz rekordy DNS, a do tego lokalne heurystyki (wiek domeny, podobnie wyglądające znaki, nazwy wyglądające na losowe).",
+  "lookup.subtitle": "Sprawdź reputację adresu IP lub domeny jednocześnie w kilku niezależnych źródłach threat-intelligence i zobacz jeden zbiorczy wynik ryzyka.\nDla adresu IP: VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise i WHOIS/rDNS.\nDla domeny: VirusTotal, AlienVault OTX, Cloudflare Radar, WHOIS/DNS, lokalne heurystyki.",
   "lookup.ip_address": "Adres IP lub domena",
   "lookup.batch_mode": "Tryb wsadowy (batch)",
   "lookup.batch_hint": "Wklej adresy IP lub domeny, jeden na linię",
