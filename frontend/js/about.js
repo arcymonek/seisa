@@ -33,7 +33,7 @@ export function initAbout(container) {
     <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version)}</div></div>
     <div class="kpi-row">
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong>Arkadiusz Polak</strong>
-        <span>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}">${AUTHOR_EMAIL}</a><br>
+        <span>${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
         GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
         ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></span></div>
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}</span>
