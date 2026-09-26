@@ -27,7 +27,7 @@ const entryKey = (e) => `${e.time}|${e.service}`;
 export function initLogs(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${escapeHtml(t("logs.subtitle"))}</div>
+    <div class="subtitle">${escapeHtml(t("logs.subtitle"))}<br>${escapeHtml(t("logs.subtitle_2"))}</div>
     <div id="lg-banner"></div>
     <div id="lg-tiles"></div>
     <div class="hi-bar">

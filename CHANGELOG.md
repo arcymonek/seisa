@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.92 - 2026-09-26
+- **Logs tab:** the sentence about expanding entries is on its own line in the description.
+
 ## 2.0.91 - 2026-09-26
 - **Logs tab:** the search box placeholder now reads "Search the logs..." ("Szukaj w logach...").
 
