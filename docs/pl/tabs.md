@@ -10,7 +10,7 @@ Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email
 
 > Reputacja adresu IP z sześciu źródeł, scalona w jeden objaśniony wynik 0-100.
 
-**Wejście:** adres IP (tryb wsadowy: wiele adresów lub domen) | **Wynik:** raport (werdykt, kafelki, karta tożsamości, karty źródeł) | **Wysyła na zewnątrz:** adres do usług, dla których masz klucze, oraz darmowe zapytania RDAP i DNS | **Klucze:** każda usługa opcjonalna. Skanowanie URL jest w zakładce [URLScan](#urlscan).
+**Wejście:** adres IP lub nazwa domeny (tryb wsadowy: wiele z nich) | **Wynik:** raport (werdykt, kafelki, karta tożsamości, karty źródeł) | **Wysyła na zewnątrz:** adres do usług, dla których masz klucze, oraz darmowe zapytania RDAP i DNS | **Klucze:** każda usługa opcjonalna. Skanowanie URL jest w zakładce [URLScan](#urlscan).
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-ip.png -->
 

@@ -10,7 +10,7 @@ The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [
 
 > The reputation of an IP address from six sources, merged into one explained 0-100 score.
 
-**Input:** an IP address (batch: many addresses or domains) | **Output:** a report (verdict, tiles, identity card, source cards) | **Sends out:** the address to the services you have keys for, plus free RDAP and DNS lookups | **Keys:** each service optional. Scanning a URL lives in the [URLScan](#urlscan) tab.
+**Input:** an IP address or a domain name (batch: many of them) | **Output:** a report (verdict, tiles, identity card, source cards) | **Sends out:** the address to the services you have keys for, plus free RDAP and DNS lookups | **Keys:** each service optional. Scanning a URL lives in the [URLScan](#urlscan) tab.
 
 <!-- Screenshot to add: docs/img/tab-ip.png -->
 

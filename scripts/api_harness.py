@@ -324,6 +324,7 @@ for lang in ("pl", "en"):
     p = f"[{lang}] "
     rec(p + "lookup ip", client.post("/api/lookup", json={"indicator": PUBLIC_IP, "type": "ip", "force_refresh": True}, headers=H))
     rec(p + "lookup domain", client.post("/api/lookup", json={"indicator": "example.com", "type": "domain", "force_refresh": True}, headers=H))
+    rec(p + "lookup domain auto", client.post("/api/lookup", json={"indicator": "example.com", "force_refresh": True}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
     rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
@@ -452,7 +453,7 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
+    "lookup ip": 200, "lookup domain": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,

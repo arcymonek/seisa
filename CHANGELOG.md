@@ -4,6 +4,10 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.61 - 2026-09-26
+- **IP tab, single mode accepts domains:** the frontend sends `type: "auto"` and the backend detects an IP address or a host name (as batch mode already did). The domain itself is queried (VirusTotal, OTX, WHOIS and the other services that support domains); it is deliberately not resolved to an IP, because a CDN address would describe the CDN, not the domain.
+- Labels and the batch hint say "IP address or domain"; the harness has a `lookup domain auto` case; README and docs updated.
+
 ## 2.0.60 - 2026-09-26
 - **Origin guard for `/api/`** (`OriginGuardMiddleware` in `backend/main.py`): a request with `Sec-Fetch-Site` other than `same-origin`/`none` (so also `same-site`), or with an `Origin` whose host is not `127.0.0.1`/`localhost` (including `null`), gets 403. Before, a page in another browser tab could fire a plain GET (an `<img>` tag) or a body-less POST at the API without a preflight and use up the urlscan/AbuseIPDB/RDAP quotas or the LLM budget (it could not read the answers). Requests without these headers (curl, scripts, older browsers) still pass, and static files stay open. The log gets at most one warning a minute about blocked requests.
 - The harness (`scripts/api_harness.py`) probes the guard (blocked and allowed cases, a preflight, a body-less POST) and asserts that a `text/plain` cross-site POST never reaches a handler.

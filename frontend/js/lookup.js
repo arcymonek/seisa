@@ -20,7 +20,7 @@ export function initLookup(container) {
   root.innerHTML = `
     <div class="subtitle">${escapeHtml(t("lookup.subtitle"))}</div>
     <label>${escapeHtml(t("lookup.ip_address"))}</label>
-    <input type="text" id="lk-indicator" placeholder="1.2.3.4">
+    <input type="text" id="lk-indicator" placeholder="1.2.3.4 / example.com">
 
     <label><input type="checkbox" id="lk-batch"> ${escapeHtml(t("lookup.batch_mode"))}</label>
     <div id="lk-batch-area" style="display:none">
@@ -133,7 +133,7 @@ async function onSubmit() {
     return;
   }
   try {
-    const result = await api.lookup({ indicator, type: "ip", services, force_refresh: forceRefresh });
+    const result = await api.lookup({ indicator, type: "auto", services, force_refresh: forceRefresh });
     stopTimer();
     resultsEl.innerHTML = "";
     resultsEl.appendChild(renderResult(result));
