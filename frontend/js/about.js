@@ -101,10 +101,7 @@ function limitLine(r) {
 function renderLimits(limits) {
   const byService = new Map();
   for (const r of limits.rows) byService.set(r.service, [...(byService.get(r.service) || []), r]);
-  const badge = (configured) =>
-    configured === null
-      ? `<span class="badge sm single">${e(t("about.status_none"))}</span>`
-      : `<span class="badge sm ${configured ? "agree" : "conflict"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
+  const badge = (configured) => `<span class="badge sm ${configured ? "agree" : "conflict"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
   root.querySelector("#ab-limits").innerHTML = services
     .map((svc) => {
       const rows = byService.get(svc.id) || [];
@@ -174,7 +171,7 @@ export async function refreshAbout() {
   </div>`;
 
   const llm = { id: "openrouter", configured: info.llm.configured, llm: true };
-  services = [...info.services.filter((s) => s.configured !== null), llm, ...info.services.filter((s) => s.configured === null)]; // services without a key last
+  services = [...keyed, llm]; // integrations that need no key (WHOIS/rDNS) get no tile
   renderEnvironment(info.environment);
 
   renderLimits(info.limits);
