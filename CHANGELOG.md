@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.79 - 2026-09-26
+- **DMARC tab:** only the IP sources section is open by default; the providers table, the chart, the comparison and the reports are folded cards. The glossary now also explains the risk levels, the tiles (suspicious, pass rate, decisions, overrides), geo/rDNS/known sender, the fix hints and the comparison with the chart.
+
 ## 2.0.78 - 2026-09-26
 - **DMARC tab:** the uploaded reports come right after the IP sources; the providers table, the chart and the comparison follow.
 

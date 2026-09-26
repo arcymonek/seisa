@@ -35,8 +35,8 @@ What you get:
 - **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each; it opens by itself on an error. "Component scores" is a collapsible card, open by default. When GreyNoise answers with its search limit (HTTP 429) the card says so in plain words, with the reset date when GreyNoise names one; the score is then computed without it.
 - **Batch mode** (many addresses or domains at once, with the VirusTotal throttle visible): duplicates in the list (`Example.com`, `https://example.com/x`) are checked once, a summary table sorted by score comes first (with the change against the previous scan, the strongest signal and the owner or registrar; a click jumps to the report) and "Save CSV" exports it (cells that could be read as a spreadsheet formula are prefixed with `'`). A 15-minute in-memory cache, with an option to force a refresh; in a single scan "Force refresh" replaces the per-report refresh button, which only batch reports keep.
 - **A domain report** has a "Scan in URLScan" button that fills the URLScan tab with `https://<domain>/`.
-- **Mail volume per day:** a bar chart (messages per day, the failing share in red) when the reports span at least two days; it opens by itself when some day has failures.
-- **Comparison with the previous import** of the same domain (from [History](#history)): new sources, sources that are gone, sources that got worse and the DMARC pass rate before and now; it opens by itself when a new suspicious source appeared or a source got worse.
+- **Mail volume per day:** a bar chart (messages per day, the failing share in red) when the reports span at least two days.
+- **Comparison with the previous import** of the same domain (from [History](#history)): new sources, sources that are gone, sources that got worse and the DMARC pass rate before and now.
 - **Export:** "Save .md" (the browser's native save dialog) or copy; the Markdown contains the whole report including the identity table.
 
 <details>
@@ -110,7 +110,7 @@ What you get:
 <details>
 <summary>Details: what each part shows</summary>
 
-**Reports.** Placed right after the sources. Each uploaded report is an expandable block with every field of its metadata and published policy: provider, contact and additional contact, report ID and version, period, domain, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, with defaults marked), report errors and any other element the report carries (for example `np`, `testing` or vendor tags).
+**Reports.** A folded card right after the sources; only the IP sources section is open by default, every other section is folded (the providers table too). Each uploaded report inside is an expandable block with every field of its metadata and published policy: provider, contact and additional contact, report ID and version, period, domain, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, with defaults marked), report errors and any other element the report carries (for example `np`, `testing` or vendor tags).
 
 **Sources.** An override such as `forwarded` is noted next to the policy decision, so legitimate forwarding is not mistaken for an attack.
 
@@ -120,7 +120,7 @@ What you get:
 
 **geo and next steps.** The optional "geo (RDAP)" button in the expanded row asks the backend about that single IP address (only on click). The backend queries RDAP, the same service as the IP tab, and the row shows the registration country, the owner, the network name and the reverse DNS name. When the reverse DNS name belongs to a well-known sender (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp and a few more) **and** resolves back to the same address, the row says so; a PTR alone would prove nothing, because whoever owns an IP block sets its PTR freely. RDAP has no ASN, so none is shown; the [IP](#ip) tab has it. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
 
-**Glossary and export.** A short glossary of SPF, DKIM, the policy terms and the table closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
+**Glossary and export.** A glossary of SPF, DKIM, the policy terms, the table, the risk levels, the tiles, geo/rDNS/known sender, the fix hints and the comparison with the chart closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
 
 </details>
 

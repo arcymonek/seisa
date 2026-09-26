@@ -35,8 +35,8 @@ Co dostajesz:
 - **Źródła bez wyniku** (błąd, brak klucza, limit dzienny, nie dotyczy) mają jedną zwiniętą belkę zamiast karty każde; przy błędzie rozwija się sama. "Wyniki składowe" to zwijana karta, domyślnie rozwinięta. Gdy GreyNoise odpowiada wyczerpanym limitem wyszukiwań (HTTP 429), karta mówi o tym zwykłym językiem, z datą odnowienia, jeśli GreyNoise ją podaje; wynik jest wtedy liczony bez tego źródła.
 - **Tryb wsadowy** (wiele adresów lub domen naraz, z widocznym throttlem VirusTotal): duplikaty na liście (`Example.com`, `https://example.com/x`) są sprawdzane raz, na początku jest tabela podsumowania posortowana wg wyniku (ze zmianą względem poprzedniego skanu, najsilniejszym sygnałem i właścicielem lub rejestratorem; kliknięcie przewija do raportu), a "Zapisz CSV" ją eksportuje (komórki, które arkusz mógłby wziąć za formułę, dostają prefiks `'`). 15-minutowy cache w pamięci z opcją wymuszenia odświeżenia; przy pojedynczym skanie "Wymuś odświeżenie" zastępuje przycisk odświeżania przy raporcie, który zostaje tylko w raportach wsadowych.
 - **Raport domeny** ma przycisk "Skanuj w URLScan", który wypełnia zakładkę URLScan adresem `https://<domena>/`.
-- **Wiadomości w czasie:** wykres słupkowy (wiadomości na dzień, udział niezgodnych na czerwono), gdy raporty obejmują co najmniej dwa dni; otwiera się sam, gdy któryś dzień ma niezgodne wiadomości.
-- **Porównanie z poprzednim importem** tej samej domeny (z [Historii](#historia)): nowe źródła, źródła, których już nie ma, źródła, które pogorszyły wynik, oraz zgodność z DMARC przed i teraz; otwiera się samo, gdy pojawiło się nowe podejrzane źródło albo któreś się pogorszyło.
+- **Wiadomości w czasie:** wykres słupkowy (wiadomości na dzień, udział niezgodnych na czerwono), gdy raporty obejmują co najmniej dwa dni.
+- **Porównanie z poprzednim importem** tej samej domeny (z [Historii](#historia)): nowe źródła, źródła, których już nie ma, źródła, które pogorszyły wynik, oraz zgodność z DMARC przed i teraz.
 - **Eksport:** "Zapisz .md" (natywne okno wyboru miejsca zapisu w przeglądarce) albo kopiowanie; Markdown zawiera cały raport, także tabelę tożsamości.
 
 <details>
@@ -110,7 +110,7 @@ Co dostajesz:
 <details>
 <summary>Szczegóły: co pokazuje każda część</summary>
 
-**Raporty.** Stoją zaraz po źródłach. Każdy wgrany raport to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
+**Raporty.** Zwinięta karta zaraz po źródłach; domyślnie rozwinięta jest tylko sekcja Źródła IP, każda inna jest zwinięta (także tabela dostawców). Każdy wgrany raport w środku to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
 
 **Źródła.** Override, np. `forwarded`, jest odnotowany obok decyzji polityki, żeby prawowite przekazywanie poczty nie wyglądało jak atak.
 
@@ -120,7 +120,7 @@ Co dostajesz:
 
 **geo i dalsze kroki.** Opcjonalny przycisk "geo (RDAP)" w rozwiniętym wierszu pyta backend o ten jeden adres IP (wyłącznie po kliknięciu). Backend odpytuje RDAP, tę samą usługę co zakładka IP, a wiersz pokazuje kraj rejestracji, właściciela, nazwę sieci i nazwę odwrotnego DNS. Gdy nazwa rDNS należy do znanego nadawcy (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp i kilku innych) **i** wskazuje z powrotem na ten sam adres, wiersz to zaznacza; sam PTR nic nie dowodzi, bo właściciel bloku IP ustawia go dowolnie. RDAP nie zawiera ASN, więc go tu nie ma; jest w zakładce [IP](#ip). Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
 
-**Legenda i eksport.** Zakładkę zamyka krótka legenda pojęć SPF, DKIM, polityki i tabeli, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
+**Legenda i eksport.** Zakładkę zamyka legenda pojęć: SPF, DKIM, polityka, tabela, poziomy ryzyka, kafelki, geo/rDNS/znany nadawca, wskazówki naprawy oraz porównanie z wykresem, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
 
 </details>
 

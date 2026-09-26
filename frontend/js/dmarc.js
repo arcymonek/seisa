@@ -448,7 +448,7 @@ function providersHtml() {
   const rows = providerStats()
     .map((g) => `<tr><td>${e(g.org)}</td><td>${g.reports}</td><td>${g.messages}</td><td>${e(fmtPct(g.messages - g.failed, g.messages))}</td><td class="${g.failed ? "bad" : ""}">${g.failed}</td></tr>`)
     .join("");
-  return `<h3>${e(t("dmarc.h_providers"))}</h3><div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_providers"))}</summary><div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
 }
 
 // ---- rendering: mail volume per day ----
@@ -479,8 +479,7 @@ function timelineHtml() {
       return `<div class="tl-col" title="${e(tip)}"><div class="tl-area"><div class="tl-bar" style="height:${(d.messages / max) * 100}%"><span class="tl-fail" style="height:${fail}%"></span></div></div><span class="tl-label">${e(d.day.slice(5))}</span></div>`;
     })
     .join("");
-  const open = days.some((d) => d.failed > 0) ? " open" : "";
-  return `<details class="fact-block"${open}><summary>${e(t("dmarc.h_timeline"))}</summary><div class="tl">${cols}</div><div class="muted">${e(t("dmarc.timeline_legend", { max }))}</div></details>`;
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_timeline"))}</summary><div class="tl">${cols}</div><div class="muted">${e(t("dmarc.timeline_legend", { max }))}</div></details>`;
 }
 
 // ---- comparison with the previous import of the same domain ----
@@ -530,8 +529,7 @@ function compareHtml(prev) {
     line(t("dmarc.cmp_worse"), worsened.length ? `${worsened.length} ${list(worsened)}` : "0"),
     line(t("dmarc.cmp_pass"), e(`${pct(prev.records)} → ${pct(allRecords)}`)),
   ];
-  const open = addedRisky.length || worsened.length ? " open" : "";
-  return `<details class="fact-block"${open}><summary>${e(t("dmarc.h_compare", { date: fmtDateTime(new Date(prev.createdAt)) }))}</summary>${lines.join("")}</details>`;
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_compare", { date: fmtDateTime(new Date(prev.createdAt)) }))}</summary>${lines.join("")}</details>`;
 }
 
 async function showComparison(id) {
@@ -544,10 +542,8 @@ async function showComparison(id) {
 // ---- rendering: reports ----
 
 function reportsHtml() {
-  const blocks = reportMeta.map((m) => reportHtml(m, reportMeta.length === 1)).join("");
-  if (reportMeta.length === 1) return `<h3>${e(t("dmarc.h_reports"))}</h3>${blocks}`;
-  // Many reports would push the sources far down the page, so the whole list is one folded card.
-  return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${blocks}</details>`;
+  // A folded card, so the sources stay in view; the reports inside are folded too.
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${reportMeta.map((m) => reportHtml(m, false)).join("")}</details>`;
 }
 
 
@@ -619,6 +615,11 @@ function legendHtml() {
     <dt>DKIM</dt><dd>${e(t("dmarc.legend_dkim"))}</dd>
     <dt>${e(t("dmarc.legend_policy_term"))}</dt><dd>${e(t("dmarc.legend_policy"))}</dd>
     <dt>${e(t("dmarc.legend_table_term"))}</dt><dd>${e(t("dmarc.legend_table"))}</dd>
+    <dt>${e(t("dmarc.legend_risk_term"))}</dt><dd>${e(t("dmarc.legend_risk"))}</dd>
+    <dt>${e(t("dmarc.legend_tiles_term"))}</dt><dd>${e(t("dmarc.legend_tiles"))}</dd>
+    <dt>${e(t("dmarc.legend_geo_term"))}</dt><dd>${e(t("dmarc.legend_geo"))}</dd>
+    <dt>${e(t("dmarc.legend_fix_term"))}</dt><dd>${e(t("dmarc.legend_fix"))}</dd>
+    <dt>${e(t("dmarc.legend_compare_term"))}</dt><dd>${e(t("dmarc.legend_compare"))}</dd>
   </dl></details>`;
 }
 
