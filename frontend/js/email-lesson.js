@@ -92,13 +92,12 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     if (title) b.title = title;
     return b;
   };
-  tools.append(search, searchInfo, mkBtn("↑", "hit-prev", t("em.lesson.hit_prev")), mkBtn("↓", "hit-next", t("em.lesson.hit_next")),
-    mkBtn(t("em.lesson.expand"), "expand"), mkBtn(t("em.lesson.collapse"), "collapse"));
+  tools.append(search, mkBtn("↑", "hit-prev", t("em.lesson.hit_prev")), mkBtn("↓", "hit-next", t("em.lesson.hit_next")),
+    mkBtn(t("common.expand_all"), "expand"), mkBtn(t("common.collapse_all"), "collapse"), searchInfo);
   const titleEl = el("h3", "em-lesson-title");
   const cardsEl = el("div", "em-cards");
   const fallbackEl = el("div", "em-flat");
-  const extra = el("div", "em-lesson-extra");
-  pane.append(tools, titleEl, cardsEl, fallbackEl, extra);
+  pane.append(tools, titleEl, cardsEl, fallbackEl);
 
   // ---- enhancing a rendered body ------------------------------------------------------------------------------
 
@@ -342,5 +341,5 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
   // The source changed (new analysis): earlier lookups are void.
   const sourceChanged = () => findCache.clear();
 
-  return { render, reset, sourceChanged, renderInto, cards, extra, openCard: (i) => cards[i] && setOpen(cards[i].det, true), search: runSearch };
+  return { render, reset, sourceChanged, renderInto, cards, openCard: (i) => cards[i] && setOpen(cards[i].det, true), search: runSearch };
 }

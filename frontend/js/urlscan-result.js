@@ -5,7 +5,7 @@
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { chips, countryName, kvHtml, numberedJson, tileHtml, toggleMoreChips } from "./lookup-result.js";
 import { defangUrl } from "./markdown-render.js";
-import { escapeHtml as e } from "./util.js";
+import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
 
 const LEVEL_TONE = { high: "bad", medium: "warn", low: "good", unknown: "info" };
 const NEW_CERT_DAYS = 7;
@@ -81,7 +81,7 @@ function shotHtml(opts) {
   const src = opts.screenshotUrl || opts.thumbnail;
   const caption = opts.screenshotUrl ? t("usr.shot_caption") : t("usr.thumb_caption");
   return `<figure class="us-shot"><img src="${e(src)}" alt="${e(t("usr.shot_alt"))}" title="${e(t("usr.shot_click"))}">
-    <figcaption class="muted">${e(caption)}</figcaption></figure>`;
+    <figcaption class="muted">${e(caption).replace(/\n/g, "<br>")}</figcaption></figure>`;
 }
 
 // ---- identity card ----
@@ -223,11 +223,12 @@ export function renderUrlscanResult(summary, opts = {}) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(summary.submitted_url)}</code>
       <button type="button" class="secondary mini" data-copy title="${e(t("usr.copy_title"))}">${e(t("common.copy"))}</button></h2>
     ${bannerHtml(summary)}${tilesHtml(summary)}${shotHtml(opts)}${identityHtml(summary)}
-    <h3>${e(t("usr.h_details"))}</h3>${detailCards(summary)}${rawCard(opts.raw)}`;
+    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button, img");
     if (!target || !wrap.contains(target)) return;
+    if (handleToggleAll(wrap, target)) return;
     if (target.tagName === "IMG") target.closest(".us-shot").classList.toggle("expanded");
     else if (target.dataset.copy !== undefined) navigator.clipboard.writeText(defangUrl(summary.submitted_url));
     else if (target.dataset.ip) window.seisaApp.goToLookup(target.dataset.ip);

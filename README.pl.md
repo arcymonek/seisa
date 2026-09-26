@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.11</b></p>
+<p align="center"><b>Seisa 2.1.12</b></p>
 
 # Seisa
 
@@ -36,7 +36,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 
 <!-- Zrzuty ekranu do dodania: docs/img/tab-*.png (po jednym na zakładkę, patrz sekcja Zakładki) -->
 
-Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu, kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał.
+Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał.
 
 ## Szybki start
 
@@ -113,11 +113,11 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 
 | Akcja | Co jest wysyłane | Dokąd | Kiedy |
 |---|---|---|---|
-| Sprawdzenie IP (i tryb wsadowy) | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
+| Sprawdzenie IP | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
 | Sprawdzenie IP, część darmowa | adres IP lub nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS; dla domeny rekordy A, AAAA, NS, MX, CAA i TXT oraz jedno zapytanie o losową subdomenę, które wykrywa wildcard DNS, i po jednym zapytaniu A o każdy serwer nazw) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
 | Skan URL | adres URL, wybrana widoczność i, jeśli je ustawisz, kraj skanu oraz user agent; domena w wyszukiwaniu "Historia" (wcześniejsze skany); identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
 | DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny) i Twój resolver DNS (zapytanie odwrotne i wprost), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
-| Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę", "Zapytaj" | cały kod źródłowy e-maila (z danymi osobowymi), a przy "Zapytaj" także pytanie i fragment | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
+| Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę" | cały kod źródłowy e-maila (z danymi osobowymi) | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
 | AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
 | AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |
 | AbuseIPDB: "Wyślij" | IP, kategorie, timestamp, komentarz | AbuseIPDB (`/report`) - **publicznie** | tylko po świadomym kliknięciu |

@@ -12,7 +12,6 @@
 
 **The LLM analysis stops in the middle.** The response limit was reached. Click "Finish the analysis": the model gets the text so far and writes the missing parts.
 
-**A batch lookup is slow.** VirusTotal's free plan allows 4 requests a minute; the throttle is visible in the batch progress.
 
 **The browser shows "Invalid host header".** Seisa accepts only `127.0.0.1` and `localhost` as the host name (protection against DNS rebinding). Open `http://127.0.0.1:54321`.
 

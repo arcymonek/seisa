@@ -10,7 +10,7 @@ Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email
 
 > Reputacja adresu IP z sześciu źródeł, scalona w jeden objaśniony wynik 0-100.
 
-**Wejście:** adres IP lub nazwa domeny (tryb wsadowy: wiele z nich) | **Wynik:** raport (werdykt, kafelki, karta tożsamości, karty źródeł) | **Wysyła na zewnątrz:** adres do usług, dla których masz klucze, oraz darmowe zapytania RDAP i DNS | **Klucze:** każda usługa opcjonalna. Skanowanie URL jest w zakładce [URLScan](#urlscan).
+**Wejście:** adres IP lub nazwa domeny | **Wynik:** raport (werdykt, kafelki, karta tożsamości, karty źródeł) | **Wysyła na zewnątrz:** adres do usług, dla których masz klucze, oraz darmowe zapytania RDAP i DNS | **Klucze:** każda usługa opcjonalna. Skanowanie URL jest w zakładce [URLScan](#urlscan).
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-ip.png -->
 
@@ -29,11 +29,10 @@ Co dostajesz:
 - **Jeden wynik zbiorczy** 0-100 i baner werdyktu: LOW poniżej 25, MEDIUM 25-59, HIGH od 60 (kolor wg poziomu, z wartościami, na których się opiera).
 - **Kafelki podsumowania:** pewność nadużyć, wykrycia, GreyNoise, pulsy OTX, kraj, ASN, typ IP oraz tabela wyników składowych. Dla domeny: wiek domeny, rejestrator, czas do wygaśnięcia, popularność w Cloudflare, kategoria, serwery nazw i adresy IP.
 - **Karta tożsamości adresu** (dla domeny: **tożsamość domeny**), która scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł (dla domeny: rejestrator, daty, wiek, serwery nazw sprawdzone między WHOIS a DNS, adresy IP, serwery poczty, SPF, DMARC, CAA, kategoria, popularność) i pokazuje, ile źródeł się zgadza. Jest zwinięta z zieloną informacją "źródła są zgodne", a gdy źródła się rozchodzą, rozwija się sama.
-- **Jedna zwijana karta na źródło**, otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25, czyli Średnie lub Wysokie); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
+- **Jedna zwijana karta na źródło** (przyciski "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Źródła" otwierają lub zwijają je naraz), otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25, czyli Średnie lub Wysokie); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
 - **Wklejone dane są porządkowane:** URL (`https://Example.com:8080/a?b`), zdefangowany wskaźnik (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` czy nazwa wielkimi literami są sprowadzane do samego hosta lub adresu IP. Adresy prywatne, pętli zwrotnej i zarezerwowane są odrzucane z wyjaśnieniem, zamiast trafiać do usług.
 - **Porównanie z poprzednim skanem:** gdy ten sam wskaźnik jest w Historii, linia pod banerem pokazuje poprzedni wynik, różnicę, źródła, których ryzyko zmieniło się o 10 lub więcej, i słupek na każdy wcześniejszy skan (Historia trzyma 25 niezapiętych wpisów, więc trend jest co najwyżej tak długi).
 - **Źródła bez wyniku** (błąd, brak klucza, limit dzienny, nie dotyczy) mają jedną zwiniętą belkę zamiast karty każde; przy błędzie rozwija się sama. "Wyniki składowe" to zwijana karta, domyślnie rozwinięta. Gdy GreyNoise odpowiada wyczerpanym limitem wyszukiwań (HTTP 429), karta mówi o tym zwykłym językiem, z datą odnowienia, jeśli GreyNoise ją podaje; wynik jest wtedy liczony bez tego źródła.
-- **Tryb wsadowy** (wiele adresów lub domen naraz, z widocznym throttlem VirusTotal): duplikaty na liście (`Example.com`, `https://example.com/x`) są sprawdzane raz, na początku jest tabela podsumowania posortowana wg wyniku (ze zmianą względem poprzedniego skanu, najsilniejszym sygnałem i właścicielem lub rejestratorem; kliknięcie przewija do raportu), a "Zapisz CSV" ją eksportuje (komórki, które arkusz mógłby wziąć za formułę, dostają prefiks `'`). 15-minutowy cache w pamięci z opcją wymuszenia odświeżenia; przy pojedynczym skanie "Wymuś odświeżenie" zastępuje przycisk odświeżania przy raporcie, który zostaje tylko w raportach wsadowych.
 - **Raport domeny** ma przycisk "Skanuj w URLScan", który wypełnia zakładkę URLScan adresem `https://<domena>/`.
 - **Wiadomości w czasie:** wykres słupkowy (wiadomości na dzień, udział niezgodnych na czerwono), gdy raporty obejmują co najmniej dwa dni.
 - **Porównanie z poprzednim importem** tej samej domeny (z [Historii](#historia)): nowe źródła, źródła, których już nie ma, źródła, które pogorszyły wynik, oraz zgodność z DMARC przed i teraz.
@@ -63,7 +62,7 @@ Co dostajesz:
 - **Baner werdyktu** w kolorze z wyniku urlscan.io oraz werdyktów silników i społeczności; "brak werdyktu" jest pokazany neutralnie i wprost nie jako "bezpieczne".
 - **Kafelki podsumowania:** wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu (ze znacznikiem "nowy" poniżej 7 dni), przekierowania.
 - **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena z przyciskiem **Sprawdź domenę**, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
-- **Zwijane karty szczegółów:** werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, kontaktowane adresy IP (każdy z przyciskiem **Sprawdź IP**), kontaktowane domeny i linki.
+- **Zwijane karty szczegółów** (z przyciskami "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Szczegóły"): werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, kontaktowane adresy IP (każdy z przyciskiem **Sprawdź IP**), kontaktowane domeny i linki.
 - **Wcześniejsze skany** tej samej domeny (przycisk **Historia**), żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
 - **Jedna linia akcji:** Skanuj, po raporcie Skanuj ponownie, Zapisz .md i Kopiuj Markdown, potem Historia (wcześniejsze skany domeny), Porównaj (z poprzednim skanem) i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
 - **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
@@ -120,7 +119,7 @@ Co dostajesz:
 
 **geo i dalsze kroki.** Opcjonalny przycisk "geo (RDAP)" w rozwiniętym wierszu pyta backend o ten jeden adres IP (wyłącznie po kliknięciu). Backend odpytuje RDAP, tę samą usługę co zakładka IP, a wiersz pokazuje kraj rejestracji, właściciela, nazwę sieci i nazwę odwrotnego DNS. Gdy nazwa rDNS należy do znanego nadawcy (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp i kilku innych) **i** wskazuje z powrotem na ten sam adres, wiersz to zaznacza; sam PTR nic nie dowodzi, bo właściciel bloku IP ustawia go dowolnie. RDAP nie zawiera ASN, więc go tu nie ma; jest w zakładce [IP](#ip). Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
 
-**Legenda i eksport.** Zakładkę zamyka legenda pojęć: SPF, DKIM, polityka, tabela, poziomy ryzyka, kafelki, geo/rDNS/znany nadawca, wskazówki naprawy oraz porównanie z wykresem, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
+**Wyjaśnienia i eksport.** Zakładkę zamyka sekcja wyjaśnień pojęć: SPF, DKIM, polityka, tabela, poziomy ryzyka, kafelki, geo/rDNS/znany nadawca, wskazówki naprawy oraz porównanie z wykresem, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
 
 </details>
 
@@ -136,9 +135,9 @@ Co dostajesz:
 
 - **Analiza deterministyczna, od razu i lokalnie** (bez LLM): anomalie, trasa Received z rolą każdego hopu w łańcuchu zaufania, uwierzytelnianie, zgodność domen, oś czasu w UTC, drzewo MIME, załączniki, linki, ukryta treść i filtry antyspamowe odbiorcy.
 - **Szczegółowa analiza LLM**, streamowana na żywo (OpenRouter, ten sam klucz i model co w AbuseIPDB), według przewodnika `docs/email-analysis-guide.md`; pierwsza linia to werdykt z poziomem pewności.
-- **Trzy panele ze spisem treści:** Przegląd (diagram trasy, ostrzeżenia, lista kontrolna, co robić, kontrola cytatów), Fakty (analiza deterministyczna jako zwijane karty) i Lekcja (cała analiza LLM).
+- **Trzy panele ze spisem treści:** Przegląd (diagram trasy, ostrzeżenia, lista kontrolna, co robić, kontrola cytatów), Fakty (analiza deterministyczna jako zwijane karty, z przyciskami "Rozwiń wszystko" / "Zwiń wszystko"; tabela Received przewija się poziomo, gdy potrzebuje miejsca) i Lekcja (cała analiza LLM).
 - **Karty dowodowe i szuflada źródła:** cytaty z wiadomości pokazują numery linii i przycisk "Pokaż w źródle".
-- **Zapisane analizy** z wykrywaniem duplikatów, porównaniem dwóch analiz, pytaniami dodatkowymi i eksportami (`.md`, `.html`).
+- **Zapisane analizy** z wykrywaniem duplikatów, porównaniem dwóch analiz i eksportami (`.md`, `.html`).
 - **Nic z wiadomości nie jest otwierane ani pobierane**; linki są pokazywane jako nieklikalny, zdefangowany tekst.
 
 <details>
@@ -183,13 +182,12 @@ Jak w zakładkach IP, DMARC i URLScan:
 </details>
 
 <details>
-<summary>Szczegóły: zapisane analizy, duplikaty, porównanie, pytania, eksporty, przekazywanie</summary>
+<summary>Szczegóły: zapisane analizy, duplikaty, porównanie, eksporty, przekazywanie</summary>
 
 - **Zapisane analizy:** każda ukończona analiza zapisuje się razem z surowym e-mailem w `data/analyses/` (pliki 0600, gitignored); lista zapisanych analiz (otwórz/usuń/porównaj) jest na dole zakładki.
 - **Wykrywanie duplikatów:** przed płatną analizą Seisa sprawdza odcisk (sha256 znormalizowanego źródła) w `data/analyses/`. Jeśli ta wiadomość była już analizowana, proponuje otwarcie zapisanej analizy (z datą, werdyktem i kosztem) albo świadome uruchomienie ponownie.
 - **Porównanie:** zaznacz dwie zapisane analizy i kliknij "Porównaj zaznaczone", by zobaczyć ich fakty obok siebie (werdykt, SPF/DKIM/DMARC, IP nadawcy, domeny, adresy IP, hosty linków, skróty załączników) z wyróżnieniem elementów wspólnych - operacja lokalna, nic nie jest wysyłane.
-- **Zapytaj o tę wiadomość** (karta na końcu panelu Lekcja): pytanie dodatkowe do zapisanej analizy, opcjonalnie z fragmentem źródła (zaznacz tekst w szufladzie źródła i kliknij "Zapytaj o zaznaczenie"; przycisk "Pokaż źródło" obok "Zapytaj" otwiera szufladę). Każde pytanie to jawne, płatne kliknięcie, które wysyła do OpenRouter cały kod źródłowy, pytanie i fragment; odpowiedź jest streamowana, renderowana bezpiecznie i zapisywana razem z analizą (`questions` w rekordzie; `POST /api/email/analyses/{id}/ask`, pytanie do 600, fragment do 2000 znaków). Pytania wchodzą do eksportów.
-- **Eksporty:** "Zapisz .md", "Kopiuj Markdown" i "Zapisz .html". Etykiety eksportu są w języku interfejsu z chwili eksportu, a treść analizy LLM w języku, w którym powstała. Eksportują komplet: metadane (data, werdykt, model, tokeny wejścia/wyjścia, koszt), całą analizę deterministyczną (tabele), analizę LLM i pytania dodatkowe. Plik HTML to samodzielna kopia wyniku z rozwiniętymi kartami (bez skryptów; Content-Security-Policy zabrania wszystkiego poza stylami inline).
+- **Eksporty:** "Zapisz .md", "Kopiuj Markdown" i "Zapisz .html". Etykiety eksportu są w języku interfejsu z chwili eksportu, a treść analizy LLM w języku, w którym powstała. Eksportują komplet: metadane (data, werdykt, model, tokeny wejścia/wyjścia, koszt), całą analizę deterministyczną (tabele) i analizę LLM. Plik HTML to samodzielna kopia wyniku z rozwiniętymi kartami (bez skryptów; Content-Security-Policy zabrania wszystkiego poza stylami inline).
 - **Przekazywanie (żadne z nich niczego nie wysyła):** przy każdym linku analizy deterministycznej (linki, zwykłe URL-e, List-Unsubscribe) jest przycisk **URLScan**, a przy publicznych adresach IP przycisk **IP**; wstawiają one tylko adres do zakładki URLScan lub IP - nic nie jest otwierane, skanowane ani sprawdzane, dopóki nie klikniesz tam akcji. Wiersze tabel Received i uwierzytelniania mają przycisk "źródło", który podświetla nagłówek w szufladzie źródła. Przycisk **"Zgłoś AbuseIPDB"** (widoczny tylko gdy werdykt to nie `legit`) wkleja oryginalny kod do pola e-maila w zakładce AbuseIPDB (nadpisując pole) i przenosi tam użytkownika.
 
 </details>
@@ -259,7 +257,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 - **Kafelki podsumowania** (suma, po jednym na typ, liczba wpisów o wysokim ryzyku), które działają też jako filtry: kliknięcie filtruje listę, drugie kliknięcie "Wysokie ryzyko" zdejmuje filtr. Pod nimi, między dwiema liniami, przyciski akcji (Odśwież, eksporty, Wyczyść historię) z liczbą widocznych wpisów; dalej jeden rząd z chipami zakresu dat po lewej i chipami ryzyka po prawej, a nad listą pole wyszukiwania w etykietach z podpowiedzią i przyciskiem porównania obok.
 - **Karty pogrupowane po dniach** (przypięte na początku): typ, etykieta, ryzyko, język wpisu, gdy różni się od języka interfejsu, i informacja, jak dawno powstał (dokładny czas w dymku). Lista pokazuje 25 najnowszych wpisów, które nie są przypięte. Jeśli ten sam IP, URL lub domena była wcześniej oceniona inaczej, karta o tym informuje ("Wcześniej: Niskie").
-- **Akcje na karcie:** "Otwórz ponownie" (sprawdzenie IP rozwija się w karcie, pozostałe otwierają się w swojej zakładce), "Powtórz" (IP i skan URL: uruchamia sprawdzenie jeszcze raz w jego zakładce, dla IP z pominięciem cache), "Przypnij" / "Odepnij" (IP, skan URL i DMARC: przypięty wpis nigdy nie wypada z limitu i przeżywa "Wyczyść historię") i "Usuń" (dwa kliknięcia; nie dotyczy zgłoszeń - lokalny log zgłoszeń jest śladem audytowym).
+- **Akcje na karcie:** "Otwórz ponownie" (sprawdzenie IP rozwija się w karcie, pozostałe otwierają się w swojej zakładce), "Powtórz" (IP i skan URL: uruchamia sprawdzenie jeszcze raz w jego zakładce,  - każde sprawdzenie IP pyta usługi od nowa), "Przypnij" / "Odepnij" (IP, skan URL i DMARC: przypięty wpis nigdy nie wypada z limitu i przeżywa "Wyczyść historię") i "Usuń" (dwa kliknięcia; nie dotyczy zgłoszeń - lokalny log zgłoszeń jest śladem audytowym).
 - **Porównanie:** zaznacz dwa sprawdzenia IP i "Porównaj zaznaczone" pokaże, co się między nimi zmieniło: poziom ryzyka i wynik, użyte źródła, tożsamość adresu i to, co zgłosiło każde źródło.
 - **Eksport i porządki:** "Eksportuj JSON" i "Eksportuj CSV" zapisują metadane listy tak, jak jest przefiltrowana na ekranie (id, typ, czas, etykieta, ryzyko, przypięcie). "Wyczyść historię" (dwa kliknięcia) usuwa tylko nieprzypięte sprawdzenia IP, skany URL i raporty DMARC; analizy e-maili (z surowymi wiadomościami) usuwa się pojedynczo; log zgłoszeń zostaje.
 
@@ -274,7 +272,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 - **Kafelki podsumowania** (błędy, ostrzeżenia, usługa z największą liczbą wpisów, ostatni wpis) albo, gdy nie ma czego pokazać, zielony baner. Pod nimi, między dwiema liniami, są przyciski **Odśwież** i **Wyczyść logi**.
 - **Filtry:** chipy zakresu dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie), poziomu (wszystkie / błędy / ostrzeżenia) i usługi (budowane z wpisów, z liczbą przy każdej) oraz pole wyszukiwania w wiadomościach. Kafelki i liczby przy chipach zawsze opisują cały zakres dat; poziom, usługa i wyszukiwanie tylko zawężają listę.
 - **Zwijane karty wpisów** (czas, poziom, usługa i pierwsza linia wiadomości; pełny tekst, np. cały błąd API, otwiera się kliknięciem i można go skopiować); karty, które otworzyłeś, zostają otwarte po odświeżeniu.
-- **"Odświeżaj co 10 s"** przeładowuje listę samoczynnie, dopóki zakładka jest otwarta, a **"Wyczyść logi"** (dwa kliknięcia, drugie potwierdza) usuwa wszystkie pliki logów. Widać maksymalnie 500 najnowszych wpisów (baner informuje, gdy starsze zostały obcięte).
+- **"Wyczyść logi"** (dwa kliknięcia, drugie potwierdza) usuwa wszystkie pliki logów. Widać maksymalnie 500 najnowszych wpisów (baner informuje, gdy starsze zostały obcięte).
 - Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
 ### Informacje
@@ -324,7 +322,7 @@ Zakładki są zaprojektowane tak, by przekazywały sobie pracę. Typowa ścieżk
 
 1. **Wczytaj wiadomość.** W zakładce [Email](#email) wklej kod źródłowy albo wczytaj plik `.eml`. Analiza deterministyczna pojawia się od razu, lokalnie.
 2. **Przeczytaj Przegląd.** Diagram trasy pokazuje, gdzie jest granica zaufania; ostrzeżenia i kafelki pokazują SPF/DKIM/DMARC tak, jak zapisał je serwer odbiorcy, oraz to, co się nie zgadza w domenach nadawcy.
-3. **Poproś o lekcję (opcjonalnie, płatnie).** Kliknij "Analizuj": streamowane wyjaśnienie z werdyktem i kartami dowodowymi. Otwórz kartę, przejdź do cytowanych linii przyciskiem "Pokaż w źródle" i użyj "Zapytaj" do pytań dodatkowych. Kontrola cytatów mówi, czy cytaty naprawdę są w źródle.
+3. **Poproś o lekcję (opcjonalnie, płatnie).** Kliknij "Analizuj": streamowane wyjaśnienie z werdyktem i kartami dowodowymi. Otwórz kartę, przejdź do cytowanych linii przyciskiem "Pokaż w źródle". Kontrola cytatów mówi, czy cytaty naprawdę są w źródle.
 4. **Sprawdź, na co to wskazuje.** Przycisk **URLScan** przy linku i przycisk **IP** przy IP źródłowym przenoszą adres do ich zakładek; nic nie jest skanowane, dopóki nie klikniesz tam akcji. Zakładka [IP](#ip) daje wynik zbiorczy i tożsamość adresu; [URLScan](#urlscan) pokazuje żywy skan, zrzut ekranu i formularze.
 5. **Zgłoś.** Jeśli werdykt to nie `legit`, "Zgłoś AbuseIPDB" przenosi kod do zakładki [AbuseIPDB](#abuseipdb), gdzie kod znajduje IP nadawcy, uruchamiają się twarde sprawdzenia i powstaje szkic komentarza po angielsku. Przeczytaj go, zamaskuj dane osobowe, wybierz kategorie.
 6. **Wyślij świadomie.** Gdy kontrole przechodzą, "Wyślij" zgłasza adres. Wszystko, co zrobiłeś(-aś), jest w [Historii](#historia); zgłoszenie jest też w "Twoje zgłoszenia". Dla skrzynki, która dostaje raporty DMARC, zakładka [DMARC](#dmarc) jest odpowiednikiem do wyłapywania źródeł podszywających się pod Twoją domenę.

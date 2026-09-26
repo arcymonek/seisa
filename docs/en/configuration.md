@@ -27,9 +27,7 @@ A missing key for any service does not block the rest of the tool - the service 
 
 | What | Limit | Notes |
 |---|---|---|
-| VirusTotal | 4 requests/min, 500/day | a visible throttle in batch mode; the daily counter (`data/vt_usage.json`) resets at 00:00 UTC |
-| Result cache | 15 minutes, in memory | an option forces a refresh |
-| Batch lookup | 200 indicators | |
+| VirusTotal | 4 requests/min, 500/day | the daily counter (`data/vt_usage.json`) resets at 00:00 UTC |
 | E-mail source | 3 million characters | |
 | LLM answer | 64000 tokens | a ceiling that includes the model's hidden reasoning (about 45% of the output); you pay only for what is generated |
 | AbuseIPDB report | one per IP per 15 minutes, comment up to 1024 characters, up to 30 categories | the 15-minute rule is enforced (HTTP 409) before a call is spent |

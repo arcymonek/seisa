@@ -27,9 +27,7 @@ Brak klucza dla dowolnej usługi nie blokuje reszty narzędzia - usługa po pros
 
 | Co | Limit | Uwagi |
 |---|---|---|
-| VirusTotal | 4 zapytania/min, 500/dzień | widoczny throttle w trybie wsadowym; dzienny licznik (`data/vt_usage.json`) zeruje się o 00:00 UTC |
-| Cache wyników | 15 minut, w pamięci | opcja wymusza odświeżenie |
-| Wyszukiwanie wsadowe | 200 wskaźników | |
+| VirusTotal | 4 zapytania/min, 500/dzień | dzienny licznik (`data/vt_usage.json`) zeruje się o 00:00 UTC |
 | Źródło e-maila | 3 mln znaków | |
 | Odpowiedź LLM | 64000 tokenów | sufit liczony razem z ukrytym rozumowaniem modelu (ok. 45% wyjścia); płacisz tylko za to, co wygenerowano |
 | Zgłoszenie do AbuseIPDB | jedno na IP na 15 minut, komentarz do 1024 znaków, do 30 kategorii | reguła 15 minut jest egzekwowana (HTTP 409), zanim zostanie zużyte zapytanie |

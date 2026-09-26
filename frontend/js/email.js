@@ -7,9 +7,8 @@
 import { api } from "./api.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, handleToggleAll, readEmlFile, toggleAllHtml } from "./util.js";
 import { buildExport, buildHtmlExport, citationKind, downloadHtml, exportFilename, langName, parseStream, VERDICT_LEVEL, verdictLabel } from "./email-export.js";
-import { createAsk } from "./email-ask.js";
 import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
 import { createLesson } from "./email-lesson.js";
@@ -17,8 +16,6 @@ import { createSourceViewer } from "./email-source.js";
 
 let root;
 let lesson;
-let ask;
-let askSelection = "";
 const compareSel = new Set();
 let viewer;
 let abortController = null;
@@ -30,7 +27,7 @@ const overviewShown = { checklist: null, advice: null };
 
 const blankState = () => ({
   raw: "", stream: "", verdict: null, confidence: null, facts: null, usage: null, model: null, createdAt: null, id: null,
-  truncated: false, citations: null, subject: "", lang: null, phase: "idle", error: null, summary: "", parts: null, questions: [],
+  truncated: false, citations: null, subject: "", lang: null, phase: "idle", error: null, summary: "", parts: null,
 });
 let S = blankState();
 
@@ -107,31 +104,6 @@ export function initEmail(container) {
 
   viewer = createSourceViewer(root);
   lesson = createLesson({ pane: $("#em-pane-lesson"), viewer, onStructure: scheduleToc });
-  ask = createAsk({
-    container: lesson.extra, lesson, getId: () => (S.phase === "done" ? S.id : null),
-    onSaved: (items) => {
-      S.questions = items;
-      scheduleToc();
-    },
-  });
-  lesson.extra.hidden = true;
-  const askBtn = document.createElement("button");
-  askBtn.type = "button";
-  askBtn.className = "action mini";
-  askBtn.hidden = true;
-  askBtn.textContent = t("em.ask.from_selection");
-  viewer.element.querySelector(".em-drawer-hint").appendChild(askBtn);
-  viewer.element.querySelector(".em-drawer-body").addEventListener("mouseup", () => {
-    askSelection = viewer.selection();
-    askBtn.hidden = !askSelection || !S.id || S.phase !== "done";
-  });
-  askBtn.addEventListener("click", () => {
-    ask.setFragment(askSelection);
-    askBtn.hidden = true;
-    paneTouched = true;
-    setPane("lesson");
-    ask.focus();
-  });
   $("#em-cmp-btn").addEventListener("click", showComparison);
   $("#em-analyze").addEventListener("click", analyze);
   $("#em-cancel").addEventListener("click", () => abortController && abortController.abort());
@@ -171,6 +143,7 @@ export function initEmail(container) {
 // ---------------------------------------------------------------------------
 
 function onClick(ev) {
+  if (handleToggleAll($("#em-pane-facts"), ev.target.closest("[data-toggle-all]"))) return undefined;
   const scan = ev.target.closest("[data-scan-url]");
   if (scan) return window.seisaApp.scanUrl(scan.dataset.scanUrl);
   const ip = ev.target.closest("[data-lookup-ip]");
@@ -317,8 +290,6 @@ function clearOutput() {
   $("#em-alert").innerHTML = "";
   $("#em-dup").innerHTML = "";
   lesson.reset();
-  ask.render([]);
-  lesson.extra.hidden = true;
   viewer.setSource("");
   viewer.close();
   $("#em-src-line").hidden = true;
@@ -334,7 +305,7 @@ function showFacts(f) {
   $("#em-kpis").innerHTML = kpiHtml(f);
   $("#em-sec-route").innerHTML = `<h3>${e(t("em.route.title"))}</h3>${routeHtml(f) || `<div class="muted">${e(t("common.none"))}</div>`}`;
   $("#em-sec-flags").innerHTML = `<h3>${e(t("em.f.flags", { n: f.flags.length }))}</h3>${flagsHtml(f)}`;
-  $("#em-pane-facts").innerHTML = `<div class="muted">${e(t("em.f.intro"))}</div>${factCardsHtml(f)}`;
+  $("#em-pane-facts").innerHTML = `<div class="em-facts-tools">${toggleAllHtml(".em-fcard")}</div>${factCardsHtml(f)}`;
   viewer.setSource(S.raw);
   lesson.sourceChanged();
   updateSourceLine();
@@ -608,8 +579,6 @@ function finishAnalysis(evt) {
   renderBanner();
   showCitations();
   showUsage();
-  lesson.extra.hidden = !S.id;
-  ask.refresh();
   scheduleToc();
   refreshSaved();
 }
@@ -794,15 +763,12 @@ async function openSaved(id) {
   S.lang = rec.lang || "pl"; // records saved before the language field existed are Polish
   S.verdict = rec.verdict || null;
   S.confidence = rec.confidence || null;
-  S.questions = rec.questions || [];
   S.phase = "done";
   showFacts(rec.facts);
   showLangNotice(rec);
   renderAnalysis({ final: true });
   renderBanner();
   showCitations();
-  ask.render(S.questions);
-  lesson.extra.hidden = false;
   scheduleToc();
   $("#em-timer").textContent = "";
   showUsage();

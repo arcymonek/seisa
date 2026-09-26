@@ -123,3 +123,20 @@ export function armedConfirm(btn, confirmText, onConfirm, ms = 4000) {
     onConfirm();
   });
 }
+
+// "Expand all" / "Collapse all" buttons for a group of <details> cards: `scope` is a CSS selector of the cards, the click
+// is handled by `handleToggleAll` on a container that holds both the buttons and the cards.
+export function toggleAllHtml(scope) {
+  const btn = (state, key) => `<button type="button" class="secondary mini" data-toggle-all="${state}" data-scope="${escapeHtml(scope)}">${escapeHtml(t(key))}</button>`;
+  return `<span class="toggle-all">${btn("open", "common.expand_all")}${btn("close", "common.collapse_all")}</span>`;
+}
+
+// True when `target` was one of the buttons above (and the cards have been opened or closed).
+export function handleToggleAll(container, target) {
+  if (!target || target.dataset.toggleAll === undefined) return false;
+  const open = target.dataset.toggleAll === "open";
+  container.querySelectorAll(target.dataset.scope).forEach((d) => {
+    d.open = open;
+  });
+  return true;
+}

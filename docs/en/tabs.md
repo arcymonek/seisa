@@ -10,7 +10,7 @@ The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [
 
 > The reputation of an IP address from six sources, merged into one explained 0-100 score.
 
-**Input:** an IP address or a domain name (batch: many of them) | **Output:** a report (verdict, tiles, identity card, source cards) | **Sends out:** the address to the services you have keys for, plus free RDAP and DNS lookups | **Keys:** each service optional. Scanning a URL lives in the [URLScan](#urlscan) tab.
+**Input:** an IP address or a domain name | **Output:** a report (verdict, tiles, identity card, source cards) | **Sends out:** the address to the services you have keys for, plus free RDAP and DNS lookups | **Keys:** each service optional. Scanning a URL lives in the [URLScan](#urlscan) tab.
 
 <!-- Screenshot to add: docs/img/tab-ip.png -->
 
@@ -29,11 +29,10 @@ What you get:
 - **One aggregate score** 0-100 and a verdict banner: LOW below 25, MEDIUM 25-59, HIGH from 60 (colour by level, with the values behind it).
 - **Summary tiles:** abuse confidence, detections, GreyNoise, OTX pulses, country, ASN, IP type, and the component-score table. For a domain: domain age, registrar, time to expiry, Cloudflare popularity, category, name servers and IP addresses.
 - **An address identity card** (for a domain: **domain identity**) that merges owner, ASN, country, network, reverse DNS, usage type and Tor from all sources (for a domain: registrar, dates, age, name servers checked against WHOIS and DNS, IP addresses, mail servers, SPF, DMARC, CAA, category, popularity) and shows how many sources agree. It is collapsed with a green "sources agree" note, and opens by itself when the sources disagree.
-- **One collapsible card per source**, open only for sources with a signal (source risk of 25 or more, i.e. Medium or High); lists (tags, CVEs, ports, pulses) are chips with "show more". The WHOIS / rDNS card repeats the identity rows that come from it, so nothing has to be looked up in two places.
+- **One collapsible card per source** (the "Expand all" / "Collapse all" buttons next to the "Sources" heading open or fold them at once), open only for sources with a signal (source risk of 25 or more, i.e. Medium or High); lists (tags, CVEs, ports, pulses) are chips with "show more". The WHOIS / rDNS card repeats the identity rows that come from it, so nothing has to be looked up in two places.
 - **Pasted input is cleaned up:** a URL (`https://Example.com:8080/a?b`), a defanged indicator (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` or an upper-case name is reduced to the bare host or IP address. Private, loopback and reserved addresses are refused with an explanation instead of being sent to the services.
 - **Comparison with the previous scan:** when the same indicator is in the History, a line under the banner shows the previous score, the difference, the sources whose risk moved by 10 or more and a bar per earlier scan (the History keeps 25 unpinned entries, so the trend is at most that long).
 - **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each; it opens by itself on an error. "Component scores" is a collapsible card, open by default. When GreyNoise answers with its search limit (HTTP 429) the card says so in plain words, with the reset date when GreyNoise names one; the score is then computed without it.
-- **Batch mode** (many addresses or domains at once, with the VirusTotal throttle visible): duplicates in the list (`Example.com`, `https://example.com/x`) are checked once, a summary table sorted by score comes first (with the change against the previous scan, the strongest signal and the owner or registrar; a click jumps to the report) and "Save CSV" exports it (cells that could be read as a spreadsheet formula are prefixed with `'`). A 15-minute in-memory cache, with an option to force a refresh; in a single scan "Force refresh" replaces the per-report refresh button, which only batch reports keep.
 - **A domain report** has a "Scan in URLScan" button that fills the URLScan tab with `https://<domain>/`.
 - **Mail volume per day:** a bar chart (messages per day, the failing share in red) when the reports span at least two days.
 - **Comparison with the previous import** of the same domain (from [History](#history)): new sources, sources that are gone, sources that got worse and the DMARC pass rate before and now.
@@ -63,7 +62,7 @@ What you get:
 - **A verdict banner** coloured from the urlscan.io score and the engine and community verdicts; "no verdict" is shown neutrally and explicitly not as "safe".
 - **Summary tiles:** score, HTTP status, server country, ASN, requests, certificate age (with a "new" mark below 7 days), redirects.
 - **The page screenshot** and a **Page identity** card: submitted and final URL, the redirect chain, title, domain, domain with a **Check domain** button, main IP with a **Check IP** button, location, PTR, server, MIME type, scan time and visibility.
-- **Collapsible detail cards:** the urlscan.io verdict (open only when it signals a risk), forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
+- **Collapsible detail cards** (with "Expand all" / "Collapse all" next to the "Details" heading): the urlscan.io verdict (open only when it signals a risk), forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
 - **Earlier scans** of the same domain (the **History** button), so a recent report can be opened instead of ordering a new scan (a "?" tip explains what the list contains); "Scan again" repeats the scan.
 - **One action line:** Scan, then (after a report) Scan again, Save .md and Copy Markdown, then History (earlier scans of the domain), Compare (with the previous scan) and Open in urlscan.io; the state and the time are always at the end of the line. A running scan has a **Cancel** button (only the waiting stops - the scan itself goes on at urlscan.io).
 - **Compare with the previous scan:** finds the newest earlier scan of the domain (the very same URL first), fetches it and shows a side-by-side table - risk level, score, redirects, IP, ASN, server, certificate, forms, technologies - with unchanged rows dimmed, plus the domains that appeared or disappeared.
@@ -120,7 +119,7 @@ What you get:
 
 **geo and next steps.** The optional "geo (RDAP)" button in the expanded row asks the backend about that single IP address (only on click). The backend queries RDAP, the same service as the IP tab, and the row shows the registration country, the owner, the network name and the reverse DNS name. When the reverse DNS name belongs to a well-known sender (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp and a few more) **and** resolves back to the same address, the row says so; a PTR alone would prove nothing, because whoever owns an IP block sets its PTR freely. RDAP has no ASN, so none is shown; the [IP](#ip) tab has it. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
 
-**Glossary and export.** A glossary of SPF, DKIM, the policy terms, the table, the risk levels, the tiles, geo/rDNS/known sender, the fix hints and the comparison with the chart closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
+**Explanations and export.** An explanations section covering SPF, DKIM, the policy terms, the table, the risk levels, the tiles, geo/rDNS/known sender, the fix hints and the comparison with the chart closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
 
 </details>
 
@@ -136,9 +135,9 @@ What you get:
 
 - **A deterministic analysis, immediately and locally** (no LLM): anomalies, the Received route with the role of each hop in the chain of trust, authentication, domain alignment, a UTC timeline, the MIME tree, attachments, links, hidden content and the recipient's anti-spam filters.
 - **A detailed LLM analysis**, streamed live (OpenRouter, the same key and model as in AbuseIPDB), following the guide `docs/email-analysis-guide.md`; the first line is the verdict with a confidence level.
-- **Three panes with a table of contents:** Overview (route diagram, warnings, checklist, what to do, the citation check), Facts (the deterministic analysis as collapsible cards) and Lesson (the whole LLM analysis).
+- **Three panes with a table of contents:** Overview (route diagram, warnings, checklist, what to do, the citation check), Facts (the deterministic analysis as collapsible cards, with "Expand all" / "Collapse all"; the Received table scrolls sideways when it needs more room) and Lesson (the whole LLM analysis).
 - **Evidence cards and a source drawer:** quotes from the message show line numbers and a "Show in source" button.
-- **Saved analyses** with duplicate detection, comparison of two analyses, follow-up questions and exports (`.md`, `.html`).
+- **Saved analyses** with duplicate detection, comparison of two analyses and exports (`.md`, `.html`).
 - **Nothing from the message is opened or downloaded**; links are shown as non-clickable, defanged text.
 
 <details>
@@ -183,13 +182,12 @@ Like the IP, DMARC and URLScan tabs:
 </details>
 
 <details>
-<summary>Details: saved analyses, duplicates, comparison, questions, exports, hand-offs</summary>
+<summary>Details: saved analyses, duplicates, comparison, exports, hand-offs</summary>
 
 - **Saved analyses:** every completed analysis is saved together with the raw e-mail in `data/analyses/` (files 0600, gitignored); the list of saved analyses (open/delete/compare) is at the bottom of the tab.
 - **Duplicate detection:** before a paid analysis Seisa checks the fingerprint (sha256 of the normalised source) in `data/analyses/`. If the message was already analysed, it offers to open the saved analysis (with the date, verdict and cost) or to run it again deliberately.
 - **Comparison:** tick two saved analyses and click "Compare selected" to see their facts side by side (verdict, SPF/DKIM/DMARC, sender IP, domains, IPs, hosts of links, attachment hashes) with the shared items highlighted - a local operation, nothing is sent.
-- **Ask about this message** (a card at the end of the Lesson pane): a follow-up question about a saved analysis, optionally with a fragment of the source (select text in the source drawer and click "Ask about the selection"; the "Show source" button next to "Ask" opens the drawer). Every question is an explicit, paid click that sends the whole source, the question and the fragment to OpenRouter; the answer is streamed, rendered safely and saved together with the analysis (`questions` in the record; `POST /api/email/analyses/{id}/ask`, question up to 600 and fragment up to 2000 characters). The questions are part of the exports.
-- **Exports:** "Save .md", "Copy Markdown" and "Save .html". The export labels follow the interface language at the moment of export, while the text of the LLM analysis stays in the language it was written in. They export the whole set: metadata (date, verdict, model, input/output tokens, cost), the whole deterministic analysis (tables), the LLM analysis and the follow-up questions. The HTML file is a self-contained copy of the result with all cards expanded (no scripts; a Content-Security-Policy forbids everything but inline styles).
+- **Exports:** "Save .md", "Copy Markdown" and "Save .html". The export labels follow the interface language at the moment of export, while the text of the LLM analysis stays in the language it was written in. They export the whole set: metadata (date, verdict, model, input/output tokens, cost), the whole deterministic analysis (tables) and the LLM analysis. The HTML file is a self-contained copy of the result with all cards expanded (no scripts; a Content-Security-Policy forbids everything but inline styles).
 - **Hand-offs (nothing is sent by them):** next to every link of the deterministic analysis (links, plain URLs, List-Unsubscribe) there is a **URLScan** button, and next to public IP addresses an **IP** button; they only put the address into the URLScan or IP tab - nothing is opened, scanned or looked up until you click the action there. Rows of the Received and authentication tables have a "source" button that highlights the header in the source drawer. The **"Report to AbuseIPDB"** button (visible only when the verdict is not `legit`) pastes the original source into the e-mail field of the AbuseIPDB tab (overwriting the field) and takes you there.
 
 </details>
@@ -259,7 +257,7 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 - **Summary tiles** (the total, one per type, the number of high-risk entries) that also work as filters: a click filters the list, a second click on "High risk" removes the filter. Under them, between two rules, sit the action buttons (Refresh, exports, Clear history) with the count of visible entries; then one row with the date-range chips on the left and the risk chips on the right, and above the list a search box over the labels with the comparison hint and button beside it.
 - **Cards grouped by day** (pinned ones first), showing the type, label, risk, the language of the entry when it differs from the interface, and how long ago it was made (the exact time is in the tooltip). The list shows the newest 25 entries that are not pinned. When the same IP, URL or domain was rated differently earlier, the card says so ("Earlier: Low").
-- **Actions on a card:** "Reopen" (an IP check unfolds inside the card, the others open in their own tab), "Repeat" (IP and URL scan: runs the check again in its tab, for the IP with the cache skipped), "Pin" / "Unpin" (IP, URL scan and DMARC: a pinned entry never falls out of the size limit and survives "Clear history") and "Delete" (two clicks; not for reports - the local report log is an audit trail).
+- **Actions on a card:** "Reopen" (an IP check unfolds inside the card, the others open in their own tab), "Repeat" (IP and URL scan: runs the check again in its tab,  - every IP check queries the services afresh), "Pin" / "Unpin" (IP, URL scan and DMARC: a pinned entry never falls out of the size limit and survives "Clear history") and "Delete" (two clicks; not for reports - the local report log is an audit trail).
 - **Compare:** tick two IP checks and "Compare the selected" shows what changed between them: risk level and score, the sources used, the address identity and what every source reported.
 - **Export and clean-up:** "Export JSON" and "Export CSV" save the metadata of the list as filtered on screen (id, type, time, label, risk, pinned). "Clear history" (two clicks) removes only unpinned IP checks, URL scans and DMARC reports; e-mail analyses (with the raw messages) are deleted one by one; the report log stays.
 
@@ -274,7 +272,7 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 - **Summary tiles** (errors, warnings, the service with the most entries, the last entry) or, when there is nothing to show, a green banner. Under them, between two rules, are the **Refresh** and **Clear logs** buttons.
 - **Filters:** chips for the date range (today / 3 days / week / month / all; the default is all), the level (all / errors / warnings) and the service (built from the entries, each with a count), and a search box over the messages. The tiles and chip counts always describe the whole date range; the level, service and search only narrow the list.
 - **Collapsible entry cards** (time, level, service and the first line of the message; the full text, for example a whole API error, opens on a click and can be copied); the cards you opened stay open across refreshes.
-- **"Refresh every 10 s"** reloads the list on its own while the tab is open, and **"Clear logs"** (two clicks, the second one confirms) deletes all log files. Up to the newest 500 entries are shown (a banner says so when older ones are cut off).
+- **"Clear logs"** (two clicks, the second one confirms) deletes all log files. Up to the newest 500 entries are shown (a banner says so when older ones are cut off).
 - All OpenRouter API errors (Email and AbuseIPDB tabs: limits, insufficient credits, provider errors, timeouts) go to a single `open_router` service; the other application errors go to `app`.
 
 ### Info
@@ -324,7 +322,7 @@ The tabs are designed to hand work to each other. A typical path:
 
 1. **Load the message.** In the [Email](#email) tab paste the source or load the `.eml` file. The deterministic analysis appears at once, locally.
 2. **Read the Overview.** The route diagram shows where the trust boundary is; the warnings and tiles show SPF/DKIM/DMARC as the recipient's server wrote them, and what the sender's domains do not match.
-3. **Ask for the lesson (optional, paid).** Click "Analyze": a streamed explanation with a verdict and evidence cards. Open a card, jump to the quoted lines with "Show in source", and use "Ask" for follow-up questions. The citation check tells you whether the quotes really are in the source.
+3. **Ask for the lesson (optional, paid).** Click "Analyze": a streamed explanation with a verdict and evidence cards. Open a card, jump to the quoted lines with "Show in source". The citation check tells you whether the quotes really are in the source.
 4. **Check what it points to.** Next to a link the **URLScan** button and next to the source IP the **IP** button carry the address to their tabs; nothing is scanned until you click there. The [IP](#ip) tab gives the aggregate score and the address identity; [URLScan](#urlscan) shows a live scan, screenshot and forms.
 5. **Report it.** If the verdict is not `legit`, "Report to AbuseIPDB" moves the source into the [AbuseIPDB](#abuseipdb) tab, where the code finds the sender IP, the hard checks run and an English comment is drafted. Read it, mask personal data, choose categories.
 6. **Send deliberately.** When the checks pass, "Send" reports the address. Everything you did is in [History](#history); the report is also in "Your reports". For a mailbox that receives DMARC reports, the [DMARC](#dmarc) tab is the counterpart for spotting sources that spoof your domain.

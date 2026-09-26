@@ -5,8 +5,6 @@ import ipaddress
 import re
 from urllib.parse import quote
 
-from backend.cache import get as cache_get
-from backend.cache import set as cache_set
 from backend.i18n import t
 from backend.identity import build_domain_identity, build_identity
 from backend.markdown_report import build_markdown
@@ -95,47 +93,31 @@ async def run_lookup(
     indicator: str,
     indicator_type: IndicatorType,
     services: list[str] | None,
-    force_refresh: bool,
-    progress_cb=None,
 ) -> LookupResult:
     """Queries the selected services in parallel (all of them when `services` is empty) and builds the report.
 
-    Results are served from the in-memory cache (15 min) unless `force_refresh` is set; `progress_cb(text)` is
-    called with a status line while the VirusTotal throttle makes a request wait.
+    Every call queries the services again (there is no result cache), so the report is always fresh.
     """
     selected = services or list(SERVICE_REGISTRY.keys())
     results: dict[str, ServiceResult] = {}
 
     async def run_one(name: str) -> None:
         service = SERVICE_REGISTRY[name]
-        if not force_refresh:
-            cached = cache_get(indicator, name)
-            if cached:
-                results[name] = cached
-                return
-
-        def on_wait(seconds: float) -> None:
-            if progress_cb:
-                progress_cb(t("lookup.vt_wait", seconds=f"{seconds:.0f}"))
-
-        kwargs = {"on_wait": on_wait} if name == "virustotal" else {}
         try:
             if indicator_type == "ip":
                 if not service.supports_ip:
                     result = service.not_applicable_result()
                 else:
-                    result = await service.query_ip(indicator, **kwargs)
+                    result = await service.query_ip(indicator)
             else:
                 if not service.supports_domain:
                     result = service.not_applicable_result()
                 else:
-                    result = await service.query_domain(indicator, **kwargs)
+                    result = await service.query_domain(indicator)
         except Exception as exc:
             result = service.error_result(describe_exception(exc))
 
         results[name] = result
-        if result.status == "ok":
-            cache_set(indicator, name, result)
 
     await asyncio.gather(*(run_one(n) for n in selected if n in SERVICE_REGISTRY))
 

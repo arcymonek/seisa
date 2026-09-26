@@ -87,7 +87,7 @@ export function initReportBuilder(container) {
       <input type="datetime-local" id="rb-timestamp" style="max-width:320px">
 
       <label for="rb-comment">${e(t("rb.comment_label"))}</label>
-      <textarea id="rb-comment" style="min-height:160px"></textarea>
+      <textarea id="rb-comment" style="min-height:230px"></textarea>
       <div class="muted" id="rb-char-count"></div>
       <div id="rb-pii"></div>
 
@@ -425,7 +425,7 @@ function renderPii() {
     return;
   }
   const tags = S.pii.map((f) => `<span class="tag" title="${e(t("rb.pii_kind." + f.kind))}">${e(f.value)}</span>`).join("");
-  el.innerHTML = `<div class="banner warn"><strong>${e(t("rb.pii_title"))}</strong><div class="muted">${e(t("rb.pii_hint"))}</div><div class="chips" style="margin:8px 0">${tags}</div><button type="button" class="secondary" data-mask style="margin:0">${e(t("rb.pii_mask"))}</button></div>`;
+  el.innerHTML = `<div class="banner warn"><strong>${e(t("rb.pii_title"))}</strong><div class="muted">${e(t("rb.pii_hint")).replace(/\n/g, "<br>")}</div><div class="chips" style="margin:8px 0">${tags}</div><button type="button" class="secondary" data-mask style="margin:0">${e(t("rb.pii_mask"))}</button></div>`;
 }
 
 async function maskPii() {

@@ -6,7 +6,6 @@ import { t, tn, fmtDateTime } from "./i18n.js";
 import { escapeHtml, fmtRelative, armedConfirm } from "./util.js";
 
 const MAX_ENTRIES = 500; // the backend limit; a full page means older entries may be cut off
-const AUTO_REFRESH_MS = 10000;
 
 let root;
 let entries = [];
@@ -14,7 +13,6 @@ let range = "all";
 let level = "all";
 let service = "all";
 let query = "";
-let timer = null;
 const openKeys = new Set(); // cards the user expanded, kept across re-renders and refreshes
 
 const RANGE_KEY = { today: "common.range_today", "3d": "common.range_3d", week: "common.range_week", month: "common.range_month", all: "common.range_all" };
@@ -41,7 +39,6 @@ export function initLogs(container) {
     <div class="lg-svc-row"><div class="chip-row" id="lg-services"></div><span class="action-info" id="lg-info"></span></div>
     <div class="lg-tools">
       <input type="text" id="lg-search" class="lg-search" placeholder="${escapeHtml(t("logs.search"))}" aria-label="${escapeHtml(t("logs.search"))}">
-      <label class="inline-check"><input type="checkbox" id="lg-auto"> ${escapeHtml(t("logs.auto_refresh"))}</label>
     </div>
     <div id="lg-list"></div>`;
 
@@ -64,10 +61,6 @@ export function initLogs(container) {
   root.querySelector("#lg-search").addEventListener("input", (ev) => {
     query = ev.target.value.trim().toLowerCase();
     renderList();
-  });
-  root.querySelector("#lg-auto").addEventListener("change", (ev) => {
-    clearInterval(timer);
-    timer = ev.target.checked ? setInterval(() => root.classList.contains("active") && load(), AUTO_REFRESH_MS) : null;
   });
   root.querySelector("#lg-refresh").addEventListener("click", load);
   armedConfirm(root.querySelector("#lg-clear"), t("logs.clear_confirm"), async () => {

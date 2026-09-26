@@ -208,9 +208,6 @@ def handler(request: httpx.Request) -> httpx.Response:
                                                          "## Control questions\n1. Why is SPF fail not enough?\n\n<details><summary>Answer</summary>\n\n",
                                                          "Because DMARC decides.\n\n</details>\n"], "stop", usage),
                                       headers={"content-type": "text/event-stream"})
-            if payload["messages"][0]["content"].startswith("You answer a follow-up question"):
-                return httpx.Response(200, content=_sse(["The `Received-SPF` line says ", "the check failed [x](https://evil.example/) <b>b</b>."], "stop", usage),
-                                      headers={"content-type": "text/event-stream"})
             return httpx.Response(200, content=_sse(
                 ["VERDICT: phishing | CONFIDENCE: high\n\n# Analysis: a fake bank message\nA phishing message: SPF failed, Reply-To points elsewhere. ",
                  "IP 203.0.113.45 and 192.0.2.99 \u2014 ", "`Received-SPF: fail`\n\n",
@@ -339,18 +336,16 @@ PUBLIC_IP = "185.220.101.1"
 for lang in ("pl", "en"):
     H = {"X-Seisa-Lang": lang}
     p = f"[{lang}] "
-    rec(p + "lookup ip", client.post("/api/lookup", json={"indicator": PUBLIC_IP, "type": "ip", "force_refresh": True}, headers=H))
-    rec(p + "lookup domain", client.post("/api/lookup", json={"indicator": "example.com", "type": "domain", "force_refresh": True}, headers=H))
-    rec(p + "lookup domain auto", client.post("/api/lookup", json={"indicator": "example.com", "force_refresh": True}, headers=H))
-    rec(p + "lookup domain url", client.post("/api/lookup", json={"indicator": "HTTPS://Example.COM:8080/a/b?x=1#f", "force_refresh": True}, headers=H))
-    rec(p + "lookup defanged ip", client.post("/api/lookup", json={"indicator": "185[.]220[.]101[.]1:443", "force_refresh": True}, headers=H))
+    rec(p + "lookup ip", client.post("/api/lookup", json={"indicator": PUBLIC_IP, "type": "ip"}, headers=H))
+    rec(p + "lookup domain", client.post("/api/lookup", json={"indicator": "example.com", "type": "domain"}, headers=H))
+    rec(p + "lookup domain auto", client.post("/api/lookup", json={"indicator": "example.com"}, headers=H))
+    rec(p + "lookup domain url", client.post("/api/lookup", json={"indicator": "HTTPS://Example.COM:8080/a/b?x=1#f"}, headers=H))
+    rec(p + "lookup defanged ip", client.post("/api/lookup", json={"indicator": "185[.]220[.]101[.]1:443"}, headers=H))
     rec(p + "lookup private ip", client.post("/api/lookup", json={"indicator": "192.168.1.10"}, headers=H))
-    rec(p + "lookup domain dangling", client.post("/api/lookup", json={"indicator": "dangling.example", "force_refresh": True}, headers=H))
-    rec(p + "lookup greynoise limit", client.post("/api/lookup", json={"indicator": "185.220.101.77", "force_refresh": True}, headers=H))
+    rec(p + "lookup domain dangling", client.post("/api/lookup", json={"indicator": "dangling.example"}, headers=H))
+    rec(p + "lookup greynoise limit", client.post("/api/lookup", json={"indicator": "185.220.101.77"}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
-    rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", "HTTPS://Example.com/x", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
-    rec(p + "lookup batch too many", client.post("/api/lookup/batch", json={"indicators": ["1.1.1.1"] * 201}, headers=H))
     rec(p + "urlscan scan", client.post("/api/urlscan/scan", json={"url": "https://phish.example/login"}, headers=H))
     rec(p + "urlscan result", client.get("/api/urlscan/result/11111111-2222-3333-4444-555555555555", headers=H))
     rec(p + "urlscan result bad uuid", client.get("/api/urlscan/result/not-a-uuid", headers=H))
@@ -411,11 +406,6 @@ for lang in ("pl", "en"):
         rec(p + "email analysis get", client.get(f"/api/email/analyses/{aid}", headers=H))
         rec(p + "email continue", client.post(f"/api/email/analyses/{aid}/continue", headers=H), sse=True)
         rec(p + "email continue again (not truncated)", client.post(f"/api/email/analyses/{aid}/continue", headers=H))
-        rec(p + "email ask", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "Why did SPF fail?", "fragment": "Received-SPF: fail"}, headers=H), sse=True)
-        rec(p + "email ask blank", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "  "}, headers=H))
-        rec(p + "email ask too long", client.post(f"/api/email/analyses/{aid}/ask", json={"question": "x" * 601}, headers=H))
-        rec(p + "email analysis after ask", client.get(f"/api/email/analyses/{aid}", headers=H))
-    rec(p + "email ask bad id", client.post("/api/email/analyses/bad-id/ask", json={"question": "q"}, headers=H))
     rec(p + "email bad id", client.get("/api/email/analyses/..%2F..%2Fetc", headers=H))
     rec(p + "email bad id2", client.get("/api/email/analyses/bad-id", headers=H))
     rec(p + "history create dmarc", client.post("/api/history", json={"type": "dmarc", "label": "d", "data": {"x": XSS}}, headers=H))
@@ -437,7 +427,7 @@ for lang in ("pl", "en"):
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
     rec(p + "about", client.get("/api/about", headers=H))
     # last GreyNoise answer before the Info tab is read must be the 429 (a later 200 clears the flag)
-    rec(p + "lookup greynoise limit late", client.post("/api/lookup", json={"indicator": "185.220.101.77", "force_refresh": True}, headers=H))
+    rec(p + "lookup greynoise limit late", client.post("/api/lookup", json={"indicator": "185.220.101.77"}, headers=H))
     rec(p + "limits refresh", client.post("/api/about/limits/refresh", headers=H))
     rec(p + "about after refresh", client.get("/api/about", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
@@ -480,8 +470,8 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup greynoise limit": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
-    "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
+    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup greynoise limit": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400,
+    "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
@@ -516,9 +506,6 @@ if isinstance(_auto, dict) and "identity" in _auto:
 _dang = next((r["body"] for r in RESULTS if r["name"].endswith("[en] lookup domain dangling")), None)
 if isinstance(_dang, dict) and "identity" in _dang and not any("ns9.gone.example" in n for n in _dang["identity"]["notes"]):
     failures.append("lookup domain dangling: the dangling NS is not reported in the identity notes")
-_batch = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup batch"), None)
-if isinstance(_batch, list) and len([ev for ev in _batch if ev.get("type") == "result"]) != 2:
-    failures.append(f"lookup batch: duplicates (URL and plain form of one host) should be one result: {[ev.get('type') for ev in _batch]}")
 _gn = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup greynoise limit"), None)
 if isinstance(_gn, dict) and "services" in _gn:
     _g = _gn["services"]["greynoise"]

@@ -24,7 +24,6 @@ async function request(path, options = {}) {
 
 export const api = {
   lookup: (body) => request("/lookup", { method: "POST", body: JSON.stringify(body) }),
-  lookupBatchStream: (body, onEvent) => streamSSE(BASE + "/lookup/batch", body, onEvent),
 
   dmarcGeo: (ip) => request(`/dmarc/geo?ip=${encodeURIComponent(ip)}`),
 
@@ -50,7 +49,6 @@ export const api = {
 
   emailAnalyzeStream: (body, onEvent, signal) => streamSSE(BASE + "/email/analyze", body, onEvent, signal),
   emailContinueStream: (id, onEvent, signal) => streamSSE(`${BASE}/email/analyses/${encodeURIComponent(id)}/continue`, {}, onEvent, signal),
-  emailAskStream: (id, body, onEvent, signal) => streamSSE(`${BASE}/email/analyses/${encodeURIComponent(id)}/ask`, body, onEvent, signal),
   emailFind: (body) => request("/email/find", { method: "POST", body: JSON.stringify(body) }),
   emailAnalyses: () => request("/email/analyses"),
   emailAnalysis: (id) => request(`/email/analyses/${encodeURIComponent(id)}`),

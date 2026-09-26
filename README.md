@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.11</b></p>
+<p align="center"><b>Seisa 2.1.12</b></p>
 
 # Seisa
 
@@ -36,7 +36,7 @@ Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-ma
 
 <!-- Screenshots to add: docs/img/tab-*.png (one per tab, see the Tabs section) -->
 
-Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner, summary tiles, then collapsible cards that open by themselves only when they carry a signal.
+Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner (no fill, only its border is coloured red, amber or green), summary tiles, then collapsible cards that open by themselves only when they carry a signal.
 
 ## Quick start
 
@@ -113,11 +113,11 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 
 | Action | What is sent | To | When |
 |---|---|---|---|
-| IP lookup (and batch) | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
+| IP lookup | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
 | IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS; for a domain the A, AAAA, NS, MX, CAA and TXT records, plus one query for a random subdomain to detect wildcard DNS and one A query per name server), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
 | URL scan | the URL, the chosen visibility and, if you set them, the scan country and the user agent; the domain in the "History" search of earlier scans; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
 | DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry) and your DNS resolver (reverse and forward lookup), as in the IP tab | only on the click in an expanded row |
-| Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis", "Ask" | the whole e-mail source (with personal data), and for "Ask" the question and the fragment | OpenRouter | only on that click; the interface says so before sending |
+| Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis" | the whole e-mail source (with personal data) | OpenRouter | only on that click; the interface says so before sending |
 | AbuseIPDB: "Analyze" | the whole e-mail source | OpenRouter | only on that click |
 | AbuseIPDB: address check | the IP | AbuseIPDB (`/check`) | when an IP is entered and a key exists |
 | AbuseIPDB: "Send" | the IP, categories, timestamp, comment | AbuseIPDB (`/report`) - **public** | only on a deliberate click |

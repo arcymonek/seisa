@@ -12,7 +12,6 @@
 
 **Analiza LLM urywa się w połowie.** Osiągnięto limit odpowiedzi. Kliknij "Dokończ analizę": model dostaje dotychczasowy tekst i dopisuje brakujące części.
 
-**Wyszukiwanie wsadowe jest wolne.** Plan darmowy VirusTotal dopuszcza 4 zapytania na minutę; throttle jest widoczny w postępie trybu wsadowego.
 
 **Przeglądarka pokazuje "Invalid host header".** Seisa przyjmuje jako nazwę hosta tylko `127.0.0.1` i `localhost` (ochrona przed DNS rebinding). Otwórz `http://127.0.0.1:54321`.
 

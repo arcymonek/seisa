@@ -49,14 +49,6 @@ export function buildExport(S) {
   L.push("");
   if (S.facts) L.push("---", "", ...factsToMarkdown(S.facts));
   L.push("---", "", parseStream(S.stream).body, "");
-  if (S.questions && S.questions.length) {
-    L.push("---", "", `## ${t("em.x.questions")}`, "");
-    S.questions.forEach((q, i) => {
-      L.push(`### ${i + 1}. ${q.question}`, "");
-      if (q.fragment) L.push("```", q.fragment, "```", "");
-      L.push(q.answer || "", "");
-    });
-  }
   const cc = S.citations;
   if (cc && !cc.error) {
     L.push("---", "", `## ${t("em.x.citations")}`, "");
@@ -79,7 +71,7 @@ export const exportFilename = (S, ext) => `${t("em.x.file_prefix")}-${(S.subject
 export async function buildHtmlExport(resultEl, S) {
   const css = await fetch("/css/style.css").then((r) => (r.ok ? r.text() : ""));
   const clone = resultEl.cloneNode(true);
-  clone.querySelectorAll(".em-toc, .em-tabs, .em-lesson-tools, .em-drawer, .em-ask, .em-source-line, button, script").forEach((n) => n.remove());
+  clone.querySelectorAll(".em-toc, .em-tabs, .em-lesson-tools, .em-drawer, .em-source-line, button, script").forEach((n) => n.remove());
   clone.querySelectorAll("[hidden]").forEach((n) => {
     if (!n.classList.contains("em-pane") && n.id !== "em-sec-citations") n.remove();
   });

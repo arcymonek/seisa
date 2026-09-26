@@ -2,7 +2,7 @@
 // collapsible card per source. All data comes from the LookupResult of the backend (also from History, where the raw API
 // responses are not kept); everything that came from a third party goes through escapeHtml.
 import { t, tn, fmtDateTime, getLocale } from "./i18n.js";
-import { escapeHtml as e } from "./util.js";
+import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
 
 // Display-only metadata per service; the descriptions live in the i18n catalog (md.service.<id>).
 const SERVICES = {
@@ -424,7 +424,7 @@ function sourcesHtml(result) {
   });
   const good = ids.filter((id) => result.services[id].status === "ok");
   const failed = ids.filter((id) => result.services[id].status !== "ok").map((id) => [id, result.services[id]]);
-  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${good.map((id) => sourceCard(id, result.services[id], comps[id], result.identity)).join("")}${failedSourcesHtml(failed)}`;
+  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))} ${toggleAllHtml("details.src, details.failed-sources")}</h3>${good.map((id) => sourceCard(id, result.services[id], comps[id], result.identity)).join("")}${failedSourcesHtml(failed)}`;
 }
 
 // The "show N more" button of a chip list (shared with the URLScan report); false when the button is something else.
@@ -479,6 +479,7 @@ export function renderLookupResult(result, actions = null) {
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button");
     if (!target || !wrap.contains(target)) return;
+    if (handleToggleAll(wrap, target)) return;
     if (target.dataset.copy !== undefined) navigator.clipboard.writeText(result.indicator);
     else if (target.dataset.checkIp) window.seisaApp.repeatLookup(target.dataset.checkIp);
     else if (target.dataset.jump || target.dataset.jumpService) {

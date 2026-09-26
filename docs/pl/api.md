@@ -9,7 +9,6 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | Metoda i ścieżka | Cel | Wywołuje na zewnątrz? |
 |---|---|---|
 | `POST /api/lookup` | reputacja jednego IP (lub domeny); dane wejściowe są najpierw normalizowane (URL, forma zdefangowana, `ip:port`), adresy niepubliczne dają 400 | usługi intel, DNS, WHOIS; odpowiedź ma `comparison` (wcześniejsze skany tego wskaźnika z Historii) |
-| `POST /api/lookup/batch` (SSE) | wiele wskaźników (normalizowanych, bez duplikatów), z widocznym throttlem VirusTotal | usługi intel |
 | `POST /api/urlscan/scan` | zlecenie skanu URL (`url`, `visibility`, opcjonalnie `country`, `useragent`) | urlscan.io |
 | `GET /api/urlscan/result/{uuid}` | odpytanie wyniku (`pending` lub `done`) | urlscan.io |
 | `GET /api/urlscan/screenshot/{uuid}` | zrzut ekranu, serwowany z Twojego originu | urlscan.io |
@@ -17,7 +16,6 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | `POST /api/email/find` | wykrywanie duplikatów po odcisku | nie (lokalnie) |
 | `POST /api/email/analyze` (SSE) | streamowana analiza LLM | OpenRouter (płatne) |
 | `POST /api/email/analyses/{id}/continue` (SSE) | dokończenie ściętej analizy | OpenRouter (płatne) |
-| `POST /api/email/analyses/{id}/ask` (SSE) | pytanie dodatkowe | OpenRouter (płatne) |
 | `GET /api/email/analyses`, `GET` / `DELETE /api/email/analyses/{id}` | zapisane analizy | nie (lokalnie) |
 | `POST /api/abuseipdb/email/analyze` | fakty, kwalifikowalność i szkic komentarza | OpenRouter (opcjonalnie, płatne) |
 | `GET /api/abuseipdb/categories` | tabela kategorii | nie |

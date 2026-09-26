@@ -199,12 +199,5 @@ export function createSourceViewer(host) {
     return ranges.length > 0;
   }
 
-  // Text currently selected inside the drawer (for "ask about this fragment").
-  function selection() {
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !drawer.contains(sel.anchorNode)) return "";
-    return sel.toString().trim();
-  }
-
-  return { setSource, find, show, open, close, selection, isOpen: () => !drawer.hidden, element: drawer };
+  return { setSource, find, show, open, close, isOpen: () => !drawer.hidden, element: drawer };
 }
