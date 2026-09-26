@@ -14,7 +14,7 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | `GET /api/urlscan/screenshot/{uuid}` | zrzut ekranu, serwowany z Twojego originu | urlscan.io |
 | `GET /api/urlscan/search` | wcześniejsze skany domeny | urlscan.io |
 | `POST /api/email/find` | wykrywanie duplikatów po odcisku | nie (lokalnie) |
-| `POST /api/email/analyze` (SSE) | streamowana analiza LLM | OpenRouter (płatne) |
+| `POST /api/email/analyze` (SSE) | fakty deterministyczne, potem streamowana analiza LLM (`use_llm: false` = tylko fakty) | OpenRouter (płatne, poza `use_llm: false`) |
 | `POST /api/email/analyses/{id}/continue` (SSE) | dokończenie ściętej analizy | OpenRouter (płatne) |
 | `GET /api/email/analyses`, `GET` / `DELETE /api/email/analyses/{id}` | zapisane analizy | nie (lokalnie) |
 | `POST /api/abuseipdb/email/analyze` | fakty, kwalifikowalność i szkic komentarza | OpenRouter (opcjonalnie, płatne) |

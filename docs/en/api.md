@@ -14,7 +14,7 @@ All routes are under `/api`, answer JSON (errors as `{"detail": "..."}`) and rea
 | `GET /api/urlscan/screenshot/{uuid}` | the screenshot, served from your origin | urlscan.io |
 | `GET /api/urlscan/search` | earlier scans of a domain | urlscan.io |
 | `POST /api/email/find` | duplicate check by fingerprint | no (local) |
-| `POST /api/email/analyze` (SSE) | streamed LLM analysis | OpenRouter (paid) |
+| `POST /api/email/analyze` (SSE) | deterministic facts, then streamed LLM analysis (`use_llm: false` = facts only) | OpenRouter (paid, unless `use_llm: false`) |
 | `POST /api/email/analyses/{id}/continue` (SSE) | finish a truncated analysis | OpenRouter (paid) |
 | `GET /api/email/analyses`, `GET` / `DELETE /api/email/analyses/{id}` | saved analyses | no (local) |
 | `POST /api/abuseipdb/email/analyze` | facts, eligibility and the drafted comment | OpenRouter (optional, paid) |

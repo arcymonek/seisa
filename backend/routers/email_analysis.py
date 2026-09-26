@@ -95,6 +95,7 @@ async def _relay(stream, run: _LlmRun):
 
 class EmailAnalysisRequest(BaseModel):
     raw_email: str
+    use_llm: bool = True  # False = deterministic facts only, nothing leaves this computer
 
 
 @router.post("/find")
@@ -164,8 +165,11 @@ async def analyze(req: EmailAnalysisRequest):
         prepared, prep_notes = prepare_for_llm(src)
         yield sse({
             "type": "facts", "facts": facts, "prep_notes": prep_notes,
-            "llm_configured": llm_analyzer.is_configured(),
+            "llm_configured": llm_analyzer.is_configured() and req.use_llm,
         })
+        if not req.use_llm:
+            yield sse({"type": "done", "llm": False, "skipped": True})
+            return
         if not llm_analyzer.is_configured():
             yield sse({"type": "done", "llm": False})
             return

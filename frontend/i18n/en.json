@@ -486,7 +486,7 @@
   "em.confidence": "confidence: {value}",
   "em.analysis_time": "Analysis: {time} s",
   "em.subtitle": "Paste the full source of an e-mail (headers + body) or load an .eml file.\nSeisa breaks it down: first it shows hard facts computed locally - Received route, authentication, domain alignment, timeline, MIME structure, links, hidden content.\nIn addition, a language model will run a detailed step-by-step analysis, so you learn to read the source of a message.",
-  "em.banner": "The whole message (with headers) is sent to OpenRouter for analysis after you click \"Analyze\". The message is treated as untrusted text: nothing in it is opened or downloaded and the links in the results are not clickable.",
+  "em.banner": "The whole message (with headers) is sent to OpenRouter for analysis after you click \"Analyze\" (\"Analyze without LLM\" sends nothing off this computer and shows only the deterministic findings). The message is treated as untrusted text: nothing in it is opened or downloaded and the links in the results are not clickable.",
   "em.cancel": "Cancel",
   "em.saved_title": "Saved analyses",
   "em.dup_verdict": "verdict: {verdict}",

@@ -506,7 +506,7 @@
   "em.confidence": "pewność: {value}",
   "em.analysis_time": "Analiza: {time} s",
   "em.subtitle": "Wklej cały kod źródłowy e-maila (nagłówki + treść) albo wczytaj plik .eml.\nSeisa rozłoży go na części: najpierw pokaże twarde fakty obliczone lokalnie - trasa Received, uwierzytelnianie, zgodność domen, oś czasu, struktura MIME, linki, ukryta treść.\nDodatkowo model językowy przeprowadzi szczegółową analizę krok po kroku, tak żebyś nauczył się czytać źródło wiadomości.",
-  "em.banner": "Cała treść wiadomości (z nagłówkami) zostanie wysłana do OpenRouter w celu analizy po kliknięciu \"Analizuj\". Wiadomość jest traktowana jako niezaufany tekst: nic z niej nie jest otwierane ani pobierane, a linki w wynikach są nieklikalne.",
+  "em.banner": "Cała treść wiadomości (z nagłówkami) zostanie wysłana do OpenRouter w celu analizy po kliknięciu \"Analizuj\" (\"Analizuj bez LLM\" nic nie wysyła poza Twój komputer i pokazuje tylko ustalenia deterministyczne). Wiadomość jest traktowana jako niezaufany tekst: nic z niej nie jest otwierane ani pobierane, a linki w wynikach są nieklikalne.",
   "em.cancel": "Przerwij",
   "em.saved_title": "Zapisane analizy",
   "em.dup_verdict": "werdykt: {verdict}",

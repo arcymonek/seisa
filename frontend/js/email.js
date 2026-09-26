@@ -60,6 +60,7 @@ export function initEmail(container) {
     <div class="banner info">${e(t("em.banner"))}</div>
     <div class="action-row">
       <button class="action" id="em-analyze">${e(t("common.analyze"))}</button>
+      <button class="secondary" id="em-analyze-no-llm">${e(t("common.analyze_no_llm"))}</button>
       <button class="secondary" id="em-cancel" style="display:none">${e(t("em.cancel"))}</button>
       <button class="secondary" id="em-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
@@ -106,6 +107,12 @@ export function initEmail(container) {
   lesson = createLesson({ pane: $("#em-pane-lesson"), viewer, onStructure: scheduleToc });
   $("#em-cmp-btn").addEventListener("click", showComparison);
   $("#em-analyze").addEventListener("click", analyze);
+$("#em-analyze-no-llm").addEventListener("click", () => {
+  const raw = $("#em-source").value;
+  if (!raw.trim()) return;
+  $("#em-dup").innerHTML = "";
+  runAnalysis(raw, { useLlm: false }); // free and local: no duplicate check
+});
   $("#em-cancel").addEventListener("click", () => abortController && abortController.abort());
   $("#em-file-btn").addEventListener("click", () => $("#em-file").click());
   $("#em-file").addEventListener("change", (ev) => {
@@ -446,10 +453,11 @@ function showDuplicate(matches, raw) {
 
 function setBusy(busy) {
   $("#em-analyze").disabled = busy;
+  $("#em-analyze-no-llm").disabled = busy;
   $("#em-cancel").style.display = busy ? "" : "none";
 }
 
-async function runAnalysis(raw) {
+async function runAnalysis(raw, { useLlm = true } = {}) {
   clearOutput();
   S.raw = raw;
   const statusEl = $("#em-status");
@@ -461,11 +469,11 @@ async function runAnalysis(raw) {
 
   try {
     await api.emailAnalyzeStream(
-      { raw_email: raw },
+      { raw_email: raw, use_llm: useLlm },
       (evt) => {
         if (evt.type === "facts") {
           S.facts = evt.facts;
-          S.phase = evt.llm_configured ? "writing" : "nokey";
+          S.phase = evt.llm_configured ? "writing" : useLlm ? "nokey" : "facts";
           showFacts(evt.facts);
           if (evt.prep_notes && evt.prep_notes.length) {
             statusEl.textContent = t("em.prep_notes", { notes: evt.prep_notes.join("; ") });
@@ -563,7 +571,7 @@ function finishAnalysis(evt) {
   clearTimeout(renderTimer);
   renderTimer = null;
   if (evt.llm === false) {
-    S.phase = "nokey";
+    S.phase = evt.skipped ? "facts" : "nokey";
     renderBanner();
     return;
   }

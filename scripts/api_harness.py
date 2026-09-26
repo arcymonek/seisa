@@ -399,6 +399,7 @@ for lang in ("pl", "en"):
     for name, src in FIX.items():
         rec(p + f"email find {name}", client.post("/api/email/find", json={"raw_email": src}, headers=H))
     ev = rec(p + "email analyze phishing", client.post("/api/email/analyze", json={"raw_email": FIX["phishing"]}, headers=H), sse=True)
+    rec(p + "email analyze phishing no-llm", client.post("/api/email/analyze", json={"raw_email": FIX["phishing"], "use_llm": False}, headers=H), sse=True)
     rec(p + "email analyze empty", client.post("/api/email/analyze", json={"raw_email": "  "}, headers=H), sse=True)
     aid = next((e.get("analysis_id") for e in ev if e.get("type") == "done"), None)
     rec(p + "email analyses", client.get("/api/email/analyses", headers=H))
