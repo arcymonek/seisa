@@ -813,11 +813,11 @@ function render() {
     bannersHtml() +
     policyHintsHtml() +
     kpiHtml() +
+    `<div id="dm-sources"></div>` +
     providersHtml() +
     timelineHtml() +
     `<div id="dm-compare"></div>` +
     reportsHtml() +
-    `<div id="dm-sources"></div>` +
     legendHtml();
   renderSources();
 

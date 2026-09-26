@@ -103,7 +103,7 @@ Co dostajesz:
 - **Baner werdyktu:** czerwony, gdy jakieś źródło nie przechodzi ani SPF, ani DKIM; żółty, gdy zawodzi tylko jedna z metod; w innym razie zielony; błędy zgłoszone w raporcie mają osobny baner. Ocena ryzyka bez zmian: wysokie = SPF i DKIM oba niezgodne, średnie = jedna z metod niezgodna.
 - **Wskazówki o ostatniej opublikowanej polityce każdej domeny:** `p=none` tylko monitoruje, politykę można prawdopodobnie zaostrzyć, `pct` poniżej 100.
 - **Kafelki podsumowania:** wiadomości, unikalne IP, źródła podejrzane, odsetek wiadomości zgodnych z DMARC oraz pasek decyzji polityki reject/quarantine/none; przy więcej niż jednym raporcie tabela według dostawcy.
-- **Źródła zagregowane wg adresu IP**, od najbardziej ryzykownych, z filtrem (wszystkie / podejrzane / przechodzące), licznikami SPF i DKIM pass/fail i decyzjami polityki.
+- **Źródła zagregowane wg adresu IP**, pierwsza sekcja tuż pod kafelkami, od najbardziej ryzykownych, z filtrem (wszystkie / podejrzane / przechodzące), licznikami SPF i DKIM pass/fail i decyzjami polityki.
 - **Diagnoza, nie tylko werdykt:** kliknięcie wiersza rozwija każdy pojedynczy rekord, co pokazuje dokładnie, *dlaczego* dopasowanie nie przeszło.
 - **Eksport:** "Zapisz .md" i "Kopiuj Markdown"; każdy import trafia do [Historii](#historia) razem z rekordami, a "Otwórz ponownie" przywraca pełną analizę.
 
