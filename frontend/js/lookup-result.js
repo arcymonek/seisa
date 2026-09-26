@@ -470,8 +470,8 @@ export function renderLookupResult(result, actions = null) {
   const sections = ["summary", ...(components ? ["components"] : []), ...(identity ? ["identity"] : [])];
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
-    <div data-actions></div>${navHtml(result, sections)}
-    ${bannerHtml(result)}${comparisonHtml(result)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
+    <div data-actions></div>
+    ${bannerHtml(result)}${comparisonHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
   const slot = wrap.querySelector("[data-actions]");
   if (actions) slot.replaceWith(actions);
   else slot.remove();

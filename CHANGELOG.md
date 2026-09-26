@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.66 - 2026-09-26
+- **IP tab:** the row of jump links moved between the verdict banner (with the comparison line) and the tiles.
+
 ## 2.0.65 - 2026-09-26
 - **IP tab:** the row of jump links (Summary, Scores, Identity, sources) has a separating line above it, so it no longer runs into the button row.
 
