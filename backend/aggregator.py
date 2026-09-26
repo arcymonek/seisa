@@ -8,7 +8,7 @@ from urllib.parse import quote
 from backend.cache import get as cache_get
 from backend.cache import set as cache_set
 from backend.i18n import t
-from backend.identity import build_identity
+from backend.identity import build_domain_identity, build_identity
 from backend.markdown_report import build_markdown
 from backend.models import IndicatorType, LookupResult, ServiceResult
 from backend.scoring import compute_risk_score
@@ -43,6 +43,44 @@ def is_valid_indicator(indicator: str, indicator_type: IndicatorType) -> bool:
             return False
         return True
     return len(indicator) <= 253 and _DOMAIN_RE.fullmatch(indicator) is not None
+
+
+_DEFANG = (("hxxp", "http"), ("[.]", "."), ("(.)", "."), ("{.}", "."), ("[dot]", "."), ("(dot)", "."), ("[:]", ":"), ("[@]", "@"))
+_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+_PORT_RE = re.compile(r":\d{1,5}$")
+
+
+def normalize_indicator(raw: str) -> str:
+    """What the user typed -> the bare IP address or host name: a pasted URL (`https://Example.com:8080/a?b#c`), a
+    defanged indicator (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host`, an IPv6 in brackets,
+    a trailing dot and upper case are all reduced to `example.com` / `1.2.3.4`. Whatever remains is still checked by
+    is_valid_indicator, which is what keeps odd input out of the URL paths of the services."""
+    text = raw.strip()
+    for old, new in _DEFANG:
+        text = re.sub(re.escape(old), new, text, flags=re.IGNORECASE)
+    text = _SCHEME_RE.sub("", text)
+    text = re.split(r"[/?#\\\s]", text, maxsplit=1)[0]
+    text = text.rsplit("@", 1)[-1]
+    if text.startswith("["):
+        text = text[1:].split("]", 1)[0]
+    elif text.count(":") == 1:
+        text = _PORT_RE.sub("", text)
+    text = text.rstrip(".").lower()
+    if not text.isascii():
+        try:
+            text = text.encode("idna").decode("ascii")
+        except UnicodeError:
+            pass
+    return text
+
+
+def is_public_ip(indicator: str) -> bool:
+    """False for private, loopback, link-local, reserved and documentation ranges: no service knows anything useful
+    about them, so asking would only waste the API quota."""
+    try:
+        return ipaddress.ip_address(indicator).is_global
+    except ValueError:
+        return True
 
 
 def detect_indicator_type(indicator: str) -> IndicatorType:
@@ -101,10 +139,10 @@ async def run_lookup(
 
     await asyncio.gather(*(run_one(n) for n in selected if n in SERVICE_REGISTRY))
 
-    risk_score = compute_risk_score(results, indicator_type)
+    risk_score = compute_risk_score(results, indicator_type, indicator)
     talos_url = f"https://talosintelligence.com/reputation_center/lookup?search={quote(indicator)}"
-    identity = build_identity(results) if indicator_type == "ip" else None
-    markdown = build_markdown(indicator, risk_score, results, identity)
+    identity = build_identity(results) if indicator_type == "ip" else build_domain_identity(results)
+    markdown = build_markdown(indicator, risk_score, results, identity, indicator_type)
 
     return LookupResult(
         indicator=indicator,

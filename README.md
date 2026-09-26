@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.61</b></p>
+<p align="center"><b>Seisa 2.0.62</b></p>
 
 # Seisa
 
@@ -114,7 +114,7 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 | Action | What is sent | To | When |
 |---|---|---|---|
 | IP lookup (and batch) | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
-| IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
+| IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS; for a domain the A, AAAA, NS, MX, CAA and TXT records, plus one query for a random subdomain to detect wildcard DNS), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
 | URL scan | the URL and the chosen visibility; the domain in the "Earlier scans" search; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
 | DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry), as in the IP tab | only on the click in an expanded row |
 | Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis", "Ask" | the whole e-mail source (with personal data), and for "Ask" the question and the fragment | OpenRouter | only on that click; the interface says so before sending |
@@ -146,7 +146,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 The latest releases; every release is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the recent ones from the git log.
 
-- **2.0.61** - IP tab: single mode now accepts a domain name as well as an IP address (the type is detected by the backend, as in batch mode); no DNS resolution to an IP is done, the domain itself is checked.
+- **2.0.62** - IP tab: single mode now accepts a domain name as well as an IP address (the type is detected by the backend, as in batch mode); no DNS resolution to an IP is done, the domain itself is checked.
 - **2.0.60** - an origin guard for `/api/`: requests that the browser marks as cross-site (`Sec-Fetch-Site`) or that carry a foreign `Origin` get 403, so another web page can no longer use up your API quotas or LLM budget; the docs state plainly that a local process is not stopped.
 - **2.0.59** - DMARC tab: the geo button asks the backend (RDAP, as in the IP tab) instead of `ipwho.is`; the Content-Security-Policy allows only `connect-src 'self'`. RDAP has no ASN, so none is shown.
 - **2.0.58** - the README split into a short README and a documentation set in `docs/en/` and `docs/pl/`; `check_i18n.py` checks the docs parity and dead links.

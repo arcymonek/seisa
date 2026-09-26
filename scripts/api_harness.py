@@ -146,6 +146,8 @@ def handler(request: httpx.Request) -> httpx.Response:
              "indicator_type_counts": {"IPv4": 10}},
             {"name": "Bulk list", "created": "2024-01-01T00:00:00", "indicator_type_counts": {"IPv4": 500}}]},
             "country_name": "Netherlands", "country_code": "NL", "asn": "AS64500"})
+    if host == "api.cloudflare.com" and "/ranking/domain/" in path:
+        return httpx.Response(200, json={"success": True, "result": {"details_0": {"rank": None, "bucket": "200000", "categories": [{"id": 1, "name": "Business"}]}}})
     if host == "api.cloudflare.com":
         return httpx.Response(200, headers={"ratelimit": '"default";r=1190;t=300', "ratelimit-policy": '"default";q=1200;w=300'},
                               json={"success": True, "result": {"ip": {"asn": 64500, "location": "DE", "asnName": "EXAMPLE-AS"}}})
@@ -260,6 +262,18 @@ for names, val in ((("ANALYSES_DIR", "ANALIZY_DIR"), cfg.DATA_DIR / "analyses"),
         if hasattr(cfg, name):
             setattr(cfg, name, val)
 
+# Imported only here, after the data paths above are patched: storage.py binds them at import time, so an earlier import of
+# anything that reaches it would make the harness read and write the real data/ directory.
+try:
+    import backend.services.whois_dns as _whois_dns
+
+    async def _fake_dns(domain):
+        return {"exists": True, "a": ["93.184.216.34"], "ns": ["ns1.example"], "mx": ["mail.example"], "spf": "v=spf1 -all"}
+
+    _whois_dns.resolve_domain = _fake_dns
+except ImportError:  # `--root` points at a checkout from before the DNS records existed
+    pass
+
 from fastapi.testclient import TestClient  # noqa: E402
 
 import backend.main as main  # noqa: E402
@@ -325,6 +339,9 @@ for lang in ("pl", "en"):
     rec(p + "lookup ip", client.post("/api/lookup", json={"indicator": PUBLIC_IP, "type": "ip", "force_refresh": True}, headers=H))
     rec(p + "lookup domain", client.post("/api/lookup", json={"indicator": "example.com", "type": "domain", "force_refresh": True}, headers=H))
     rec(p + "lookup domain auto", client.post("/api/lookup", json={"indicator": "example.com", "force_refresh": True}, headers=H))
+    rec(p + "lookup domain url", client.post("/api/lookup", json={"indicator": "HTTPS://Example.COM:8080/a/b?x=1#f", "force_refresh": True}, headers=H))
+    rec(p + "lookup defanged ip", client.post("/api/lookup", json={"indicator": "185[.]220[.]101[.]1:443", "force_refresh": True}, headers=H))
+    rec(p + "lookup private ip", client.post("/api/lookup", json={"indicator": "192.168.1.10"}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
     rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
@@ -453,7 +470,7 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
+    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
@@ -472,6 +489,18 @@ for r in RESULTS:
     want = EXPECTED_STATUS.get(r["name"].split("] ", 1)[-1])
     if want is not None and r["status"] != want:
         failures.append(f"{r['name']}: status {r['status']}, expected {want}")
+# domain lookup: URL normalised, identity of the domain, Cloudflare ranking instead of the IP entity endpoint
+_dom = next((r["body"] for r in RESULTS if r["name"].endswith("lookup domain url")), None)
+if isinstance(_dom, dict) and "identity" in _dom:
+    if _dom.get("indicator") != "example.com":
+        failures.append(f"lookup domain url: indicator not normalised: {_dom.get('indicator')}")
+    if not any(f["key"] == "registrar" for f in (_dom.get("identity") or {}).get("fields", [])):
+        failures.append("lookup domain: identity has no registrar")
+    if _dom["services"]["cloudflare_radar"]["status"] != "ok":
+        failures.append(f"lookup domain: Cloudflare Radar failed: {_dom['services']['cloudflare_radar']}")
+_ip = next((r["body"] for r in RESULTS if r["name"].endswith("lookup defanged ip")), None)
+if isinstance(_ip, dict) and _ip.get("indicator") != PUBLIC_IP:
+    failures.append(f"lookup defanged ip: not normalised: {_ip.get('indicator')}")
 # identity merging (backend/identity.py): tie-break by source priority, normalisation, no false conflicts
 try:
     from backend.identity import build_identity

@@ -38,6 +38,24 @@ PRIORITY = {
 }
 FIELD_ORDER = tuple(PRIORITY)
 
+# The same for a domain. "dns" is not a service: it stands for the records resolved by backend/services/dns_records.py
+# (stored in the summary of whois_rdns).
+DOMAIN_PRIORITY = {
+    "registrar": ("whois_rdns",),
+    "domain_created": ("whois_rdns",),
+    "domain_age": ("whois_rdns",),
+    "domain_expires": ("whois_rdns",),
+    "domain_status": ("whois_rdns",),
+    "nameservers": ("dns", "whois_rdns"),
+    "addresses": ("dns",),
+    "mx": ("dns",),
+    "spf": ("dns",),
+    "dmarc": ("dns",),
+    "caa": ("dns",),
+    "category": ("virustotal", "cloudflare_radar"),
+    "popularity": ("cloudflare_radar",),
+}
+
 # Legal-form suffixes and filler words that say nothing about who the owner is.
 _ORG_NOISE = frozenset(
     "ltd limited llc llp lp inc incorporated corp corporation co company gmbh bv sa srl sas sarl ag plc pty pte kft "
@@ -190,13 +208,14 @@ def _collect(results: dict[str, ServiceResult]) -> dict[str, list[_Candidate]]:
 _RELATED: dict[str, Callable[[Any, Any], bool]] = {
     "organization": _org_related,
     "network": _networks_related,
+    "category": lambda a, b: bool(a & b),  # the sources name categories differently: one shared word is enough
 }
 
 
 def _resolve(field: str, candidates: list[_Candidate]) -> IdentityField | None:
     if not candidates:
         return None
-    order = PRIORITY[field]
+    order = PRIORITY.get(field) or DOMAIN_PRIORITY[field]
     ranked = sorted(candidates, key=lambda c: order.index(c.source))
     related = _RELATED.get(field, _equal)
 
@@ -235,4 +254,68 @@ def build_identity(results: dict[str, ServiceResult]) -> Identity:
     registration, location = by_key.get("country_registration"), by_key.get("country_location")
     if registration and location and registration.value != location.value:
         notes.append(t("identity.note_reg_loc", registration=registration.value, location=location.value))
+    return Identity(fields=fields, notes=notes)
+
+
+def _as_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    items = value if isinstance(value, (list, tuple, set)) else [value]
+    return [str(v).strip() for v in items if str(v).strip()]
+
+
+def _collect_domain(results: dict[str, ServiceResult]) -> dict[str, list[_Candidate]]:
+    found: dict[str, list[_Candidate]] = {k: [] for k in DOMAIN_PRIORITY}
+
+    def add(field: str, source: str, display: str | None, key: Any = None) -> None:
+        if display:
+            found[field].append(_Candidate(source, display, key if key is not None else display.lower()))
+
+    whois = _ok_summary(results, "whois_rdns")
+    dns = whois.get("dns") or {}
+    vt = _ok_summary(results, "virustotal")
+    cf = _ok_summary(results, "cloudflare_radar")
+
+    add("registrar", "whois_rdns", _text(whois.get("registrar")))
+    add("domain_created", "whois_rdns", (_text(whois.get("creation_date")) or "")[:10])
+    if whois.get("domain_age_days") is not None:
+        add("domain_age", "whois_rdns", str(whois["domain_age_days"]))
+    add("domain_expires", "whois_rdns", (_text(whois.get("expiration_date")) or "")[:10])
+    statuses = sorted({s.split()[0] for s in _as_list(whois.get("status"))})
+    add("domain_status", "whois_rdns", ", ".join(statuses))
+
+    for source, names in (("dns", dns.get("ns")), ("whois_rdns", whois.get("name_servers"))):
+        hosts = sorted({n.rstrip(".").lower() for n in _as_list(names)})
+        add("nameservers", source, ", ".join(hosts), frozenset(hosts))
+
+    add("addresses", "dns", ", ".join(_as_list(dns.get("a")) + _as_list(dns.get("aaaa"))))
+    add("mx", "dns", ", ".join(_as_list(dns.get("mx"))))
+    add("spf", "dns", _text(dns.get("spf")))
+    add("dmarc", "dns", _text(dns.get("dmarc")))
+    add("caa", "dns", ", ".join(_as_list(dns.get("caa"))))
+
+    for source, names in (("virustotal", list((vt.get("categories") or {}).values())), ("cloudflare_radar", cf.get("categories"))):
+        words = sorted({str(n).strip().lower() for n in _as_list(names)})
+        add("category", source, ", ".join(words), frozenset(w for n in words for w in re.findall(r"\w+", n)))
+
+    if cf.get("rank") is not None:
+        add("popularity", "cloudflare_radar", f"#{cf['rank']}")
+    elif cf.get("bucket"):
+        bucket = str(cf["bucket"])
+        add("popularity", "cloudflare_radar", t("identity.popularity_top", n=bucket) if bucket.isdigit() else bucket)
+    return found
+
+
+def build_domain_identity(results: dict[str, ServiceResult]) -> Identity:
+    """Who stands behind a domain: registration (WHOIS), delegation and records (DNS), category and popularity, merged
+    by the same rules as the identity of an IP address (nameservers from WHOIS and DNS and the categories from
+    VirusTotal and Cloudflare are the fields that can really disagree)."""
+    found = _collect_domain(results)
+    fields = [f for f in (_resolve(key, found[key]) for key in DOMAIN_PRIORITY) if f]
+    notes: list[str] = []
+    dns = _ok_summary(results, "whois_rdns").get("dns") or {}
+    if dns and dns.get("exists") is False:
+        notes.append(t("identity.note_nxdomain"))
+    if dns.get("wildcard"):
+        notes.append(t("identity.note_wildcard"))
     return Identity(fields=fields, notes=notes)

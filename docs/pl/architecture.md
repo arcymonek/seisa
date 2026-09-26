@@ -14,7 +14,7 @@
 
 ## Stos technologiczny
 
-Python 3.11+ z FastAPI, uvicorn, pydantic i pydantic-settings, httpx i python-whois (`requirements.txt`; `requirements.lock` przypina przetestowane wersje). Frontend: zwykły JavaScript (moduły ES), CSS i lokalnie dołączony `marked.min.js`. Narzędzia deweloperskie (nie zależności): `ruff`. Jedyny test automatyczny to harness API.
+Python 3.11+ z FastAPI, uvicorn, pydantic i pydantic-settings, httpx, python-whois i dnspython (`requirements.txt`; `requirements.lock` przypina przetestowane wersje). Frontend: zwykły JavaScript (moduły ES), CSS i lokalnie dołączony `marked.min.js`. Narzędzia deweloperskie (nie zależności): `ruff`. Jedyny test automatyczny to harness API.
 
 ## Architektura
 
@@ -67,7 +67,8 @@ seisa/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
 │   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
-│   ├── identity.py           # scalona tożsamość adresu (ASN, właściciel, kraj, sieć) ze zgodnością źródeł per pole
+│   ├── identity.py           # scalona tożsamość adresu (ASN, właściciel, kraj, sieć) lub domeny (rejestrator, daty, serwery nazw, DNS, kategoria) ze zgodnością źródeł per pole
+│   ├── domain_heuristics.py  # lokalne wskazówki o domenie (wiek, podobne znaki, losowo wyglądające etykiety ...) do wyniku
 │   ├── report_builder.py     # budowa komentarza AbuseIPDB + walidacja polityki
 │   ├── report_utils.py       # sanityzacja tekstu, sprawdzanie IP, skan i maskowanie danych osobowych
 │   ├── urlscan_report.py     # ustrukturyzowane podsumowanie + raport Markdown wyniku skanu urlscan.io

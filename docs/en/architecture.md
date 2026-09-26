@@ -14,7 +14,7 @@
 
 ## Stack
 
-Python 3.11+ with FastAPI, uvicorn, pydantic and pydantic-settings, httpx and python-whois (`requirements.txt`; `requirements.lock` pins the tested versions). Frontend: plain JavaScript (ES modules), CSS, and `marked.min.js` bundled locally. Development tools (not dependencies): `ruff`. The only automated test is the API harness.
+Python 3.11+ with FastAPI, uvicorn, pydantic and pydantic-settings, httpx, python-whois and dnspython (`requirements.txt`; `requirements.lock` pins the tested versions). Frontend: plain JavaScript (ES modules), CSS, and `marked.min.js` bundled locally. Development tools (not dependencies): `ruff`. The only automated test is the API harness.
 
 ## Architecture
 
@@ -67,7 +67,8 @@ seisa/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
 │   ├── scoring.py            # aggregate IP reputation score (noisy-OR)
-│   ├── identity.py           # merged address identity (ASN, owner, country, network) with per-field source agreement
+│   ├── identity.py           # merged identity of an address (ASN, owner, country, network) or a domain (registrar, dates, name servers, DNS, category) with per-field source agreement
+│   ├── domain_heuristics.py  # local hints about a domain (age, look-alike characters, random-looking labels ...) for the score
 │   ├── report_builder.py     # AbuseIPDB comment builder + policy validation
 │   ├── report_utils.py       # text sanitisation, IP checks, personal-data scan and masking
 │   ├── urlscan_report.py     # structured summary + Markdown report of a urlscan.io scan result

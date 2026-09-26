@@ -4,6 +4,12 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.62 - 2026-09-26
+- **IP tab, domains:** Cloudflare Radar now uses the ranking endpoint (`/radar/ranking/domain/{domain}`: rank, popularity bucket, categories); the old entity URL answered `HTTP 400 No route for that URI`. WHOIS is joined by DNS records (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard; new dependency `dnspython`). A **domain identity** card (registrar, dates, age, name servers cross-checked between WHOIS and DNS, addresses with a "check this IP" button, category, popularity), domain tiles, and local heuristics as a low-credibility score source (`backend/domain_heuristics.py`).
+- **Input normalisation** (`normalize_indicator`): a pasted URL, a defanged indicator, `ip:port`, `user@host`, upper case and IDN are reduced to the bare host or IP; private, loopback and reserved addresses get 400 with an explanation instead of being sent to the services.
+- **UI:** "Force refresh" sits next to "Batch mode"; the copy button reads "Copy IP" / "Copy domain" and has the size of the other buttons; "Open in Talos" ends the button row; the identity card is collapsed (green "sources agree") and opens by itself on a disagreement; the WHOIS / rDNS card lists the identity rows it supplies; the subtitle describes domain scans.
+- The harness imports the application only after the data paths are patched (before, an early import made it write to the real `data/`).
+
 ## 2.0.61 - 2026-09-26
 - **IP tab, single mode accepts domains:** the frontend sends `type: "auto"` and the backend detects an IP address or a host name (as batch mode already did). The domain itself is queried (VirusTotal, OTX, WHOIS and the other services that support domains); it is deliberately not resolved to an IP, because a CDN address would describe the CDN, not the domain.
 - Labels and the batch hint say "IP address or domain"; the harness has a `lookup domain auto` case; README and docs updated.

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import socket
+from datetime import datetime, timezone
 
 import whois
 
 from backend.i18n import t
 from backend.models import ServiceResult
 from backend.services.base import IntelService
+from backend.services.dns_records import resolve_domain
 
 RDAP_BOOTSTRAP = "https://rdap.org/ip/{ip}"
 
@@ -42,19 +44,30 @@ class WhoisDnsService(IntelService):
         )
 
     async def query_domain(self, domain: str) -> ServiceResult:
-        try:
-            data = await asyncio.to_thread(whois.whois, domain)
-        except Exception as exc:
-            return self.error_result(str(exc))
+        """WHOIS (registration data) and DNS records side by side; a failure of one still gives the other."""
+        whois_data, dns_data = await asyncio.gather(
+            asyncio.to_thread(whois.whois, domain), resolve_domain(domain), return_exceptions=True
+        )
+        if isinstance(dns_data, BaseException):
+            self.logger.error(f"DNS resolution failed: {dns_data}")
+            dns_data = None
+        if isinstance(whois_data, BaseException):
+            if not dns_data:
+                return self.error_result(str(whois_data))
+            self.logger.error(f"WHOIS failed: {whois_data}")
+            whois_data = {}
+        created = _stringify(_first(whois_data.get("creation_date")))
         summary = {
-            "registrar": _first(data.get("registrar")),
-            "creation_date": _stringify(_first(data.get("creation_date"))),
-            "expiration_date": _stringify(_first(data.get("expiration_date"))),
-            "name_servers": data.get("name_servers"),
-            "status": data.get("status"),
-            "emails": data.get("emails"),
+            "registrar": _first(whois_data.get("registrar")),
+            "creation_date": created,
+            "domain_age_days": _age_days(_first(whois_data.get("creation_date"))),
+            "expiration_date": _stringify(_first(whois_data.get("expiration_date"))),
+            "name_servers": whois_data.get("name_servers"),
+            "status": whois_data.get("status"),
+            "emails": whois_data.get("emails"),
+            "dns": dns_data,
         }
-        return ServiceResult(service=self.name, status="ok", summary=summary, raw=dict(data))
+        return ServiceResult(service=self.name, status="ok", summary=summary, raw=dict(whois_data) | {"dns": dns_data})
 
     @staticmethod
     def _reverse_dns(ip: str) -> str | None:
@@ -126,6 +139,20 @@ def _first(value):
     if isinstance(value, list):
         return value[0] if value else None
     return value
+
+
+def _age_days(created) -> int | None:
+    """Days since the registration date; whois returns a datetime or (for some registries) a string."""
+    if isinstance(created, str):
+        try:
+            created = datetime.fromisoformat(created.strip()[:19])
+        except ValueError:
+            return None
+    if not isinstance(created, datetime):
+        return None
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    return max(0, (datetime.now(timezone.utc) - created).days)
 
 
 def _stringify(value):

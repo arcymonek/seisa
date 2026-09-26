@@ -342,6 +342,11 @@ button.mini { margin: 0 0 0 10px; padding: 2px 10px; font-size: 13px; vertical-a
 .badge.sm.majority { background: #3a3220; color: var(--warn); }
 .badge.sm.conflict { background: #3a2422; color: var(--fail); }
 .badge.sm.single { background: none; border: 1px solid var(--hair); color: var(--muted); font-weight: 400; }
+.check-row { display: flex; flex-wrap: wrap; gap: 0 28px; }
+.ident-state { font-size: 14px; }
+.ident-state.warn { color: var(--warn); }
+.ident-state.ok { color: var(--pass); }
+button.tag[data-check-ip] { cursor: pointer; color: var(--accent); border-color: var(--accent); }
 .ident-var > summary { cursor: pointer; }
 .ident-var ul { margin: 6px 0 2px; padding-left: 20px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }

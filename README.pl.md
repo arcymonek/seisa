@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.61</b></p>
+<p align="center"><b>Seisa 2.0.62</b></p>
 
 # Seisa
 
@@ -114,7 +114,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 | Akcja | Co jest wysyłane | Dokąd | Kiedy |
 |---|---|---|---|
 | Sprawdzenie IP (i tryb wsadowy) | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
-| Sprawdzenie IP, część darmowa | adres IP lub nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
+| Sprawdzenie IP, część darmowa | adres IP lub nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS; dla domeny rekordy A, AAAA, NS, MX, CAA i TXT oraz jedno zapytanie o losową subdomenę, które wykrywa wildcard DNS) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
 | Skan URL | adres URL i wybrana widoczność; domena w wyszukiwaniu "Wcześniejsze skany"; identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
 | DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
 | Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę", "Zapytaj" | cały kod źródłowy e-maila (z danymi osobowymi), a przy "Zapytaj" także pytanie i fragment | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
@@ -146,7 +146,7 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Najnowsze wydania; każde wydanie jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje ostatnie z git log.
 
-- **2.0.61** - zakładka IP: tryb pojedynczy przyjmuje teraz także nazwę domeny (typ rozpoznaje backend, jak w trybie wsadowym); domena nie jest zamieniana na IP, sprawdzana jest sama domena.
+- **2.0.62** - zakładka IP: tryb pojedynczy przyjmuje teraz także nazwę domeny (typ rozpoznaje backend, jak w trybie wsadowym); domena nie jest zamieniana na IP, sprawdzana jest sama domena.
 - **2.0.60** - strażnik originu dla `/api/`: żądania, które przeglądarka oznacza jako cross-site (`Sec-Fetch-Site`) lub które niosą obcy `Origin`, dostają 403, więc inna strona WWW nie zużyje już limitów API ani budżetu LLM; dokumentacja mówi wprost, że lokalnego procesu to nie zatrzymuje.
 - **2.0.59** - zakładka DMARC: przycisk geo pyta backend (RDAP, jak w zakładce IP) zamiast `ipwho.is`; Content-Security-Policy ma tylko `connect-src 'self'`. RDAP nie zawiera ASN, więc go nie pokazujemy.
 - **2.0.58** - README podzielone na krótkie README i dokumentację w `docs/en/` i `docs/pl/`; `check_i18n.py` sprawdza parytet docs i martwe linki.

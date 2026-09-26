@@ -15,10 +15,11 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from itertools import pairwise
 
+from backend.domain_heuristics import analyze, total_risk
 from backend.i18n import t
 from backend.models import RiskComponent, RiskScore, ServiceResult
 
-CREDIBILITY = {"abuseipdb": 0.9, "virustotal": 0.8, "greynoise": 0.7, "otx": 0.5}
+CREDIBILITY = {"abuseipdb": 0.9, "virustotal": 0.8, "greynoise": 0.7, "otx": 0.5, "local_heuristics": 0.4}
 
 MEDIUM_FROM = 25
 HIGH_FROM = 60
@@ -158,7 +159,7 @@ def score_otx(s: dict, raw: dict | None = None) -> Vote:
     return Vote(_component("otx", "pulses", value, risk), benign=benign)
 
 
-def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str) -> RiskScore:
+def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str, indicator: str = "") -> RiskScore:
     votes: list[Vote] = []
     excluded: list[str] = []
     scorers = {
@@ -188,6 +189,15 @@ def compute_risk_score(results: dict[str, ServiceResult], indicator_type: str) -
             excluded.append(vote.neutral)
             continue
         votes.append(vote)
+
+    if indicator_type == "domain" and indicator:
+        # local hints about the name and the age (from WHOIS); with nothing suspicious the source simply does not vote
+        possible += 1
+        whois = results.get("whois_rdns")
+        age = whois.summary.get("domain_age_days") if whois is not None and whois.status == "ok" else None
+        signals = analyze(indicator, age)
+        if signals:
+            votes.append(Vote(_component("local_heuristics", "name_and_age", "; ".join(s.text for s in signals), total_risk(signals))))
 
     excluded.append(t("score.cloudflare_excluded"))
 

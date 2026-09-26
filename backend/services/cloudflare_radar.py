@@ -17,7 +17,19 @@ class CloudflareRadarService(IntelService):
         return await self._fetch(f"{BASE_URL}/entities/ip", params={"ip": ip})
 
     async def query_domain(self, domain: str) -> ServiceResult:
-        return await self._fetch(f"{BASE_URL}/entities/domains/{domain}")
+        """Popularity ranking of the domain: the exact rank (top 100 only), the popularity bucket (top 200, 500, ...)
+        and the content categories. A domain outside every bucket answers with rank null and no categories - that is
+        a result, not an error."""
+        result = await self._fetch(f"{BASE_URL}/ranking/domain/{domain}")
+        if result.status != "ok":
+            return result
+        details = (result.summary["network_context"] or {}).get("details_0") or {}
+        summary = {
+            "rank": details.get("rank"),
+            "bucket": details.get("bucket"),
+            "categories": [c.get("name") for c in details.get("categories") or [] if c.get("name")],
+        }
+        return ServiceResult(service=self.name, status="ok", summary=summary, raw=result.raw)
 
     async def _fetch(self, url: str, params: dict | None = None) -> ServiceResult:
         if not self.is_configured():

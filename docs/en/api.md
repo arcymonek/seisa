@@ -8,7 +8,7 @@ All routes are under `/api`, answer JSON (errors as `{"detail": "..."}`) and rea
 
 | Method and path | Purpose | Calls out? |
 |---|---|---|
-| `POST /api/lookup` | reputation of one IP (or domain) | intel services |
+| `POST /api/lookup` | reputation of one IP (or domain); the input is normalised first (URL, defanged form, `ip:port`), non-public addresses get 400 | intel services, DNS, WHOIS |
 | `POST /api/lookup/batch` (SSE) | many indicators, with the VirusTotal throttle visible | intel services |
 | `POST /api/urlscan/scan` | submit a URL scan | urlscan.io |
 | `GET /api/urlscan/result/{uuid}` | poll the result (`pending` or `done`) | urlscan.io |

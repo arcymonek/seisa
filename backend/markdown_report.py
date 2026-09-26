@@ -12,6 +12,8 @@ SERVICE_TITLES = {
     "abuseipdb": "AbuseIPDB",
     "greynoise": "GreyNoise",
     "whois_rdns": "WHOIS / rDNS",
+    "dns": "DNS",
+    "local_heuristics": "Seisa",
 }
 
 # Fixed order of the sections in the report, regardless of the order in which the queries finish.
@@ -69,10 +71,10 @@ def numbered_code_block(text: str, lang: str = "json") -> list[str]:
     return [f"```{lang}", *numbered, "```"]
 
 
-def _identity_lines(identity: Identity) -> list[str]:
+def _identity_lines(identity: Identity, indicator_type: str = "ip") -> list[str]:
     """Table of the merged identity: the value shown, how many sources agree, and the other values (with sources)
     wherever the sources disagree."""
-    lines = [f"## {t('identity.title')}", ""]
+    lines = [f"## {t('identity.title_domain' if indicator_type == 'domain' else 'identity.title')}", ""]
     lines.append(f"| {t('md.col_field')} | {t('md.col_value')} | {t('md.col_agreement')} |")
     lines.append("|---|---|---|")
     for f in identity.fields:
@@ -94,6 +96,7 @@ def build_markdown(
     risk_score: RiskScore,
     services: dict[str, ServiceResult],
     identity: Identity | None = None,
+    indicator_type: str = "ip",
 ) -> str:
     lines: list[str] = []
     lines.append(f"# {t('md.report_title')} - `{indicator}`")
@@ -119,7 +122,7 @@ def build_markdown(
         lines.append("")
 
     if identity and identity.fields:
-        lines.extend(_identity_lines(identity))
+        lines.extend(_identity_lines(identity, indicator_type))
 
     ordered = sorted(services.items(), key=lambda kv: SERVICE_ORDER.index(kv[0]) if kv[0] in SERVICE_ORDER else len(SERVICE_ORDER))
     for name, result in ordered:

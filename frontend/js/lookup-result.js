@@ -14,7 +14,10 @@ const SERVICES = {
   greynoise: { title: "GreyNoise", desc: "md.service.greynoise", url: "https://www.greynoise.io" },
 };
 const SERVICE_ORDER = Object.keys(SERVICES);
-export const serviceTitle = (id) => (SERVICES[id] ? SERVICES[id].title : id);
+// "dns" (records resolved locally) and "local_heuristics" (name/age hints) are not services but appear as sources of
+// identity fields and score components.
+export const serviceTitle = (id) =>
+  SERVICES[id] ? SERVICES[id].title : id === "dns" ? "DNS" : id === "local_heuristics" ? t("lookup.src_heuristics") : id;
 
 // Same thresholds as backend/scoring.py (MEDIUM_FROM, HIGH_FROM).
 const MEDIUM_FROM = 25;
@@ -94,17 +97,15 @@ const FIELDS = {
     F("last_changed", "last_changed", "date"),
     F("technical_contact", "technical_contact"),
     F("remarks", "remarks", "clip"),
-    F("registrar", "registrar"),
-    F("creation_date", "creation_date", "date"),
-    F("expiration_date", "expiration_date", "date"),
-    F("name_servers", "name_servers", "chips"),
-    F("domain_status", "status", "chips"),
     F("emails", "emails", "chips"),
   ],
   cloudflare_radar: [
     F("cf_asn_name", "network_context.ip.asnName"),
     F("cf_asn_location", "network_context.ip.asnLocation"),
     F("cf_location_name", "network_context.ip.locationName"),
+    F("cf_rank", "rank"),
+    F("cf_bucket", "bucket"),
+    F("cf_categories", "categories", "chips"),
   ],
 };
 
@@ -221,7 +222,42 @@ function tilesHtml(result) {
   }
   const usage = idf("usage_type");
   if (usage) tiles.push(tileHtml(t("lookup.kpi_type"), usage.value, idf("tor") ? t("lookup.tor_node") : ""));
+  if (result.indicator_type === "domain") tiles.push(...domainTiles(result, idf, svc));
   return tiles.length ? `<div class="kpi-row">${tiles.join("")}</div>` : "";
+}
+
+function daysUntil(date) {
+  const d = new Date(date);
+  return Number.isNaN(d.getTime()) ? null : Math.ceil((d.getTime() - Date.now()) / 86400000);
+}
+
+// Extra tiles of a domain report: age, registrar, expiry, popularity/category, delegation, addresses.
+function domainTiles(result, idf, svc) {
+  const tiles = [];
+  const age = idf("domain_age");
+  if (age) tiles.push(tileHtml(t("lookup.kpi_age"), tn("lookup.n_days", Number(age.value)), (idf("domain_created") || {}).value || ""));
+  const registrar = idf("registrar");
+  if (registrar) tiles.push(tileHtml(t("lookup.kpi_registrar"), registrar.value));
+  const expires = idf("domain_expires");
+  const left = expires ? daysUntil(expires.value) : null;
+  if (left !== null) tiles.push(tileHtml(t("lookup.kpi_expires"), left < 0 ? t("lookup.expired") : tn("lookup.n_days", left), expires.value, left >= 0 && left < 30 ? `<span class="badge sm majority">${e(t("lookup.soon"))}</span>` : ""));
+  const cf = svc("cloudflare_radar");
+  const popularity = idf("popularity");
+  if (popularity) tiles.push(tileHtml(t("lookup.kpi_popularity"), popularity.value, cf && cf.rank == null ? t("lookup.kpi_popularity_sub") : ""));
+  else if (cf) tiles.push(tileHtml(t("lookup.kpi_popularity"), t("lookup.no_data")));
+  const category = idf("category");
+  if (category) tiles.push(tileHtml(t("lookup.kpi_category"), category.value.split(", ")[0], category.value.includes(", ") ? category.value.split(", ").slice(1).join(", ") : "", agreementMark(category)));
+  const ns = idf("nameservers");
+  if (ns) {
+    const hosts = ns.value.split(", ");
+    tiles.push(tileHtml(t("lookup.kpi_nameservers"), hosts.length, hosts[0], agreementMark(ns)));
+  }
+  const addr = idf("addresses");
+  if (addr) {
+    const ips = addr.value.split(", ");
+    tiles.push(tileHtml(t("lookup.kpi_addresses"), ips.length, ips[0]));
+  }
+  return tiles;
 }
 
 // ---- component scores ----
@@ -256,8 +292,13 @@ function identityValue(field, value) {
 
 function identityRow(field) {
   const label = t("lookup.fi." + field.key);
+  if (field.key === "addresses") {
+    const buttons = field.value.split(", ").map((ip) => `<button type="button" class="tag" data-check-ip="${e(ip)}" title="${e(t("lookup.check_ip"))}">${e(ip)}</button>`);
+    return [label, `<span class="chips">${buttons.join("")}</span>`];
+  }
   const badge = `<span class="badge sm ${field.status}" title="${e(t("lookup.agreement_title." + field.status))}">${e(agreementText(field))}</span>`;
-  const shown = `<span class="${field.key === "asn" || field.key === "network" || field.key === "rdns" ? "mono" : ""}">${e(identityValue(field, field.value))}</span>`;
+  const mono = ["asn", "network", "rdns", "nameservers", "addresses", "mx", "spf", "dmarc", "caa"].includes(field.key);
+  const shown = `<span class="${mono ? "mono" : ""}">${e(identityValue(field, field.value))}</span>`;
   if (field.status === "majority" || field.status === "conflict") {
     const list = field.variants
       .map((v) => `<li>${e(identityValue(field, v.value))} <span class="muted">- ${e(v.sources.map(serviceTitle).join(", "))}</span></li>`)
@@ -268,14 +309,16 @@ function identityRow(field) {
   return [label, `${shown} ${badge}${sources}`];
 }
 
-function identityHtml(identity) {
+function identityHtml(identity, type) {
   if (!identity || !identity.fields.length) return "";
   const off = identity.fields.filter((f) => f.status === "majority" || f.status === "conflict");
-  const banner = off.length
-    ? `<div class="banner warn">${e(tn("lookup.identity_disagree", off.length, { fields: off.map((f) => t("lookup.fi." + f.key)).join(", ") }))}</div>`
-    : "";
+  const state = off.length
+    ? `<span class="ident-state warn">${e(tn("lookup.identity_disagree", off.length, { fields: off.map((f) => t("lookup.fi." + f.key)).join(", ") }))}</span>`
+    : `<span class="ident-state ok">${e(t("lookup.identity_ok"))}</span>`;
   const notes = identity.notes.map((n) => `<div class="muted">${e(n)}</div>`).join("");
-  return `<h3 data-sec="identity">${e(t("lookup.h_identity"))}</h3>${banner}<div class="card">${kvHtml(identity.fields.map(identityRow))}${notes}</div>`;
+  const title = t(type === "domain" ? "lookup.h_identity_domain" : "lookup.h_identity");
+  // Collapsed while the sources agree; opened by itself when they do not (that is what needs a look).
+  return `<details class="fact-block identity" data-sec="identity"${off.length ? " open" : ""}><summary>${e(title)} ${state}</summary>${kvHtml(identity.fields.map(identityRow))}${notes}</details>`;
 }
 
 // ---- source cards ----
@@ -297,11 +340,23 @@ function keyFact(id, res, comp) {
   if (comp) return comp.value;
   const s = res.summary || {};
   if (id === "whois_rdns") return s.organization || s.network_name || s.registrar || "";
+  if (id === "cloudflare_radar" && "bucket" in s) return s.rank != null ? `#${s.rank}` : (s.categories || []).join(", ");
   if (id === "cloudflare_radar") return getPath(s, "network_context.ip.asnName") || "";
   return "";
 }
 
-function sourceCard(id, res, comp) {
+// The identity card merges what this source reports (owner, network, registrar, DNS records ...); its own card lists
+// the same values first, so that nothing has to be looked up in two places.
+function identityRowsOf(id, identity) {
+  if (!identity) return [];
+  const mine = id === "whois_rdns" ? ["whois_rdns", "dns"] : [id];
+  return identity.fields
+    .map((f) => [f, f.variants.find((v) => v.sources.some((s) => mine.includes(s)))])
+    .filter(([, v]) => v)
+    .map(([f, v]) => [t("lookup.fi." + f.key), `<span class="${f.key === "asn" || f.key === "network" ? "mono" : ""}">${e(identityValue(f, v.value))}</span>`]);
+}
+
+function sourceCard(id, res, comp, identity) {
   const info = SERVICES[id] || { title: id, desc: null, url: null };
   const signal = Boolean(comp) && comp.risk >= MEDIUM_FROM;
   const fact = keyFact(id, res, comp);
@@ -316,7 +371,10 @@ function sourceCard(id, res, comp) {
       .map((def) => [def, renderValue(def, getPath(res.summary || {}, def.path))])
       .filter(([, html]) => html !== null)
       .map(([def, html]) => [t("lookup.f." + def.id), html]);
-    body += rows.length ? kvHtml(rows) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`;
+    const idRows = identityRowsOf(id, identity);
+    const all = [...idRows, ...rows];
+    if (idRows.length) body += `<div class="muted">${e(t("lookup.identity_pointer"))}</div>`;
+    body += all.length ? kvHtml(all) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`;
   }
   const open = info.url ? `<button type="button" class="secondary mini" data-url="${e(info.url)}">${e(t("md.open_service", { name: info.title }))}</button>` : "";
   return `<details class="fact-block src" data-service="${e(id)}"${signal ? " open" : ""}>
@@ -332,7 +390,7 @@ function sourcesHtml(result) {
     const rb = comps[b] ? comps[b].risk : -1;
     return rb - ra || SERVICE_ORDER.indexOf(a) - SERVICE_ORDER.indexOf(b);
   });
-  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id])).join("")}`;
+  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id], result.identity)).join("")}`;
 }
 
 // The "show N more" button of a chip list (shared with the URLScan report); false when the button is something else.
@@ -374,10 +432,10 @@ export function renderLookupResult(result, actions = null) {
   const wrap = document.createElement("div");
   wrap.className = "lookup-result";
   const components = componentsHtml(result.risk_score);
-  const identity = identityHtml(result.identity);
+  const identity = identityHtml(result.identity, result.indicator_type);
   const sections = ["summary", ...(components ? ["components"] : []), ...(identity ? ["identity"] : [])];
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
-      <button type="button" class="secondary mini" data-copy>${e(t("common.copy"))}</button></h2>
+      <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
     <div data-actions></div>${navHtml(result, sections)}
     ${bannerHtml(result)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
   const slot = wrap.querySelector("[data-actions]");
@@ -388,10 +446,11 @@ export function renderLookupResult(result, actions = null) {
     const target = ev.target.closest("button");
     if (!target || !wrap.contains(target)) return;
     if (target.dataset.copy !== undefined) navigator.clipboard.writeText(result.indicator);
+    else if (target.dataset.checkIp) window.seisaApp.repeatLookup(target.dataset.checkIp);
     else if (target.dataset.jump || target.dataset.jumpService) {
       const card = target.dataset.jumpService ? wrap.querySelector(`details.src[data-service="${target.dataset.jumpService}"]`) : null;
       const dest = card || wrap.querySelector(`[data-sec="${target.dataset.jump}"]`);
-      if (card) card.open = true;
+      if (dest && dest.tagName === "DETAILS") dest.open = true;
       if (dest) dest.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     else if (target.dataset.url) window.open(target.dataset.url, "_blank", "noopener");

@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from backend.aggregator import detect_indicator_type, is_valid_indicator, run_lookup
+from backend.aggregator import detect_indicator_type, is_public_ip, is_valid_indicator, normalize_indicator, run_lookup
 from backend.config import MAX_BATCH_INDICATORS
 from backend.i18n import current_lang, t
 from backend.models import HistoryEntry, IndicatorType
@@ -30,6 +30,15 @@ class BatchLookupRequest(BaseModel):
     force_refresh: bool = False
 
 
+def _rejection(indicator: str, indicator_type: IndicatorType) -> str | None:
+    """Why the indicator cannot be checked (message for the user), or None when it can."""
+    if not is_valid_indicator(indicator, indicator_type):
+        return t("lookup.invalid_indicator", indicator=indicator[:80])
+    if indicator_type == "ip" and not is_public_ip(indicator):
+        return t("lookup.non_public_ip", indicator=indicator)
+    return None
+
+
 def _resolve_type(indicator: str, requested: str) -> IndicatorType:
     if requested in ("ip", "domain"):
         return requested  # type: ignore[return-value]
@@ -49,10 +58,12 @@ def _save_to_history(result) -> None:
 
 @router.post("/lookup")
 async def lookup(req: LookupRequest):
-    indicator_type = _resolve_type(req.indicator, req.type)
-    if not is_valid_indicator(req.indicator, indicator_type):
-        raise HTTPException(status_code=400, detail=t("lookup.invalid_indicator", indicator=req.indicator[:80]))
-    result = await run_lookup(req.indicator, indicator_type, req.services, req.force_refresh)
+    indicator = normalize_indicator(req.indicator)
+    indicator_type = _resolve_type(indicator, req.type)
+    reason = _rejection(indicator, indicator_type)
+    if reason:
+        raise HTTPException(status_code=400, detail=reason)
+    result = await run_lookup(indicator, indicator_type, req.services, req.force_refresh)
     _save_to_history(result)
     return result
 
@@ -62,12 +73,13 @@ async def lookup_batch(req: BatchLookupRequest):
     async def event_stream():
         total = len(req.indicators)
         for i, indicator in enumerate(req.indicators, start=1):
-            indicator = indicator.strip()
-            if not indicator:
+            if not indicator.strip():
                 continue
+            indicator = normalize_indicator(indicator)
             indicator_type = detect_indicator_type(indicator)
-            if not is_valid_indicator(indicator, indicator_type):
-                yield sse({"type": "invalid", "indicator": indicator[:80], "message": t("lookup.invalid_indicator", indicator=indicator[:80])})
+            reason = _rejection(indicator, indicator_type)
+            if reason:
+                yield sse({"type": "invalid", "indicator": indicator[:80], "message": reason})
                 continue
             yield sse({"type": "progress", "completed": i - 1, "total": total, "current": indicator})
 

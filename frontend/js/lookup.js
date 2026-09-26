@@ -22,13 +22,14 @@ export function initLookup(container) {
     <label>${escapeHtml(t("lookup.ip_address"))}</label>
     <input type="text" id="lk-indicator" placeholder="1.2.3.4 / example.com">
 
-    <label><input type="checkbox" id="lk-batch"> ${escapeHtml(t("lookup.batch_mode"))}</label>
+    <div class="check-row">
+      <label><input type="checkbox" id="lk-batch"> ${escapeHtml(t("lookup.batch_mode"))}</label>
+      <label><input type="checkbox" id="lk-force"> ${escapeHtml(t("lookup.force_refresh"))}</label>
+    </div>
     <div id="lk-batch-area" style="display:none">
       <label>${escapeHtml(t("lookup.batch_hint"))}</label>
       <textarea id="lk-batch-text"></textarea>
     </div>
-
-    <label><input type="checkbox" id="lk-force"> ${escapeHtml(t("lookup.force_refresh"))}</label>
 
     <label>${escapeHtml(t("lookup.services"))}</label>
     <div class="chip-row" id="lk-chips"></div>
@@ -146,13 +147,6 @@ async function onSubmit() {
 function renderResult(result) {
   const actions = document.createElement("div");
   actions.className = "action-row";
-  const talosBtn = document.createElement("button");
-  talosBtn.type = "button";
-  talosBtn.className = "secondary";
-  talosBtn.textContent = t("lookup.open_talos");
-  talosBtn.onclick = () => window.open(result.talos_url, "_blank", "noopener");
-  actions.appendChild(talosBtn);
-
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
   saveBtn.textContent = t("common.save_md");
@@ -185,6 +179,13 @@ function renderResult(result) {
     reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator);
     actions.appendChild(reportBtn);
   }
+
+  const talosBtn = document.createElement("button");
+  talosBtn.type = "button";
+  talosBtn.className = "secondary";
+  talosBtn.textContent = t("lookup.open_talos");
+  talosBtn.onclick = () => window.open(result.talos_url, "_blank", "noopener");
+  actions.appendChild(talosBtn);
 
   const wrap = renderLookupResult(result, actions);
   return wrap;

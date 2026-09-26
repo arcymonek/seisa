@@ -21,22 +21,23 @@ Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email
 | [Cloudflare Radar](https://radar.cloudflare.com) | dane sieciowe/kontekstowe - ASN, lokalizacja, routing (nie werdykt) |
 | [AbuseIPDB](https://www.abuseipdb.com) | confidence score, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP |
 | [GreyNoise](https://www.greynoise.io) | pełny IP Lookup (`/v3/ip`) - aktor, tagi, VPN/Tor, metadane sieciowe; spada na darmowy endpoint community, jeśli klucz nie ma dostępu do pełnego API; "brak informacji w usłudze" liczone jako wkład 0.0, nie jako "unknown" |
-| WHOIS / rDNS | odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji - bez klucza API |
+| WHOIS / rDNS | dla IP: odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji; dla domeny: WHOIS (rejestrator, daty, serwery nazw, status) + rekordy DNS (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard) - bez klucza API |
 | Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
 Co dostajesz:
 
 - **Jeden wynik zbiorczy** 0-100 i baner werdyktu: LOW poniżej 25, MEDIUM 25-59, HIGH od 60 (kolor wg poziomu, z wartościami, na których się opiera).
-- **Kafelki podsumowania:** pewność nadużyć, wykrycia, GreyNoise, pulsy OTX, kraj, ASN, typ IP oraz tabela wyników składowych.
-- **Karta tożsamości adresu**, która scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł i pokazuje, ile źródeł się zgadza.
-- **Jedna zwijana karta na źródło**, otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej".
+- **Kafelki podsumowania:** pewność nadużyć, wykrycia, GreyNoise, pulsy OTX, kraj, ASN, typ IP oraz tabela wyników składowych. Dla domeny: wiek domeny, rejestrator, czas do wygaśnięcia, popularność w Cloudflare, kategoria, serwery nazw i adresy IP.
+- **Karta tożsamości adresu** (dla domeny: **tożsamość domeny**), która scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł (dla domeny: rejestrator, daty, wiek, serwery nazw sprawdzone między WHOIS a DNS, adresy IP, serwery poczty, SPF, DMARC, CAA, kategoria, popularność) i pokazuje, ile źródeł się zgadza. Jest zwinięta z zieloną informacją "źródła są zgodne", a gdy źródła się rozchodzą, rozwija się sama.
+- **Jedna zwijana karta na źródło**, otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25, czyli Średnie lub Wysokie); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
+- **Wklejone dane są porządkowane:** URL (`https://Example.com:8080/a?b`), zdefangowany wskaźnik (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` czy nazwa wielkimi literami są sprowadzane do samego hosta lub adresu IP. Adresy prywatne, pętli zwrotnej i zarezerwowane są odrzucane z wyjaśnieniem, zamiast trafiać do usług.
 - **Tryb wsadowy** (wiele adresów naraz, z widocznym throttlem VirusTotal) oraz 15-minutowy cache w pamięci z opcją wymuszenia odświeżenia.
 - **Eksport:** "Zapisz .md" (natywne okno wyboru miejsca zapisu w przeglądarce) albo kopiowanie; Markdown zawiera cały raport, także tabelę tożsamości.
 
 <details>
 <summary>Szczegóły: model punktacji, karta tożsamości, surowe odpowiedzi</summary>
 
-**Punktacja** (`backend/scoring.py`). Model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność (0,9, 0,8, 0,7 i 0,5). Źródło bez danych nie głosuje, więc nie rozrzedza wyniku. Znane dobre IP (wpis na białej liście AbuseIPDB, GreyNoise benign/RIOT, walidacja OTX) obniża wynik do 15, chyba że występują silne sprzeczne sygnały. Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby. Raport podaje też, ile źródeł wzięło udział, i dodaje uwagi.
+**Punktacja** (`backend/scoring.py`). Model szum-OR: każde źródło - AbuseIPDB, VirusTotal, GreyNoise, OTX - daje ryzyko 0-100 nieliniową skalą i ma własną wiarygodność (0,9, 0,8, 0,7 i 0,5). Źródło bez danych nie głosuje, więc nie rozrzedza wyniku. Znane dobre IP (wpis na białej liście AbuseIPDB, GreyNoise benign/RIOT, walidacja OTX) obniża wynik do 15, chyba że występują silne sprzeczne sygnały. Cloudflare Radar jest kontekstowy i celowo wyłączony z liczby. Dla domeny dołącza jeszcze jedno źródło o niskiej wiarygodności (0,4): lokalne heurystyki (`backend/domain_heuristics.py`) - domena młodsza niż 90 dni, podobnie wyglądające znaki z różnych alfabetów (homograf), punycode, często nadużywana domena najwyższego poziomu, etykieta wyglądająca na losową, słowa-wabiki jak `login` czy `secure`; mogą podnieść domenę do Medium, ale same nigdy do High. Raport podaje też, ile źródeł wzięło udział, i dodaje uwagi.
 
 **Tożsamość adresu** (`backend/identity.py`). Wartości są najpierw normalizowane (ASN do liczby, kraj do kodu ISO, nazwy właścicieli bez form prawnych, zakresy RDAP do CIDR). Przy każdym polu widać, ile źródeł się zgadza. Gdy się różnią, pokazywana jest wartość większości z bursztynową plakietką (kliknięcie wypisuje wszystkie wartości ze źródłami); przy remisie wartość z najwyżej cenionego źródła (RDAP jako rejestr pierwszy) z czerwoną plakietką. Kraj rejestracji (RDAP) i kraj geolokalizacji to osobne pola, bo przy hostingu i anycaście zwykle się różnią. Dotyczy to tylko wyświetlania, nie wyniku.
 
