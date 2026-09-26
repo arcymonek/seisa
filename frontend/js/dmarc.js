@@ -494,12 +494,12 @@ function reportHtml(m, open) {
 }
 
 function legendHtml() {
-  return `<h3>${e(t("dmarc.h_legend"))}</h3><div class="card"><dl class="kv legend">
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_legend"))}</summary><dl class="kv legend">
     <dt>SPF</dt><dd>${e(t("dmarc.legend_spf"))}</dd>
     <dt>DKIM</dt><dd>${e(t("dmarc.legend_dkim"))}</dd>
     <dt>${e(t("dmarc.legend_policy_term"))}</dt><dd>${e(t("dmarc.legend_policy"))}</dd>
     <dt>${e(t("dmarc.legend_table_term"))}</dt><dd>${e(t("dmarc.legend_table"))}</dd>
-  </dl></div>`;
+  </dl></details>`;
 }
 
 // ---- rendering: sources ----

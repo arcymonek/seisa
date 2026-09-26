@@ -116,7 +116,7 @@ Co dostajesz:
 
 **geo i dalsze kroki.** Opcjonalny przycisk "geo (RDAP)" w rozwiniętym wierszu pyta backend o ten jeden adres IP (wyłącznie po kliknięciu). Backend odpytuje RDAP, tę samą usługę co zakładka IP, a wiersz pokazuje kraj rejestracji, właściciela i nazwę sieci. RDAP nie zawiera ASN, więc go tu nie ma; jest w zakładce [IP](#ip). Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
 
-**Legenda i eksport.** Zakładkę zamyka krótka legenda pojęć SPF, DKIM, polityki i tabeli. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
+**Legenda i eksport.** Zakładkę zamyka krótka legenda pojęć SPF, DKIM, polityki i tabeli, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
 
 </details>
 

@@ -116,7 +116,7 @@ What you get:
 
 **geo and next steps.** The optional "geo (RDAP)" button in the expanded row asks the backend about that single IP address (only on click). The backend queries RDAP, the same service as the IP tab, and the row shows the registration country, the owner and the network name. RDAP has no ASN, so none is shown; the [IP](#ip) tab has it. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
 
-**Glossary and export.** A short glossary of SPF, DKIM, the policy terms and the table closes the tab. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
+**Glossary and export.** A short glossary of SPF, DKIM, the policy terms and the table closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
 
 </details>
 
