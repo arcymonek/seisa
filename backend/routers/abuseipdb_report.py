@@ -8,6 +8,7 @@ refusals (quota, repeat rule, invalid data, key) are turned into readable errors
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -23,6 +24,7 @@ from backend.email_parser import (
 from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import (
+    MAX_COMMENT_CHARS,
     find_pii,
     is_reportable_ip,
     own_identifiers,
@@ -112,6 +114,15 @@ def _fallback_comment(facts: dict) -> str:
     )
 
 
+def _with_source_port(comment: str, port: int | None) -> str:
+    """Appends "Source port: N." only when the Received header of the reported hop states the port and the
+    comment does not already mention it; without a known port the comment is left untouched."""
+    if not port or re.search(rf"\bport\b\D{{0,12}}{port}\b", comment, re.IGNORECASE):
+        return truncate_chars(comment)
+    suffix = f" Source port: {port}."
+    return truncate_chars(comment, MAX_COMMENT_CHARS - len(suffix)) + suffix
+
+
 def _api_timestamp(value: str | None) -> str:
     """ISO 8601 in UTC without fractions (e.g. 2026-09-25T07:04:00+00:00) - the plainest form the API accepts."""
     if value:
@@ -143,7 +154,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         report_comment = llm_analysis["report_comment"]
     if not report_comment:
         report_comment = _fallback_comment(facts)
-    report_comment = truncate_chars(sanitize_comment(report_comment))
+    report_comment = _with_source_port(sanitize_comment(report_comment), facts.get("source_port"))
 
     addr = extract_addresses(msg)
     return {
