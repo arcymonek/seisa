@@ -24,7 +24,6 @@ from backend.email_parser import (
 from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import (
-    MAX_COMMENT_CHARS,
     find_pii,
     is_reportable_ip,
     own_identifiers,
@@ -67,7 +66,6 @@ class ReportFields(BaseModel):
     categories: list[int]
     attack_timestamp: str | None = None
     comment: str = ""
-    target_port: int | None = Field(default=None, ge=1, le=65535)  # the attacked port (victim side), optional
     own_terms: list[str] = Field(default_factory=list, max_length=20)  # the reporter's identifiers, for the PII scan
 
 
@@ -121,20 +119,9 @@ _PORT_MENTION_RE = re.compile(r"\bports?\b\W{0,3}\d", re.IGNORECASE)
 
 def _strip_ports(comment: str) -> str:
     """The LLM cannot know which port was attacked (an e-mail carries no such fact), so any port it wrote is
-    removed: whole sentences that name a port and `ip:port` suffixes. A port is added only from the reporter's
-    own field (see `_final_comment`)."""
+    removed: whole sentences that name a port and `ip:port` suffixes."""
     comment = _IP_PORT_RE.sub(r"\1", comment)
     return " ".join(s for s in re.split(r"(?<=[.!?])\s+", comment) if not _PORT_MENTION_RE.search(s))
-
-
-def _final_comment(comment: str, target_port: int | None = None) -> str:
-    """The comment exactly as it goes to the API: ASCII only, at most 1024 characters, and - when the reporter
-    filled in the attacked port - "Target port: N." at the end (unless the text already names that port)."""
-    text = sanitize_comment(comment)
-    if not target_port or re.search(rf"\bports?\b\D{{0,12}}{target_port}\b", text, re.IGNORECASE):
-        return truncate_chars(text)
-    suffix = f" Target port: {target_port}."
-    return truncate_chars(text, MAX_COMMENT_CHARS - len(suffix)) + suffix
 
 
 def _api_timestamp(value: str | None) -> str:
@@ -194,7 +181,7 @@ def categories():
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
-    comment = _final_comment(fields.comment, fields.target_port)
+    comment = truncate_chars(sanitize_comment(fields.comment))
     return {
         "checks": checks,
         "previous": _previous_reports(fields.ip),
@@ -270,7 +257,7 @@ async def submit_report(fields: ReportFields):
     if left:
         raise HTTPException(status_code=409, detail=t("report.cooldown", minutes=left, limit=REPORT_COOLDOWN_MINUTES))
 
-    comment = _final_comment(fields.comment, fields.target_port)
+    comment = truncate_chars(sanitize_comment(fields.comment))
     timestamp = _api_timestamp(fields.attack_timestamp)
     categories = sorted(set(fields.categories))
     record = {

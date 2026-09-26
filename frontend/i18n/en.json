@@ -411,8 +411,6 @@
   "rb.llm_note_warn_text": "Always check the proposed report before sending it to AbuseIPDB - it is your responsibility.",
   "rb.categories": "Categories",
   "rb.attack_timestamp": "Attack timestamp",
-  "rb.target_port": "Attacked port (optional)",
-  "rb.target_port_hint": "The destination port on the victim side (e.g. 22 for SSH), not the sender's source port. It is appended to the end of the comment as \"Target port: N.\". An e-mail usually does not carry this - fill it in only when you know it (e.g. from logs).",
   "rb.comment_label": "Report comment (in English, AI-generated - editable)",
   "rb.submit": "Send via AbuseIPDB API",
   "rb.copy_comment": "Copy comment",

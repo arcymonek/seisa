@@ -427,8 +427,6 @@
   "rb.llm_note_warn_text": "Zawsze sprawdź proponowany raport przed wysłaniem go do AbuseIPDB - to Twoja odpowiedzialność.",
   "rb.categories": "Kategorie",
   "rb.attack_timestamp": "Timestamp ataku",
-  "rb.target_port": "Atakowany port (opcjonalnie)",
-  "rb.target_port_hint": "Port docelowy po stronie ofiary (np. 22 dla SSH), nie port źródłowy nadawcy. Zostanie dopisany na końcu komentarza jako \"Target port: N.\". E-mail zwykle nie zawiera tej informacji - wypełnij tylko, gdy ją znasz (np. z logów).",
   "rb.comment_label": "Komentarz zgłoszenia (po angielsku, wygenerowany przez AI - edytowalny)",
   "rb.submit": "Wyślij przez AbuseIPDB API",
   "rb.copy_comment": "Kopiuj komentarz",

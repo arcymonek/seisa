@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.86 - 2026-09-26
+- **AbuseIPDB tab:** the optional Attacked port field is removed (the tab is for e-mails only, which do not carry the attacked port). Ports the LLM writes in the comment are still stripped.
+
 ## 2.0.85 - 2026-09-26
 - **AbuseIPDB tab:** the source port read from `Received` is gone again (it is the sender's random port, not the attacked one). New optional **Attacked port** field: the destination port on the victim side is appended to the comment as "Target port: N.". Ports the LLM writes are still stripped.
 
