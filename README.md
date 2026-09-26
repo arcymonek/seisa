@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.64</b></p>
+<p align="center"><b>Seisa 2.0.65</b></p>
 
 # Seisa
 
@@ -146,7 +146,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 The latest releases; every release is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the recent ones from the git log.
 
-- **2.0.64** - IP tab: single mode now accepts a domain name as well as an IP address (the type is detected by the backend, as in batch mode); no DNS resolution to an IP is done, the domain itself is checked.
+- **2.0.65** - IP tab: single mode now accepts a domain name as well as an IP address (the type is detected by the backend, as in batch mode); no DNS resolution to an IP is done, the domain itself is checked.
 - **2.0.60** - an origin guard for `/api/`: requests that the browser marks as cross-site (`Sec-Fetch-Site`) or that carry a foreign `Origin` get 403, so another web page can no longer use up your API quotas or LLM budget; the docs state plainly that a local process is not stopped.
 - **2.0.59** - DMARC tab: the geo button asks the backend (RDAP, as in the IP tab) instead of `ipwho.is`; the Content-Security-Policy allows only `connect-src 'self'`. RDAP has no ASN, so none is shown.
 - **2.0.58** - the README split into a short README and a documentation set in `docs/en/` and `docs/pl/`; `check_i18n.py` checks the docs parity and dead links.
