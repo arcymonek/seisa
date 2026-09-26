@@ -7,7 +7,7 @@ import { serviceTitle } from "./lookup-result.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
-const AUTHOR_EMAIL = "kontakt@arkadiuszpolak.pl";
+const AUTHOR_EMAIL = "seisa@arkadiuszpolak.pl";
 const LICENSE_URL = "https://polyformproject.org/licenses/noncommercial/1.0.0";
 const AUTHOR_GITHUB = "https://github.com/arcymonek";
 const AUTHOR_SITE = "https://arkadiuszpolak.pl";
