@@ -4,7 +4,7 @@
 // once, so a card the user opened stays open when the tab is refreshed; only their bodies are refilled.
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
-import { t, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
+import { t, tn, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
 const AUTHOR_EMAIL = "kontakt@arkadiuszpolak.pl";
@@ -48,7 +48,7 @@ export function initAbout(container) {
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
       <div id="ab-limits-errors"></div><div id="ab-limits"></div>
       <div class="muted">${e(t("about.status_hint"))}</div>
-      <div class="muted">${e(t("about.limits_hint"))}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
+      <div class="muted">${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
     ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
@@ -75,16 +75,26 @@ const amount = (n, unit) => (unit === "usd" ? `$${n.toLocaleString(getLocale(), 
 const percent = (row) => (row.used != null && row.limit > 0 ? (row.used / row.limit) * 100 : null);
 const barClass = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "medium" : "low");
 
+// A reset still ahead is a bare "6 h" / "4 days"; one already in the past (stale data) keeps the "3 hours ago" wording.
+function fmtReset(value) {
+  const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
+  if (seconds <= 0 || seconds >= 30 * 86400) return fmtRelative(value);
+  if (seconds >= 86400) return tn("about.reset_days", Math.round(seconds / 86400));
+  if (seconds >= 3600) return t("about.reset_hours", { n: Math.round(seconds / 3600) });
+  return t("about.reset_minutes", { n: Math.max(1, Math.round(seconds / 60)) });
+}
+
+// The numbers stand at the left edge of the column, the bar takes the rest of its width.
 function usageCell(row) {
   const pct = percent(row);
-  const used = row.used == null ? `<span class="muted">-</span>` : e(amount(row.used, row.unit));
-  const limit = row.limit == null ? `<span class="muted">-</span>` : e(amount(row.limit, row.unit));
-  const bar = pct == null ? "" : `<span class="riskbar ${barClass(pct)}" title="${e(Math.round(pct))}%"><i style="width:${Math.min(100, pct)}%"></i></span> `;
+  const used = row.used == null ? "-" : amount(row.used, row.unit);
+  const limit = row.limit == null ? "-" : amount(row.limit, row.unit);
+  const bar = pct == null ? "" : `<span class="riskbar ${barClass(pct)}" title="${e(Math.round(pct))}%"><i style="width:${Math.min(100, pct)}%"></i></span>`;
   const assumed = row.assumed ? ` <span class="muted" title="${e(t("about.lim_assumed"))}">*</span>` : "";
   const exceeded = row.exceeded
-    ? ` <span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span>`
+    ? `<div><span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span></div>`
     : "";
-  return `${bar}${used} / ${limit}${assumed}${exceeded}`;
+  return `<div class="usage"><span class="usage-val">${e(used)}/${e(limit)}${assumed}</span>${bar}</div>${exceeded}`;
 }
 
 function renderLimits(limits) {
@@ -98,22 +108,22 @@ function renderLimits(limits) {
   const body = services
     .map((svc) => {
       const rows = byService.get(svc.id) || [null];
-      const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id);
-      const model = svc.model ? ` <span class="muted mono">${e(t("about.status_llm_model", { model: svc.model }))}</span>` : "";
+      const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id).replace(" / ", "/");
+      const model = svc.model ? `<span class="muted mono key-model">${e(t("about.status_llm_model", { model: svc.model }))}</span>` : "";
       return rows
         .map((r, i) => {
           const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}${model}</td>` : `<td></td><td></td>`;
-          if (!r) return `<tr>${head}<td>${dash}</td><td>${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
+          if (!r) return `<tr>${head}<td>${dash}</td><td class="usage-cell">${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
           const resets = r.resets_at
-            ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtRelative(r.resets_at))}</span>`
+            ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtReset(r.resets_at))}</span>`
             : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : dash;
-          return `<tr>${head}<td>${e(t("about.scope." + r.scope))} / ${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td><td>${resets}</td>
+          return `<tr>${head}<td>${e(t("about.scope." + r.scope))}/${e(t("about.win." + r.window))}</td><td class="usage-cell">${usageCell(r)}</td><td>${resets}</td>
             <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`;
         })
         .join("");
     })
     .join("");
-  root.querySelector("#ab-limits").innerHTML = `<div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("about.lim_col_service"))}</th><th>${e(t("about.lim_col_key"))}</th><th>${e(t("about.lim_col_window"))}</th><th>${e(t("about.lim_col_usage"))}</th><th>${e(t("about.lim_col_resets"))}</th><th>${e(t("about.lim_col_source"))}</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  root.querySelector("#ab-limits").innerHTML = `<div class="table-wrap"><table class="fact-table status-table"><thead><tr><th>${e(t("about.lim_col_service"))}</th><th>${e(t("about.lim_col_key"))}</th><th>${e(t("about.lim_col_window"))}</th><th>${e(t("about.lim_col_usage"))}</th><th>${e(t("about.lim_col_resets"))}</th><th>${e(t("about.lim_col_source"))}</th></tr></thead><tbody>${body}</tbody></table></div>`;
   const rows = limits.rows;
 
   // the summary line names the entry closest to its limit
@@ -128,7 +138,7 @@ function renderLimits(limits) {
     state.classList.add("bad");
   } else if (worst) {
     const pct = percent(worst);
-    state.textContent = `${serviceName(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)} / ${amount(worst.limit, worst.unit)}`;
+    state.textContent = `${serviceName(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)}/${amount(worst.limit, worst.unit)}`;
     if (pct >= 90) state.classList.add("bad");
     else if (pct >= 70) state.classList.add("warn");
   }
@@ -175,7 +185,8 @@ export async function refreshAbout() {
     ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
   </div>`;
 
-  services = [...info.services, { id: "openrouter", configured: info.llm.configured, llm: true, model: info.llm.model }];
+  const llm = { id: "openrouter", configured: info.llm.configured, llm: true, model: info.llm.model };
+  services = [...info.services.filter((s) => s.configured !== null), llm, ...info.services.filter((s) => s.configured === null)]; // services without a key last
   renderEnvironment(info.environment);
 
   renderLimits(info.limits);
