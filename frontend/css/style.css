@@ -452,7 +452,14 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .hi-compare h3 { margin-top: 0; }
 .env-grid { display: grid; gap: 4px; margin: 8px 0 12px; font-size: 14.5px; }
 .env-grid .mono { overflow-wrap: anywhere; }
-.status-table { width: auto; }
+.status-table { table-layout: fixed; min-width: 900px; }
+.status-table th:nth-child(1) { width: 16%; }
+.status-table th:nth-child(2) { width: 11%; }
+.status-table th:nth-child(3) { width: 24%; }
+.status-table th:nth-child(4) { width: 22%; }
+.status-table th:nth-child(5) { width: 14%; }
+.status-table th:nth-child(6) { width: 13%; }
+#ab-limits-card .action-row { padding-bottom: 12px; border-bottom: 1px solid var(--hair); }
 .status-table td { white-space: nowrap; }
 .ab-changes { padding-left: 20px; margin: 8px 0 2px; }
 .ab-changes li { margin: 4px 0; font-size: 14.5px; overflow-wrap: anywhere; }

@@ -89,11 +89,10 @@ function usageCell(row) {
   const used = row.used == null ? "-" : amount(row.used, row.unit);
   const limit = row.limit == null ? "-" : amount(row.limit, row.unit);
   const share = pct == null ? "" : ` | <span class="${pct >= 90 ? "bad" : pct >= 70 ? "warnc" : "ok"}">${e(pct > 0 && pct < 1 ? "<1" : Math.round(pct))}%</span>`;
-  const assumed = row.assumed ? ` <span class="muted" title="${e(t("about.lim_assumed"))}">*</span>` : "";
   const exceeded = row.exceeded
     ? `<div><span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span></div>`
     : "";
-  return `${e(used)}/${e(limit)}${share}${assumed}${exceeded}`;
+  return `${e(used)}/${e(limit)}${share}${exceeded}`;
 }
 
 function renderLimits(limits) {
