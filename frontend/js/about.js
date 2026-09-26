@@ -73,7 +73,6 @@ function renderEnvironment(env) {
 const number = (n) => n.toLocaleString(getLocale(), { maximumFractionDigits: 0 });
 const amount = (n, unit) => (unit === "usd" ? `$${n.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : number(n));
 const percent = (row) => (row.used != null && row.limit > 0 ? (row.used / row.limit) * 100 : null);
-const barClass = (pct) => (pct >= 90 ? "high" : pct >= 70 ? "medium" : "low");
 
 // A reset still ahead is a bare "6 h" / "4 days"; one already in the past (stale data) keeps the "3 hours ago" wording.
 function fmtReset(value) {
@@ -84,17 +83,17 @@ function fmtReset(value) {
   return t("about.reset_minutes", { n: Math.max(1, Math.round(seconds / 60)) });
 }
 
-// The numbers stand at the left edge of the column, the bar takes the rest of its width.
+// "used/limit | share": the share is green, yellow from 70% and red from 90%.
 function usageCell(row) {
   const pct = percent(row);
   const used = row.used == null ? "-" : amount(row.used, row.unit);
   const limit = row.limit == null ? "-" : amount(row.limit, row.unit);
-  const bar = pct == null ? "" : `<span class="riskbar ${barClass(pct)}" title="${e(Math.round(pct))}%"><i style="width:${Math.min(100, pct)}%"></i></span>`;
+  const share = pct == null ? "" : ` | <span class="${pct >= 90 ? "bad" : pct >= 70 ? "warnc" : "ok"}">${e(pct > 0 && pct < 1 ? "<1" : Math.round(pct))}%</span>`;
   const assumed = row.assumed ? ` <span class="muted" title="${e(t("about.lim_assumed"))}">*</span>` : "";
   const exceeded = row.exceeded
-    ? `<div><span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span></div>`
+    ? ` <span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span>`
     : "";
-  return `<div class="usage"><span class="usage-val">${e(used)}/${e(limit)}${assumed}</span>${bar}</div>${exceeded}`;
+  return `${e(used)}/${e(limit)}${share}${assumed}${exceeded}`;
 }
 
 function renderLimits(limits) {

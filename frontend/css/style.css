@@ -453,9 +453,6 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .env-grid { display: grid; gap: 4px; margin: 8px 0 12px; font-size: 14.5px; }
 .env-grid .mono { overflow-wrap: anywhere; }
 .status-table td { white-space: nowrap; }
-.usage { display: flex; align-items: center; gap: 12px; }
-.usage-val { flex: none; min-width: 9em; }
-.usage .riskbar { flex: none; width: 80px; }
 .ab-changes { padding-left: 20px; margin: 8px 0 2px; }
 .ab-changes li { margin: 4px 0; font-size: 14.5px; overflow-wrap: anywhere; }
 
