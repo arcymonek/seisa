@@ -6,7 +6,7 @@
   "tab.info": "Info",
   "about.description": "A local tool for IP reputation analysis, URL scanning, DMARC reports, e-mail source analysis and preparing AbuseIPDB abuse reports.",
   "about.kpi_version": "Version",
-  "about.kpi_version_sub": "updated: {date}",
+  "about.kpi_version_sub": "{date}",
   "about.kpi_keys": "API keys",
   "about.kpi_keys_sub": "services with a key set",
   "about.kpi_llm": "LLM",
