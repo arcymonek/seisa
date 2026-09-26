@@ -4,8 +4,11 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.78 - 2026-09-26
+- **DMARC tab:** the uploaded reports come right after the IP sources; the providers table, the chart and the comparison follow.
+
 ## 2.0.77 - 2026-09-26
-- **DMARC tab:** the IP sources section comes first, right below the summary tiles; the providers table, the chart, the comparison and the reports follow it.
+- **DMARC tab:** the IP sources section comes first, right below the summary tiles.
 
 ## 2.0.76 - 2026-09-26
 - **DMARC tab:** reverse DNS next to the geo data, with a well-known sender named only when its reverse DNS name is forward-confirmed (`backend/known_senders.py`); fix hints per failing source; a bar chart of messages per day; a comparison with the previous import of the same domain (from the History); the list of reports is one folded card when there are several; the banner lists every failing address behind an expandable line.

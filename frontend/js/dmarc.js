@@ -814,10 +814,10 @@ function render() {
     policyHintsHtml() +
     kpiHtml() +
     `<div id="dm-sources"></div>` +
+    reportsHtml() +
     providersHtml() +
     timelineHtml() +
     `<div id="dm-compare"></div>` +
-    reportsHtml() +
     legendHtml();
   renderSources();
 

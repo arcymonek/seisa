@@ -110,7 +110,7 @@ Co dostajesz:
 <details>
 <summary>Szczegóły: co pokazuje każda część</summary>
 
-**Raporty.** Każdy wgrany raport to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
+**Raporty.** Stoją zaraz po źródłach. Każdy wgrany raport to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
 
 **Źródła.** Override, np. `forwarded`, jest odnotowany obok decyzji polityki, żeby prawowite przekazywanie poczty nie wyglądało jak atak.
 
