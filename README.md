@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.75</b></p>
+<p align="center"><b>Seisa 2.0.76</b></p>
 
 # Seisa
 
@@ -27,7 +27,7 @@ Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-ma
 |---|---|---|---|
 | [IP](docs/en/tabs.md#ip) | Reputation of an IP address or a domain name from VirusTotal, OTX, Cloudflare Radar, AbuseIPDB, GreyNoise and RDAP/reverse DNS, merged into one 0-100 score | a key per service (each optional) | the address, to the services you have keys for, plus the free RDAP/DNS lookups |
 | [URLScan](docs/en/tabs.md#urlscan) | A live scan of a URL through urlscan.io with a verdict, a screenshot, redirects, forms and certificates | `URLSCAN_API_KEY` | the URL, to urlscan.io |
-| [DMARC](docs/en/tabs.md#dmarc) | Aggregate DMARC reports (`.xml`, `.gz`, `.zip`) unpacked and analysed in the browser | nothing | nothing (an optional button asks the backend for RDAP data on one IP, like the IP tab) |
+| [DMARC](docs/en/tabs.md#dmarc) | Aggregate DMARC reports (`.xml`, `.gz`, `.zip`) unpacked and analysed in the browser | nothing | nothing (an optional button asks the backend for RDAP and reverse DNS data on one IP, like the IP tab) |
 | [Email](docs/en/tabs.md#email) | An educational analysis of an e-mail's source: deterministic findings at once, plus an optional streamed LLM lesson | OpenRouter key for the LLM part | the whole source to OpenRouter, only after an explicit click |
 | [AbuseIPDB](docs/en/tabs.md#abuseipdb) | Prepares and sends an abuse report: source IP, eligibility, categories, an English comment, hard checks | `ABUSEIPDB_API_KEY` (OpenRouter optional) | the IP and, on "Send", the report, to AbuseIPDB |
 | [History](docs/en/tabs.md#history) | Everything Seisa remembers, reopenable, comparable, pinnable | nothing | nothing |
@@ -116,7 +116,7 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 | IP lookup (and batch) | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
 | IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS; for a domain the A, AAAA, NS, MX, CAA and TXT records, plus one query for a random subdomain to detect wildcard DNS and one A query per name server), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
 | URL scan | the URL, the chosen visibility and, if you set them, the scan country and the user agent; the domain in the "History" search of earlier scans; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
-| DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry), as in the IP tab | only on the click in an expanded row |
+| DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry) and your DNS resolver (reverse and forward lookup), as in the IP tab | only on the click in an expanded row |
 | Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis", "Ask" | the whole e-mail source (with personal data), and for "Ask" the question and the fragment | OpenRouter | only on that click; the interface says so before sending |
 | AbuseIPDB: "Analyze" | the whole e-mail source | OpenRouter | only on that click |
 | AbuseIPDB: address check | the IP | AbuseIPDB (`/check`) | when an IP is entered and a key exists |

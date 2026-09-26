@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.75</b></p>
+<p align="center"><b>Seisa 2.0.76</b></p>
 
 # Seisa
 
@@ -27,7 +27,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 |---|---|---|---|
 | [IP](docs/pl/tabs.md#ip) | Reputacja adresu IP lub nazwy domeny z VirusTotal, OTX, Cloudflare Radar, AbuseIPDB, GreyNoise oraz RDAP/odwrotnego DNS, scalona w jeden wynik 0-100 | klucza dla każdej usługi (każdy opcjonalny) | adres, do usług, dla których masz klucze, oraz darmowe zapytania RDAP/DNS |
 | [URLScan](docs/pl/tabs.md#urlscan) | Żywy skan adresu URL przez urlscan.io z werdyktem, zrzutem ekranu, przekierowaniami, formularzami i certyfikatami | `URLSCAN_API_KEY` | adres URL, do urlscan.io |
-| [DMARC](docs/pl/tabs.md#dmarc) | Raporty zbiorcze DMARC (`.xml`, `.gz`, `.zip`) rozpakowane i przeanalizowane w przeglądarce | niczego | nic (opcjonalny przycisk prosi backend o dane RDAP jednego IP, jak zakładka IP) |
+| [DMARC](docs/pl/tabs.md#dmarc) | Raporty zbiorcze DMARC (`.xml`, `.gz`, `.zip`) rozpakowane i przeanalizowane w przeglądarce | niczego | nic (opcjonalny przycisk prosi backend o dane RDAP i odwrotny DNS jednego IP, jak zakładka IP) |
 | [Email](docs/pl/tabs.md#email) | Edukacyjna analiza źródła e-maila: od razu ustalenia deterministyczne, opcjonalnie streamowana lekcja LLM | klucza OpenRouter dla części LLM | cały kod źródłowy do OpenRouter, wyłącznie po jawnym kliknięciu |
 | [AbuseIPDB](docs/pl/tabs.md#abuseipdb) | Przygotowuje i wysyła zgłoszenie nadużycia: IP źródłowe, kwalifikowalność, kategorie, komentarz po angielsku, twarde sprawdzenia | `ABUSEIPDB_API_KEY` (OpenRouter opcjonalnie) | IP oraz, po "Wyślij", zgłoszenie, do AbuseIPDB |
 | [Historia](docs/pl/tabs.md#historia) | Wszystko, co Seisa pamięta, z ponownym otwieraniem, porównywaniem i przypinaniem | niczego | nic |
@@ -116,7 +116,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 | Sprawdzenie IP (i tryb wsadowy) | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
 | Sprawdzenie IP, część darmowa | adres IP lub nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS; dla domeny rekordy A, AAAA, NS, MX, CAA i TXT oraz jedno zapytanie o losową subdomenę, które wykrywa wildcard DNS, i po jednym zapytaniu A o każdy serwer nazw) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
 | Skan URL | adres URL, wybrana widoczność i, jeśli je ustawisz, kraj skanu oraz user agent; domena w wyszukiwaniu "Historia" (wcześniejsze skany); identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
-| DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
+| DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny) i Twój resolver DNS (zapytanie odwrotne i wprost), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
 | Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę", "Zapytaj" | cały kod źródłowy e-maila (z danymi osobowymi), a przy "Zapytaj" także pytanie i fragment | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
 | AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
 | AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |

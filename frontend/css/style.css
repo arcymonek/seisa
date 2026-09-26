@@ -444,3 +444,15 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .hi-compare h3 { margin-top: 0; }
 .ab-changes { padding-left: 20px; margin: 8px 0 2px; }
 .ab-changes li { margin: 4px 0; font-size: 14.5px; overflow-wrap: anywhere; }
+
+/* DMARC: expandable address list in the banner, fix hints, mail volume per day */
+.banner-ips summary { cursor: pointer; }
+.banner-ips > div { margin-top: 4px; overflow-wrap: anywhere; }
+.fix-hints { margin: 10px 0; }
+.fix-hints ul { margin: 4px 0 0; padding-left: 20px; }
+.tl { display: flex; gap: 4px; overflow-x: auto; padding: 6px 0; }
+.tl-col { display: flex; flex-direction: column; align-items: center; flex: 0 0 34px; }
+.tl-area { height: 120px; width: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.tl-bar { width: 70%; min-height: 2px; background: var(--pass); display: flex; flex-direction: column-reverse; }
+.tl-fail { display: block; background: var(--fail); }
+.tl-label { font-size: 11px; color: var(--muted); margin-top: 4px; }

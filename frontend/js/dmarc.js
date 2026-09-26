@@ -2,12 +2,14 @@
 // (nothing is uploaded). Rows are grouped by source IP; per IP the tab can fetch the RDAP registration data
 // through the backend (on click) and hand the IP over to the IP tab or to the AbuseIPDB tab. Every field of the report is
 // shown somewhere: the known ones with labels, anything else through the generic "other fields" lists.
-// Every value from the XML is untrusted: escapeHtml in the page, code spans in the Markdown export.
+// The tab also compares the import with the previous one for the same domain (from the History), draws the mail volume
+// per day and derives fix hints per source from the SPF/DKIM results. Every value from the XML is untrusted: escapeHtml in the page, code spans in the Markdown export.
 import { api } from "./api.js";
 import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
 import { downloadMarkdown, escapeHtml as e } from "./util.js";
 
+const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
 const SOURCE_LIMIT = 50; // rows shown before the "show all" button
 const RISK_RANK = { high: 0, medium: 1, low: 2 };
 const META_KNOWN = ["org_name", "email", "extra_contact_info", "report_id", "date_range", "error"];
@@ -145,11 +147,14 @@ async function handleFiles(files) {
   showFiles(items);
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.parsed", { time: fmtSeconds(performance.now() - started) });
+  const id = ++importId;
+  await showComparison(id);
   saveSummaryToHistory();
 }
 
 // Re-opens a report set saved in the history (see saveSummaryToHistory).
 export function loadDmarcData(data) {
+  importId++;
   resetState();
   const day = (v) => (v ? new Date(v) : null);
   reportMeta = data.reportMeta.map((m) => ({ ...m, begin: day(m.begin), end: day(m.end) }));
@@ -329,14 +334,28 @@ async function lookupGeo(ip, btn) {
   const slot = btn.closest(".geo-slot");
   slot.textContent = geoText(ip);
   slot.classList.add("muted");
+  const known = slot.closest(".src-detail").querySelector(".known-slot");
+  known.innerHTML = knownSenderHtml(ip, sources.find((r) => r.sourceIp === ip));
 }
 
 function geoText(ip) {
   const data = geoCache[ip];
   if (!data || data.status !== "ok") return t("dmarc.geo_failed");
-  const parts = [data.country || "?", data.organization || t("dmarc.unknown_operator")];
-  if (data.network_name) parts.push(data.network_name);
+  const parts = [];
+  if (data.country || data.organization || data.network_name) {
+    parts.push(data.country || "?", data.organization || t("dmarc.unknown_operator"));
+    if (data.network_name) parts.push(data.network_name);
+  }
+  parts.push(data.reverse_dns ? `rDNS ${data.reverse_dns}` : t("dmarc.no_rdns"));
   return parts.join(" · ");
+}
+
+// A well-known sender is named by the backend only when the reverse DNS name is forward-confirmed.
+function knownSenderHtml(ip, row) {
+  const name = geoCache[ip]?.known_sender;
+  if (!name) return "";
+  const failing = row.spfFail > 0 || row.dkimFail > 0;
+  return `<div class="ok">${e(t("dmarc.known_sender", { name }))}${failing ? ` <span class="muted">${e(t("dmarc.known_sender_fix"))}</span>` : ""}</div>`;
 }
 
 // ---- rendering: summary ----
@@ -346,14 +365,18 @@ function bannersHtml() {
   const high = sources.filter((s) => riskLevel(s) === "high");
   const medium = sources.filter((s) => riskLevel(s) === "medium");
   if (high.length) {
-    const ips = high.slice(0, 5).map((s) => s.sourceIp).join(", ") + (high.length > 5 ? ", ..." : "");
+    const ipList = high.map((s) => s.sourceIp);
+    const ipsHtml =
+      ipList.length > 5
+        ? `<details class="banner-ips"><summary>${e(ipList.slice(0, 5).join(", "))}, ... ${e(t("dmarc.banner_bad_all", { n: ipList.length }))}</summary><div>${e(ipList.slice(0, BANNER_IP_LIMIT).join(", "))}${ipList.length > BANNER_IP_LIMIT ? ", ..." : ""}</div></details>`
+        : `<div>${e(t("dmarc.banner_bad_ips", { ips: ipList.join(", ") }))}</div>`;
     const actions = t("dmarc.banner_bad_actions", {
       reject: sumBy(high, "reject"),
       quarantine: sumBy(high, "quarantine"),
       none: sumBy(high, "none"),
     });
     const head = tn("dmarc.banner_bad", high.length, { messages: tn("dmarc.messages", sumBy(high, "count")) });
-    html += `<div class="banner bad"><strong>${e(head)}</strong><div>${e(t("dmarc.banner_bad_ips", { ips }))}</div><div>${e(actions)}</div><div>${e(t("dmarc.banner_bad_hint"))}</div></div>`;
+    html += `<div class="banner bad"><strong>${e(head)}</strong>${ipsHtml}<div>${e(actions)}</div><div>${e(t("dmarc.banner_bad_hint"))}</div></div>`;
   } else if (medium.length) {
     html += `<div class="banner warn">${e(tn("dmarc.banner_warn", medium.length))}</div>`;
   } else if (sources.length) {
@@ -428,7 +451,105 @@ function providersHtml() {
   return `<h3>${e(t("dmarc.h_providers"))}</h3><div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// ---- rendering: mail volume per day ----
+
+// Reports are per day (usually 24 h), so the day of the report start is the bucket of all its records.
+function dailyStats() {
+  const by = new Map();
+  allRecords.forEach((r) => {
+    const begin = reportMeta[r.reportIdx].begin;
+    if (!begin || Number.isNaN(begin.getTime())) return;
+    const day = begin.toISOString().slice(0, 10);
+    if (!by.has(day)) by.set(day, { day, messages: 0, failed: 0 });
+    const d = by.get(day);
+    d.messages += r.count;
+    if (!isPass(r)) d.failed += r.count;
+  });
+  return Array.from(by.values()).sort((a, b) => a.day.localeCompare(b.day));
+}
+
+function timelineHtml() {
+  const days = dailyStats();
+  if (days.length < 2) return "";
+  const max = Math.max(...days.map((d) => d.messages)) || 1;
+  const cols = days
+    .map((d) => {
+      const tip = t("dmarc.timeline_tip", { day: d.day, messages: d.messages, pass: fmtPct(d.messages - d.failed, d.messages) });
+      const fail = d.messages ? (d.failed / d.messages) * 100 : 0;
+      return `<div class="tl-col" title="${e(tip)}"><div class="tl-area"><div class="tl-bar" style="height:${(d.messages / max) * 100}%"><span class="tl-fail" style="height:${fail}%"></span></div></div><span class="tl-label">${e(d.day.slice(5))}</span></div>`;
+    })
+    .join("");
+  const open = days.some((d) => d.failed > 0) ? " open" : "";
+  return `<details class="fact-block"${open}><summary>${e(t("dmarc.h_timeline"))}</summary><div class="tl">${cols}</div><div class="muted">${e(t("dmarc.timeline_legend", { max }))}</div></details>`;
+}
+
+// ---- comparison with the previous import of the same domain ----
+
+let importId = 0; // a slow History request must not paint over a newer import
+
+const worse = (a, b) => RISK_RANK[b] < RISK_RANK[a]; // b is riskier than a
+
+function ipRisks(records) {
+  const by = new Map();
+  records.forEach((r) => {
+    if (!by.has(r.sourceIp)) by.set(r.sourceIp, { spfFail: 0, dkimFail: 0 });
+    const b = by.get(r.sourceIp);
+    if (r.spfEval !== "pass") b.spfFail += r.count;
+    if (r.dkimEval !== "pass") b.dkimFail += r.count;
+  });
+  return new Map([...by].map(([ip, b]) => [ip, riskLevel(b)]));
+}
+
+// The newest History entry of type dmarc whose label starts with the same domains; called before the current import
+// is saved, so it never finds itself.
+async function findPreviousImport() {
+  const domains = [...new Set(reportMeta.map((m) => m.domain))].join(", ");
+  try {
+    const list = await api.history();
+    const prev = list.find((h) => h.type === "dmarc" && String(h.label).startsWith(domains + " - "));
+    if (!prev) return null;
+    const full = await api.historyEntry(prev.id);
+    return Array.isArray(full.data?.records) ? { createdAt: prev.created_at, records: full.data.records } : null;
+  } catch {
+    return null;
+  }
+}
+
+function compareHtml(prev) {
+  const before = ipRisks(prev.records);
+  const now = new Map(sources.map((s) => [s.sourceIp, riskLevel(s)]));
+  const added = [...now].filter(([ip]) => !before.has(ip));
+  const gone = [...before.keys()].filter((ip) => !now.has(ip));
+  const worsened = [...now].filter(([ip, risk]) => before.has(ip) && worse(before.get(ip), risk));
+  const addedRisky = added.filter(([, risk]) => risk !== "low");
+  const pct = (recs) => fmtPct(sumBy(recs.filter(isPass), "count"), sumBy(recs, "count"));
+  const list = (items) => items.slice(0, 10).map(([ip, risk]) => `<span class="badge sm ${risk}">${e(ip)}</span>`).join(" ") + (items.length > 10 ? " ..." : "");
+  const lines = [
+    line(t("dmarc.cmp_new"), added.length ? `${added.length} (${e(t("dmarc.cmp_of_which", { n: addedRisky.length }))}) ${list(added)}` : "0"),
+    line(t("dmarc.cmp_gone"), String(gone.length)),
+    line(t("dmarc.cmp_worse"), worsened.length ? `${worsened.length} ${list(worsened)}` : "0"),
+    line(t("dmarc.cmp_pass"), e(`${pct(prev.records)} → ${pct(allRecords)}`)),
+  ];
+  const open = addedRisky.length || worsened.length ? " open" : "";
+  return `<details class="fact-block"${open}><summary>${e(t("dmarc.h_compare", { date: fmtDateTime(new Date(prev.createdAt)) }))}</summary>${lines.join("")}</details>`;
+}
+
+async function showComparison(id) {
+  const prev = await findPreviousImport();
+  const slot = root.querySelector("#dm-compare");
+  if (!prev || id !== importId || !slot) return;
+  slot.innerHTML = compareHtml(prev);
+}
+
 // ---- rendering: reports ----
+
+function reportsHtml() {
+  const blocks = reportMeta.map((m) => reportHtml(m, reportMeta.length === 1)).join("");
+  if (reportMeta.length === 1) return `<h3>${e(t("dmarc.h_reports"))}</h3>${blocks}`;
+  // Many reports would push the sources far down the page, so the whole list is one folded card.
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${blocks}</details>`;
+}
+
 
 function alignWord(v) {
   if (v === "r") return t("dmarc.relaxed");
@@ -541,6 +662,35 @@ function recordRowHtml(r) {
   </tr>`;
 }
 
+// Concrete fixes derived from the SPF / DKIM results of the records that failed. Only relevant when the source is a
+// legitimate sender, which the heading says.
+function fixHints(row) {
+  const hints = new Set();
+  const add = (key, params) => hints.add(t(key, params));
+  row.records.forEach((r) => {
+    const from = r.headerFrom || "?";
+    if (r.dkimEval !== "pass") {
+      const pass = r.dkimResults.find((a) => String(a.result).toLowerCase() === "pass");
+      if (!r.dkimResults.length) add("dmarc.fix_dkim_missing", {});
+      else if (pass) add("dmarc.fix_dkim_misaligned", { domain: pass.domain || "?", from });
+      else r.dkimResults.forEach((a) => add("dmarc.fix_dkim_fail", { domain: a.domain || "?", selector: a.selector || "?" }));
+    }
+    if (r.spfEval !== "pass") {
+      const pass = r.spfResults.find((a) => String(a.result).toLowerCase() === "pass");
+      if (!r.spfResults.length) add("dmarc.fix_spf_missing", {});
+      else if (pass) add("dmarc.fix_spf_misaligned", { domain: pass.domain || "?", from });
+      else r.spfResults.forEach((a) => add("dmarc.fix_spf_fail", { domain: a.domain || "?", ip: row.sourceIp }));
+    }
+  });
+  return [...hints].slice(0, 8);
+}
+
+function fixHintsHtml(row) {
+  const hints = fixHints(row);
+  if (!hints.length) return "";
+  return `<div class="fix-hints"><strong>${e(t("dmarc.h_fix"))}</strong><ul>${hints.map((h) => `<li>${e(h)}</li>`).join("")}</ul></div>`;
+}
+
 function detailHtml(row) {
   const geo = geoCache[row.sourceIp]
     ? `<span class="geo-slot muted">${e(geoText(row.sourceIp))}</span>`
@@ -550,6 +700,8 @@ function detailHtml(row) {
       <button class="secondary lookup-btn">${e(t("dmarc.btn_lookup"))}</button>
       <button class="secondary report-btn">${e(t("lookup.report_abuseipdb"))}</button>
     </div>
+    <div class="known-slot">${knownSenderHtml(row.sourceIp, row)}</div>
+    ${fixHintsHtml(row)}
     <div class="table-wrap"><table class="fact-table"><thead><tr>
       <th>${e(t("dmarc.col_identifiers"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>SPF</th><th>DKIM</th><th>${e(t("dmarc.policy_decision"))}</th>
     </tr></thead><tbody>${row.records.map(recordRowHtml).join("")}</tbody></table></div>
@@ -662,8 +814,9 @@ function render() {
     policyHintsHtml() +
     kpiHtml() +
     providersHtml() +
-    `<h3>${e(t("dmarc.h_reports"))}</h3>` +
-    reportMeta.map((m) => reportHtml(m, reportMeta.length === 1)).join("") +
+    timelineHtml() +
+    `<div id="dm-compare"></div>` +
+    reportsHtml() +
     `<div id="dm-sources"></div>` +
     legendHtml();
   renderSources();
@@ -702,6 +855,14 @@ function buildMarkdown() {
     out.push(`## ${t("dmarc.h_providers")}`, "");
     out.push(`| ${t("dmarc.f_provider")} | ${t("dmarc.col_reports")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|---|");
     providerStats().forEach((g) => out.push(`| ${mdCell(g.org)} | ${g.reports} | ${g.messages} | ${fmtPct(g.messages - g.failed, g.messages)} | ${g.failed} |`));
+    out.push("");
+  }
+
+  const days = dailyStats();
+  if (days.length > 1) {
+    out.push(`## ${t("dmarc.h_timeline")}`, "");
+    out.push(`| ${t("dmarc.col_day")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|");
+    days.forEach((d) => out.push(`| ${d.day} | ${d.messages} | ${fmtPct(d.messages - d.failed, d.messages)} | ${d.failed} |`));
     out.push("");
   }
 

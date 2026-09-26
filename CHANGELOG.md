@@ -4,6 +4,18 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.76 - 2026-09-26
+- **DMARC tab:** reverse DNS next to the geo data, with a well-known sender named only when its reverse DNS name is forward-confirmed (`backend/known_senders.py`); fix hints per failing source; a bar chart of messages per day; a comparison with the previous import of the same domain (from the History); the list of reports is one folded card when there are several; the banner lists every failing address behind an expandable line.
+
+## 2.0.75 - 2026-09-26
+- **DMARC tab:** the results banner shows the headline, the addresses, the policy decisions and the advice on separate lines.
+
+## 2.0.74 - 2026-09-26
+- **DMARC tab:** the English description matches the Polish one.
+
+## 2.0.73 - 2026-09-26
+- **DMARC tab:** a new description; the glossary is a collapsible card, folded by default.
+
 ## 2.0.72 - 2026-09-26
 - **URLScan tab:** the History list (earlier scans) and the batch list show full addresses as plain, non-clickable text, like the report.
 

@@ -23,7 +23,7 @@ All routes are under `/api`, answer JSON (errors as `{"detail": "..."}`) and rea
 | `GET /api/abuseipdb/categories` | the category table | no |
 | `POST /api/abuseipdb/report/preview` | recompute the hard checks | no |
 | `POST /api/abuseipdb/report/redact` | mask personal data in the comment | no |
-| `GET /api/dmarc/geo` | RDAP country, owner and network name of a source IP (DMARC tab, on click) | RDAP |
+| `GET /api/dmarc/geo` | RDAP country, owner and network name, reverse DNS name and (forward-confirmed) known sender of a source IP (DMARC tab, on click) | RDAP, DNS |
 | `GET /api/abuseipdb/ip-info` | what AbuseIPDB already knows about an IP | AbuseIPDB |
 | `POST /api/abuseipdb/report/submit` | send the report (re-validated, 409 within the 15-minute rule) | AbuseIPDB |
 | `GET /api/abuseipdb/report/history` | the local log of sent reports | no |

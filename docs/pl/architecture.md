@@ -66,6 +66,7 @@ seisa/
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
+│   ├── known_senders.py      # znani nadawcy poczty wg nazwy odwrotnego DNS (zakładka DMARC)
 │   ├── scoring.py            # wynik zbiorczy reputacji IP (szum-OR)
 │   ├── identity.py           # scalona tożsamość adresu (ASN, właściciel, kraj, sieć) lub domeny (rejestrator, daty, serwery nazw, DNS, kategoria) ze zgodnością źródeł per pole
 │   ├── domain_heuristics.py  # lokalne wskazówki o domenie (wiek, podobne znaki, losowo wyglądające etykiety ...) do wyniku

@@ -66,6 +66,7 @@ seisa/
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
+│   ├── known_senders.py      # well-known mail senders by reverse DNS name (DMARC tab)
 │   ├── scoring.py            # aggregate IP reputation score (noisy-OR)
 │   ├── identity.py           # merged identity of an address (ASN, owner, country, network) or a domain (registrar, dates, name servers, DNS, category) with per-field source agreement
 │   ├── domain_heuristics.py  # local hints about a domain (age, look-alike characters, random-looking labels ...) for the score
