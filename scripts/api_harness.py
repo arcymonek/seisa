@@ -358,6 +358,9 @@ for lang in ("pl", "en"):
     rec(p + "urlscan scan private host", client.post("/api/urlscan/scan", json={"url": "http://192.168.1.10/admin"}, headers=H))
     rec(p + "urlscan scan bad scheme", client.post("/api/urlscan/scan", json={"url": "javascript:alert(1)"}, headers=H))
     rec(p + "urlscan scan bad visibility", client.post("/api/urlscan/scan", json={"url": "https://phish.example/", "visibility": "everyone"}, headers=H))
+    rec(p + "urlscan scan options", client.post("/api/urlscan/scan", json={"url": "https://phish.example/login", "country": "PL", "useragent": "Mozilla/5.0 (Test)"}, headers=H))
+    rec(p + "urlscan scan bad country", client.post("/api/urlscan/scan", json={"url": "https://phish.example/", "country": "xx"}, headers=H))
+    rec(p + "urlscan scan bad useragent", client.post("/api/urlscan/scan", json={"url": "https://phish.example/", "useragent": "bad\nagent"}, headers=H))
     rec(p + "urlscan search", client.get("/api/urlscan/search", params={"url": "hxxps://phish[.]example/login"}, headers=H))
     rec(p + "urlscan search bad url", client.get("/api/urlscan/search", params={"url": "http://10.0.0.1/"}, headers=H))
     rec(p + "urlscan search injection", client.get("/api/urlscan/search", params={"url": 'https://a.example" OR page.domain:"b/'}, headers=H))
@@ -656,6 +659,9 @@ if len(_defanged) != 2 or any(x["url"].startswith("hxxp") for x in SCANS) or any
     failures.append(f"urlscan submissions were not normalised (defanged URL, visibility): {SCANS}")
 if any("192.168" in x["url"] or x["url"].startswith("javascript") for x in SCANS):
     failures.append("urlscan accepted a private host or a non-HTTP scheme")
+_opts = [x for x in SCANS if "country" in x or "customagent" in x]
+if not _opts or any(x.get("country") != "pl" or x.get("customagent") != "Mozilla/5.0 (Test)" for x in _opts):
+    failures.append(f"urlscan scan options (country, custom user agent) were not passed on correctly: {_opts}")
 if not SEARCHES or any('page.domain:"phish.example"' not in q.replace("%22", '"').replace("%3A", ":") for q in SEARCHES):
     failures.append(f"urlscan search query was not the plain domain query: {SEARCHES[:2]}")
 _summary = summary_stub

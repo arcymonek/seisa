@@ -52,7 +52,7 @@ What you get:
 
 > A live scan of a URL through urlscan.io, laid out like the IP tab.
 
-**Input:** a URL (defanged links accepted) | **Output:** verdict, screenshot, page identity, detail cards | **Sends out:** the URL to urlscan.io | **Keys:** `URLSCAN_API_KEY`.
+**Input:** a URL or up to 5 URLs at once (defanged links accepted) | **Output:** verdict, screenshot, page identity, detail cards | **Sends out:** the URL to urlscan.io | **Keys:** `URLSCAN_API_KEY`.
 
 <!-- Screenshot to add: docs/img/tab-urlscan.png -->
 
@@ -60,9 +60,12 @@ What you get:
 
 - **A verdict banner** coloured from the urlscan.io score and the engine and community verdicts; "no verdict" is shown neutrally and explicitly not as "safe".
 - **Summary tiles:** score, HTTP status, server country, ASN, requests, certificate age (with a "new" mark below 7 days), redirects.
-- **The page screenshot** and a **Page identity** card: submitted and final URL, the redirect chain, title, domain, main IP with a **Check IP** button, location, PTR, server, MIME type, scan time and visibility.
+- **The page screenshot** and a **Page identity** card: submitted and final URL, the redirect chain, title, domain, domain with a **Check domain** button, main IP with a **Check IP** button, location, PTR, server, MIME type, scan time and visibility.
 - **Collapsible detail cards:** the urlscan.io verdict (open only when it signals a risk), forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
-- **Earlier scans** of the same domain, so a recent report can be opened instead of ordering a new scan; "Scan again" repeats the scan.
+- **Earlier scans** of the same domain, so a recent report can be opened instead of ordering a new scan (a "?" tip explains what the list contains); "Scan again" repeats the scan.
+- **One action line:** Scan, Earlier scans, then (after a report) Save .md, Copy Markdown, Scan again, Compare with the previous scan and Open in urlscan.io; the state and the time are always at the end of the line. A running scan has a **Cancel** button (only the waiting stops - the scan itself goes on at urlscan.io).
+- **Compare with the previous scan:** finds the newest earlier scan of the domain (the very same URL first), fetches it and shows a side-by-side table - risk level, score, redirects, IP, ASN, server, certificate, forms, technologies - with unchanged rows dimmed, plus the domains that appeared or disappeared.
+- **Several addresses at once:** paste up to 5 addresses separated by spaces, commas or new lines; they are submitted one by one (with a pause, to stay within the rate limit) and shown in a list with the risk level of each, "Open report" and a link to urlscan.io. Every finished scan is saved in the History (without a thumbnail).
 - **Export:** "Save .md" and "Copy Markdown"; addresses found on the scanned page are defanged and never clickable there either.
 
 <details>
@@ -70,11 +73,11 @@ What you get:
 
 **How a scan runs.** `POST /api/v1/scan/`, then polling `GET /api/v1/result/{uuid}/` every 5 seconds until the result is ready (urlscan.io answers 404 while the scan is running; a three-step indicator shows the progress). The backend cleans the address first: a defanged link (`hxxps://evil[.]example`) is restored, a missing scheme becomes `https://`, and what urlscan.io can never scan is refused with a clear message (non-HTTP schemes, `localhost`, private and local addresses, intranet names).
 
-**Fixed submission choices.**
+**Submission choices.**
 
-- **Visibility, your choice (three buttons under the URL field):** `unlisted` by default (not on the urlscan.io front page or in public search, but visible to verified security researchers in urlscan Pro), `private` (only your account) or `public` (anyone; the tab warns about it).
+- **Visibility, your choice (three buttons under the URL field, remembered in the browser):** `unlisted` by default (not on the urlscan.io front page or in public search, but visible to verified security researchers in urlscan Pro), `private` (only your account) or `public` (anyone; the tab warns about it, and also when the address contains parameters such as `token=`, `key=`, `email=` or `user:password@`).
 - **Earlier scans:** urlscan.io is first searched for earlier scans of the same domain (public ones plus those of your account); a hit is marked when it is the very same URL.
-- **The default user agent** (no `customagent`) and **automatic choice of the scan country** (no `country`): both fields are deliberately left out of the request.
+- **Advanced options** (a collapsed section, remembered in the browser): the scan country (a short list, sent as `country`) and the user agent (Chrome on Windows or Android, Safari on iPhone, or your own text, sent as `customagent`). By default both fields are left out of the request, so urlscan.io picks the country automatically and uses its default user agent. A phishing page often shows different content depending on the country or the device.
 
 **Screenshot.** The backend fetches it from urlscan.io and serves it from your own origin, so neither the browser nor the Content-Security-Policy ever touch urlscan.io or the scanned page.
 

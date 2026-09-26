@@ -100,7 +100,7 @@ seisa/
 Moduły frontendu w `frontend/js/`:
 
 - `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML);
-- `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js`, `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
+- `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (porównanie dwóch skanów), `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-ask.js`, `email-compare.js`, `email-export.js` (fakty deterministyczne, karty lekcji, szuflada źródła, dymki słownika, pytania dodatkowe, porównanie i eksporty);
 - `report-builder.js` (zakładka AbuseIPDB) + `report-result.js`, `report-history.js`, `report-export.js` (widok analizy, log wysłanych zgłoszeń i eksport Markdown);
 - `history.js` + `history-compare.js`, `logs.js`, `about.js`.

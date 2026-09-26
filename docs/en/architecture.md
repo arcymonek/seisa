@@ -100,7 +100,7 @@ seisa/
 Frontend modules in `frontend/js/`:
 
 - `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list);
-- `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js`, `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
+- `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (comparison of two scans), `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-ask.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips, follow-up questions, comparison and exports);
 - `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);
 - `history.js` + `history-compare.js`, `logs.js`, `about.js`.

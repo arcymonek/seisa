@@ -17,6 +17,8 @@ SEARCH_URL = "https://urlscan.io/api/v1/search/"
 SEARCH_SIZE = 10
 VISIBILITIES = ("unlisted", "private", "public")
 DEFAULT_VISIBILITY = "unlisted"
+COUNTRIES = ("de", "us", "jp", "fr", "gb", "nl", "ca", "it", "es", "se", "pl", "au")  # scan countries offered in the UI
+MAX_USERAGENT_CHARS = 250
 MAX_SCREENSHOT_BYTES = 6_000_000
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
@@ -35,16 +37,21 @@ def _headers() -> dict:
     return {"API-Key": settings.urlscan_api_key, "Content-Type": "application/json"}
 
 
-async def submit_scan(url: str, visibility: str = DEFAULT_VISIBILITY) -> dict:
+async def submit_scan(url: str, visibility: str = DEFAULT_VISIBILITY, country: str | None = None, useragent: str | None = None) -> dict:
     """Submits a new scan. The default visibility is 'unlisted' (it does not appear on the public front page/search
     of urlscan.io, but is available by UUID and visible to verified researchers in urlscan Pro); 'private' and
-    'public' are chosen explicitly in the UI. The user agent and the scan country are deliberately NOT set
-    (Default/Auto) - the fields are simply omitted and urlscan.io picks the default values itself."""
+    'public' are chosen explicitly in the UI. The user agent (`customagent`) and the scan country (`country`) are
+    optional: unless the user picked them in the advanced options, the fields are simply omitted and urlscan.io picks
+    the default values itself."""
     if not is_configured():
         raise UrlscanError("no API key (URLSCAN_API_KEY)")
     if visibility not in VISIBILITIES:
         raise UrlscanError(f"unsupported visibility: {visibility}")
     payload = {"url": url, "visibility": visibility}
+    if country:
+        payload["country"] = country
+    if useragent:
+        payload["customagent"] = useragent
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(SCAN_URL, headers=_headers(), json=payload)

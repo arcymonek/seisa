@@ -22,6 +22,8 @@ router = APIRouter()
 class ScanRequest(BaseModel):
     url: str
     visibility: str = urlscan_service.DEFAULT_VISIBILITY
+    country: str | None = None
+    useragent: str | None = None
 
 
 @router.post("/scan")
@@ -30,12 +32,18 @@ async def scan(req: ScanRequest):
         raise HTTPException(status_code=400, detail=t("urlscan.no_key"))
     if req.visibility not in urlscan_service.VISIBILITIES:
         raise HTTPException(status_code=400, detail=t("urlscan.invalid_visibility"))
+    country = (req.country or "").strip().lower() or None
+    if country and country not in urlscan_service.COUNTRIES:
+        raise HTTPException(status_code=400, detail=t("urlscan.invalid_country"))
+    useragent = (req.useragent or "").strip() or None
+    if useragent and (len(useragent) > urlscan_service.MAX_USERAGENT_CHARS or not useragent.isprintable()):
+        raise HTTPException(status_code=400, detail=t("urlscan.invalid_useragent"))
     try:
         url = normalize_scan_url(req.url)
     except InvalidScanUrl as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     try:
-        data = await urlscan_service.submit_scan(url, req.visibility)
+        data = await urlscan_service.submit_scan(url, req.visibility, country, useragent)
     except urlscan_service.UrlscanError as exc:
         raise HTTPException(status_code=502, detail=t("urlscan.submit_failed", message=exc.message)) from exc
     return {

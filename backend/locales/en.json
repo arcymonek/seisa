@@ -86,6 +86,8 @@
   "urlscan.url_invalid": "this is not a valid URL",
   "urlscan.url_private": "urlscan.io scans only public internet hosts; \"{host}\" is a local or private address",
   "urlscan.invalid_visibility": "unsupported scan visibility",
+  "urlscan.invalid_country": "unsupported scan country",
+  "urlscan.invalid_useragent": "invalid user agent (up to 250 printable characters)",
   "urlscan.screenshot_failed": "fetching the screenshot failed: {message}",
   "urlscan.no_screenshot": "no screenshot for this scan",
   "report.ip_invalid": "invalid IP address",

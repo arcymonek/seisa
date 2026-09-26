@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.70 - 2026-09-26
+- **URLScan tab:** the chosen visibility, scan country and user agent are remembered in the browser; advanced options (scan country, user agent: presets or custom) are sent to urlscan.io only when set; a Cancel button stops waiting for a running scan; "Compare with the previous scan" shows what changed since the newest earlier scan of the domain; a "Check domain" button in the identity card; up to 5 addresses can be scanned at once (a list with the risk level of each); a warning when a Public scan would publish an address with parameters such as `token=` or `user:password@`; the note under "Earlier scans" moved into a "?" tip.
+
 ## 2.0.69 - 2026-09-26
 - **URLScan tab:** the scan visibility drop-down is replaced by three buttons (unlisted, private, public; the description banner stays). The action line now holds all the buttons - Scan, Earlier scans, Save .md, Copy Markdown, Scan again, Open in urlscan.io - with the state and the time always at its end; the buttons below the report are gone.
 

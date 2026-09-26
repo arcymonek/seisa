@@ -1,6 +1,8 @@
 import { api } from "./api.js";
 import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";
 import { defangUrl } from "./markdown-render.js";
+import { countryName } from "./lookup-result.js";
+import { compareScans } from "./urlscan-compare.js";
 import { renderUrlscanResult } from "./urlscan-result.js";
 import { downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
 
@@ -11,25 +13,58 @@ const THUMB_ATTEMPTS = [[640, 0.6], [640, 0.45], [480, 0.45]]; // [width in px, 
 const THUMB_MAX_CHARS = 150000;
 const RISK_LABEL = { high: "High", medium: "Medium", low: "Low" };
 const VISIBILITIES = ["unlisted", "private", "public"];
+const COUNTRIES = ["de", "us", "jp", "fr", "gb", "nl", "ca", "it", "es", "se", "pl", "au"]; // as accepted by the backend
+const USER_AGENTS = {
+  chrome_windows: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  chrome_android: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+  safari_iphone: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+};
+const MAX_BATCH = 5;
+const BATCH_GAP_MS = 1000; // a pause between submissions, so that the urlscan.io rate limit is not hit
+const MAX_USERAGENT_CHARS = 250;
+const STORAGE_KEY = "seisa.urlscan.options";
+// Parameter names that often carry a secret - a public scan would publish them together with the address.
+const SENSITIVE_PARAM = /[?&;#](access_token|token|auth|api_?key|key|password|passwd|pwd|pass|secret|sig|signature|session|sid|code|otp|email|mail)=/gi;
+const USERINFO = /\/\/[^/\s?#]*:[^/\s?#]*@/;
 
 let root;
 let pollTimer = null;
 let elapsedTimer = null;
 let pollStarted = null;
-let visibility = "unlisted";
+let scanning = false; // a scan (single or batch) is in progress
+let run = 0; // raised whenever a scan is stopped, so that a request still in flight cannot draw into a newer view
+let cancelBtn = null;
+let batchItems = [];
+const options = { visibility: "unlisted", country: "", agent: "", custom: "" };
 
 const formatElapsed = elapsedSeconds("urlscan.seconds");
 
 export function initUrlscan(container) {
   root = container;
+  loadOptions();
   root.innerHTML = `
     <div class="subtitle">${escapeHtml(t("urlscan.subtitle"))}</div>
     <label for="us-url">${escapeHtml(t("urlscan.url_label"))}</label>
-    <input type="text" id="us-url" placeholder="${escapeHtml(t("urlscan.url_placeholder"))}" autocomplete="off" spellcheck="false">
+    <textarea id="us-url" rows="1" placeholder="${escapeHtml(t("urlscan.url_placeholder"))}" autocomplete="off" spellcheck="false"></textarea>
     <div class="chip-row" id="us-visibility" role="group" aria-label="${escapeHtml(t("urlscan.visibility_label"))}">${VISIBILITIES.map(
-      (v) => `<button type="button" class="chip${v === visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
+      (v) => `<button type="button" class="chip${v === options.visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === options.visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
     ).join("")}</div>
+    <details class="us-advanced" id="us-advanced"${options.country || options.agent ? " open" : ""}>
+      <summary>${escapeHtml(t("urlscan.advanced"))}</summary>
+      <div class="us-adv-grid">
+        <label for="us-country">${escapeHtml(t("urlscan.country_label"))}</label>
+        <select id="us-country"><option value="">${escapeHtml(t("urlscan.country_auto"))}</option>${COUNTRIES.map(
+          (c) => `<option value="${c}"${c === options.country ? " selected" : ""}>${escapeHtml(countryName(c.toUpperCase()))}</option>`
+        ).join("")}</select>
+        <label for="us-agent">${escapeHtml(t("urlscan.agent_label"))}</label>
+        <select id="us-agent"><option value="">${escapeHtml(t("urlscan.agent_default"))}</option>${Object.keys(USER_AGENTS).map(
+          (k) => `<option value="${k}"${k === options.agent ? " selected" : ""}>${escapeHtml(t("urlscan.agent." + k))}</option>`
+        ).join("")}<option value="custom"${options.agent === "custom" ? " selected" : ""}>${escapeHtml(t("urlscan.agent.custom"))}</option></select>
+        <input type="text" id="us-agent-custom" maxlength="${MAX_USERAGENT_CHARS}" value="${escapeHtml(options.custom)}" placeholder="${escapeHtml(t("urlscan.agent_custom_placeholder"))}" spellcheck="false" autocomplete="off"${options.agent === "custom" ? "" : " hidden"}>
+      </div>
+    </details>
     <div class="banner info" id="us-hint"></div>
+    <div id="us-warn"></div>
     <div class="action-row">
       <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
       <button class="secondary" id="us-existing">${escapeHtml(t("urlscan.existing"))}</button>
@@ -37,32 +72,90 @@ export function initUrlscan(container) {
       <span class="action-info" id="us-status"></span>
     </div>
     <div id="us-error"></div>
+    <div id="us-batch"></div>
     <div id="us-result"></div>
   `;
+  const urlInput = root.querySelector("#us-url");
   root.querySelector("#us-submit").addEventListener("click", onSubmit);
   root.querySelector("#us-existing").addEventListener("click", onExisting);
-  root.querySelector("#us-url").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") onSubmit();
+  urlInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSubmit();
+    }
+  });
+  urlInput.addEventListener("input", () => {
+    growUrlField();
+    updateHint();
   });
   root.querySelector("#us-visibility").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-vis]");
     if (!btn) return;
-    visibility = btn.dataset.vis;
+    options.visibility = btn.dataset.vis;
     root.querySelectorAll("#us-visibility [data-vis]").forEach((b) => {
       b.classList.toggle("on", b === btn);
       b.setAttribute("aria-pressed", String(b === btn));
     });
+    saveOptions();
+    updateHint();
+  });
+  const agentSelect = root.querySelector("#us-agent");
+  const customInput = root.querySelector("#us-agent-custom");
+  root.querySelector("#us-country").addEventListener("change", (e) => {
+    options.country = e.target.value;
+    saveOptions();
+    updateHint();
+  });
+  agentSelect.addEventListener("change", () => {
+    options.agent = agentSelect.value;
+    customInput.hidden = options.agent !== "custom";
+    if (!customInput.hidden) customInput.focus();
+    saveOptions();
+    updateHint();
+  });
+  customInput.addEventListener("input", () => {
+    options.custom = customInput.value;
+    saveOptions();
     updateHint();
   });
   updateHint();
-  registerDirtyCheck(() => pollTimer !== null);
+  registerDirtyCheck(() => scanning);
+}
+
+// The remembered choices (visibility, country, user agent); a private window or blocked storage just means the defaults.
+function loadOptions() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    if (VISIBILITIES.includes(saved.visibility)) options.visibility = saved.visibility;
+    if (COUNTRIES.includes(saved.country)) options.country = saved.country;
+    if (saved.agent === "custom" || USER_AGENTS[saved.agent]) options.agent = saved.agent;
+    if (typeof saved.custom === "string") options.custom = saved.custom.slice(0, MAX_USERAGENT_CHARS);
+  } catch {
+    /* defaults */
+  }
+}
+
+function saveOptions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
+  } catch {
+    /* not remembered */
+  }
+}
+
+function userAgentValue() {
+  if (options.agent === "custom") return options.custom.trim();
+  return USER_AGENTS[options.agent] || "";
 }
 
 // Puts an address into the URL field (used by the other tabs); nothing is submitted.
 export function prefillUrlscan(url) {
   if (!root) return;
-  root.querySelector("#us-url").value = url;
-  root.querySelector("#us-url").focus();
+  const field = root.querySelector("#us-url");
+  field.value = url;
+  growUrlField();
+  updateHint();
+  field.focus();
 }
 
 // Scans the address again from another tab (History).
@@ -75,10 +168,9 @@ export function repeatUrlscan(url) {
 // Shows a scan kept in the History (the summary and the thumbnail; the full report can be fetched again).
 export function showSavedScan(data) {
   if (!root || !data || !data.summary) return;
-  stopTimers();
-  setBusy(false);
+  endScan();
   clearOutput();
-  root.querySelector("#us-url").value = data.summary.submitted_url;
+  prefillUrlscan(data.summary.submitted_url);
   const report = renderUrlscanResult(data.summary, { thumbnail: data.thumbnail });
   const fullBtn = button(t("urlscan.load_full"), "secondary", async () => {
     fullBtn.disabled = true;
@@ -96,10 +188,31 @@ export function showSavedScan(data) {
   root.querySelector("#us-result").appendChild(report);
 }
 
+// The URL field grows with the pasted list (up to a few lines).
+function growUrlField() {
+  const field = root.querySelector("#us-url");
+  field.rows = Math.min(MAX_BATCH, Math.max(1, field.value.split("\n").length));
+}
+
+// Addresses separated by spaces, commas, semicolons or new lines (a defanged address has none of them), without repeats.
+function parseUrls(text) {
+  return [...new Set(text.split(/[\s,;]+/).filter(Boolean))];
+}
+
+function sensitiveParams(text) {
+  const names = new Set([...text.matchAll(SENSITIVE_PARAM)].map((m) => m[1].toLowerCase()));
+  if (USERINFO.test(text)) names.add("user:password@");
+  return [...names];
+}
+
 function updateHint() {
   const hint = root.querySelector("#us-hint");
-  hint.className = `banner ${visibility === "public" ? "warn" : "info"}`;
-  hint.textContent = t("urlscan.hint." + visibility);
+  hint.className = `banner ${options.visibility === "public" ? "warn" : "info"}`;
+  const ua = !userAgentValue() ? t("urlscan.agent_default") : options.agent === "custom" ? t("urlscan.agent.custom").toLowerCase() : t("urlscan.agent." + options.agent);
+  const country = options.country ? countryName(options.country.toUpperCase()) : t("urlscan.country_auto");
+  hint.textContent = `${t("urlscan.hint." + options.visibility)} ${t("urlscan.hint_options", { ua, country })}`;
+  const found = options.visibility === "public" ? sensitiveParams(root.querySelector("#us-url").value) : [];
+  root.querySelector("#us-warn").innerHTML = found.length ? `<div class="banner warn">${escapeHtml(t("urlscan.warn_sensitive", { list: found.join(", ") }))}</div>` : "";
 }
 
 function button(text, cls, onClick) {
@@ -116,57 +229,102 @@ function setBusy(busy) {
   root.querySelector("#us-existing").disabled = busy;
 }
 
+// The buttons of the action line (after Scan and Earlier scans, before the status); a running scan keeps its Cancel.
+function setActions(buttons) {
+  root.querySelector("#us-actions").replaceChildren(...(scanning && cancelBtn ? [cancelBtn] : []), ...buttons);
+}
+
 function stopTimers() {
   clearTimeout(pollTimer);
   clearInterval(elapsedTimer);
   pollTimer = null;
   elapsedTimer = null;
+  scanning = false;
+  run += 1;
+}
+
+function endScan() {
+  stopTimers();
+  setBusy(false);
 }
 
 function clearOutput() {
   root.querySelector("#us-result").innerHTML = "";
+  root.querySelector("#us-batch").innerHTML = "";
   root.querySelector("#us-error").innerHTML = "";
   root.querySelector("#us-status").textContent = "";
   root.querySelector("#us-actions").innerHTML = "";
+  batchItems = [];
 }
 
-function setActions(buttons) {
-  root.querySelector("#us-actions").replaceChildren(...buttons);
+function startScan() {
+  stopTimers();
+  clearOutput();
+  scanning = true;
+  setBusy(true);
+  cancelBtn = button(t("urlscan.cancel"), "secondary", cancelScan);
+  return run;
+}
+
+// Stops waiting for the result (the scan itself goes on at urlscan.io, so its page can still be opened).
+function cancelScan() {
+  endScan();
+  const textEl = root.querySelector("#us-status-text");
+  if (textEl) textEl.textContent = t("urlscan.cancelled");
+  root.querySelector("#us-actions").querySelectorAll("button").forEach((b) => b === cancelBtn && b.remove());
+  if (!batchItems.length) root.querySelector("#us-result").innerHTML = "";
+  else {
+    batchItems.forEach((it) => (it.state === "scanning" || it.state === "queued") && (it.state = "cancelled"));
+    renderBatch();
+  }
 }
 
 async function onSubmit() {
+  const urls = parseUrls(root.querySelector("#us-url").value);
+  if (!urls.length) return;
+  if (urls.length > MAX_BATCH) {
+    clearOutput();
+    return showError(t("urlscan.batch_limit", { max: MAX_BATCH }));
+  }
+  if (urls.length > 1) return onBatch(urls);
+  const url = urls[0];
   const urlInput = root.querySelector("#us-url");
-  const url = urlInput.value.trim();
-  if (!url) return;
-  stopTimers();
-  clearOutput();
+  const id = startScan();
   const statusEl = root.querySelector("#us-status");
   statusEl.textContent = t("urlscan.submitting");
-  setBusy(true);
 
   let submitted;
   try {
-    submitted = await api.urlscanSubmit(url, visibility);
+    submitted = await api.urlscanSubmit(url, submitOptions());
   } catch (err) {
+    if (id !== run) return;
+    endScan();
     statusEl.textContent = "";
     showError(t("urlscan.submit_error", { message: err.message }));
-    setBusy(false);
     return;
   }
+  if (id !== run) return;
 
   if (!submitted.uuid) {
+    endScan();
     statusEl.textContent = "";
     showError(t("urlscan.no_uuid"));
-    setBusy(false);
     return;
   }
-  if (submitted.url && submitted.url !== url) urlInput.value = submitted.url; // defanged/schemeless input, cleaned by the backend
+  if (submitted.url && submitted.url !== url) {
+    urlInput.value = submitted.url; // defanged/schemeless input, cleaned by the backend
+    growUrlField();
+  }
 
   pollStarted = performance.now();
   renderStatus(submitted.result_page_url, t("urlscan.submitted"));
   renderSteps(1);
   elapsedTimer = setInterval(() => updateStatusText(t("urlscan.in_progress")), 1000);
-  pollTimer = setTimeout(() => poll(submitted.uuid, submitted.result_page_url), FIRST_POLL_DELAY_MS);
+  pollTimer = setTimeout(() => poll(submitted.uuid, id), FIRST_POLL_DELAY_MS);
+}
+
+function submitOptions() {
+  return { visibility: options.visibility, country: options.country, useragent: userAgentValue() };
 }
 
 function showError(message) {
@@ -181,8 +339,7 @@ function renderSteps(active) {
 }
 
 function renderStatus(resultPageUrl, message) {
-  const statusEl = root.querySelector("#us-status");
-  statusEl.innerHTML = '<span id="us-status-text"></span>';
+  root.querySelector("#us-status").innerHTML = '<span id="us-status-text"></span>';
   setActions([button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener"))]);
   updateStatusText(message);
 }
@@ -191,56 +348,152 @@ function updateStatusText(message) {
   const textEl = root.querySelector("#us-status-text");
   if (!textEl) return;
   const elapsed = pollStarted ? formatElapsed(performance.now() - pollStarted) : formatElapsed(0);
-  textEl.textContent = `${message} (${elapsed}) `;
+  textEl.textContent = `${message} (${elapsed})`;
 }
 
-async function poll(uuid, resultPageUrl) {
+async function poll(uuid, id) {
   const statusEl = root.querySelector("#us-status");
   let data;
   try {
     data = await api.urlscanResult(uuid);
   } catch (err) {
-    stopTimers();
+    if (id !== run) return;
+    endScan();
     statusEl.textContent = "";
     showError(t("urlscan.result_error", { message: err.message }));
     root.querySelector("#us-result").innerHTML = "";
-    setBusy(false);
     return;
   }
+  if (id !== run) return;
 
   if (data.status === "pending") {
     renderSteps(1);
     if (performance.now() - pollStarted > MAX_WAIT_MS) {
-      stopTimers();
+      endScan();
       updateStatusText(t("urlscan.still_running", { time: formatElapsed(MAX_WAIT_MS) }));
-      setBusy(false);
       return;
     }
-    pollTimer = setTimeout(() => poll(uuid, resultPageUrl), POLL_INTERVAL_MS);
+    pollTimer = setTimeout(() => poll(uuid, id), POLL_INTERVAL_MS);
     return;
   }
 
-  stopTimers();
-  setBusy(false);
+  endScan();
   updateStatusText(t("urlscan.ready"));
   showReport(data, { save: true });
+}
+
+// ---- several addresses at once ----
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function onBatch(urls) {
+  const id = startScan();
+  batchItems = urls.map((input) => ({ input, state: "queued" }));
+  pollStarted = performance.now();
+  root.querySelector("#us-status").innerHTML = '<span id="us-status-text"></span>';
+  setActions([]);
+  renderBatch();
+  updateStatusText(t("urlscan.batch_submitting", { done: 0, total: urls.length }));
+  for (const [i, item] of batchItems.entries()) {
+    if (i) await sleep(BATCH_GAP_MS);
+    if (id !== run) return;
+    try {
+      const submitted = await api.urlscanSubmit(item.input, submitOptions());
+      if (!submitted.uuid) throw new Error(t("urlscan.no_uuid"));
+      Object.assign(item, { state: "scanning", uuid: submitted.uuid, url: submitted.url || item.input, pageUrl: submitted.result_page_url });
+    } catch (err) {
+      if (id !== run) return;
+      Object.assign(item, { state: "error", message: err.message });
+    }
+    if (id !== run) return;
+    renderBatch();
+    updateStatusText(t("urlscan.batch_submitting", { done: i + 1, total: urls.length }));
+  }
+  if (!batchItems.some((it) => it.state === "scanning")) return finishBatch();
+  elapsedTimer = setInterval(() => updateStatusText(t("urlscan.batch_progress", batchCounts())), 1000);
+  pollTimer = setTimeout(() => pollBatch(id), FIRST_POLL_DELAY_MS);
+}
+
+function batchCounts() {
+  const finished = batchItems.filter((it) => it.state === "done" || it.state === "error").length;
+  return { done: finished, total: batchItems.length };
+}
+
+function finishBatch(message) {
+  endScan();
+  root.querySelector("#us-actions").innerHTML = "";
+  updateStatusText(message || t("urlscan.ready"));
+}
+
+async function pollBatch(id) {
+  for (const item of batchItems.filter((it) => it.state === "scanning")) {
+    try {
+      const data = await api.urlscanResult(item.uuid);
+      if (id !== run) return;
+      if (data.status === "pending") continue;
+      Object.assign(item, { state: "done", data });
+      saveToHistory(data.summary, null);
+    } catch (err) {
+      if (id !== run) return;
+      Object.assign(item, { state: "error", message: err.message });
+    }
+    renderBatch();
+  }
+  if (id !== run) return;
+  if (!batchItems.some((it) => it.state === "scanning")) return finishBatch();
+  if (performance.now() - pollStarted > MAX_WAIT_MS) {
+    batchItems.forEach((it) => it.state === "scanning" && (it.state = "timeout"));
+    renderBatch();
+    return finishBatch(t("urlscan.still_running", { time: formatElapsed(MAX_WAIT_MS) }));
+  }
+  pollTimer = setTimeout(() => pollBatch(id), POLL_INTERVAL_MS);
+}
+
+function renderBatch() {
+  const rows = batchItems.map((it, i) => {
+    let state = escapeHtml(t("urlscan.batch_state." + it.state));
+    if (it.state === "error") state += ` <span class="muted">${escapeHtml(it.message || "")}</span>`;
+    if (it.state === "done") {
+      const v = it.data.summary.verdict;
+      state = `<span class="badge sm ${v.level === "unknown" ? "single" : v.level}">${escapeHtml(v.level === "unknown" ? t("usr.level_unknown") : t("risk." + v.level))}</span>${v.score != null ? ` <span class="muted">${escapeHtml(String(v.score))}</span>` : ""}`;
+    }
+    const open = it.state === "done" ? `<button type="button" class="secondary mini" data-report="${i}">${escapeHtml(t("urlscan.open_report"))}</button>` : "";
+    const ext = it.pageUrl ? `<button type="button" class="secondary mini" data-ext="${i}">${escapeHtml(t("urlscan.open"))}</button>` : "";
+    return `<tr><td class="mono">${escapeHtml(defangUrl(it.url || it.input))}</td><td>${state}</td><td>${open} ${ext}</td></tr>`;
+  });
+  const box = root.querySelector("#us-batch");
+  box.innerHTML = `<h3>${escapeHtml(t("urlscan.batch_title", { n: batchItems.length }))}</h3>
+    <div class="table-wrap"><table class="fact-table"><tbody>${rows.join("")}</tbody></table></div>`;
+  box.onclick = (ev) => {
+    const btn = ev.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.report !== undefined) {
+      root.querySelector("#us-error").innerHTML = "";
+      showReport(batchItems[Number(btn.dataset.report)].data, { save: false });
+    } else if (btn.dataset.ext !== undefined) window.open(batchItems[Number(btn.dataset.ext)].pageUrl, "_blank", "noopener");
+  };
 }
 
 // ---- earlier scans of the same domain ----
 
 async function onExisting() {
+  const urls = parseUrls(root.querySelector("#us-url").value);
+  if (!urls.length) return;
   const urlInput = root.querySelector("#us-url");
-  const url = urlInput.value.trim();
-  if (!url) return;
-  stopTimers();
+  endScan();
   clearOutput();
+  if (urls.length > 1) return showError(t("urlscan.batch_single_only"));
+  const url = urls[0];
   const statusEl = root.querySelector("#us-status");
   statusEl.textContent = t("urlscan.searching");
   setBusy(true);
   try {
     const data = await api.urlscanSearch(url);
     statusEl.textContent = "";
-    if (data.url !== url) urlInput.value = data.url;
+    if (data.url !== url) {
+      urlInput.value = data.url;
+      growUrlField();
+    }
     root.querySelector("#us-result").appendChild(existingList(data));
   } catch (err) {
     statusEl.textContent = "";
@@ -263,9 +516,9 @@ function existingList(data) {
       <button type="button" class="secondary" data-ext>${escapeHtml(t("urlscan.open"))}</button>
     </div>`;
   });
-  wrap.innerHTML = `<h3>${escapeHtml(t("urlscan.existing_title", { host: defangUrl(data.host) }))}</h3>
-    <div class="card">${rows.length ? rows.join("") : `<div class="muted">${escapeHtml(t("urlscan.existing_none"))}</div>`}
-    <div class="muted">${escapeHtml(t("urlscan.existing_note"))}</div></div>`;
+  wrap.innerHTML = `<h3>${escapeHtml(t("urlscan.existing_title", { host: defangUrl(data.host) }))}
+      <span class="hint-i" tabindex="0" role="img" title="${escapeHtml(t("urlscan.existing_note"))}" aria-label="${escapeHtml(t("urlscan.existing_note"))}">?</span></h3>
+    <div class="card">${rows.length ? rows.join("") : `<div class="muted">${escapeHtml(t("urlscan.existing_none"))}</div>`}</div>`;
   wrap.addEventListener("click", async (ev) => {
     const btn = ev.target.closest("button");
     if (!btn) return;
@@ -299,12 +552,46 @@ function actionButtons(summary, markdown) {
   }
   buttons.push(
     button(t("urlscan.scan_again"), "secondary", () => {
-      root.querySelector("#us-url").value = summary.submitted_url;
+      prefillUrlscan(summary.submitted_url);
       onSubmit();
     })
   );
+  const compareBtn = button(t("urlscan.compare"), "secondary", () => compareWithPrevious(summary, compareBtn));
+  buttons.push(compareBtn);
   buttons.push(button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener")));
   return buttons;
+}
+
+// Finds the newest earlier scan of the same domain (the very same URL first), fetches it and shows what changed.
+async function compareWithPrevious(summary, btn) {
+  const box = document.createElement("div");
+  box.innerHTML = `<div class="muted">${escapeHtml(t("urlscan.cmp.searching"))}</div>`;
+  const resultEl = root.querySelector("#us-result");
+  resultEl.querySelectorAll(".us-compare-box").forEach((el) => el.remove());
+  box.className = "us-compare-box";
+  resultEl.appendChild(box);
+  btn.disabled = true;
+  try {
+    const found = await api.urlscanSearch(summary.submitted_url);
+    const older = found.results
+      .filter((r) => r.uuid !== summary.uuid && r.time && (!summary.scanned_at || r.time < summary.scanned_at))
+      .sort((a, b) => Number(b.exact) - Number(a.exact) || (a.time < b.time ? 1 : -1))[0];
+    if (!older) {
+      box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.cmp.none"))}</div>`;
+      return;
+    }
+    const full = await api.urlscanResult(older.uuid);
+    if (full.status === "pending") {
+      box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.full_pending"))}</div>`;
+      return;
+    }
+    box.innerHTML = compareScans(full.summary, summary, older.exact);
+    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (err) {
+    box.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.cmp.error", { message: err.message }))}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function showReport(data, { save }) {

@@ -52,7 +52,7 @@ Co dostajesz:
 
 > Żywy skan adresu URL przez urlscan.io, w układzie jak zakładka IP.
 
-**Wejście:** adres URL (przyjmuje zdefangowane linki) | **Wynik:** werdykt, zrzut ekranu, tożsamość strony, karty szczegółów | **Wysyła na zewnątrz:** adres URL do urlscan.io | **Klucze:** `URLSCAN_API_KEY`.
+**Wejście:** adres URL albo do 5 adresów naraz (przyjmuje zdefangowane linki) | **Wynik:** werdykt, zrzut ekranu, tożsamość strony, karty szczegółów | **Wysyła na zewnątrz:** adres URL do urlscan.io | **Klucze:** `URLSCAN_API_KEY`.
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-urlscan.png -->
 
@@ -60,9 +60,12 @@ Co dostajesz:
 
 - **Baner werdyktu** w kolorze z wyniku urlscan.io oraz werdyktów silników i społeczności; "brak werdyktu" jest pokazany neutralnie i wprost nie jako "bezpieczne".
 - **Kafelki podsumowania:** wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu (ze znacznikiem "nowy" poniżej 7 dni), przekierowania.
-- **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
+- **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena z przyciskiem **Sprawdź domenę**, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
 - **Zwijane karty szczegółów:** werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, kontaktowane adresy IP (każdy z przyciskiem **Sprawdź IP**), kontaktowane domeny i linki.
-- **Wcześniejsze skany** tej samej domeny, żeby otworzyć świeży raport zamiast zlecać nowy skan; "Skanuj ponownie" powtarza skan.
+- **Wcześniejsze skany** tej samej domeny, żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
+- **Jedna linia akcji:** Skanuj, Wcześniejsze skany, a po raporcie Zapisz .md, Kopiuj Markdown, Skanuj ponownie, Porównaj z poprzednim skanem i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
+- **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
+- **Kilka adresów naraz:** wklej do 5 adresów oddzielonych spacją, przecinkiem lub nową linią; są zgłaszane po kolei (z przerwą, żeby nie przekroczyć limitu zapytań) i pokazane na liście z poziomem ryzyka każdego, "Otwórz raport" i linkiem do urlscan.io. Każdy zakończony skan trafia do Historii (bez miniatury).
 - **Eksport:** "Zapisz .md" i "Kopiuj Markdown"; adresy znalezione na skanowanej stronie są zdefangowane i tam także nigdy nie są klikalne.
 
 <details>
@@ -70,11 +73,11 @@ Co dostajesz:
 
 **Jak przebiega skan.** `POST /api/v1/scan/`, potem odpytywanie `GET /api/v1/result/{uuid}/` co 5 sekund, aż wynik będzie gotowy (urlscan.io zwraca 404, dopóki skan trwa; postęp pokazuje trzyetapowy wskaźnik). Backend najpierw czyści adres: zdefangowany link (`hxxps://evil[.]example`) zostaje przywrócony, brakujący schemat zamieniany jest na `https://`, a to, czego urlscan.io nigdy nie zeskanuje, jest odrzucane z czytelnym komunikatem (schematy inne niż HTTP, `localhost`, adresy prywatne i lokalne, nazwy z sieci wewnętrznej).
 
-**Stałe wybory przy zlecaniu.**
+**Wybory przy zlecaniu.**
 
-- **Widoczność, którą wybierasz (trzy przyciski pod polem URL):** domyślnie `unlisted` (nie trafia na stronę główną ani do publicznego wyszukiwania urlscan.io, ale jest widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro), `private` (tylko Twoje konto) lub `public` (każdy; zakładka ostrzega o tym).
+- **Widoczność, którą wybierasz (trzy przyciski pod polem URL, zapamiętywane w przeglądarce):** domyślnie `unlisted` (nie trafia na stronę główną ani do publicznego wyszukiwania urlscan.io, ale jest widoczny dla zweryfikowanych badaczy bezpieczeństwa w urlscan Pro), `private` (tylko Twoje konto) lub `public` (każdy; zakładka ostrzega o tym, a także gdy adres zawiera parametry takie jak `token=`, `key=`, `email=` albo `user:hasło@`).
 - **Wcześniejsze skany:** najpierw przeszukiwane jest urlscan.io pod kątem wcześniejszych skanów tej samej domeny (publicznych oraz z Twojego konta); trafienie jest oznaczone, gdy to dokładnie ten sam URL.
-- **Domyślny user-agent** (bez `customagent`) i **automatyczny dobór kraju skanowania** (bez `country`): oba pola są celowo pominięte w zapytaniu.
+- **Opcje zaawansowane** (zwinięta sekcja, zapamiętywana w przeglądarce): kraj skanu (krótka lista, wysyłany jako `country`) i user agent (Chrome na Windows lub Androidzie, Safari na iPhonie albo własny tekst, wysyłany jako `customagent`). Domyślnie oba pola są pominięte w zapytaniu, więc urlscan.io sam dobiera kraj i używa domyślnego user agenta. Strona phishingowa często pokazuje inną treść zależnie od kraju albo urządzenia.
 
 **Zrzut ekranu.** Pobiera go z urlscan.io backend i serwuje z Twojego własnego źródła, więc ani przeglądarka, ani Content-Security-Policy nie mają styczności z urlscan.io ani ze skanowaną stroną.
 

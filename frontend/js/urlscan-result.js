@@ -99,7 +99,7 @@ function identityHtml(summary) {
   add(t("usr.f.final"), page.final_url && page.final_url !== summary.submitted_url ? monoUrl(page.final_url) : "");
   if (summary.redirects.length) add(t("usr.f.redirects"), redirectsHtml(summary.redirects));
   add(t("usr.f.title"), page.title ? e(page.title) : "");
-  add(t("usr.f.domain"), page.domain ? mono(page.domain) : "");
+  add(t("usr.f.domain"), page.domain ? `${mono(page.domain)} <button type="button" class="secondary mini inline" data-domain="${e(page.domain)}">${e(t("usr.check_domain"))}</button>` : "");
   add(t("usr.f.apex"), page.apex_domain && page.apex_domain !== page.domain ? mono(page.apex_domain) : "");
   if (page.ip)
     add(t("usr.f.ip"), `${mono(page.ip)} <button type="button" class="secondary mini inline" data-ip="${e(page.ip)}">${e(t("usr.check_ip"))}</button>`);
@@ -231,6 +231,7 @@ export function renderUrlscanResult(summary, opts = {}) {
     if (target.tagName === "IMG") target.closest(".us-shot").classList.toggle("expanded");
     else if (target.dataset.copy !== undefined) navigator.clipboard.writeText(defangUrl(summary.submitted_url));
     else if (target.dataset.ip) window.seisaApp.goToLookup(target.dataset.ip);
+    else if (target.dataset.domain) window.seisaApp.goToLookup(target.dataset.domain);
     else toggleMoreChips(target);
   });
 

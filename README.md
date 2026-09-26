@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.69</b></p>
+<p align="center"><b>Seisa 2.0.70</b></p>
 
 # Seisa
 
@@ -115,7 +115,7 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 |---|---|---|---|
 | IP lookup (and batch) | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
 | IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS; for a domain the A, AAAA, NS, MX, CAA and TXT records, plus one query for a random subdomain to detect wildcard DNS and one A query per name server), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
-| URL scan | the URL and the chosen visibility; the domain in the "Earlier scans" search; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
+| URL scan | the URL, the chosen visibility and, if you set them, the scan country and the user agent; the domain in the "Earlier scans" search; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
 | DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry), as in the IP tab | only on the click in an expanded row |
 | Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis", "Ask" | the whole e-mail source (with personal data), and for "Ask" the question and the fragment | OpenRouter | only on that click; the interface says so before sending |
 | AbuseIPDB: "Analyze" | the whole e-mail source | OpenRouter | only on that click |
