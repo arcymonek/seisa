@@ -342,6 +342,13 @@ button.mini { margin: 0 0 0 10px; padding: 2px 10px; font-size: 13px; vertical-a
 .badge.sm.majority { background: #3a3220; color: var(--warn); }
 .badge.sm.conflict { background: #3a2422; color: var(--fail); }
 .badge.sm.single { background: none; border: 1px solid var(--hair); color: var(--muted); font-weight: 400; }
+.compare { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 8px 0; font-size: 14.5px; }
+.spark { display: inline-flex; align-items: flex-end; gap: 3px; height: 26px; }
+.spark i { display: block; width: 8px; border-radius: 2px; background: var(--pass); }
+.spark i.medium { background: var(--warn); }
+.spark i.high { background: var(--fail); }
+.spark i:last-child { outline: 1px solid var(--text); }
+.failed-sources > summary { color: var(--muted); }
 .check-row { display: flex; flex-wrap: wrap; gap: 0 28px; }
 .ident-state { font-size: 14px; }
 .ident-state.warn { color: var(--warn); }

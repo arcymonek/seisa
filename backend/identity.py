@@ -316,6 +316,8 @@ def build_domain_identity(results: dict[str, ServiceResult]) -> Identity:
     dns = _ok_summary(results, "whois_rdns").get("dns") or {}
     if dns and dns.get("exists") is False:
         notes.append(t("identity.note_nxdomain"))
+    if dns.get("ns_missing"):
+        notes.append(t("identity.note_ns_missing", hosts=", ".join(dns["ns_missing"])))
     if dns.get("wildcard"):
         notes.append(t("identity.note_wildcard"))
     return Identity(fields=fields, notes=notes)

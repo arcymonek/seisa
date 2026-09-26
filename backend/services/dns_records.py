@@ -45,13 +45,18 @@ async def resolve_domain(domain: str) -> dict:
         _query(host, "A"), _query(host, "AAAA"), _query(host, "NS"), _query(host, "MX"), _query(host, "CAA"),
         _query(host, "TXT"), _query(f"_dmarc.{host}", "TXT"), _query(probe, "A"),
     )
+    ns_hosts = sorted(n.rstrip(".").lower() for n in ns)
+    # A delegation to a name server whose own name does not exist ("dangling" NS): the zone cannot be resolved through
+    # it, and whoever registers that name takes the zone over. Only NXDOMAIN counts - a timeout proves nothing.
+    ns_gone = [h for h, (_, gone) in zip(ns_hosts, await asyncio.gather(*(_query(h, "A") for h in ns_hosts)), strict=True) if gone]
     spf = [v for v in _txt(txt) if v.lower().startswith("v=spf1")]
     dmarc_records = [v for v in _txt(dmarc) if v.lower().startswith("v=dmarc1")]
     summary = {
         "exists": not nx,
         "a": sorted(a),
         "aaaa": sorted(aaaa),
-        "ns": sorted(n.rstrip(".").lower() for n in ns),
+        "ns": ns_hosts,
+        "ns_missing": ns_gone,
         # "0 ." is the null MX of a domain that takes no mail: no host to list
         "mx": [h for h in (m.split(None, 1)[-1].rstrip(".").lower() for m in sorted(mx, key=lambda m: int(m.split()[0]) if m.split()[0].isdigit() else 0)) if h],
         "caa": sorted(caa),

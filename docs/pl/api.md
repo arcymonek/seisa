@@ -8,8 +8,8 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 
 | Metoda i ścieżka | Cel | Wywołuje na zewnątrz? |
 |---|---|---|
-| `POST /api/lookup` | reputacja jednego IP (lub domeny); dane wejściowe są najpierw normalizowane (URL, forma zdefangowana, `ip:port`), adresy niepubliczne dają 400 | usługi intel, DNS, WHOIS |
-| `POST /api/lookup/batch` (SSE) | wiele wskaźników, z widocznym throttlem VirusTotal | usługi intel |
+| `POST /api/lookup` | reputacja jednego IP (lub domeny); dane wejściowe są najpierw normalizowane (URL, forma zdefangowana, `ip:port`), adresy niepubliczne dają 400 | usługi intel, DNS, WHOIS; odpowiedź ma `comparison` (wcześniejsze skany tego wskaźnika z Historii) |
+| `POST /api/lookup/batch` (SSE) | wiele wskaźników (normalizowanych, bez duplikatów), z widocznym throttlem VirusTotal | usługi intel |
 | `POST /api/urlscan/scan` | zlecenie skanu URL | urlscan.io |
 | `GET /api/urlscan/result/{uuid}` | odpytanie wyniku (`pending` lub `done`) | urlscan.io |
 | `GET /api/urlscan/screenshot/{uuid}` | zrzut ekranu, serwowany z Twojego originu | urlscan.io |

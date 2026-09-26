@@ -4,6 +4,12 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.63 - 2026-09-26
+- **Comparison with the previous scan** (`comparison` in the `/api/lookup` answer, built from the History before the new entry is saved and never stored in it): previous score, difference, sources whose risk moved by 10 or more, and a bar per earlier scan.
+- **Batch mode:** duplicates are dropped after normalisation, a summary table sorted by score, and "Save CSV" (spreadsheet-formula safe).
+- **IP tab:** sources without a result are one collapsed bar; "Component scores" is collapsed; the service chips carry the service names; a single result has no "Refresh" button (Force refresh does the same); a domain report has "Scan in URLScan".
+- **Domains:** a delegation to name servers that do not exist (dangling NS) is reported in the domain identity.
+
 ## 2.0.62 - 2026-09-26
 - **IP tab, domains:** Cloudflare Radar now uses the ranking endpoint (`/radar/ranking/domain/{domain}`: rank, popularity bucket, categories); the old entity URL answered `HTTP 400 No route for that URI`. WHOIS is joined by DNS records (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard; new dependency `dnspython`). A **domain identity** card (registrar, dates, age, name servers cross-checked between WHOIS and DNS, addresses with a "check this IP" button, category, popularity), domain tiles, and local heuristics as a low-credibility score source (`backend/domain_heuristics.py`).
 - **Input normalisation** (`normalize_indicator`): a pasted URL, a defanged indicator, `ip:port`, `user@host`, upper case and IDN are reduced to the bare host or IP; private, loopback and reserved addresses get 400 with an explanation instead of being sent to the services.

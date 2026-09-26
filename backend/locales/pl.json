@@ -280,5 +280,6 @@
   "identity.f.popularity": "Popularność (Cloudflare)",
   "identity.popularity_top": "top {n}",
   "identity.note_nxdomain": "Domena nie istnieje w DNS (NXDOMAIN) - jest niezarejestrowana, wygasła lub wyłączona.",
-  "identity.note_wildcard": "Strefa odpowiada dla dowolnej subdomeny (wildcard DNS) - losowa nazwa też się rozwiązuje; typowe dla domen zaparkowanych i zestawów phishingowych."
+  "identity.note_wildcard": "Strefa odpowiada dla dowolnej subdomeny (wildcard DNS) - losowa nazwa też się rozwiązuje; typowe dla domen zaparkowanych i zestawów phishingowych.",
+  "identity.note_ns_missing": "Strefa jest delegowana do serwerów nazw, które nie istnieją w DNS: {hosts}. Strefa nie rozwiązuje się w pełni, a kto zarejestruje taką nazwę, może przejąć strefę (wiszący NS)."
 }

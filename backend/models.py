@@ -66,6 +66,27 @@ class Identity(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class ScorePoint(BaseModel):
+    queried_at: str
+    score: float
+    level: Literal["low", "medium", "high"]
+
+
+class SourceChange(BaseModel):
+    source: str
+    before: float | None = None  # source risk in the previous scan (None: the source did not vote)
+    after: float | None = None
+
+
+class Comparison(BaseModel):
+    """The same indicator checked before (from the History): the previous result, what moved, the score trend."""
+
+    previous: ScorePoint
+    delta: float
+    changes: list[SourceChange] = Field(default_factory=list)
+    trend: list[ScorePoint] = Field(default_factory=list)  # oldest first, the current scan is not included
+
+
 class LookupResult(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     indicator: str
@@ -75,11 +96,12 @@ class LookupResult(BaseModel):
     services: dict[str, ServiceResult] = Field(default_factory=dict)
     talos_url: str
     markdown: str
-    identity: Identity | None = None  # IP lookups only
+    identity: Identity | None = None
+    comparison: Comparison | None = None  # set by the router from the History; never stored in it
 
     def stripped_for_history(self) -> LookupResult:
         return self.model_copy(
-            update={"services": {k: v.without_raw() for k, v in self.services.items()}}
+            update={"services": {k: v.without_raw() for k, v in self.services.items()}, "comparison": None}
         )
 
 

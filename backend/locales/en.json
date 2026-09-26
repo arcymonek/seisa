@@ -280,5 +280,6 @@
   "identity.f.popularity": "Popularity (Cloudflare)",
   "identity.popularity_top": "top {n}",
   "identity.note_nxdomain": "The domain does not exist in DNS (NXDOMAIN) - it is unregistered, expired or taken down.",
-  "identity.note_wildcard": "The zone answers for any subdomain (wildcard DNS) - a random name resolves too; common for parked domains and for phishing kits."
+  "identity.note_wildcard": "The zone answers for any subdomain (wildcard DNS) - a random name resolves too; common for parked domains and for phishing kits.",
+  "identity.note_ns_missing": "The zone is delegated to name servers that do not exist in DNS: {hosts}. The zone cannot be fully resolved, and whoever registers such a name can take the zone over (a dangling NS)."
 }

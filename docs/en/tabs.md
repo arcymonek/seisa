@@ -21,7 +21,7 @@ The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [
 | [Cloudflare Radar](https://radar.cloudflare.com) | network/context data - ASN, location, routing (not a verdict) |
 | [AbuseIPDB](https://www.abuseipdb.com) | confidence score, number of reports, author of the latest report, ISP |
 | [GreyNoise](https://www.greynoise.io) | full IP Lookup (`/v3/ip`) - actor, tags, VPN/Tor, network metadata; falls back to the free community endpoint if the key has no access to the full API; "no information in the service" counts as a contribution of 0.0, not as "unknown" |
-| WHOIS / rDNS | for an IP: reverse DNS (PTR) + full RDAP (RFC 9083, the successor of WHOIS) - network range, owner, abuse/technical contact, registration dates; for a domain: WHOIS (registrar, dates, name servers, status) + DNS records (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard) - no API key needed |
+| WHOIS / rDNS | for an IP: reverse DNS (PTR) + full RDAP (RFC 9083, the successor of WHOIS) - network range, owner, abuse/technical contact, registration dates; for a domain: WHOIS (registrar, dates, name servers, status) + DNS records (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard, name servers that do not exist) - no API key needed |
 | Cisco Talos | no official API - only a button for a manual check |
 
 What you get:
@@ -31,7 +31,10 @@ What you get:
 - **An address identity card** (for a domain: **domain identity**) that merges owner, ASN, country, network, reverse DNS, usage type and Tor from all sources (for a domain: registrar, dates, age, name servers checked against WHOIS and DNS, IP addresses, mail servers, SPF, DMARC, CAA, category, popularity) and shows how many sources agree. It is collapsed with a green "sources agree" note, and opens by itself when the sources disagree.
 - **One collapsible card per source**, open only for sources with a signal (source risk of 25 or more, i.e. Medium or High); lists (tags, CVEs, ports, pulses) are chips with "show more". The WHOIS / rDNS card repeats the identity rows that come from it, so nothing has to be looked up in two places.
 - **Pasted input is cleaned up:** a URL (`https://Example.com:8080/a?b`), a defanged indicator (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` or an upper-case name is reduced to the bare host or IP address. Private, loopback and reserved addresses are refused with an explanation instead of being sent to the services.
-- **Batch mode** (many addresses at once, with the VirusTotal throttle visible) and a 15-minute in-memory cache with an option to force a refresh.
+- **Comparison with the previous scan:** when the same indicator is in the History, a line under the banner shows the previous score, the difference, the sources whose risk moved by 10 or more and a bar per earlier scan (the History keeps 25 unpinned entries, so the trend is at most that long).
+- **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each; it opens by itself on an error. "Component scores" is collapsed too.
+- **Batch mode** (many addresses or domains at once, with the VirusTotal throttle visible): duplicates in the list (`Example.com`, `https://example.com/x`) are checked once, a summary table sorted by score comes first (with the change against the previous scan, the strongest signal and the owner or registrar; a click jumps to the report) and "Save CSV" exports it (cells that could be read as a spreadsheet formula are prefixed with `'`). A 15-minute in-memory cache, with an option to force a refresh; in a single scan "Force refresh" replaces the per-report refresh button, which only batch reports keep.
+- **A domain report** has a "Scan in URLScan" button that fills the URLScan tab with `https://<domain>/`.
 - **Export:** "Save .md" (the browser's native save dialog) or copy; the Markdown contains the whole report including the identity table.
 
 <details>

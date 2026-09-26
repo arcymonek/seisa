@@ -187,6 +187,26 @@ function bannerHtml(result) {
   return `<div class="banner ${BANNER_TONE[rs.level] || "info"}" data-sec="summary"><strong>${e(title)}</strong>${basis}${detail ? `<div>${e(detail)}</div>` : ""}${notes}</div>`;
 }
 
+// The same indicator scanned before (History): difference to the last scan, the sources that moved, a bar per earlier scan.
+function comparisonHtml(result) {
+  const cmp = result.comparison;
+  if (!cmp) return "";
+  const delta = cmp.delta;
+  const change = delta > 0 ? t("lookup.compare_up", { n: delta }) : delta < 0 ? t("lookup.compare_down", { n: Math.abs(delta) }) : t("lookup.compare_same");
+  const tone = delta > 0 ? "warn" : delta < 0 ? "ok" : "";
+  const moved = cmp.changes
+    .map((c) => `${serviceTitle(c.source)}: ${c.before == null ? "-" : c.before} → ${c.after == null ? "-" : c.after}`)
+    .join("; ");
+  const points = [...cmp.trend, { queried_at: result.queried_at, score: result.risk_score.score, level: result.risk_score.level }];
+  const bars = points
+    .map((p) => `<i class="${e(p.level)}" style="height:${Math.max(6, Math.min(100, p.score))}%" title="${e(fmtDateTime(p.queried_at))}: ${e(p.score)}"></i>`)
+    .join("");
+  return `<div class="compare"><span>${e(t("lookup.compare_prev", { when: fmtDateTime(cmp.previous.queried_at), score: cmp.previous.score, level: t("risk." + cmp.previous.level) }))}
+    <strong class="ident-state ${tone}">${e(change)}</strong></span>
+    ${moved ? `<span class="muted">${e(t("lookup.compare_moved"))}: ${e(moved)}</span>` : ""}
+    ${points.length > 2 ? `<span class="spark" title="${e(t("lookup.compare_trend", { n: points.length }))}">${bars}</span>` : ""}</div>`;
+}
+
 export function tileHtml(label, value, sub, mark) {
   return `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}${mark ? ` ${mark}` : ""}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
 }
@@ -276,7 +296,8 @@ function componentsHtml(rs) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("lookup.col_source"))}</th><th>${e(t("lookup.col_signal"))}</th><th>${e(t("lookup.col_value"))}</th><th>${e(t("lookup.col_risk"))}</th><th>${e(t("lookup.col_credibility"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : "";
   const excluded = excludedSources.length ? `<div class="excluded-sources">${e(t("lookup.excluded"))}: ${e(excludedSources.join("; "))}</div>` : "";
-  return `<h3 data-sec="components">${e(t("lookup.h_components"))}</h3>${table}${excluded}`;
+  // Collapsed: the banner already names the sources that drive the score; this is the arithmetic behind it.
+  return `<details class="fact-block" data-sec="components"><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
 }
 
 // ---- identity card ----
@@ -383,6 +404,17 @@ function sourceCard(id, res, comp, identity) {
   </details>`;
 }
 
+// Sources that gave no answer (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each.
+function failedSourcesHtml(entries) {
+  if (!entries.length) return "";
+  const problem = entries.some(([, res]) => res.status === "error" || res.status === "rate_limited_daily");
+  const rows = entries.map(([id, res]) => {
+    const msg = res.error_message || (res.summary && res.summary.message) || "";
+    return [serviceTitle(id), `${e(t("lookup.status." + res.status))}${msg ? ` <span class="muted">- ${e(msg)}</span>` : ""}`];
+  });
+  return `<details class="fact-block failed-sources"${problem ? " open" : ""}><summary>${e(tn("lookup.failed_sources", entries.length))} <span class="ident-state ${problem ? "warn" : ""}">${e(entries.map(([id]) => serviceTitle(id)).join(", "))}</span></summary>${kvHtml(rows)}</details>`;
+}
+
 function sourcesHtml(result) {
   const comps = Object.fromEntries((result.risk_score.components || []).map((c) => [c.source, c]));
   const ids = Object.keys(result.services).sort((a, b) => {
@@ -390,7 +422,9 @@ function sourcesHtml(result) {
     const rb = comps[b] ? comps[b].risk : -1;
     return rb - ra || SERVICE_ORDER.indexOf(a) - SERVICE_ORDER.indexOf(b);
   });
-  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${ids.map((id) => sourceCard(id, result.services[id], comps[id], result.identity)).join("")}`;
+  const good = ids.filter((id) => result.services[id].status === "ok");
+  const failed = ids.filter((id) => result.services[id].status !== "ok").map((id) => [id, result.services[id]]);
+  return `<h3 data-sec="sources">${e(t("lookup.h_sources"))}</h3>${good.map((id) => sourceCard(id, result.services[id], comps[id], result.identity)).join("")}${failedSourcesHtml(failed)}`;
 }
 
 // The "show N more" button of a chip list (shared with the URLScan report); false when the button is something else.
@@ -437,7 +471,7 @@ export function renderLookupResult(result, actions = null) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
     <div data-actions></div>${navHtml(result, sections)}
-    ${bannerHtml(result)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
+    ${bannerHtml(result)}${comparisonHtml(result)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
   const slot = wrap.querySelector("[data-actions]");
   if (actions) slot.replaceWith(actions);
   else slot.remove();
@@ -449,7 +483,8 @@ export function renderLookupResult(result, actions = null) {
     else if (target.dataset.checkIp) window.seisaApp.repeatLookup(target.dataset.checkIp);
     else if (target.dataset.jump || target.dataset.jumpService) {
       const card = target.dataset.jumpService ? wrap.querySelector(`details.src[data-service="${target.dataset.jumpService}"]`) : null;
-      const dest = card || wrap.querySelector(`[data-sec="${target.dataset.jump}"]`);
+      const failed = target.dataset.jumpService && !card ? wrap.querySelector("details.failed-sources") : null;
+      const dest = card || failed || wrap.querySelector(`[data-sec="${target.dataset.jump}"]`);
       if (dest && dest.tagName === "DETAILS") dest.open = true;
       if (dest) dest.scrollIntoView({ behavior: "smooth", block: "start" });
     }

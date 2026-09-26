@@ -268,7 +268,8 @@ try:
     import backend.services.whois_dns as _whois_dns
 
     async def _fake_dns(domain):
-        return {"exists": True, "a": ["93.184.216.34"], "ns": ["ns1.example"], "mx": ["mail.example"], "spf": "v=spf1 -all"}
+        return {"exists": True, "a": ["93.184.216.34"], "ns": ["ns1.example"], "mx": ["mail.example"], "spf": "v=spf1 -all",
+                **({"ns_missing": ["ns9.gone.example"]} if domain == "dangling.example" else {})}
 
     _whois_dns.resolve_domain = _fake_dns
 except ImportError:  # `--root` points at a checkout from before the DNS records existed
@@ -342,9 +343,10 @@ for lang in ("pl", "en"):
     rec(p + "lookup domain url", client.post("/api/lookup", json={"indicator": "HTTPS://Example.COM:8080/a/b?x=1#f", "force_refresh": True}, headers=H))
     rec(p + "lookup defanged ip", client.post("/api/lookup", json={"indicator": "185[.]220[.]101[.]1:443", "force_refresh": True}, headers=H))
     rec(p + "lookup private ip", client.post("/api/lookup", json={"indicator": "192.168.1.10"}, headers=H))
+    rec(p + "lookup domain dangling", client.post("/api/lookup", json={"indicator": "dangling.example", "force_refresh": True}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
-    rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
+    rec(p + "lookup batch", client.post("/api/lookup/batch", json={"indicators": [PUBLIC_IP, "example.com", "HTTPS://Example.com/x", " ", "a/../../x"], "force_refresh": True}, headers=H), sse=True)
     rec(p + "lookup batch too many", client.post("/api/lookup/batch", json={"indicators": ["1.1.1.1"] * 201}, headers=H))
     rec(p + "urlscan scan", client.post("/api/urlscan/scan", json={"url": "https://phish.example/login"}, headers=H))
     rec(p + "urlscan result", client.get("/api/urlscan/result/11111111-2222-3333-4444-555555555555", headers=H))
@@ -470,7 +472,7 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
+    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400, "lookup batch": 200,
     "lookup batch too many": 422, "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
@@ -498,6 +500,17 @@ if isinstance(_dom, dict) and "identity" in _dom:
         failures.append("lookup domain: identity has no registrar")
     if _dom["services"]["cloudflare_radar"]["status"] != "ok":
         failures.append(f"lookup domain: Cloudflare Radar failed: {_dom['services']['cloudflare_radar']}")
+_auto = next((r["body"] for r in RESULTS if r["name"].endswith("] lookup domain auto")), None)
+if isinstance(_auto, dict) and "identity" in _auto:
+    _cmp = _auto.get("comparison")
+    if not (_cmp and _cmp["previous"]["level"] and "delta" in _cmp and _cmp["trend"]):
+        failures.append(f"lookup domain auto: no comparison with the earlier scan of the same domain: {_cmp}")
+_dang = next((r["body"] for r in RESULTS if r["name"].endswith("[en] lookup domain dangling")), None)
+if isinstance(_dang, dict) and "identity" in _dang and not any("ns9.gone.example" in n for n in _dang["identity"]["notes"]):
+    failures.append("lookup domain dangling: the dangling NS is not reported in the identity notes")
+_batch = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup batch"), None)
+if isinstance(_batch, list) and len([ev for ev in _batch if ev.get("type") == "result"]) != 2:
+    failures.append(f"lookup batch: duplicates (URL and plain form of one host) should be one result: {[ev.get('type') for ev in _batch]}")
 _ip = next((r["body"] for r in RESULTS if r["name"].endswith("lookup defanged ip")), None)
 if isinstance(_ip, dict) and _ip.get("indicator") != PUBLIC_IP:
     failures.append(f"lookup defanged ip: not normalised: {_ip.get('indicator')}")
