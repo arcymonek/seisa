@@ -62,11 +62,11 @@ Co dostajesz:
 - **Kafelki podsumowania:** wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu (ze znacznikiem "nowy" poniżej 7 dni), przekierowania.
 - **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena z przyciskiem **Sprawdź domenę**, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
 - **Zwijane karty szczegółów:** werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, kontaktowane adresy IP (każdy z przyciskiem **Sprawdź IP**), kontaktowane domeny i linki.
-- **Wcześniejsze skany** tej samej domeny, żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
-- **Jedna linia akcji:** Skanuj, Wcześniejsze skany, a po raporcie Zapisz .md, Kopiuj Markdown, Skanuj ponownie, Porównaj z poprzednim skanem i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
+- **Wcześniejsze skany** tej samej domeny (przycisk **Historia**), żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
+- **Jedna linia akcji:** Skanuj, po raporcie Skanuj ponownie, Zapisz .md i Kopiuj Markdown, potem Historia (wcześniejsze skany domeny), Porównaj (z poprzednim skanem) i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
 - **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
 - **Kilka adresów naraz:** wklej do 5 adresów oddzielonych spacją, przecinkiem lub nową linią; są zgłaszane po kolei (z przerwą, żeby nie przekroczyć limitu zapytań) i pokazane na liście z poziomem ryzyka każdego, "Otwórz raport" i linkiem do urlscan.io. Każdy zakończony skan trafia do Historii (bez miniatury).
-- **Eksport:** "Zapisz .md" i "Kopiuj Markdown"; adresy znalezione na skanowanej stronie są zdefangowane i tam także nigdy nie są klikalne.
+- **Eksport:** "Zapisz .md" i "Kopiuj Markdown"; w eksporcie adresy znalezione na skanowanej stronie są zdefangowane. W raporcie na ekranie adresy (skanowany URL, łańcuch przekierowań, kontaktowane domeny, linki) są pokazane w całości, jako zwykły tekst, który nigdy nie jest klikalny.
 
 <details>
 <summary>Szczegóły: zlecanie skanu, czyszczenie adresu, karta Formularze, historia</summary>

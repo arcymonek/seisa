@@ -42,32 +42,34 @@ const formatElapsed = elapsedSeconds("urlscan.seconds");
 export function initUrlscan(container) {
   root = container;
   loadOptions();
+  const advancedOpen = Boolean(options.country || options.agent);
   root.innerHTML = `
     <div class="subtitle">${escapeHtml(t("urlscan.subtitle"))}</div>
     <label for="us-url">${escapeHtml(t("urlscan.url_label"))}</label>
     <textarea id="us-url" rows="1" placeholder="${escapeHtml(t("urlscan.url_placeholder"))}" autocomplete="off" spellcheck="false"></textarea>
-    <div class="chip-row" id="us-visibility" role="group" aria-label="${escapeHtml(t("urlscan.visibility_label"))}">${VISIBILITIES.map(
-      (v) => `<button type="button" class="chip${v === options.visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === options.visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
-    ).join("")}</div>
-    <details class="us-advanced" id="us-advanced"${options.country || options.agent ? " open" : ""}>
-      <summary>${escapeHtml(t("urlscan.advanced"))}</summary>
-      <div class="us-adv-grid">
-        <label for="us-country">${escapeHtml(t("urlscan.country_label"))}</label>
-        <select id="us-country"><option value="">${escapeHtml(t("urlscan.country_auto"))}</option>${COUNTRIES.map(
-          (c) => `<option value="${c}"${c === options.country ? " selected" : ""}>${escapeHtml(countryName(c.toUpperCase()))}</option>`
-        ).join("")}</select>
-        <label for="us-agent">${escapeHtml(t("urlscan.agent_label"))}</label>
-        <select id="us-agent"><option value="">${escapeHtml(t("urlscan.agent_default"))}</option>${Object.keys(USER_AGENTS).map(
-          (k) => `<option value="${k}"${k === options.agent ? " selected" : ""}>${escapeHtml(t("urlscan.agent." + k))}</option>`
-        ).join("")}<option value="custom"${options.agent === "custom" ? " selected" : ""}>${escapeHtml(t("urlscan.agent.custom"))}</option></select>
-        <input type="text" id="us-agent-custom" maxlength="${MAX_USERAGENT_CHARS}" value="${escapeHtml(options.custom)}" placeholder="${escapeHtml(t("urlscan.agent_custom_placeholder"))}" spellcheck="false" autocomplete="off"${options.agent === "custom" ? "" : " hidden"}>
-      </div>
-    </details>
+    <div id="us-options">
+      <span id="us-visibility" role="group" aria-label="${escapeHtml(t("urlscan.visibility_label"))}">${VISIBILITIES.map(
+        (v) => `<button type="button" class="secondary${v === options.visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === options.visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
+      ).join("")}</span>
+      <button type="button" class="secondary${advancedOpen ? " on" : ""}" id="us-adv-toggle" aria-expanded="${advancedOpen}" aria-controls="us-adv">${escapeHtml(t("urlscan.advanced"))}</button>
+    </div>
+    <div class="us-adv-grid" id="us-adv"${advancedOpen ? "" : " hidden"}>
+      <label for="us-country">${escapeHtml(t("urlscan.country_label"))}</label>
+      <select id="us-country"><option value="">${escapeHtml(t("urlscan.country_auto"))}</option>${COUNTRIES.map(
+        (c) => `<option value="${c}"${c === options.country ? " selected" : ""}>${escapeHtml(countryName(c.toUpperCase()))}</option>`
+      ).join("")}</select>
+      <label for="us-agent">${escapeHtml(t("urlscan.agent_label"))}</label>
+      <select id="us-agent"><option value="">${escapeHtml(t("urlscan.agent_default"))}</option>${Object.keys(USER_AGENTS).map(
+        (k) => `<option value="${k}"${k === options.agent ? " selected" : ""}>${escapeHtml(t("urlscan.agent." + k))}</option>`
+      ).join("")}<option value="custom"${options.agent === "custom" ? " selected" : ""}>${escapeHtml(t("urlscan.agent.custom"))}</option></select>
+      <input type="text" id="us-agent-custom" maxlength="${MAX_USERAGENT_CHARS}" value="${escapeHtml(options.custom)}" placeholder="${escapeHtml(t("urlscan.agent_custom_placeholder"))}" spellcheck="false" autocomplete="off"${options.agent === "custom" ? "" : " hidden"}>
+    </div>
     <div class="banner info" id="us-hint"></div>
     <div id="us-warn"></div>
     <div class="action-row">
       <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
-      <button class="secondary" id="us-existing">${escapeHtml(t("urlscan.existing"))}</button>
+      <span class="us-actions" id="us-actions-pre"></span>
+      <button class="secondary" id="us-existing" title="${escapeHtml(t("urlscan.existing_tip"))}">${escapeHtml(t("urlscan.existing"))}</button>
       <span class="us-actions" id="us-actions"></span>
       <span class="action-info" id="us-status"></span>
     </div>
@@ -98,6 +100,13 @@ export function initUrlscan(container) {
     });
     saveOptions();
     updateHint();
+  });
+  const advToggle = root.querySelector("#us-adv-toggle");
+  advToggle.addEventListener("click", () => {
+    const open = root.querySelector("#us-adv").hidden;
+    root.querySelector("#us-adv").hidden = !open;
+    advToggle.setAttribute("aria-expanded", String(open));
+    advToggle.classList.toggle("on", open);
   });
   const agentSelect = root.querySelector("#us-agent");
   const customInput = root.querySelector("#us-agent-custom");
@@ -184,7 +193,8 @@ export function showSavedScan(data) {
       fullBtn.disabled = false;
     }
   });
-  setActions([fullBtn, ...actionButtons(data.summary)]);
+  const { pre, post } = actionButtons(data.summary);
+  setActions([...pre, fullBtn], post);
   root.querySelector("#us-result").appendChild(report);
 }
 
@@ -229,9 +239,11 @@ function setBusy(busy) {
   root.querySelector("#us-existing").disabled = busy;
 }
 
-// The buttons of the action line (after Scan and Earlier scans, before the status); a running scan keeps its Cancel.
-function setActions(buttons) {
-  root.querySelector("#us-actions").replaceChildren(...(scanning && cancelBtn ? [cancelBtn] : []), ...buttons);
+// The buttons of the action line: `pre` follow Scan, `post` follow History (a running scan keeps its Cancel first among
+// them); the status text stays last.
+function setActions(pre, post = []) {
+  root.querySelector("#us-actions-pre").replaceChildren(...pre);
+  root.querySelector("#us-actions").replaceChildren(...(scanning && cancelBtn ? [cancelBtn] : []), ...post);
 }
 
 function stopTimers() {
@@ -253,7 +265,7 @@ function clearOutput() {
   root.querySelector("#us-batch").innerHTML = "";
   root.querySelector("#us-error").innerHTML = "";
   root.querySelector("#us-status").textContent = "";
-  root.querySelector("#us-actions").innerHTML = "";
+  setActions([]);
   batchItems = [];
 }
 
@@ -283,6 +295,7 @@ async function onSubmit() {
   const urls = parseUrls(root.querySelector("#us-url").value);
   if (!urls.length) return;
   if (urls.length > MAX_BATCH) {
+    endScan();
     clearOutput();
     return showError(t("urlscan.batch_limit", { max: MAX_BATCH }));
   }
@@ -340,7 +353,7 @@ function renderSteps(active) {
 
 function renderStatus(resultPageUrl, message) {
   root.querySelector("#us-status").innerHTML = '<span id="us-status-text"></span>';
-  setActions([button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener"))]);
+  setActions([], [button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener"))]);
   updateStatusText(message);
 }
 
@@ -543,23 +556,22 @@ function existingList(data) {
 
 // ---- report ----
 
+// Two groups: `pre` (Scan again, Save .md, Copy Markdown) go after Scan, `post` (Compare, Open in urlscan.io) after History.
 function actionButtons(summary, markdown) {
-  const buttons = [];
-  if (markdown) {
-    const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;
-    buttons.push(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
-    buttons.push(button(t("common.copy_markdown"), "secondary", () => navigator.clipboard.writeText(markdown)));
-  }
-  buttons.push(
+  const pre = [
     button(t("urlscan.scan_again"), "secondary", () => {
       prefillUrlscan(summary.submitted_url);
       onSubmit();
-    })
-  );
+    }),
+  ];
+  if (markdown) {
+    const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;
+    pre.push(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
+    pre.push(button(t("common.copy_markdown"), "secondary", () => navigator.clipboard.writeText(markdown)));
+  }
   const compareBtn = button(t("urlscan.compare"), "secondary", () => compareWithPrevious(summary, compareBtn));
-  buttons.push(compareBtn);
-  buttons.push(button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener")));
-  return buttons;
+  compareBtn.title = t("urlscan.compare_tip");
+  return { pre, post: [compareBtn, button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener"))] };
 }
 
 // Finds the newest earlier scan of the same domain (the very same URL first), fetches it and shows what changed.
@@ -603,7 +615,8 @@ function showReport(data, { save }) {
     raw: data.raw,
     onShot: save ? (img, ok) => saveToHistory(summary, ok ? makeThumbnail(img) : null) : undefined,
   });
-  setActions(actionButtons(summary, data.markdown));
+  const { pre, post } = actionButtons(summary, data.markdown);
+  setActions(pre, post);
   resultEl.appendChild(report);
 }
 

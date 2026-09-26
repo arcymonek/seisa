@@ -62,11 +62,11 @@ What you get:
 - **Summary tiles:** score, HTTP status, server country, ASN, requests, certificate age (with a "new" mark below 7 days), redirects.
 - **The page screenshot** and a **Page identity** card: submitted and final URL, the redirect chain, title, domain, domain with a **Check domain** button, main IP with a **Check IP** button, location, PTR, server, MIME type, scan time and visibility.
 - **Collapsible detail cards:** the urlscan.io verdict (open only when it signals a risk), forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
-- **Earlier scans** of the same domain, so a recent report can be opened instead of ordering a new scan (a "?" tip explains what the list contains); "Scan again" repeats the scan.
-- **One action line:** Scan, Earlier scans, then (after a report) Save .md, Copy Markdown, Scan again, Compare with the previous scan and Open in urlscan.io; the state and the time are always at the end of the line. A running scan has a **Cancel** button (only the waiting stops - the scan itself goes on at urlscan.io).
+- **Earlier scans** of the same domain (the **History** button), so a recent report can be opened instead of ordering a new scan (a "?" tip explains what the list contains); "Scan again" repeats the scan.
+- **One action line:** Scan, then (after a report) Scan again, Save .md and Copy Markdown, then History (earlier scans of the domain), Compare (with the previous scan) and Open in urlscan.io; the state and the time are always at the end of the line. A running scan has a **Cancel** button (only the waiting stops - the scan itself goes on at urlscan.io).
 - **Compare with the previous scan:** finds the newest earlier scan of the domain (the very same URL first), fetches it and shows a side-by-side table - risk level, score, redirects, IP, ASN, server, certificate, forms, technologies - with unchanged rows dimmed, plus the domains that appeared or disappeared.
 - **Several addresses at once:** paste up to 5 addresses separated by spaces, commas or new lines; they are submitted one by one (with a pause, to stay within the rate limit) and shown in a list with the risk level of each, "Open report" and a link to urlscan.io. Every finished scan is saved in the History (without a thumbnail).
-- **Export:** "Save .md" and "Copy Markdown"; addresses found on the scanned page are defanged and never clickable there either.
+- **Export:** "Save .md" and "Copy Markdown"; in the export addresses found on the scanned page are defanged. In the report on screen the addresses (the scanned URL, the redirect chain, contacted domains, links) are shown in full, as plain text that is never clickable.
 
 <details>
 <summary>Details: submission, cleaning, the Forms card, history</summary>

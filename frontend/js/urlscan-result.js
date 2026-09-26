@@ -1,7 +1,7 @@
 // URLScan tab: the report of one scan - verdict banner, summary tiles, page screenshot, page identity card and collapsible
 // detail cards. It is drawn from the structured summary of the backend (also from History, where only the summary and a
 // thumbnail are kept). Everything that came from the scanned page goes through escapeHtml, and addresses found on it are
-// shown defanged and never as links.
+// shown as plain, non-clickable text (the Markdown export and the copy button keep them defanged).
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { chips, countryName, kvHtml, numberedJson, tileHtml, toggleMoreChips } from "./lookup-result.js";
 import { defangUrl } from "./markdown-render.js";
@@ -13,7 +13,7 @@ const PILL_LIMIT = 30;
 const SHOT_RETRIES = 3;
 const SHOT_RETRY_MS = 4000;
 const mono = (value) => `<span class="mono">${e(value)}</span>`;
-const monoUrl = (url) => mono(defangUrl(url));
+const monoUrl = (url) => mono(url);
 const isSet = (v) => v != null && v !== "";
 
 function fmtBytes(n) {
@@ -200,7 +200,7 @@ function detailCards(summary) {
     summary.domains.length
       ? card(`${t("usr.c_domains")} (${summary.stats.domains})`, {
           key: "domains",
-          body: chips(summary.domains.map(defangUrl), PILL_LIMIT),
+          body: chips(summary.domains, PILL_LIMIT),
         })
       : "",
     listCard("links", t("usr.c_links"), summary.links_total, summary.links, (x) => `<div class="us-row">${monoUrl(x.href || "?")}${x.text ? ` <span class="muted">${e(x.text)}</span>` : ""}</div>`)
@@ -220,7 +220,7 @@ function rawCard(raw) {
 export function renderUrlscanResult(summary, opts = {}) {
   const wrap = document.createElement("div");
   wrap.className = "lookup-result urlscan-result";
-  wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(defangUrl(summary.submitted_url))}</code>
+  wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(summary.submitted_url)}</code>
       <button type="button" class="secondary mini" data-copy title="${e(t("usr.copy_title"))}">${e(t("common.copy"))}</button></h2>
     ${bannerHtml(summary)}${tilesHtml(summary)}${shotHtml(opts)}${identityHtml(summary)}
     <h3>${e(t("usr.h_details"))}</h3>${detailCards(summary)}${rawCard(opts.raw)}`;

@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.71 - 2026-09-26
+- **URLScan tab:** the input hint moved into the label; the visibility buttons look like the buttons of the other tabs and "Advanced options" sits next to them; the action line reads Scan, Scan again, Save .md, Copy Markdown, History, Compare, Open in urlscan.io (state and time at the end); addresses in the report (title, identity, redirects, contacted domains, links, comparison) are shown in full as plain, non-clickable text - the Markdown export and the copy button stay defanged.
+
 ## 2.0.70 - 2026-09-26
 - **URLScan tab:** the chosen visibility, scan country and user agent are remembered in the browser; advanced options (scan country, user agent: presets or custom) are sent to urlscan.io only when set; a Cancel button stops waiting for a running scan; "Compare with the previous scan" shows what changed since the newest earlier scan of the domain; a "Check domain" button in the identity card; up to 5 addresses can be scanned at once (a list with the risk level of each); a warning when a Public scan would publish an address with parameters such as `token=` or `user:password@`; the note under "Earlier scans" moved into a "?" tip.
 

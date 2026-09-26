@@ -157,8 +157,8 @@
   "lookup.report_abuseipdb": "Report to AbuseIPDB",
   "urlscan.seconds": "{time} s",
   "urlscan.subtitle": "Submit a live scan of a suspicious URL to urlscan.io - you get a detailed report on the page content, network traffic, detected technologies and verdict without opening the link yourself.",
-  "urlscan.url_label": "URL to scan",
-  "urlscan.url_placeholder": "https://example.com/suspicious-link (several addresses: separate them with a space or a new line)",
+  "urlscan.url_label": "URL to scan. Several addresses: separate them with a space or a new line (up to 5)",
+  "urlscan.url_placeholder": "https://example.com/suspicious-link",
   "urlscan.submit": "Scan",
   "urlscan.submitting": "Submitting the scan...",
   "urlscan.submit_error": "Scan submission failed: {message}",
@@ -252,7 +252,7 @@
   "usr.c_domains": "Contacted domains",
   "usr.c_links": "Links on the page",
   "usr.clipped": "Showing the first {shown} of {total}; the rest is in the full API response.",
-  "urlscan.existing": "Earlier scans",
+  "urlscan.existing": "History",
   "urlscan.searching": "Searching earlier scans...",
   "urlscan.search_error": "Searching earlier scans failed: {message}",
   "urlscan.existing_title": "Earlier scans of {host}",
@@ -1033,7 +1033,7 @@
   "urlscan.batch_state.error": "error:",
   "urlscan.batch_state.timeout": "still running - check manually",
   "urlscan.batch_state.cancelled": "cancelled",
-  "urlscan.compare": "Compare with the previous scan",
+  "urlscan.compare": "Compare",
   "urlscan.cmp.searching": "Looking for the previous scan...",
   "urlscan.cmp.none": "There is no earlier scan of this domain to compare with.",
   "urlscan.cmp.error": "Comparison error: {message}",
@@ -1045,5 +1045,7 @@
   "urlscan.cmp.removed_domains": "Domains that disappeared ({n}):",
   "urlscan.cmp.more": "(and {n} more)",
   "urlscan.cmp.legend": "Unchanged rows are dimmed. The saved scan data is compared; nothing is scanned again.",
-  "usr.check_domain": "Check domain"
+  "usr.check_domain": "Check domain",
+  "urlscan.existing_tip": "Earlier scans of this domain at urlscan.io",
+  "urlscan.compare_tip": "Compare with the previous scan of this domain"
 }

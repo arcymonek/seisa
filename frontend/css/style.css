@@ -371,10 +371,9 @@ td.mono { font-family: var(--mono); font-size: 13px; }
 
 /* --- zakładka URLScan --- */
 #us-url { min-height: 0; height: auto; resize: none; overflow-y: auto; }
-#us-visibility { margin: 10px 0; }
-.us-advanced { margin: 4px 0 8px; }
-.us-advanced summary { cursor: pointer; color: var(--muted); font-size: 14px; }
-.us-adv-grid { display: grid; grid-template-columns: max-content minmax(0, 320px); gap: 8px 12px; align-items: center; margin-top: 8px; }
+button.secondary.on { border-color: var(--accent); color: var(--accent); }
+.us-adv-grid { display: grid; grid-template-columns: max-content minmax(0, 320px); gap: 8px 12px; align-items: center; margin-top: 10px; }
+.us-adv-grid[hidden] { display: none; }
 .us-adv-grid label { margin: 0; }
 .us-adv-grid input[type="text"] { grid-column: 2; }
 .hint-i { display: inline-block; width: 1.4em; height: 1.4em; line-height: 1.4em; margin-left: 6px; text-align: center; font-size: 12px; font-weight: 400; border: 1px solid var(--hair); border-radius: 50%; color: var(--muted); cursor: help; vertical-align: middle; }

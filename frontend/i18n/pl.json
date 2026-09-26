@@ -159,8 +159,8 @@
   "lookup.report_abuseipdb": "Zgłoś AbuseIPDB",
   "urlscan.seconds": "{time} s",
   "urlscan.subtitle": "Zleć żywy skan podejrzanego adresu URL usłudze urlscan.io - zobaczysz szczegółowy raport z zawartości strony, ruchu sieciowego, wykrytych technologii i werdyktu, bez otwierania linku samodzielnie.",
-  "urlscan.url_label": "Adres URL do zeskanowania",
-  "urlscan.url_placeholder": "https://przyklad.pl/podejrzany-link (kilka adresów: oddziel spacją lub nową linią)",
+  "urlscan.url_label": "Adres URL do zeskanowania. Kilka adresów: oddziel spacją lub nową linią (do 5)",
+  "urlscan.url_placeholder": "https://przyklad.pl/podejrzany-link",
   "urlscan.submit": "Skanuj",
   "urlscan.submitting": "Zgłaszam skan...",
   "urlscan.submit_error": "Błąd zgłoszenia skanu: {message}",
@@ -258,7 +258,7 @@
   "usr.c_domains": "Kontaktowane domeny",
   "usr.c_links": "Linki na stronie",
   "usr.clipped": "Pokazano pierwsze {shown} z {total}; reszta jest w pełnej odpowiedzi API.",
-  "urlscan.existing": "Wcześniejsze skany",
+  "urlscan.existing": "Historia",
   "urlscan.searching": "Szukanie wcześniejszych skanów...",
   "urlscan.search_error": "Wyszukanie wcześniejszych skanów nie powiodło się: {message}",
   "urlscan.existing_title": "Wcześniejsze skany {host}",
@@ -1071,7 +1071,7 @@
   "urlscan.batch_state.error": "błąd:",
   "urlscan.batch_state.timeout": "wciąż trwa - sprawdź ręcznie",
   "urlscan.batch_state.cancelled": "anulowano",
-  "urlscan.compare": "Porównaj z poprzednim skanem",
+  "urlscan.compare": "Porównaj",
   "urlscan.cmp.searching": "Szukam poprzedniego skanu...",
   "urlscan.cmp.none": "Nie ma wcześniejszego skanu tej domeny, z którym można porównać.",
   "urlscan.cmp.error": "Błąd porównania: {message}",
@@ -1083,5 +1083,7 @@
   "urlscan.cmp.removed_domains": "Domeny, które zniknęły ({n}):",
   "urlscan.cmp.more": "(i {n} więcej)",
   "urlscan.cmp.legend": "Wiersze bez zmian są przyciemnione. Porównywane są zapisane dane skanów; nic nie jest skanowane ponownie.",
-  "usr.check_domain": "Sprawdź domenę"
+  "usr.check_domain": "Sprawdź domenę",
+  "urlscan.existing_tip": "Wcześniejsze skany tej domeny w urlscan.io",
+  "urlscan.compare_tip": "Porównaj z poprzednim skanem tej domeny"
 }
