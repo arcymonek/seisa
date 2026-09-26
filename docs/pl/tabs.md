@@ -281,7 +281,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 > Okrągły przycisk informacji na prawym końcu rzędu zakładek: krótki opis Seisy i jej stanu.
 
-**Pokazuje:** wersję (czytaną z nagłówka strony), ile usług ma ustawiony klucz API, model LLM albo "wyłączony" | **Wysyła na zewnątrz:** nic, poza zapytaniami o limity po "Odśwież limity".
+**Pokazuje:** wersję (czytaną z nagłówka strony) z datą ostatniej aktualizacji, ile usług ma ustawiony klucz API, model LLM albo "wyłączony" | **Wysyła na zewnątrz:** nic, poza zapytaniami o limity po "Odśwież limity".
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-info.png -->
 
@@ -289,7 +289,7 @@ Pod kafelkami podsumowania dwa kafelki obok siebie: **Autor** (e-mail, GitHub, s
 
 1. **Status usług** (zwinięta): status każdej integracji - widać tylko, czy klucz jest ustawiony; same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki.
 2. **Limity API** (zwinięta): opisane niżej.
-3. **Ostatnie zmiany** (zwinięta): ostatnie wydania z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
+3. **Ostatnie zmiany** (zwinięta): 10 ostatnich wydań z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
 4. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
 
 <details>

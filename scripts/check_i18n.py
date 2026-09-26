@@ -282,6 +282,9 @@ def check_versions() -> None:
         found[name] = m.group(1) if m else "?"
     if len(set(found.values())) != 1:
         errors.append(f"version differs between places: {found}")
+    m = re.search(r'<meta name="seisa-release-date" content="(\d{4}-\d{2}-\d{2})"', html)
+    if not m:
+        errors.append("index.html: missing <meta name=\"seisa-release-date\" content=\"YYYY-MM-DD\">")
 
 
 def main() -> int:

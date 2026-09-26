@@ -12,20 +12,21 @@ from backend.config import BASE_DIR, settings
 
 router = APIRouter()
 
-CHANGES_LIMIT = 12
+CHANGES_LIMIT = 10
+SCAN_LIMIT = 100  # commits looked through to find CHANGES_LIMIT release commits
 _RELEASE = re.compile(r"^Seisa (\d+\.\d+\.\d+): (.+)$")
 
 
 def _recent_changes() -> list[dict]:
     try:
         out = subprocess.run(
-            ["git", "log", "-n", str(CHANGES_LIMIT), "--format=%s"],
+            ["git", "log", "-n", str(SCAN_LIMIT), "--format=%s"],
             cwd=BASE_DIR, capture_output=True, text=True, timeout=3, check=True,
         ).stdout
     except (OSError, subprocess.SubprocessError):
         return []
     found = (_RELEASE.match(line) for line in out.splitlines())
-    return [{"version": m.group(1), "summary": m.group(2)} for m in found if m]
+    return [{"version": m.group(1), "summary": m.group(2)} for m in found if m][:CHANGES_LIMIT]
 
 
 @router.get("/about")

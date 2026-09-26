@@ -4,7 +4,7 @@
 // once, so a card the user opened stays open when the tab is refreshed; only their bodies are refilled.
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
-import { t, getLocale, fmtDateTime } from "./i18n.js";
+import { t, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
 const AUTHOR_EMAIL = "kontakt@arkadiuszpolak.pl";
@@ -16,6 +16,7 @@ const SERVICE_NAMES = { urlscan: "URLScan", openrouter: "OpenRouter" }; // the o
 const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
 let root;
 let version = "";
+let releaseDate = "";
 
 const tile = (label, value, sub) =>
   `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
@@ -28,9 +29,11 @@ export function initAbout(container) {
   root = container;
   const versionEl = document.querySelector("h1 small");
   version = versionEl ? versionEl.textContent.trim() : "";
+  const dateEl = document.querySelector('meta[name="seisa-release-date"]');
+  releaseDate = dateEl ? t("about.kpi_version_sub", { date: fmtDate(`${dateEl.content}T00:00`) }) : "";
   root.innerHTML = `
     <div class="subtitle">${e(t("about.description"))}</div>
-    <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version)}</div></div>
+    <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version, releaseDate)}</div></div>
     <div class="kpi-row">
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
         <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
@@ -45,7 +48,7 @@ export function initAbout(container) {
       <div id="ab-limits-errors"></div><div id="ab-limits"></div>
       <div class="muted">${e(t("about.limits_hint"))}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
-    ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}</p>`)}
+    ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
 }
@@ -99,7 +102,7 @@ function renderLimits(limits) {
     else if (pct >= 70) state.classList.add("warn");
   }
   const info = root.querySelector("#ab-limits-info");
-  info.textContent = limits.fetched_at ? t("about.limits_fetched", { time: new Date(limits.fetched_at).toLocaleTimeString(getLocale()) }) : "";
+  info.textContent = limits.fetched_at ? t("about.limits_fetched", { date: fmtDate(limits.fetched_at), time: new Date(limits.fetched_at).toLocaleTimeString(getLocale()) }) : "";
 }
 
 async function refreshLimits() {
@@ -136,7 +139,7 @@ export async function refreshAbout() {
   const keyed = info.services.filter((s) => s.configured !== null);
   const set = keyed.filter((s) => s.configured).length;
   root.querySelector("#ab-tiles").innerHTML = `<div class="kpi-row">
-    ${tile(t("about.kpi_version"), version)}
+    ${tile(t("about.kpi_version"), version, releaseDate)}
     ${tile(t("about.kpi_keys"), `${set}/${keyed.length}`, t("about.kpi_keys_sub"))}
     ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
   </div>`;

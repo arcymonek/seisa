@@ -281,7 +281,7 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 > The round info button at the far right of the tab row: a short description of Seisa and its state.
 
-**Shows:** the version (read from the page header), how many services have an API key set, the LLM model or "off" | **Sends out:** nothing, except quota requests on "Refresh limits".
+**Shows:** the version (read from the page header) with the date of the last update, how many services have an API key set, the LLM model or "off" | **Sends out:** nothing, except quota requests on "Refresh limits".
 
 <!-- Screenshot to add: docs/img/tab-info.png -->
 
@@ -289,7 +289,7 @@ Below the summary tiles, two tiles side by side: **Author** (e-mail, GitHub, web
 
 1. **Service status** (collapsed): the status of every integration - only whether a key is set; the keys are never shown or sent to the browser.
 2. **API limits** (collapsed): described below.
-3. **Recent changes** (collapsed): the recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
+3. **Recent changes** (collapsed): the 10 most recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
 4. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
 
 <details>
