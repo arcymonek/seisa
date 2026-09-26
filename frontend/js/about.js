@@ -112,11 +112,11 @@ function renderLimits(limits) {
       return rows
         .map((r, i) => {
           const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}</td>` : `<td></td><td></td>`;
-          if (!r) return `<tr>${head}<td>${dash}</td><td class="usage-cell">${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
+          if (!r) return `<tr>${head}<td>${dash}</td><td>${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
           const resets = r.resets_at
             ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtReset(r.resets_at))}</span>`
             : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : dash;
-          return `<tr>${head}<td>${e(t("about.scope." + r.scope))}/${e(t("about.win." + r.window))}</td><td class="usage-cell">${usageCell(r)}</td><td>${resets}</td>
+          return `<tr>${head}<td>${e(t("about.scope." + r.scope))}/${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td><td>${resets}</td>
             <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`;
         })
         .join("");
