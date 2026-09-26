@@ -114,10 +114,17 @@ def _fallback_comment(facts: dict) -> str:
     )
 
 
+_IP_PORT_RE = re.compile(r"(\b\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}\b")
+_PORT_MENTION_RE = re.compile(r"\bports?\b\W{0,3}\d", re.IGNORECASE)
+
+
 def _with_source_port(comment: str, port: int | None) -> str:
-    """Appends "Source port: N." only when the Received header of the reported hop states the port and the
-    comment does not already mention it; without a known port the comment is left untouched."""
-    if not port or re.search(rf"\bport\b\D{{0,12}}{port}\b", comment, re.IGNORECASE):
+    """The only port allowed in the comment is the one the Received header of the reported hop states. Any port
+    the LLM wrote itself (it cannot know it, and may contradict the header) is removed first - whole sentences
+    that name a port and `ip:port` suffixes - then "Source port: N." is appended when the header gave one."""
+    comment = _IP_PORT_RE.sub(r"\1", comment)
+    comment = " ".join(s for s in re.split(r"(?<=[.!?])\s+", comment) if not _PORT_MENTION_RE.search(s))
+    if not port:
         return truncate_chars(comment)
     suffix = f" Source port: {port}."
     return truncate_chars(comment, MAX_COMMENT_CHARS - len(suffix)) + suffix

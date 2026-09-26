@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.84 - 2026-09-26
+- **AbuseIPDB tab:** any port the LLM writes in the comment is removed; only the port read from the `Received` header (or none) can reach AbuseIPDB.
+
 ## 2.0.83 - 2026-09-26
 - **AbuseIPDB tab:** when the `Received` header of the reported hop states the connecting client's port, the comment ends with "Source port: N." (LLM text and fallback alike); when it does not, no port is mentioned.
 
