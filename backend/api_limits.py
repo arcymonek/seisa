@@ -85,9 +85,39 @@ def _field(header: str | None, name: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def _limit_key(service: str, resp: httpx.Response) -> str:
+    """The key under which an exhausted limit is remembered: AbuseIPDB has separate limits per endpoint."""
+    if service == "abuseipdb":
+        return f"abuseipdb:{resp.request.url.path.rstrip('/').rsplit('/', 1)[-1]}"
+    return service
+
+
+def _exceeded_entry(resp: httpx.Response, now: datetime) -> dict:
+    """What an HTTP 429 says about the reset: Retry-After / X-RateLimit-Reset when present, else a date named in the
+    body (GreyNoise: "Your searches will reset on September 29")."""
+    reset_at = None
+    retry = _int(resp.headers, "Retry-After")
+    epoch = _int(resp.headers, "X-RateLimit-Reset")
+    if retry is not None:
+        reset_at = _iso(now + timedelta(seconds=retry))
+    elif epoch is not None and epoch > now.timestamp():
+        reset_at = _iso(datetime.fromtimestamp(epoch, timezone.utc))
+    match = re.search(r"reset on ([A-Za-z]+ \d{1,2})", resp.text[:2000])
+    return {"seen": _iso(now), "reset_at": reset_at, "reset_text": match.group(1) if match else None}
+
+
 def _observe(service: str, resp: httpx.Response) -> None:
     usage = load_api_usage()
     now = _now()
+    key = _limit_key(service, resp)
+    if resp.status_code == 429:
+        # the API itself says the limit is used up: shown in the Info tab until the next successful answer
+        usage.setdefault("exceeded", {})[key] = _exceeded_entry(resp, now)
+        save_api_usage(usage)
+        return
+    if resp.status_code < 400 and key in usage.get("exceeded", {}):
+        del usage["exceeded"][key]
+        save_api_usage(usage)
     if service == "greynoise":
         if resp.status_code in (200, 404):  # a search happened; a 403 (plan too low) and errors are not counted
             _count(usage, service)
@@ -136,6 +166,26 @@ def _counted(usage: dict, service: str, since_key: str, until_key: str | None = 
     return sum(n for k, n in counts.items() if k >= since_key and (until_key is None or k <= until_key))
 
 
+def _mark_exceeded(rows: list[dict], exceeded: dict, now: datetime) -> None:
+    """Rows of a service that answered HTTP 429 get an `exceeded` entry. Where the count is Seisa's own or comes from
+    headers, the usage is raised to the limit (a lower bound of a real count that is known to be full); the quotas
+    read from the service itself are left alone."""
+    for row in rows:
+        key = f"abuseipdb:{row['scope']}" if row["service"] == "abuseipdb" else row["service"]
+        entry = exceeded.get(key)
+        if not entry:
+            continue
+        seen = datetime.fromisoformat(entry["seen"])
+        reset = datetime.fromisoformat(entry["reset_at"]) if entry.get("reset_at") else None
+        if (reset and reset <= now) or seen < now - timedelta(days=_KEEP_DAYS):
+            continue  # the window has passed: the flag says nothing any more
+        row["exceeded"] = entry
+        if row["source"] in ("local", "headers", "none") and row["limit"] and (row["used"] is None or row["used"] < row["limit"]):
+            row["used"] = row["limit"]
+        if not row["resets_at"] and reset:
+            row["resets_at"] = entry["reset_at"]
+
+
 def limits_snapshot() -> dict:
     """Rows for every service that has a key, from what is stored - no network access."""
     usage = load_api_usage()
@@ -166,6 +216,7 @@ def limits_snapshot() -> dict:
         rows.append(_header_row("cloudflare_radar", "requests", "5min", CLOUDFLARE_5MIN, headers.get("cloudflare_radar"), now))
     if settings.openrouter_api_key:
         rows += live.get("openrouter", {}).get("rows") or placeholder("openrouter")
+    _mark_exceeded(rows, usage.get("exceeded", {}), now)
     rows.sort(key=lambda r: SERVICE_ORDER.index(r["service"]))
     fetched = [v.get("fetched_at") for v in live.values() if v.get("fetched_at")]
     return {"rows": rows, "fetched_at": max(fetched) if fetched else None}

@@ -134,7 +134,7 @@
   "md.status.error": "error",
   "md.status.no_key": "no API key",
   "md.status.not_applicable": "not applicable to this type of indicator",
-  "md.status.rate_limited_daily": "daily limit exceeded",
+  "md.status.rate_limited_daily": "limit exceeded",
   "md.report_title": "Reputation report",
   "md.aggregate_score": "Aggregate score",
   "md.score_based_on": "The score is based on {used} of {possible} sources.",

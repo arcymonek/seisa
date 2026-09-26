@@ -134,7 +134,7 @@
   "md.status.error": "błąd",
   "md.status.no_key": "brak klucza API",
   "md.status.not_applicable": "nie dotyczy tego typu wskaźnika",
-  "md.status.rate_limited_daily": "przekroczony dzienny limit",
+  "md.status.rate_limited_daily": "limit wyczerpany",
   "md.report_title": "Raport reputacji",
   "md.aggregate_score": "Wynik zbiorczy",
   "md.score_based_on": "Wynik oparty na {used} z {possible} źródeł.",

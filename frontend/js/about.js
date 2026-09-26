@@ -61,7 +61,10 @@ function usageCell(row) {
   const limit = row.limit == null ? `<span class="muted">-</span>` : e(amount(row.limit, row.unit));
   const bar = pct == null ? "" : `<span class="riskbar ${barClass(pct)}" title="${e(Math.round(pct))}%"><i style="width:${Math.min(100, pct)}%"></i></span> `;
   const assumed = row.assumed ? ` <span class="muted" title="${e(t("about.lim_assumed"))}">*</span>` : "";
-  return `${bar}${used} / ${limit}${assumed}`;
+  const exceeded = row.exceeded
+    ? ` <span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span>`
+    : "";
+  return `${bar}${used} / ${limit}${assumed}${exceeded}`;
 }
 
 function renderLimits(limits) {
@@ -71,7 +74,7 @@ function renderLimits(limits) {
         .map(
           (r) => `<tr><td>${e(serviceName(r.service))} <span class="muted">${e(t("about.scope." + r.scope))}</span></td>
           <td>${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td>
-          <td>${r.resets_at ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtRelative(r.resets_at))}</span>` : `<span class="muted">-</span>`}</td>
+          <td>${r.resets_at ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtRelative(r.resets_at))}</span>` : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : `<span class="muted">-</span>`}</td>
           <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`
         )
         .join("")}</tbody></table></div>`
@@ -80,9 +83,14 @@ function renderLimits(limits) {
   // the summary line names the entry closest to its limit
   const state = root.querySelector("#ab-limits-state");
   const worst = rows.filter((r) => percent(r) != null).sort((a, b) => percent(b) - percent(a))[0];
+  const over = rows.find((r) => r.exceeded);
   state.className = "em-state";
   state.textContent = "";
-  if (worst) {
+  if (over) {
+    // an HTTP 429 from the service outranks every computed percentage
+    state.textContent = t("about.lim_state_exceeded", { service: serviceName(over.service), scope: t("about.scope." + over.scope) });
+    state.classList.add("bad");
+  } else if (worst) {
     const pct = percent(worst);
     state.textContent = `${serviceName(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)} / ${amount(worst.limit, worst.unit)}`;
     if (pct >= 90) state.classList.add("bad");

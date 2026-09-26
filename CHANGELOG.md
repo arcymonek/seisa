@@ -4,6 +4,10 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.67 - 2026-09-26
+- **HTTP 429 in the Info tab:** when any service answers "limit exceeded", `backend/api_limits.py` remembers it (with the reset date from `Retry-After` / `X-RateLimit-Reset` or from the message, e.g. GreyNoise "reset on September 29") and the "API limits" card marks the row with a "limit exceeded" badge, fills the counter to the limit (only where the count is Seisa's own or comes from headers) and turns the summary line red. The mark disappears after the next successful answer of that service, or when the reset time has passed. AbuseIPDB is tracked per endpoint (check / report).
+- The status of a source that reached its limit reads "limit exceeded" instead of "daily limit exceeded" (GreyNoise's limit is weekly).
+
 ## 2.0.66 - 2026-09-26
 - **IP tab:** the row of jump links moved between the verdict banner (with the comparison line) and the tiles.
 

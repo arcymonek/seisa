@@ -295,7 +295,8 @@ The card shows the usage of the limits of the *free plans* for every service tha
 - **Real quota, on demand:** VirusTotal (per hour, day and month), urlscan (per day, per kind of scan, search and retrieval) and OpenRouter (credits of the key, free-model requests). Seisa asks for it only when you click "Refresh limits" (one request to each; none of these calls uses up quota, and the last answer is remembered).
 - **From rate-limit headers** of your latest requests: AbuseIPDB (`check` and `report` separately; the limit is read from the answer, 5,000/day assumed until the first request) and Cloudflare Radar (1,200 requests per 5 minutes).
 - **Counted by Seisa:** GreyNoise (50 searches per 7 days) and OTX (10,000 requests per hour) report nothing. That count is a lower bound, because requests made elsewhere (for example in the GreyNoise Visualizer) are invisible to it, and the limits marked with `*` are assumptions for the free plans.
-- The summary line of the card names the entry closest to its limit (amber from 70%, red from 90%). Counters and the last known values live in `data/api_usage.json`.
+- **When a service answers HTTP 429** (limit exceeded, on a lookup or a report), its row gets a "limit exceeded" badge and, where the count is Seisa's own or from headers, a full counter; the reset date comes from `Retry-After`, `X-RateLimit-Reset` or the message itself (GreyNoise names it). The mark stays until the next successful answer of that service or until the reset time passes.
+- The summary line of the card names the entry closest to its limit (amber from 70%, red from 90%); a service that reported HTTP 429 comes first, in red. Counters and the last known values live in `data/api_usage.json`.
 
 </details>
 

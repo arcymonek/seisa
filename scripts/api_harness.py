@@ -433,6 +433,8 @@ for lang in ("pl", "en"):
     rec(p + "logs all", client.get("/api/logs?range=all&service=all", headers=H))
     rec(p + "logs today abuseipdb", client.get("/api/logs?range=today&service=abuseipdb", headers=H))
     rec(p + "about", client.get("/api/about", headers=H))
+    # last GreyNoise answer before the Info tab is read must be the 429 (a later 200 clears the flag)
+    rec(p + "lookup greynoise limit late", client.post("/api/lookup", json={"indicator": "185.220.101.77", "force_refresh": True}, headers=H))
     rec(p + "limits refresh", client.post("/api/about/limits/refresh", headers=H))
     rec(p + "about after refresh", client.get("/api/about", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
@@ -627,6 +629,10 @@ if ("urlscan", "scan_private", "day") not in _lim_by or ("openrouter", "credits"
 _g = _lim_by.get(("greynoise", "searches", "week"), {})
 if not _g or _g["source"] != "local" or _g["limit"] != 50 or not _g["used"]:
     failures.append(f"limits: GreyNoise searches are not counted locally: {_g}")
+if not (_g.get("exceeded") and _g["exceeded"].get("reset_text") == "September 29" and _g["used"] == _g["limit"]):
+    failures.append(f"limits: the HTTP 429 of GreyNoise is not shown in the Info tab: {_g}")
+if any(r.get("exceeded") for r in _lim if r["service"] != "greynoise"):
+    failures.append("limits: another service is marked as exceeded")
 _o = _lim_by.get(("otx", "requests", "hour"), {})
 if not _o or not _o["used"]:
     failures.append(f"limits: OTX requests are not counted locally: {_o}")

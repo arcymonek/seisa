@@ -295,7 +295,8 @@ Karta pokazuje zużycie limitów *planów darmowych* dla każdej usługi z klucz
 - **Prawdziwa kwota, na żądanie:** VirusTotal (na godzinę, dobę i miesiąc), urlscan (na dobę, osobno dla rodzajów skanów, wyszukiwania i pobierania) i OpenRouter (kredyty klucza, zapytania do modeli darmowych). Seisa pyta o nią wyłącznie po kliknięciu "Odśwież limity" (po jednym zapytaniu do każdej; żadne z nich nie zużywa limitu, a ostatnia odpowiedź jest zapamiętywana).
 - **Z nagłówków rate-limit** ostatnich zapytań: AbuseIPDB (`check` i `report` osobno; limit czytany z odpowiedzi, do pierwszego zapytania przyjmowane 5 000/dobę) i Cloudflare Radar (1 200 zapytań na 5 minut).
 - **Liczone przez Seisę:** GreyNoise (50 wyszukiwań na 7 dni) i OTX (10 000 zapytań na godzinę) nic nie raportują. Ta liczba to dolna granica, bo zapytań wykonanych gdzie indziej (np. w GreyNoise Visualizer) Seisa nie widzi, a limity oznaczone `*` to założenia dla planów darmowych.
-- Wiersz podsumowania karty wskazuje pozycję najbliższą limitu (bursztynowa od 70%, czerwona od 90%). Liczniki i ostatnie znane wartości są w `data/api_usage.json`.
+- **Gdy usługa odpowie błędem HTTP 429** (przekroczony limit, przy sprawdzeniu lub zgłoszeniu), jej wiersz dostaje plakietkę "limit wyczerpany" i, gdy licznik jest własny Seisy lub z nagłówków, pełny licznik; data odnowienia pochodzi z `Retry-After`, `X-RateLimit-Reset` albo z samego komunikatu (GreyNoise ją podaje). Oznaczenie zostaje do następnej udanej odpowiedzi tej usługi albo do upływu czasu odnowienia.
+- Wiersz podsumowania karty wskazuje pozycję najbliższą limitu (bursztynowa od 70%, czerwona od 90%); usługa, która zgłosiła HTTP 429, jest pierwsza, na czerwono. Liczniki i ostatnie znane wartości są w `data/api_usage.json`.
 
 </details>
 
