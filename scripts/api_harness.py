@@ -347,6 +347,9 @@ for lang in ("pl", "en"):
     fields = {"ip": PUBLIC_IP, "categories": [11], "attack_timestamp": "2026-09-24T10:00:00Z", "comment": "=test \u2014 comment"}
     rec(p + "report preview", client.post("/api/abuseipdb/report/preview", json=fields, headers=H))
     rec(p + "report preview private ip", client.post("/api/abuseipdb/report/preview", json={**fields, "ip": "10.0.0.1"}, headers=H))
+    rec(p + "dmarc geo", client.get(f"/api/dmarc/geo?ip={PUBLIC_IP}", headers=H))
+    rec(p + "dmarc geo private", client.get("/api/dmarc/geo?ip=10.0.0.1", headers=H))
+    rec(p + "dmarc geo invalid", client.get("/api/dmarc/geo?ip=x/../y", headers=H))
     rec(p + "ip-info", client.get(f"/api/abuseipdb/ip-info?ip={PUBLIC_IP}", headers=H))
     rec(p + "ip-info private", client.get("/api/abuseipdb/ip-info?ip=10.0.0.1", headers=H))
     rec(p + "report submit bad", client.post("/api/abuseipdb/report/submit", json={**fields, "categories": []}, headers=H))
@@ -438,7 +441,7 @@ EXPECTED_STATUS = {
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
-    "report preview": 200, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
+    "report preview": 200, "dmarc geo": 200, "dmarc geo private": 400, "dmarc geo invalid": 400, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
     "report submit cooldown": 409, "report submit 422": 422, "report submit daily limit": 429, "report submit repeat at api": 409,
     "report submit bad key": 401, "report submit outage": 502, "report submit wire": 200, "report submit old": 400,
     "report submit future": 400, "report submit no timestamp": 400, "report submit unknown category": 400,

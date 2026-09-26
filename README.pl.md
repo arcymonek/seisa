@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.0.58</b></p>
+<p align="center"><b>Seisa 2.0.59</b></p>
 
 # Seisa
 
@@ -27,7 +27,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 |---|---|---|---|
 | [IP](docs/pl/tabs.md#ip) | Reputacja adresu IP (tryb wsadowy przyjmuje też nazwy domen) z VirusTotal, OTX, Cloudflare Radar, AbuseIPDB, GreyNoise oraz RDAP/odwrotnego DNS, scalona w jeden wynik 0-100 | klucza dla każdej usługi (każdy opcjonalny) | adres, do usług, dla których masz klucze, oraz darmowe zapytania RDAP/DNS |
 | [URLScan](docs/pl/tabs.md#urlscan) | Żywy skan adresu URL przez urlscan.io z werdyktem, zrzutem ekranu, przekierowaniami, formularzami i certyfikatami | `URLSCAN_API_KEY` | adres URL, do urlscan.io |
-| [DMARC](docs/pl/tabs.md#dmarc) | Raporty zbiorcze DMARC (`.xml`, `.gz`, `.zip`) rozpakowane i przeanalizowane w przeglądarce | niczego | nic (opcjonalny przycisk wysyła jeden adres IP do ipwho.is) |
+| [DMARC](docs/pl/tabs.md#dmarc) | Raporty zbiorcze DMARC (`.xml`, `.gz`, `.zip`) rozpakowane i przeanalizowane w przeglądarce | niczego | nic (opcjonalny przycisk prosi backend o dane RDAP jednego IP, jak zakładka IP) |
 | [Email](docs/pl/tabs.md#email) | Edukacyjna analiza źródła e-maila: od razu ustalenia deterministyczne, opcjonalnie streamowana lekcja LLM | klucza OpenRouter dla części LLM | cały kod źródłowy do OpenRouter, wyłącznie po jawnym kliknięciu |
 | [AbuseIPDB](docs/pl/tabs.md#abuseipdb) | Przygotowuje i wysyła zgłoszenie nadużycia: IP źródłowe, kwalifikowalność, kategorie, komentarz po angielsku, twarde sprawdzenia | `ABUSEIPDB_API_KEY` (OpenRouter opcjonalnie) | IP oraz, po "Wyślij", zgłoszenie, do AbuseIPDB |
 | [Historia](docs/pl/tabs.md#historia) | Wszystko, co Seisa pamięta, z ponownym otwieraniem, porównywaniem i przypinaniem | niczego | nic |
@@ -116,7 +116,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 | Sprawdzenie IP (i tryb wsadowy) | adres IP (w trybie wsadowym także nazwa domeny) | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
 | Sprawdzenie IP, część darmowa | adres IP; w trybie wsadowym nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
 | Skan URL | adres URL i wybrana widoczność; domena w wyszukiwaniu "Wcześniejsze skany"; identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
-| DMARC "geo/ASN" | jeden adres IP, z Twojej przeglądarki | [ipwho.is](https://ipwho.is) | tylko po kliknięciu w rozwiniętym wierszu |
+| DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
 | Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę", "Zapytaj" | cały kod źródłowy e-maila (z danymi osobowymi), a przy "Zapytaj" także pytanie i fragment | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
 | AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
 | AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |
@@ -146,6 +146,7 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Najnowsze wydania; każde wydanie jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje ostatnie z git log.
 
+- **2.0.59** - zakładka DMARC: przycisk geo pyta backend (RDAP, jak w zakładce IP) zamiast `ipwho.is`; Content-Security-Policy ma tylko `connect-src 'self'`. RDAP nie zawiera ASN, więc go nie pokazujemy.
 - **2.0.58** - README podzielone na krótkie README i dokumentację w `docs/en/` i `docs/pl/`; `check_i18n.py` sprawdza parytet docs i martwe linki.
 - **2.0.57** - README (EN i PL) zbudowane od nowa: struktura, tabela prywatności, model zagrożeń, przewodnik dla deweloperów i forków, endpointy i pliki danych; dodany pełny [CHANGELOG.md](CHANGELOG.md).
 - **2.0.56** - Informacje: zwinięta karta limitów API z limitami planów darmowych każdej usługi z kluczem; dzienny licznik VirusTotal zeruje się o 00:00 UTC.

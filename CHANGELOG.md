@@ -4,6 +4,10 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.59 - 2026-09-26
+- **DMARC tab:** the "geo" button no longer makes the browser call `ipwho.is`. A new `GET /api/dmarc/geo` (`backend/routers/dmarc.py`) asks RDAP through the same service as the IP tab and returns the registration country, the owner and the network name (only global addresses; private ones get 400). RDAP has no ASN, so it is no longer shown. The button is labelled "geo (RDAP)".
+- The Content-Security-Policy is now `connect-src 'self'`: the frontend calls no third-party host. The privacy tables, the tab description and the API list (README, `docs/{en,pl}`) are updated.
+
 ## 2.0.58 - 2026-09-26
 - **Documentation:** the single-page README (758 lines) split into a short `README.md` / `README.pl.md` (landing, quick start, keys, privacy overview, documentation index) and a documentation set in `docs/en/` and `docs/pl/` (`index`, `tabs`, `configuration`, `privacy-and-security`, `architecture`, `api`, `extending`, `troubleshooting`). This reverses the "everything on one page" decision of 2.0.57. The two prompt-context files directly in `docs/` are unchanged.
 - `scripts/check_i18n.py` checks the parity of `docs/en` and `docs/pl` (the same files, the same heading levels) and dead relative links and anchors in the Markdown files.

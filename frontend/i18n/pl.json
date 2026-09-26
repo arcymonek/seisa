@@ -289,6 +289,7 @@
   "dmarc.parse_error": "{file} - błąd parsowania: {message}",
   "dmarc.invalid_xml": "nieprawidłowy XML",
   "dmarc.unknown": "nieznany",
+  "dmarc.geo_button": "geo (RDAP)",
   "dmarc.geo_failed": "nie udało się pobrać danych",
   "dmarc.unknown_operator": "nieznany operator",
   "dmarc.no_auth_data": "brak danych auth_results/{section} w tym rekordzie",

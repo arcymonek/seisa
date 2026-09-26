@@ -13,7 +13,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 | Sprawdzenie IP (i tryb wsadowy) | adres IP (w trybie wsadowym także nazwa domeny) | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
 | Sprawdzenie IP, część darmowa | adres IP; w trybie wsadowym nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
 | Skan URL | adres URL i wybrana widoczność; domena w wyszukiwaniu "Wcześniejsze skany"; identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
-| DMARC "geo/ASN" | jeden adres IP, z Twojej przeglądarki | [ipwho.is](https://ipwho.is) | tylko po kliknięciu w rozwiniętym wierszu |
+| DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
 | Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę", "Zapytaj" | cały kod źródłowy e-maila (z danymi osobowymi), a przy "Zapytaj" także pytanie i fragment | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
 | AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
 | AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |
@@ -62,7 +62,7 @@ Przed płatną analizą e-maila Seisa sprawdza, czy ta sama wiadomość była ju
 Jeśli zmieniasz kod, zachowaj te własności; przy każdej podano, gdzie jest zrealizowana.
 
 1. **Nagłówek `Host` tylko z pętli zwrotnej** (`backend/main.py`, `TrustedHostMiddleware`): blokuje DNS rebinding.
-2. **Content-Security-Policy na każdej odpowiedzi** (`backend/main.py`): skrypty tylko z własnego originu narzędzia. Jeśli frontend musi wywołać inny host, dodaj go do `connect-src` w tym miejscu (dziś tylko `https://ipwho.is`).
+2. **Content-Security-Policy na każdej odpowiedzi** (`backend/main.py`): skrypty tylko z własnego originu narzędzia. Frontend woła wyłącznie własny backend (`connect-src 'self'`); jeśli kiedyś musiałby wywołać inny host, dodaj go w tym miejscu.
 3. **Tekst z zewnątrz to dane.** Renderowany Markdown przechodzi przez allow-listę (`frontend/js/markdown-render.js`: tylko tagi używane w raportach, linki tylko z `http(s)`, każdy inny znacznik pokazywany jako nieszkodliwy tekst), a wynik `t()` wstawiany do `innerHTML` zawsze przechodzi przez `escapeHtml` (`frontend/js/util.js`).
 4. **Linki z e-maili i skanów nigdy nie są klikalne** i są pokazywane zdefangowane; nic z wiadomości nie jest otwierane ani pobierane; zrzut ekranu z urlscan pobiera backend.
 5. **LLM jest wywoływany tylko po jawnym kliknięciu**, a banery, które o tym mówią, muszą zostać (`email.js`, `report-builder.js`).

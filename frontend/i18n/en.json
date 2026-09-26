@@ -283,6 +283,7 @@
   "dmarc.parse_error": "{file} - parse error: {message}",
   "dmarc.invalid_xml": "invalid XML",
   "dmarc.unknown": "unknown",
+  "dmarc.geo_button": "geo (RDAP)",
   "dmarc.geo_failed": "could not fetch the data",
   "dmarc.unknown_operator": "unknown operator",
   "dmarc.no_auth_data": "no auth_results/{section} data in this record",

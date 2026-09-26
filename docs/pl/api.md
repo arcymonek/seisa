@@ -23,6 +23,7 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | `GET /api/abuseipdb/categories` | tabela kategorii | nie |
 | `POST /api/abuseipdb/report/preview` | ponowne policzenie twardych sprawdzeń | nie |
 | `POST /api/abuseipdb/report/redact` | zamaskowanie danych osobowych w komentarzu | nie |
+| `GET /api/dmarc/geo` | kraj, właściciel i nazwa sieci z RDAP dla IP źródła (zakładka DMARC, po kliknięciu) | RDAP |
 | `GET /api/abuseipdb/ip-info` | co AbuseIPDB już wie o IP | AbuseIPDB |
 | `POST /api/abuseipdb/report/submit` | wysłanie zgłoszenia (walidowane od nowa, 409 w ramach reguły 15 minut) | AbuseIPDB |
 | `GET /api/abuseipdb/report/history` | lokalny log wysłanych zgłoszeń | nie |

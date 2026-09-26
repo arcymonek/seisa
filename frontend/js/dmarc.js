@@ -1,6 +1,6 @@
 // DMARC tab: aggregate reports (XML, also .gz/.zip) are unpacked, parsed and aggregated entirely in the browser
-// (nothing is uploaded). Rows are grouped by source IP; per IP the tab can fetch geo/ASN (the one call to a third
-// party: ipwho.is, on click) and hand the IP over to the IP tab or to the AbuseIPDB tab. Every field of the report is
+// (nothing is uploaded). Rows are grouped by source IP; per IP the tab can fetch the RDAP registration data
+// through the backend (on click) and hand the IP over to the IP tab or to the AbuseIPDB tab. Every field of the report is
 // shown somewhere: the known ones with labels, anything else through the generic "other fields" lists.
 // Every value from the XML is untrusted: escapeHtml in the page, code spans in the Markdown export.
 import { api } from "./api.js";
@@ -321,10 +321,9 @@ async function lookupGeo(ip, btn) {
   if (!geoCache[ip]) {
     btn.textContent = "...";
     try {
-      const res = await fetch("https://ipwho.is/" + ip);
-      geoCache[ip] = await res.json();
+      geoCache[ip] = await api.dmarcGeo(ip);
     } catch {
-      geoCache[ip] = { success: false };
+      geoCache[ip] = { status: "unavailable" };
     }
   }
   const slot = btn.closest(".geo-slot");
@@ -334,9 +333,10 @@ async function lookupGeo(ip, btn) {
 
 function geoText(ip) {
   const data = geoCache[ip];
-  if (!data || data.success === false) return t("dmarc.geo_failed");
-  const org = (data.connection && (data.connection.org || data.connection.isp)) || t("dmarc.unknown_operator");
-  return `${data.country || "?"} · ${org} · ASN ${data.connection ? data.connection.asn : "?"}`;
+  if (!data || data.status !== "ok") return t("dmarc.geo_failed");
+  const parts = [data.country || "?", data.organization || t("dmarc.unknown_operator")];
+  if (data.network_name) parts.push(data.network_name);
+  return parts.join(" · ");
 }
 
 // ---- rendering: summary ----
@@ -545,7 +545,7 @@ function recordRowHtml(r) {
 function detailHtml(row) {
   const geo = geoCache[row.sourceIp]
     ? `<span class="geo-slot muted">${e(geoText(row.sourceIp))}</span>`
-    : `<span class="geo-slot"><button class="secondary geo-btn">geo/ASN</button></span>`;
+    : `<span class="geo-slot"><button class="secondary geo-btn">${e(t("dmarc.geo_button"))}</button></span>`;
   return `<div class="src-detail">
     <div class="src-actions">${geo}
       <button class="secondary lookup-btn">${e(t("dmarc.btn_lookup"))}</button>

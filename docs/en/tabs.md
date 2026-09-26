@@ -84,7 +84,7 @@ What you get:
 
 > Drag in aggregate DMARC reports and see everything they contain, without anything leaving your browser.
 
-**Input:** `.xml`, `.gz` or `.zip` reports exactly as providers send them (Google, Microsoft and others) | **Output:** verdict, tiles, policy hints, sources aggregated by IP | **Sends out:** nothing (the optional geo/ASN button sends one IP to ipwho.is) | **Keys:** none.
+**Input:** `.xml`, `.gz` or `.zip` reports exactly as providers send them (Google, Microsoft and others) | **Output:** verdict, tiles, policy hints, sources aggregated by IP | **Sends out:** nothing from the browser (the optional geo button makes the backend ask RDAP about one IP, as the IP tab does) | **Keys:** none.
 
 <!-- Screenshot to add: docs/img/tab-dmarc.png -->
 
@@ -107,7 +107,7 @@ What you get:
 
 **Records.** An expanded row shows: header/envelope from and to, the reason of a policy override (`policy_evaluated > reason`), the raw `auth_results` outcome (domain/selector/result/`human_result` for DKIM, domain/scope/result for SPF) and any extra fields.
 
-**geo/ASN and next steps.** The optional "geo/ASN" button in the expanded row sends that single IP address to [ipwho.is](https://ipwho.is) (from your browser, only on click) and shows the country and ASN. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
+**geo and next steps.** The optional "geo (RDAP)" button in the expanded row asks the backend about that single IP address (only on click). The backend queries RDAP, the same service as the IP tab, and the row shows the registration country, the owner and the network name. RDAP has no ASN, so none is shown; the [IP](#ip) tab has it. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
 
 **Glossary and export.** A short glossary of SPF, DKIM, the policy terms and the table closes the tab. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
 

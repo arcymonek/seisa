@@ -2,7 +2,7 @@ import { getLang } from "./i18n.js";
 
 const BASE = "/api";
 
-// The header goes only to our own backend (never to third-party hosts such as ipwho.is).
+// The header goes only to our own backend (the frontend never calls third-party hosts).
 const langHeader = () => ({ "X-Seisa-Lang": getLang() });
 
 async function request(path, options = {}) {
@@ -25,6 +25,8 @@ async function request(path, options = {}) {
 export const api = {
   lookup: (body) => request("/lookup", { method: "POST", body: JSON.stringify(body) }),
   lookupBatchStream: (body, onEvent) => streamSSE(BASE + "/lookup/batch", body, onEvent),
+
+  dmarcGeo: (ip) => request(`/dmarc/geo?ip=${encodeURIComponent(ip)}`),
 
   history: () => request("/history"),
   historyEntry: (id) => request(`/history/${id}`),

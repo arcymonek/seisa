@@ -11,7 +11,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from backend.config import FRONTEND_DIR
 from backend.i18n import reset_lang, set_lang, t
 from backend.logging_config import setup_logging
-from backend.routers import abuseipdb_report, about, email_analysis, history, logs, lookup, urlscan
+from backend.routers import abuseipdb_report, about, dmarc, email_analysis, history, logs, lookup, urlscan
 
 setup_logging()
 app_logger = logging.getLogger("app")
@@ -20,11 +20,11 @@ app = FastAPI(title="Seisa")
 
 
 # Second line of defence next to the HTML sanitising in the frontend: scripts only from our own origin, no plugins,
-# no framing. style-src needs 'unsafe-inline' because the UI uses style= attributes; connect-src lists the one
-# external host the frontend calls itself (geo/ASN lookup in the DMARC tab).
+# no framing. style-src needs 'unsafe-inline' because the UI uses style= attributes; the frontend talks only to
+# its own backend (connect-src 'self').
 CONTENT_SECURITY_POLICY = (
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
-    "connect-src 'self' https://ipwho.is; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+    "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
 )
 
 
@@ -71,6 +71,7 @@ app.include_router(history.router, prefix="/api")
 app.include_router(logs.router, prefix="/api")
 app.include_router(about.router, prefix="/api")
 app.include_router(abuseipdb_report.router, prefix="/api/abuseipdb")
+app.include_router(dmarc.router, prefix="/api/dmarc")
 app.include_router(urlscan.router, prefix="/api/urlscan")
 app.include_router(email_analysis.router, prefix="/api/email")
 

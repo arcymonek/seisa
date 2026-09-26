@@ -13,7 +13,7 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 | IP lookup (and batch) | the IP address (in batch mode also a domain name) | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
 | IP lookup, free part | the IP address; a domain name in batch mode | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
 | URL scan | the URL and the chosen visibility; the domain in the "Earlier scans" search; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
-| DMARC "geo/ASN" | one IP address, from your browser | [ipwho.is](https://ipwho.is) | only on the click in an expanded row |
+| DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry), as in the IP tab | only on the click in an expanded row |
 | Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis", "Ask" | the whole e-mail source (with personal data), and for "Ask" the question and the fragment | OpenRouter | only on that click; the interface says so before sending |
 | AbuseIPDB: "Analyze" | the whole e-mail source | OpenRouter | only on that click |
 | AbuseIPDB: address check | the IP | AbuseIPDB (`/check`) | when an IP is entered and a key exists |
@@ -62,7 +62,7 @@ Before a paid e-mail analysis Seisa checks whether the same message was analysed
 If you change the code, keep these true; each names where it lives.
 
 1. **Loopback-only `Host` header** (`backend/main.py`, `TrustedHostMiddleware`): blocks DNS rebinding.
-2. **Content-Security-Policy on every response** (`backend/main.py`): scripts only from the tool's own origin. If the frontend must call another host, add it to `connect-src` there (today only `https://ipwho.is`).
+2. **Content-Security-Policy on every response** (`backend/main.py`): scripts only from the tool's own origin. The frontend calls only its own backend (`connect-src 'self'`); if it ever has to call another host, add it there.
 3. **Third-party text is data.** Rendered Markdown goes through an allow-list (`frontend/js/markdown-render.js`: only the tags the reports use, links only with `http(s)`, anything else shown as inert text), and the result of `t()` put into `innerHTML` always goes through `escapeHtml` (`frontend/js/util.js`).
 4. **Links from e-mails and scans are never clickable** and are shown defanged; nothing from a message is opened or downloaded; the urlscan screenshot is fetched by the backend.
 5. **The LLM is called only after an explicit click**, and the banners that say so must stay (`email.js`, `report-builder.js`).

@@ -73,7 +73,7 @@ seisa/
 │   ├── urlscan_report.py     # ustrukturyzowane podsumowanie + raport Markdown wyniku skanu urlscan.io
 │   ├── urlscan_input.py      # czyszczenie i walidacja skanowanego URL (refang, schemat, hosty prywatne)
 │   ├── urlscan_forms.py      # formularze skanowanej strony (z jej DOM): action, method, pola, flagi hasła/zewnętrzne
-│   ├── routers/               # endpointy /api/*: lookup, urlscan, email_analysis, abuseipdb_report, history, logs, about
+│   ├── routers/               # endpointy /api/*: lookup, urlscan, email_analysis, abuseipdb_report, dmarc, history, logs, about
 │   └── services/               # klient każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - zlecenie+odpytywanie; llm_analyzer.py - OpenRouter)
 ├── frontend/
 │   ├── index.html

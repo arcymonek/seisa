@@ -84,7 +84,7 @@ Co dostajesz:
 
 > Przeciągnij raporty zbiorcze DMARC i zobacz wszystko, co zawierają, bez wysyłania czegokolwiek poza przeglądarkę.
 
-**Wejście:** raporty `.xml`, `.gz` lub `.zip` dokładnie takie, jakie wysyłają dostawcy (Google, Microsoft i inni) | **Wynik:** werdykt, kafelki, wskazówki o polityce, źródła zagregowane wg IP | **Wysyła na zewnątrz:** nic (opcjonalny przycisk geo/ASN wysyła jeden adres IP do ipwho.is) | **Klucze:** brak.
+**Wejście:** raporty `.xml`, `.gz` lub `.zip` dokładnie takie, jakie wysyłają dostawcy (Google, Microsoft i inni) | **Wynik:** werdykt, kafelki, wskazówki o polityce, źródła zagregowane wg IP | **Wysyła na zewnątrz:** nic z przeglądarki (opcjonalny przycisk geo każe backendowi zapytać RDAP o jeden adres IP, tak jak zakładka IP) | **Klucze:** brak.
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-dmarc.png -->
 
@@ -107,7 +107,7 @@ Co dostajesz:
 
 **Rekordy.** Rozwinięty wiersz pokazuje: header/envelope from i to, powód nadpisania polityki (`policy_evaluated > reason`), surowy wynik `auth_results` (domena/selektor/wynik/`human_result` dla DKIM, domena/scope/wynik dla SPF) i ewentualne dodatkowe pola.
 
-**geo/ASN i dalsze kroki.** Opcjonalny przycisk "geo/ASN" w rozwiniętym wierszu wysyła ten jeden adres IP do zewnętrznej usługi [ipwho.is](https://ipwho.is) (z przeglądarki, wyłącznie po kliknięciu) i pokazuje kraj oraz ASN. Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
+**geo i dalsze kroki.** Opcjonalny przycisk "geo (RDAP)" w rozwiniętym wierszu pyta backend o ten jeden adres IP (wyłącznie po kliknięciu). Backend odpytuje RDAP, tę samą usługę co zakładka IP, a wiersz pokazuje kraj rejestracji, właściciela i nazwę sieci. RDAP nie zawiera ASN, więc go tu nie ma; jest w zakładce [IP](#ip). Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
 
 **Legenda i eksport.** Zakładkę zamyka krótka legenda pojęć SPF, DKIM, polityki i tabeli. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
 
