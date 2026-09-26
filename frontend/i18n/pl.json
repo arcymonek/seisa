@@ -1026,7 +1026,7 @@
   "rb.ip_whitelisted": "Ten adres jest na białej liście AbuseIPDB - zgłoszenie raczej nic nie zmieni.",
   "rb.ip_redundant": "W ciągu ostatnich {days} dni ten adres ma już zgłoszenia w jednej z wybranych kategorii (liczba: {n}) - kolejne raczej doda tylko szum. Zgłaszaj, jeśli masz nowe fakty.",
   "rb.pii_title": "Komentarz może zawierać dane osobowe",
-  "rb.pii_hint": "AbuseIPDB pokazuje komentarze publicznie i nie odpowiada za ujawnione dane osobowe - usuń je przed wysyłką.",
+  "rb.pii_hint": "AbuseIPDB pokazuje komentarze publicznie i nie odpowiada za ujawnione dane osobowe - sprawdź czy to Twoje dane i zamaskuj lub usuń je przed wysyłką.",
   "rb.pii_mask": "Zamaskuj",
   "rb.pii_kind.own": "Twoje (odbiorca wiadomości)",
   "rb.pii_kind.email": "adres e-mail",

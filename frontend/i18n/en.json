@@ -990,7 +990,7 @@
   "rb.ip_whitelisted": "This address is on the AbuseIPDB whitelist - a report is unlikely to have any effect.",
   "rb.ip_redundant": "In the last {days} days this address already has reports in one of the chosen categories (count: {n}) - a new one probably adds only noise. Report it only if you have new facts.",
   "rb.pii_title": "The comment may contain personal data",
-  "rb.pii_hint": "AbuseIPDB shows comments publicly and is not responsible for personal data you reveal - strip it before sending.",
+  "rb.pii_hint": "AbuseIPDB shows comments publicly and is not responsible for personal data you reveal - check whether it is your data and mask or remove it before sending.",
   "rb.pii_mask": "Mask them",
   "rb.pii_kind.own": "yours (recipient of the message)",
   "rb.pii_kind.email": "e-mail address",
