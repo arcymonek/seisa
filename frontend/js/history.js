@@ -23,6 +23,8 @@ const RANGE_KEY = { today: "common.range_today", "3d": "common.range_3d", week: 
 const RANGE_DAYS_BACK = { today: 0, "3d": 2, week: 6, month: 29 };
 const DAY_MS = 86400000;
 
+// URL scans saved by older versions carry a defanged label (hxxps://host[.]tld); show and match the plain address.
+const plainUrlLabel = (e) => (e.type === "urlscan" ? { ...e, label: e.label.replace(/^hxxp/i, "http").replace(/\[\.\]/g, ".") } : e);
 const riskOf = (e) => (e.risk_summary ? e.risk_summary.toLowerCase() : null);
 const riskText = (risk) => (risk ? t("risk." + risk) : t("history.risk_none"));
 
@@ -84,7 +86,7 @@ export function refreshHistory() {
 
 async function load() {
   try {
-    entries = await api.history();
+    entries = (await api.history()).map(plainUrlLabel);
   } catch (err) {
     root.querySelector("#hi-list").innerHTML = `<div class="banner bad">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
     return;

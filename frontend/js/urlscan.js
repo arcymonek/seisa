@@ -1,6 +1,5 @@
 import { api } from "./api.js";
 import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";
-import { defangUrl } from "./markdown-render.js";
 import { countryName } from "./lookup-result.js";
 import { compareScans } from "./urlscan-compare.js";
 import { renderUrlscanResult } from "./urlscan-result.js";
@@ -645,7 +644,7 @@ async function saveToHistory(summary, thumbnail) {
   try {
     await api.historyCreate({
       type: "urlscan",
-      label: defangUrl(summary.submitted_url),
+      label: summary.submitted_url,
       risk_summary: RISK_LABEL[summary.verdict.level] || null,
       data: thumbnail ? { summary, thumbnail } : { summary },
     });
