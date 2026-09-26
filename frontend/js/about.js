@@ -50,7 +50,7 @@ export function initAbout(container) {
       <div class="muted">${e(t("about.status_hint"))}</div>
       <div class="muted">${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
-    ${block(t("about.license_title"), `<p>${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
+    ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
 }

@@ -309,6 +309,7 @@ mark.em-hit.cur { background: var(--warn); color: #12181c; }
 .kpi.about-card { flex: 1 1 320px; justify-content: flex-start; gap: 8px; }
 .about-name { font-size: 20px; }
 .about-small { font-size: 16px; }
+.about-license a { font-style: normal; }
 .about-card a { font-style: normal; text-decoration: none; }
 .kpi.wide { flex: 2 1 260px; }
 .kpi-label { display: block; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
