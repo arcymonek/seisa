@@ -31,7 +31,7 @@ const riskText = (risk) => (risk ? t("risk." + risk) : t("history.risk_none"));
 export function initHistory(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${escapeHtml(t("history.subtitle"))}<br>${escapeHtml(t("history.subtitle_2"))}</div>
+    <div class="subtitle">${escapeHtml(t("history.subtitle"))}<br>${escapeHtml(t("history.subtitle_2")).replace(/\n/g, "<br>")}</div>
     <div id="hi-tiles"></div>
     <div class="action-row hi-bar">
       <button class="secondary" id="hi-refresh">${escapeHtml(t("common.refresh"))}</button>

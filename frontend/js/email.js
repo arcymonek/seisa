@@ -50,7 +50,7 @@ const $ = (sel) => root.querySelector(sel);
 export function initEmail(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${e(t("em.subtitle"))}</div>
+    <div class="subtitle">${e(t("em.subtitle")).replace(/\n/g, "<br>")}</div>
     <div id="em-src-wrap">
       <label>${e(t("rb.email_source"))}</label>
       <textarea id="em-source" placeholder="Received: ... From: ... Subject: ..." style="min-height:200px"></textarea>

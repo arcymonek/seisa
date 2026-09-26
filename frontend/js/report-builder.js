@@ -55,7 +55,7 @@ async function loadFile(file) {
 export function initReportBuilder(container) {
   root = container;
   root.innerHTML = `
-    <div class="subtitle">${e(t("rb.subtitle"))} ${e(t("rb.llm_note"))}<br><b>${e(t("rb.llm_note_warn"))}</b> ${e(t("rb.llm_note_warn_text"))}</div>
+    <div class="subtitle">${e(t("rb.subtitle"))} ${e(t("rb.llm_note")).replace(/\n/g, "<br>")}<br><b>${e(t("rb.llm_note_warn"))}</b> ${e(t("rb.llm_note_warn_text"))}</div>
     <label for="rb-email">${e(t("rb.email_source"))}</label>
     <textarea id="rb-email" placeholder="Received: ... From: ... Subject: ..."></textarea>
     <div class="action-row">
