@@ -126,7 +126,7 @@
   "logs.level_all": "All levels",
   "logs.level_error": "Errors",
   "logs.level_warning": "Warnings",
-  "logs.search": "Search the messages...",
+  "logs.search": "Search the logs...",
   "logs.auto_refresh": "Refresh every 10 s",
   "logs.clear": "Clear logs",
   "logs.clear_confirm": "Click again to delete all logs",

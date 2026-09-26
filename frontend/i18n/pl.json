@@ -126,7 +126,7 @@
   "logs.level_all": "Wszystkie poziomy",
   "logs.level_error": "Błędy",
   "logs.level_warning": "Ostrzeżenia",
-  "logs.search": "Szukaj w wiadomościach...",
+  "logs.search": "Szukaj w logach...",
   "logs.auto_refresh": "Odświeżaj co 10 s",
   "logs.clear": "Wyczyść logi",
   "logs.clear_confirm": "Kliknij ponownie, aby usunąć wszystkie logi",
