@@ -79,7 +79,7 @@
   "risk.low": "Niskie",
   "risk.medium": "Średnie",
   "risk.high": "Wysokie",
-  "history.subtitle": "Twoja ostatnia praca w jednym miejscu: sprawdzenia IP, skany URL, importy DMARC, zapisane analizy e-maili i przyjęte zgłoszenia AbuseIPDB. Przypięte wpisy (IP, skan URL, DMARC) zostają, dopóki ich nie odepniesz; \"Wyczyść historię\" usuwa tylko nieprzypięte sprawdzenia IP, skany URL i raporty DMARC - analizy e-maili (z surowymi wiadomościami) usuwasz pojedynczo, a wysłane zgłoszenia zostają w lokalnym logu i otwierają się jako szkic.",
+  "history.subtitle": "Twoja ostatnia praca w jednym miejscu: sprawdzenia IP, skany URL, importy DMARC, zapisane analizy e-maili i przyjęte zgłoszenia AbuseIPDB. Przypięte wpisy zostają, dopóki ich nie odepniesz; \"Wyczyść historię\" usuwa tylko nieprzypięte sprawdzenia IP, skany URL i raporty DMARC. Analizy e-maili usuwasz pojedynczo. Zgłoszenia do AbuseIPDB zostają w lokalnym logu w zakładce i otwierają się jako szkic.",
   "history.clear": "Wyczyść historię",
   "history.empty": "Brak historii.",
   "history.tile_all": "Wszystkie wpisy",

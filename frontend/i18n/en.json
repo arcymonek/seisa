@@ -79,7 +79,7 @@
   "risk.low": "Low",
   "risk.medium": "Medium",
   "risk.high": "High",
-  "history.subtitle": "Your recent work in one place: IP checks, URL scans, DMARC imports, saved e-mail analyses and accepted AbuseIPDB reports. Pinned entries (IP, URL scan, DMARC) stay until you unpin them; \"Clear history\" removes only unpinned IP checks, URL scans and DMARC reports - e-mail analyses (which contain the raw messages) are deleted one by one, and sent reports stay in the local report log and open as a draft.",
+  "history.subtitle": "Your recent work in one place: IP checks, URL scans, DMARC imports, saved e-mail analyses and accepted AbuseIPDB reports. Pinned entries stay until you unpin them; \"Clear history\" removes only unpinned IP checks, URL scans and DMARC reports. You delete e-mail analyses one by one. AbuseIPDB reports stay in the local log in the tab and open as a draft.",
   "history.clear": "Clear history",
   "history.empty": "No history yet.",
   "history.tile_all": "All entries",

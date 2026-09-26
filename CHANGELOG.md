@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.87 - 2026-09-26
+- **History tab:** the description is reworded into shorter sentences (what is stored, what "Clear history" removes, how e-mail analyses and AbuseIPDB reports are handled).
+
 ## 2.0.86 - 2026-09-26
 - **AbuseIPDB tab:** the optional Attacked port field is removed (the tab is for e-mails only, which do not carry the attacked port). Ports the LLM writes in the comment are still stripped.
 
