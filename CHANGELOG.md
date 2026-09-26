@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.82 - 2026-09-26
+- **AbuseIPDB tab:** the LLM notice and the check-before-sending warning moved from a separate banner into the tab description.
+
 ## 2.0.81 - 2026-09-26
 - **AbuseIPDB tab:** the check-before-sending warning sits on its own line in the banner; the personal-data hint now asks you to check whether the data is yours and to mask or remove it before sending.
 
