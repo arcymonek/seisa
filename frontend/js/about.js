@@ -44,11 +44,10 @@ export function initAbout(container) {
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>
     ${block(t("about.status_limits_title"), `
-      <div class="env-grid" id="ab-env"></div>
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
-      <div id="ab-limits-errors"></div><div id="ab-limits"></div>
-      <div class="muted">${e(t("about.status_hint"))}</div>
-      <div class="muted">${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
+      <div id="ab-limits-errors"></div>
+      <div class="svc-grid"><div class="svc-card" id="ab-env"></div><div id="ab-limits" class="contents"></div></div>
+      <div class="ab-notes muted">${e(t("about.status_hint"))}<br>${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
     ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
@@ -59,7 +58,7 @@ export function initAbout(container) {
 
 function renderEnvironment(env) {
   const item = (label, value, cls = "") => `<div><span class="muted">${e(label)}:</span> <span class="mono${cls ? " " + cls : ""}">${value}</span></div>`;
-  root.querySelector("#ab-env").innerHTML = [
+  root.querySelector("#ab-env").innerHTML = `<div class="svc-head"><span>${e(t("about.env_title"))}</span></div>` + [
     item(t("about.env_address"), e(env.host && env.port ? `${env.host}:${env.port}` : "-")),
     item(t("about.env_dotenv"), e(t(env.dotenv ? "about.env_dotenv_yes" : "about.env_dotenv_no")), env.dotenv ? "ok" : "warnc"),
     item(t("about.env_os"), e(env.os)),
@@ -83,16 +82,20 @@ function fmtReset(value) {
   return t("about.reset_minutes", { n: Math.max(1, Math.round(seconds / 60)) });
 }
 
-// "used/limit | share": the share is green, yellow from 70% and red from 90%.
-function usageCell(row) {
-  const pct = percent(row);
-  const used = row.used == null ? "-" : amount(row.used, row.unit);
-  const limit = row.limit == null ? "-" : amount(row.limit, row.unit);
+// One tile per integration: the key status and a line per limit (used/limit | share, a bar, reset and source).
+function limitLine(r) {
+  const pct = percent(r);
+  const used = r.used == null ? "-" : amount(r.used, r.unit);
+  const limit = r.limit == null ? "-" : amount(r.limit, r.unit);
+  const level = pct == null ? "" : pct >= 90 ? "high" : pct >= 70 ? "medium" : "low";
   const share = pct == null ? "" : ` | <span class="${pct >= 90 ? "bad" : pct >= 70 ? "warnc" : "ok"}">${e(pct > 0 && pct < 1 ? "<1" : Math.round(pct))}%</span>`;
-  const exceeded = row.exceeded
-    ? `<div><span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(row.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span></div>`
+  const bar = pct == null ? "" : `<span class="riskbar svc-bar ${level}"><i style="width:${Math.max(pct, 1.5).toFixed(1)}%"></i></span>`;
+  const exceeded = r.exceeded
+    ? `<div><span class="badge sm conflict" title="${e(t("about.lim_exceeded_title", { time: fmtDateTime(r.exceeded.seen) }))}">${e(t("about.lim_exceeded"))}</span></div>`
     : "";
-  return `${e(used)}/${e(limit)}${share}${exceeded}`;
+  const resets = r.resets_at ? fmtReset(r.resets_at) : r.exceeded && r.exceeded.reset_text ? r.exceeded.reset_text : "";
+  const foot = [resets ? `${t("about.lim_col_resets")}: ${resets}` : "", t("about.src." + r.source)].filter(Boolean).join(" · ");
+  return `<div class="svc-line"><div class="svc-row"><span class="muted">${e(t("about.scope." + r.scope))}/${e(t("about.win." + r.window))}</span><span>${e(used)}/${e(limit)}${share}</span></div>${bar}${exceeded}<div class="muted svc-foot"${r.resets_at ? ` title="${e(fmtDateTime(r.resets_at))}"` : ""}>${e(foot)}</div></div>`;
 }
 
 function renderLimits(limits) {
@@ -102,25 +105,13 @@ function renderLimits(limits) {
     configured === null
       ? `<span class="badge sm single">${e(t("about.status_none"))}</span>`
       : `<span class="badge sm ${configured ? "agree" : "conflict"}">${e(t(configured ? "about.status_set" : "about.status_missing"))}</span>`;
-  const dash = `<span class="muted">-</span>`;
-  const body = services
+  root.querySelector("#ab-limits").innerHTML = services
     .map((svc) => {
-      const rows = byService.get(svc.id) || [null];
+      const rows = byService.get(svc.id) || [];
       const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id).replace(" / ", "/");
-      return rows
-        .map((r, i) => {
-          const head = i === 0 ? `<td>${e(name)}</td><td>${badge(svc.configured)}</td>` : `<td></td><td></td>`;
-          if (!r) return `<tr>${head}<td>${dash}</td><td>${dash}</td><td>${dash}</td><td>${dash}</td></tr>`;
-          const resets = r.resets_at
-            ? `<span title="${e(fmtDateTime(r.resets_at))}">${e(fmtReset(r.resets_at))}</span>`
-            : r.exceeded && r.exceeded.reset_text ? e(r.exceeded.reset_text) : dash;
-          return `<tr>${head}<td>${e(t("about.scope." + r.scope))}/${e(t("about.win." + r.window))}</td><td>${usageCell(r)}</td><td>${resets}</td>
-            <td class="muted"${r.seen_at ? ` title="${e(fmtDateTime(r.seen_at))}"` : ""}>${e(t("about.src." + r.source))}</td></tr>`;
-        })
-        .join("");
+      return `<div class="svc-card${rows.some((r) => r.exceeded) ? " over" : ""}"><div class="svc-head"><span>${e(name)}</span>${badge(svc.configured)}</div>${rows.map(limitLine).join("")}</div>`;
     })
     .join("");
-  root.querySelector("#ab-limits").innerHTML = `<div class="table-wrap"><table class="fact-table status-table"><thead><tr><th>${e(t("about.lim_col_service"))}</th><th>${e(t("about.lim_col_key"))}</th><th>${e(t("about.lim_col_window"))}</th><th>${e(t("about.lim_col_usage"))}</th><th>${e(t("about.lim_col_resets"))}</th><th>${e(t("about.lim_col_source"))}</th></tr></thead><tbody>${body}</tbody></table></div>`;
   const rows = limits.rows;
 
   // the summary line names the entry closest to its limit

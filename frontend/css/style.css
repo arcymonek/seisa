@@ -451,17 +451,19 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 #hi-compare-bar { display: contents; }
 .lg-tools button { margin: 0; }
 .hi-compare h3 { margin-top: 0; }
-.env-grid { display: grid; gap: 4px; margin: 8px 0 12px; font-size: 14.5px; }
-.env-grid .mono { overflow-wrap: anywhere; }
-.status-table { table-layout: fixed; min-width: 900px; }
-.status-table th:nth-child(1) { width: 16%; }
-.status-table th:nth-child(2) { width: 11%; }
-.status-table th:nth-child(3) { width: 24%; }
-.status-table th:nth-child(4) { width: 22%; }
-.status-table th:nth-child(5) { width: 14%; }
-.status-table th:nth-child(6) { width: 13%; }
+.contents { display: contents; }
+.svc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 14px 0; }
+.svc-card { background: var(--bg-raised); border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; font-size: 14.5px; }
+.svc-card.over { border-color: var(--fail); }
+.svc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 16px; }
+.svc-line { margin-top: 10px; }
+.svc-row { display: flex; justify-content: space-between; gap: 8px; }
+.svc-bar.riskbar { display: block; width: auto; height: 4px; margin-top: 4px; }
+.svc-foot { font-size: 12.5px; margin-top: 2px; }
+#ab-env .mono { overflow-wrap: anywhere; }
+#ab-env div + div { margin-top: 4px; }
+.ab-notes { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair); }
 #ab-limits-card .action-row { padding-bottom: 12px; border-bottom: 1px solid var(--hair); }
-.status-table td { white-space: nowrap; }
 .ab-changes { padding-left: 20px; margin: 8px 0 2px; }
 .ab-changes li { margin: 4px 0; font-size: 14.5px; overflow-wrap: anywhere; }
 
