@@ -67,6 +67,7 @@ class ReportFields(BaseModel):
     categories: list[int]
     attack_timestamp: str | None = None
     comment: str = ""
+    target_port: int | None = Field(default=None, ge=1, le=65535)  # the attacked port (victim side), optional
     own_terms: list[str] = Field(default_factory=list, max_length=20)  # the reporter's identifiers, for the PII scan
 
 
@@ -118,16 +119,22 @@ _IP_PORT_RE = re.compile(r"(\b\d{1,3}(?:\.\d{1,3}){3}):\d{1,5}\b")
 _PORT_MENTION_RE = re.compile(r"\bports?\b\W{0,3}\d", re.IGNORECASE)
 
 
-def _with_source_port(comment: str, port: int | None) -> str:
-    """The only port allowed in the comment is the one the Received header of the reported hop states. Any port
-    the LLM wrote itself (it cannot know it, and may contradict the header) is removed first - whole sentences
-    that name a port and `ip:port` suffixes - then "Source port: N." is appended when the header gave one."""
+def _strip_ports(comment: str) -> str:
+    """The LLM cannot know which port was attacked (an e-mail carries no such fact), so any port it wrote is
+    removed: whole sentences that name a port and `ip:port` suffixes. A port is added only from the reporter's
+    own field (see `_final_comment`)."""
     comment = _IP_PORT_RE.sub(r"\1", comment)
-    comment = " ".join(s for s in re.split(r"(?<=[.!?])\s+", comment) if not _PORT_MENTION_RE.search(s))
-    if not port:
-        return truncate_chars(comment)
-    suffix = f" Source port: {port}."
-    return truncate_chars(comment, MAX_COMMENT_CHARS - len(suffix)) + suffix
+    return " ".join(s for s in re.split(r"(?<=[.!?])\s+", comment) if not _PORT_MENTION_RE.search(s))
+
+
+def _final_comment(comment: str, target_port: int | None = None) -> str:
+    """The comment exactly as it goes to the API: ASCII only, at most 1024 characters, and - when the reporter
+    filled in the attacked port - "Target port: N." at the end (unless the text already names that port)."""
+    text = sanitize_comment(comment)
+    if not target_port or re.search(rf"\bports?\b\D{{0,12}}{target_port}\b", text, re.IGNORECASE):
+        return truncate_chars(text)
+    suffix = f" Target port: {target_port}."
+    return truncate_chars(text, MAX_COMMENT_CHARS - len(suffix)) + suffix
 
 
 def _api_timestamp(value: str | None) -> str:
@@ -161,7 +168,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         report_comment = llm_analysis["report_comment"]
     if not report_comment:
         report_comment = _fallback_comment(facts)
-    report_comment = _with_source_port(sanitize_comment(report_comment), facts.get("source_port"))
+    report_comment = truncate_chars(sanitize_comment(_strip_ports(report_comment)))
 
     addr = extract_addresses(msg)
     return {
@@ -187,7 +194,7 @@ def categories():
 @router.post("/report/preview")
 async def preview_report(fields: ReportFields):
     checks = validate_hard_checks(fields.ip, fields.attack_timestamp, fields.categories)
-    comment = truncate_chars(sanitize_comment(fields.comment))
+    comment = _final_comment(fields.comment, fields.target_port)
     return {
         "checks": checks,
         "previous": _previous_reports(fields.ip),
@@ -263,7 +270,7 @@ async def submit_report(fields: ReportFields):
     if left:
         raise HTTPException(status_code=409, detail=t("report.cooldown", minutes=left, limit=REPORT_COOLDOWN_MINUTES))
 
-    comment = truncate_chars(sanitize_comment(fields.comment))
+    comment = _final_comment(fields.comment, fields.target_port)
     timestamp = _api_timestamp(fields.attack_timestamp)
     categories = sorted(set(fields.categories))
     record = {

@@ -93,19 +93,6 @@ def _extract_ip_candidates(text: str) -> list[str]:
     return public or candidates
 
 
-def _extract_port(from_raw: str, ip: str | None) -> int | None:
-    """The connecting client's TCP port, only when the "from" clause states it right next to the chosen IP:
-    `[ip]:port` / `ip:port` (Exim, others) or `port N` / `port=N`. Never guessed - None when absent."""
-    if not ip or not from_raw:
-        return None
-    escaped = re.escape(ip)
-    for pattern in (rf"\[{escaped}\]:(\d{{1,5}})\b", rf"(?<![\w:.]){escaped}:(\d{{1,5}})\b", r"\bport[ =:]+(\d{1,5})\b"):
-        m = re.search(pattern, from_raw, re.IGNORECASE)
-        if m and 1 <= int(m.group(1)) <= 65535:
-            return int(m.group(1))
-    return None
-
-
 def parse_received_header(raw_header: str) -> dict:
     normalized = re.sub(r"\s+", " ", raw_header).strip()
     match = _FROM_BY_RE.search(normalized)
@@ -114,7 +101,7 @@ def parse_received_header(raw_header: str) -> dict:
     from_host = from_raw.split(" ", 1)[0].strip("[]") if from_raw else None
     candidates = _extract_ip_candidates(from_raw)
     ip = candidates[0] if candidates else _parse_ip(from_host)
-    return {"raw": normalized, "from_host": from_host, "by_host": by_host, "ip": ip, "port": _extract_port(from_raw, ip), "is_boundary": False}
+    return {"raw": normalized, "from_host": from_host, "by_host": by_host, "ip": ip, "is_boundary": False}
 
 
 def _registrable_domain(host: str | None) -> str | None:
@@ -367,13 +354,12 @@ def parse_email(source: str | Message) -> dict:
 
     return {
         "trusted_source_ip": trusted_ip,
-        "source_port": boundary_hop.get("port") if boundary_hop else None,
         "ip_ok": ip_ok,
         "ip_reject_reason": ip_reject_reason,
         "ip_confidence": ip_confidence,
         "ip_reasoning": ip_reasoning,
         "received_chain": [
-            {"from_host": h["from_host"], "ip": h["ip"], "port": h["port"], "by_host": h["by_host"], "is_boundary": h["is_boundary"]}
+            {"from_host": h["from_host"], "ip": h["ip"], "by_host": h["by_host"], "is_boundary": h["is_boundary"]}
             for h in hop_chain
         ],
         "from": msg.get("From"),

@@ -86,6 +86,10 @@ export function initReportBuilder(container) {
       <label for="rb-timestamp">${e(t("rb.attack_timestamp"))}</label>
       <input type="datetime-local" id="rb-timestamp" style="max-width:320px">
 
+      <label for="rb-port">${e(t("rb.target_port"))}</label>
+      <input type="number" id="rb-port" min="1" max="65535" step="1" style="max-width:160px">
+      <div class="muted">${e(t("rb.target_port_hint"))}</div>
+
       <label for="rb-comment">${e(t("rb.comment_label"))}</label>
       <textarea id="rb-comment" style="min-height:160px"></textarea>
       <div class="muted" id="rb-char-count"></div>
@@ -134,6 +138,7 @@ export function initReportBuilder(container) {
   });
   $("#rb-ip").addEventListener("input", scheduleChecks);
   $("#rb-timestamp").addEventListener("input", scheduleChecks);
+  $("#rb-port").addEventListener("input", scheduleChecks);
   // address buttons of the chain card and of the "report another address" offer
   root.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-use-ip]");
@@ -188,6 +193,7 @@ function resetAnalysis() {
   Object.assign(S, { facts: null, llm: null, verdict: "unknown", local: {}, candidates: [], ownTerms: [], sentAt: null, ipInfo: null });
   infoIp = null;
   $("#rb-submit-result").innerHTML = "";
+  $("#rb-port").value = "";
 }
 
 // The category table lives in the backend (ABUSEIPDB_CATEGORIES); the analysis response carries it too, this is for the
@@ -311,6 +317,7 @@ function buildFields() {
     categories: selectedCategories(),
     attack_timestamp: ts ? new Date(ts).toISOString() : null,
     comment: $("#rb-comment").value,
+    target_port: Number.parseInt($("#rb-port").value, 10) || null,
     own_terms: S.ownTerms,
   };
 }
@@ -546,7 +553,7 @@ async function exportMarkdown() {
   const fields = buildFields();
   const model = lastModel || checksModel();
   const checks = [...model.required, ...model.blocking, ...model.info].map(([key, status, note]) => [checkLabel(key), status, note]);
-  const md = reportMarkdown({ fields, categoriesMap, facts: S.facts, verdict: S.verdict, checks, sent: S.sentAt });
+  const md = reportMarkdown({ fields: { ...fields, comment: (S.payload && S.payload.comment) || fields.comment }, categoriesMap, facts: S.facts, verdict: S.verdict, checks, sent: S.sentAt });
   const day = new Date().toISOString().slice(0, 10);
   await downloadMarkdown(`seisa-abuseipdb-${fields.ip || "report"}-${day}.md`, md, { native: true });
 }
