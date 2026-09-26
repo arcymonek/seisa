@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.90 - 2026-09-26
+- **Logs tab:** the Refresh and Clear logs buttons sit between two rules under the summary tiles; the "Shown: N of N" count moved next to the service chips.
+
 ## 2.0.89 - 2026-09-26
 - **History tab:** URL scans are listed with the plain address (`https://host.tld/`) instead of the defanged one (`hxxps://host[.]tld/`); older entries are shown the same way. The links stay non-clickable.
 

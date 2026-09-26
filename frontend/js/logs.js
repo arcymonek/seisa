@@ -30,17 +30,18 @@ export function initLogs(container) {
     <div class="subtitle">${escapeHtml(t("logs.subtitle"))}</div>
     <div id="lg-banner"></div>
     <div id="lg-tiles"></div>
+    <div class="hi-bar">
+      <div class="action-row">
+        <button class="secondary" id="lg-refresh">${escapeHtml(t("common.refresh"))}</button>
+        <button class="secondary" id="lg-clear">${escapeHtml(t("logs.clear"))}</button>
+      </div>
+    </div>
     <div class="chip-row" id="lg-range">${Object.keys(RANGE_KEY).map((r) => `<span class="chip${r === range ? " on" : ""}" role="button" tabindex="0" data-range="${r}">${escapeHtml(t(RANGE_KEY[r]))}</span>`).join("")}</div>
     <div class="chip-row" id="lg-levels"></div>
-    <div class="chip-row" id="lg-services"></div>
+    <div class="lg-svc-row"><div class="chip-row" id="lg-services"></div><span class="action-info" id="lg-info"></span></div>
     <div class="lg-tools">
       <input type="text" id="lg-search" class="lg-search" placeholder="${escapeHtml(t("logs.search"))}" aria-label="${escapeHtml(t("logs.search"))}">
       <label class="inline-check"><input type="checkbox" id="lg-auto"> ${escapeHtml(t("logs.auto_refresh"))}</label>
-    </div>
-    <div class="action-row">
-      <button class="secondary" id="lg-refresh">${escapeHtml(t("common.refresh"))}</button>
-      <button class="secondary" id="lg-clear">${escapeHtml(t("logs.clear"))}</button>
-      <span class="action-info" id="lg-info"></span>
     </div>
     <div id="lg-list"></div>`;
 

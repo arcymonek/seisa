@@ -271,7 +271,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 <!-- Zrzut ekranu do dodania: docs/img/tab-logs.png -->
 
-- **Kafelki podsumowania** (błędy, ostrzeżenia, usługa z największą liczbą wpisów, ostatni wpis) albo, gdy nie ma czego pokazać, zielony baner.
+- **Kafelki podsumowania** (błędy, ostrzeżenia, usługa z największą liczbą wpisów, ostatni wpis) albo, gdy nie ma czego pokazać, zielony baner. Pod nimi, między dwiema liniami, są przyciski **Odśwież** i **Wyczyść logi**.
 - **Filtry:** chipy zakresu dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie), poziomu (wszystkie / błędy / ostrzeżenia) i usługi (budowane z wpisów, z liczbą przy każdej) oraz pole wyszukiwania w wiadomościach. Kafelki i liczby przy chipach zawsze opisują cały zakres dat; poziom, usługa i wyszukiwanie tylko zawężają listę.
 - **Zwijane karty wpisów** (czas, poziom, usługa i pierwsza linia wiadomości; pełny tekst, np. cały błąd API, otwiera się kliknięciem i można go skopiować); karty, które otworzyłeś, zostają otwarte po odświeżeniu.
 - **"Odświeżaj co 10 s"** przeładowuje listę samoczynnie, dopóki zakładka jest otwarta, a **"Wyczyść logi"** (dwa kliknięcia, drugie potwierdza) usuwa wszystkie pliki logów. Widać maksymalnie 500 najnowszych wpisów (baner informuje, gdy starsze zostały obcięte).

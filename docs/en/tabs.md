@@ -271,7 +271,7 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 <!-- Screenshot to add: docs/img/tab-logs.png -->
 
-- **Summary tiles** (errors, warnings, the service with the most entries, the last entry) or, when there is nothing to show, a green banner.
+- **Summary tiles** (errors, warnings, the service with the most entries, the last entry) or, when there is nothing to show, a green banner. Under them, between two rules, are the **Refresh** and **Clear logs** buttons.
 - **Filters:** chips for the date range (today / 3 days / week / month / all; the default is all), the level (all / errors / warnings) and the service (built from the entries, each with a count), and a search box over the messages. The tiles and chip counts always describe the whole date range; the level, service and search only narrow the list.
 - **Collapsible entry cards** (time, level, service and the first line of the message; the full text, for example a whole API error, opens on a click and can be copied); the cards you opened stay open across refreshes.
 - **"Refresh every 10 s"** reloads the list on its own while the tab is open, and **"Clear logs"** (two clicks, the second one confirms) deletes all log files. Up to the newest 500 entries are shown (a banner says so when older ones are cut off).

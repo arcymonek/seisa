@@ -414,6 +414,8 @@ details.legend { margin-top: 24px; }
 /* --- zakladki Logi i Historia --- */
 .lg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 8px 0 2px; }
 .lg-search { flex: 0 1 320px; width: auto; padding: 6px 10px; font-size: 15px; }
+.lg-svc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
+.lg-svc-row .action-info { margin-top: 0; }
 .inline-check { display: inline-flex; align-items: center; margin: 0; font-size: 14px; }
 .chip.disabled { pointer-events: none; }
 button.secondary.armed { border-color: var(--fail); color: var(--fail); }
