@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.0.72 - 2026-09-26
+- **URLScan tab:** the History list (earlier scans) and the batch list show full addresses as plain, non-clickable text, like the report.
+
 ## 2.0.71 - 2026-09-26
 - **URLScan tab:** the input hint moved into the label; the visibility buttons look like the buttons of the other tabs and "Advanced options" sits next to them; the action line reads Scan, Scan again, Save .md, Copy Markdown, History, Compare, Open in urlscan.io (state and time at the end); addresses in the report (title, identity, redirects, contacted domains, links, comparison) are shown in full as plain, non-clickable text - the Markdown export and the copy button stay defanged.
 

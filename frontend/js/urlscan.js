@@ -472,7 +472,7 @@ function renderBatch() {
     }
     const open = it.state === "done" ? `<button type="button" class="secondary mini" data-report="${i}">${escapeHtml(t("urlscan.open_report"))}</button>` : "";
     const ext = it.pageUrl ? `<button type="button" class="secondary mini" data-ext="${i}">${escapeHtml(t("urlscan.open"))}</button>` : "";
-    return `<tr><td class="mono">${escapeHtml(defangUrl(it.url || it.input))}</td><td>${state}</td><td>${open} ${ext}</td></tr>`;
+    return `<tr><td class="mono">${escapeHtml(it.url || it.input)}</td><td>${state}</td><td>${open} ${ext}</td></tr>`;
   });
   const box = root.querySelector("#us-batch");
   box.innerHTML = `<h3>${escapeHtml(t("urlscan.batch_title", { n: batchItems.length }))}</h3>
@@ -524,12 +524,12 @@ function existingList(data) {
     const meta = [r.ip, r.country, r.visibility].filter(Boolean).join(" - ");
     return `<div class="saved-row" data-uuid="${escapeHtml(r.uuid)}">
       <span class="muted">${escapeHtml(r.time ? fmtDateTime(r.time) : "?")}</span>
-      <span class="grow"><span class="mono">${escapeHtml(defangUrl(r.url))}</span>${level}${exact}${meta ? `<div class="muted">${escapeHtml(meta)}</div>` : ""}</span>
+      <span class="grow"><span class="mono">${escapeHtml(r.url)}</span>${level}${exact}${meta ? `<div class="muted">${escapeHtml(meta)}</div>` : ""}</span>
       <button type="button" class="secondary" data-open>${escapeHtml(t("urlscan.open_report"))}</button>
       <button type="button" class="secondary" data-ext>${escapeHtml(t("urlscan.open"))}</button>
     </div>`;
   });
-  wrap.innerHTML = `<h3>${escapeHtml(t("urlscan.existing_title", { host: defangUrl(data.host) }))}
+  wrap.innerHTML = `<h3>${escapeHtml(t("urlscan.existing_title", { host: data.host }))}
       <span class="hint-i" tabindex="0" role="img" title="${escapeHtml(t("urlscan.existing_note"))}" aria-label="${escapeHtml(t("urlscan.existing_note"))}">?</span></h3>
     <div class="card">${rows.length ? rows.join("") : `<div class="muted">${escapeHtml(t("urlscan.existing_none"))}</div>`}</div>`;
   wrap.addEventListener("click", async (ev) => {
