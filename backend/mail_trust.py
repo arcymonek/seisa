@@ -28,7 +28,10 @@ def parse_ip(candidate: str | None) -> str | None:
 
 def is_special_ip(ip_str: str) -> bool:
     ip = ipaddress.ip_address(ip_str)
-    return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
+    return (
+        ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
+        or ip.is_multicast or ip.is_unspecified
+    )
 
 
 # Public suffixes that are themselves two labels long (e.g. "co.uk") - for these, the registrable domain needs

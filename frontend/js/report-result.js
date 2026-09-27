@@ -63,15 +63,14 @@ export function abuseTileHtml(info) {
 
 // ---- the address chain, with the option to pick another address ----
 
-function hopRow(hop, cand, corroboration) {
+function hopRow(hop, cand) {
   const boundary = hop.is_boundary ? ` <span class="badge sm agree">${e(t("rb.boundary_hop"))}</span>` : "";
-  const smtpAuth = hop.is_boundary && corroboration && corroboration.consistent === true
-    ? ` <span class="badge sm agree">${e(t("rb.smtp_auth_verified"))}</span>`
-    : "";
+  const smtpAuth = hop.auth_consistent === true ? ` <span class="badge sm agree">${e(t("rb.smtp_auth_verified"))}</span>` : "";
+  const priv = hop.is_private === true ? ` <span class="badge sm single">${e(t("rb.ip_private"))}</span>` : "";
   const reported = cand && cand.reported ? ` <span class="badge sm single">${e(t("rb.already_reported"))}</span>` : "";
   const use = cand ? `<button type="button" class="secondary mini inline" data-use-ip="${e(cand.ip)}">${e(t("rb.use_ip"))}</button>` : "";
   const title = cand && !hop.is_boundary ? ` title="${e(t("rb.hop_internal"))}"` : "";
-  return `<div class="hop-row${hop.is_boundary ? " hop-boundary" : ""}"${title}>from <strong>${e(hop.from_host || "?")}</strong> (${e(hop.ip || t("rb.no_ip"))}) by ${e(hop.by_host || "?")}${boundary}${smtpAuth}${reported}${use}</div>`;
+  return `<div class="hop-row${hop.is_boundary ? " hop-boundary" : ""}"${title}>from <strong>${e(hop.from_host || "?")}</strong> (${e(hop.ip || t("rb.no_ip"))})${priv} by ${e(hop.by_host || "?")}${boundary}${smtpAuth}${reported}${use}</div>`;
 }
 
 export function ipCardHtml(facts, candidates, llm, llmChars) {
@@ -84,7 +83,7 @@ export function ipCardHtml(facts, candidates, llm, llmChars) {
   }
   if (facts.ip_reasoning) html += `<div class="muted">${e(facts.ip_reasoning)}</div>`;
   html += chain.length ? `<div class="muted" style="margin-top:8px">${e(t("rb.chain_summary", { hops: tn("rb.hops", chain.length) }))}</div>` : "";
-  html += chain.map((hop) => hopRow(hop, hop.ip ? byIp.get(hop.ip) : null, facts.boundary_auth_corroboration)).join("");
+  html += chain.map((hop) => hopRow(hop, hop.ip ? byIp.get(hop.ip) : null)).join("");
   const extra = candidates.filter((c) => c.role === "llm" && !chain.some((h) => h.ip === c.ip));
   html += extra
     .map((c) => `<div class="hop-row">${e(t("rb.ai_suggests"))} <strong>${e(c.ip)}</strong>${c.reported ? ` <span class="badge sm single">${e(t("rb.already_reported"))}</span>` : ""}<button type="button" class="secondary mini inline" data-use-ip="${e(c.ip)}">${e(t("rb.use_ip"))}</button></div>`)

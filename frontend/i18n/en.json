@@ -424,6 +424,7 @@
   "rb.llm_full": "The model saw the complete message source (headers and the whole body, {chars} characters).",
   "rb.boundary_hop": "boundary hop",
   "rb.smtp_auth_verified": "SMTP-AUTH verified",
+  "rb.ip_private": "private",
   "rb.no_ip": "no IP",
   "rb.hops_one": "{n} hop",
   "rb.hops_other": "{n} hops",

@@ -228,24 +228,41 @@ def _parse_auth_results(header_value: str) -> dict[str, str]:
 _CONFIDENCE_LADDER = {"low": "medium", "medium": "high", "high": "high"}
 
 
+def _hop_corroboration(corroboration: dict | None) -> dict | None:
+    """Per-hop SMTP-AUTH/DKIM corroboration (smtp_auth_account/dkim_domain/consistent), or None when there is
+    nothing to report for this hop - shared by every hop's own fact in received_chain and by
+    _apply_auth_corroboration below, which additionally turns the boundary hop's result into reasoning text and
+    a confidence bump."""
+    if not corroboration:
+        return None
+    account = corroboration.get("smtp_auth_account")
+    if corroboration.get("auth") != "pass" or not account:
+        return None
+    dkim_domain = corroboration.get("dkim_domain")
+    account_domain = account.split("@")[-1] if "@" in account else None
+    if dkim_domain and domains_consistent(account_domain, dkim_domain):
+        return {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": True}
+    if dkim_domain:
+        return {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": False}
+    return {"smtp_auth_account": account, "dkim_domain": None, "consistent": None}
+
+
 def _apply_auth_corroboration(confidence: str, reasoning: str, corroboration: dict) -> tuple[str, str, dict | None]:
     """Turns a hop-specific SMTP-AUTH/DKIM corroboration into extra reasoning text and (only when the SMTP-AUTH
     account's domain matches the validated DKIM domain) a one-step confidence bump. Never changes which IP was
     selected - this only explains and reinforces the choice _find_boundary_hop already made."""
-    account = corroboration.get("smtp_auth_account")
-    if corroboration.get("auth") != "pass" or not account:
+    per_hop = _hop_corroboration(corroboration)
+    if not per_hop:
         return confidence, reasoning, None
-    dkim_domain = corroboration.get("dkim_domain")
-    account_domain = account.split("@")[-1] if "@" in account else None
-    if dkim_domain and domains_consistent(account_domain, dkim_domain):
+    account, dkim_domain, consistent = per_hop["smtp_auth_account"], per_hop["dkim_domain"], per_hop["consistent"]
+    if consistent is True:
         reasoning += " " + t("parser.smtp_auth_consistent", account=account, domain=dkim_domain)
         confidence = _CONFIDENCE_LADDER.get(confidence, confidence)
-        return confidence, reasoning, {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": True}
-    if dkim_domain:
+    elif consistent is False:
         reasoning += " " + t("parser.smtp_auth_mismatch", account=account, domain=dkim_domain)
-        return confidence, reasoning, {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": False}
-    reasoning += " " + t("parser.smtp_auth_no_dkim", account=account)
-    return confidence, reasoning, {"smtp_auth_account": account, "dkim_domain": None, "consistent": None}
+    else:
+        reasoning += " " + t("parser.smtp_auth_no_dkim", account=account)
+    return confidence, reasoning, per_hop
 
 
 _COMMON_DISPLAY_EXTENSIONS = {
@@ -346,13 +363,20 @@ def parse_email(source: str | Message) -> dict:
     boundary_hop, hop_chain, ip_confidence, ip_reasoning = _find_boundary_hop(received_headers)
     trusted_ip = boundary_hop["ip"] if boundary_hop else None
 
+    # SMTP-AUTH/DKIM corroboration for every hop (not just the boundary) - so a manual override to a different
+    # candidate hop keeps this context too; only the boundary hop's result feeds the confidence/reasoning text.
     boundary_index = next((i for i, h in enumerate(hop_chain) if h.get("is_boundary")), None)
     hop_auth = hop_specific_auth(list(msg.items()), len(hop_chain))
     boundary_auth_corroboration = None
-    if boundary_index is not None and boundary_index in hop_auth:
-        ip_confidence, ip_reasoning, boundary_auth_corroboration = _apply_auth_corroboration(
-            ip_confidence, ip_reasoning, hop_auth[boundary_index]
-        )
+    for i, h in enumerate(hop_chain):
+        per_hop = _hop_corroboration(hop_auth.get(i))
+        h["smtp_auth_account"] = per_hop["smtp_auth_account"] if per_hop else None
+        h["dkim_domain"] = per_hop["dkim_domain"] if per_hop else None
+        h["auth_consistent"] = per_hop["consistent"] if per_hop else None
+        if i == boundary_index and per_hop:
+            ip_confidence, ip_reasoning, boundary_auth_corroboration = _apply_auth_corroboration(
+                ip_confidence, ip_reasoning, hop_auth[i]
+            )
 
     # Servers without their own Authentication-Results (e.g. Exim) leave the results only in Microsoft/ARC headers.
     auth_header = (
@@ -393,7 +417,12 @@ def parse_email(source: str | Message) -> dict:
         "ip_reasoning": ip_reasoning,
         "boundary_auth_corroboration": boundary_auth_corroboration,
         "received_chain": [
-            {"from_host": h["from_host"], "ip": h["ip"], "by_host": h["by_host"], "is_boundary": h["is_boundary"]}
+            {
+                "from_host": h["from_host"], "ip": h["ip"], "by_host": h["by_host"], "is_boundary": h["is_boundary"],
+                "is_private": is_special_ip(h["ip"]) if h["ip"] else None,
+                "smtp_auth_account": h["smtp_auth_account"], "dkim_domain": h["dkim_domain"],
+                "auth_consistent": h["auth_consistent"],
+            }
             for h in hop_chain
         ],
         "from": msg.get("From"),

@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timedelta, timezone
 
 from backend.i18n import t
+from backend.mail_trust import is_special_ip
 
 AGE_LIMIT_DAYS = 60  # AbuseIPDB: the reported activity must be no older than 60 days
 CLOCK_SKEW = timedelta(hours=1)  # a date this far in the future is treated as "now" (clock offset, not a forged date)
@@ -29,17 +30,10 @@ def sanitize_comment(text: str) -> str:
 
 def is_reportable_ip(ip_str: str) -> tuple[bool, str | None]:
     try:
-        ip = ipaddress.ip_address(ip_str)
+        ipaddress.ip_address(ip_str)
     except ValueError:
         return False, t("report.ip_invalid")
-    if (
-        ip.is_private
-        or ip.is_loopback
-        or ip.is_link_local
-        or ip.is_reserved
-        or ip.is_multicast
-        or ip.is_unspecified
-    ):
+    if is_special_ip(ip_str):
         return False, t("report.ip_private")
     return True, None
 
