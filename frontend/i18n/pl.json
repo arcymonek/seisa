@@ -441,6 +441,7 @@
   "rb.attachments_summary": "Wykryte załączniki ({n}) - uwzględnione przez AI w komentarzu zgłoszenia",
   "rb.llm_full": "Model widział cały kod źródłowy wiadomości (nagłówki i całą treść, {chars} znaków).",
   "rb.boundary_hop": "hop graniczny",
+  "rb.smtp_auth_verified": "SMTP AUTH zweryfikowany",
   "rb.no_ip": "brak IP",
   "rb.hops_one": "{n} hop",
   "rb.hops_few": "{n} hopy",

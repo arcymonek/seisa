@@ -1,0 +1,15 @@
+Received: from mailer-out.relaywave.example (mailer-out.relaywave.example [198.51.100.20]) by mx1.northlake-corp.example with ESMTPS id R1; Wed, 23 Sep 2026 09:15:40 +0000
+Received: from msg-submission-7c9d8f5b6-x2p9k (msg-submission-7c9d8f5b6-x2p9k [10.42.3.11]) by mailer-out.relaywave.example with ESMTP id R2; Wed, 23 Sep 2026 09:15:38 +0000
+Received: from msg-router-59f7c8d4b-q7t3m (msg-router-59f7c8d4b-q7t3m [10.42.1.7]) by msg-submission-7c9d8f5b6-x2p9k with ESMTP id R3; Wed, 23 Sep 2026 09:15:35 +0000
+Received: from [154.16.88.201] (unverified [154.16.88.201]) by msg-router-59f7c8d4b-q7t3m with ESMTPSA id R4 (Authenticated sender: sales@brightfield-consult.example); Wed, 23 Sep 2026 09:15:30 +0000
+Authentication-Results: mailer-out.relaywave.example; spf=pass smtp.mailfrom=brightfield-consult.example; dkim=pass header.d=brightfield-consult.example header.s=sel1; dmarc=pass header.from=brightfield-consult.example; auth=pass smtp.auth=sales@brightfield-consult.example
+X-Sample-ClientIp: 154.16.88.201
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=brightfield-consult.example; s=sel1; h=from:to:subject:date:message-id; bh=47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=; b=abc
+From: Sales <sales@brightfield-consult.example>
+To: prospect@northlake-corp.example
+Subject: Quick question about your Q4 plans
+Date: Wed, 23 Sep 2026 09:15:00 +0000
+Message-ID: <cold1@brightfield-consult.example>
+Content-Type: text/plain; charset=utf-8
+
+Hi, I noticed your company might benefit from our services. Are you the right person to speak to?
