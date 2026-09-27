@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.17</b></p>
+<p align="center"><b>Seisa 2.1.18</b></p>
 
 # Seisa
 
@@ -146,14 +146,10 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 The latest releases; every release is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the recent ones from the git log.
 
-- **2.0.68** - IP tab: single mode now accepts a domain name as well as an IP address (the type is detected by the backend, as in batch mode); no DNS resolution to an IP is done, the domain itself is checked.
-- **2.0.60** - an origin guard for `/api/`: requests that the browser marks as cross-site (`Sec-Fetch-Site`) or that carry a foreign `Origin` get 403, so another web page can no longer use up your API quotas or LLM budget; the docs state plainly that a local process is not stopped.
-- **2.0.59** - DMARC tab: the geo button asks the backend (RDAP, as in the IP tab) instead of `ipwho.is`; the Content-Security-Policy allows only `connect-src 'self'`. RDAP has no ASN, so none is shown.
-- **2.0.58** - the README split into a short README and a documentation set in `docs/en/` and `docs/pl/`; `check_i18n.py` checks the docs parity and dead links.
-- **2.0.57** - the README (EN and PL) rebuilt: structure, privacy table, threat model, developer and fork guide, endpoints and data files; the full [CHANGELOG.md](CHANGELOG.md) added.
-- **2.0.56** - Info: the collapsed API limits card with the free-plan limits of every keyed service; the VirusTotal daily counter resets at 00:00 UTC.
-- **2.0.55** - Info: the privacy banner removed and the cards reordered.
-- **2.0.54** - Email: all Lesson cards start collapsed; a "Show source" button next to "Ask".
+- **2.1.17** - AbuseIPDB tab: every hop in the address card now shows a private/public label and its own SMTP-AUTH/DKIM corroboration badge, not just the boundary hop; `is_reportable_ip` shares its private/special-IP check with the rest of the tool instead of a third, separate copy of it.
+- **2.1.16** - Email tab: the "sender IP" fact and the route diagram now walk through an external relay's own internal hops (the same mechanism as the AbuseIPDB tab), fixing a wrong sender IP for chains that span more than one mail operator.
+- **2.1.15** - Email tab: trust-boundary detection now recognises internal relay hops named with bare, dotless identifiers instead of miscounting them as a different operator; every hop's IP is marked private or public and gets an SMTP-AUTH/DKIM corroboration note. Domain/IP/relay-trust logic shared by the Email and AbuseIPDB tabs is consolidated into `backend/mail_trust.py`.
+- **2.1.14** - AbuseIPDB tab: the reported IP no longer gets stuck on a shared mail relay when its internal hops are named with bare, dotless identifiers (for example OVH's mail-out infrastructure); added an SMTP-AUTH/DKIM corroboration note and a confidence bump for the selected hop.
 
 ## License and contributing
 

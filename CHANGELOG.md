@@ -4,6 +4,21 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.18 - 2026-09-27
+- **Docs:** added the missing changelog entries for 2.1.14-2.1.17 and refreshed the READMEs' release highlights to match; `docs/{en,pl}/tabs.md`, `docs/{en,pl}/architecture.md` and `docs/email-analysis-guide.md` were already updated in those releases themselves.
+
+## 2.1.17 - 2026-09-27
+- **AbuseIPDB tab:** every hop in the address card now shows a private/public label and its own SMTP-AUTH/DKIM corroboration badge, not just the boundary hop; `is_reportable_ip`'s private/special-IP check now shares its classification with the rest of the tool instead of a third, separate copy of it.
+
+## 2.1.16 - 2026-09-27
+- **Email tab:** the "sender IP" fact and the route diagram now walk through an external relay's own internal hops (the same mechanism as the AbuseIPDB tab) instead of always defaulting to the newest entry, fixing a wrong sender IP for chains that span more than one mail operator.
+
+## 2.1.15 - 2026-09-27
+- **Email tab:** trust-boundary detection now recognises internal relay hops named with bare, dotless identifiers (for example Kubernetes pod names) instead of miscounting them as a different operator; every hop's IP is marked private or public and gets an SMTP-AUTH/DKIM corroboration note. Domain/IP/relay-trust logic shared by the Email and AbuseIPDB tabs is consolidated into `backend/mail_trust.py`.
+
+## 2.1.14 - 2026-09-27
+- **AbuseIPDB tab:** the reported IP no longer gets stuck on a shared mail relay when its internal hops are named with bare, dotless identifiers (for example OVH's mail-out infrastructure) - the boundary walk now continues through them; added an SMTP-AUTH/DKIM corroboration note and a confidence bump for the selected hop.
+
 ## 2.0.92 - 2026-09-26
 - **Logs tab:** the sentence about expanding entries is on its own line in the description.
 

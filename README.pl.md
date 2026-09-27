@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.17</b></p>
+<p align="center"><b>Seisa 2.1.18</b></p>
 
 # Seisa
 
@@ -146,14 +146,10 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Najnowsze wydania; każde wydanie jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje ostatnie z git log.
 
-- **2.0.68** - zakładka IP: tryb pojedynczy przyjmuje teraz także nazwę domeny (typ rozpoznaje backend, jak w trybie wsadowym); domena nie jest zamieniana na IP, sprawdzana jest sama domena.
-- **2.0.60** - strażnik originu dla `/api/`: żądania, które przeglądarka oznacza jako cross-site (`Sec-Fetch-Site`) lub które niosą obcy `Origin`, dostają 403, więc inna strona WWW nie zużyje już limitów API ani budżetu LLM; dokumentacja mówi wprost, że lokalnego procesu to nie zatrzymuje.
-- **2.0.59** - zakładka DMARC: przycisk geo pyta backend (RDAP, jak w zakładce IP) zamiast `ipwho.is`; Content-Security-Policy ma tylko `connect-src 'self'`. RDAP nie zawiera ASN, więc go nie pokazujemy.
-- **2.0.58** - README podzielone na krótkie README i dokumentację w `docs/en/` i `docs/pl/`; `check_i18n.py` sprawdza parytet docs i martwe linki.
-- **2.0.57** - README (EN i PL) zbudowane od nowa: struktura, tabela prywatności, model zagrożeń, przewodnik dla deweloperów i forków, endpointy i pliki danych; dodany pełny [CHANGELOG.md](CHANGELOG.md).
-- **2.0.56** - Informacje: zwinięta karta limitów API z limitami planów darmowych każdej usługi z kluczem; dzienny licznik VirusTotal zeruje się o 00:00 UTC.
-- **2.0.55** - Informacje: usunięty baner prywatności, karty w nowej kolejności.
-- **2.0.54** - Email: wszystkie karty Lekcji startują zwinięte; przycisk "Pokaż źródło" obok "Zapytaj".
+- **2.1.17** - zakładka AbuseIPDB: każdy hop w karcie adresu ma teraz oznaczenie prywatny/publiczny i własną plakietkę potwierdzenia SMTP AUTH/DKIM, nie tylko hop graniczny; `is_reportable_ip` korzysta teraz ze wspólnej klasyfikacji prywatnych/specjalnych adresów IP zamiast trzeciej, osobnej kopii tej logiki.
+- **2.1.16** - zakładka Email: fakt "IP nadawcy" i diagram trasy przechodzą teraz przez wewnętrzne hopy zewnętrznego przekaźnika (ten sam mechanizm co w zakładce AbuseIPDB), co naprawia błędny adres nadawcy dla łańcuchów obejmujących więcej niż jednego operatora poczty.
+- **2.1.15** - zakładka Email: wykrywanie granicy zaufania rozpoznaje teraz wewnętrzne hopy przekaźnika nazwane gołymi identyfikatorami bez kropki, zamiast błędnie liczyć je jako innego operatora; każdy adres IP w łańcuchu ma oznaczenie prywatny/publiczny i notatkę o potwierdzeniu SMTP AUTH/DKIM. Logika domen/IP/zaufania łańcucha, współdzielona przez zakładki Email i AbuseIPDB, została skonsolidowana w `backend/mail_trust.py`.
+- **2.1.14** - zakładka AbuseIPDB: zgłaszany adres IP nie utyka już na współdzielonym przekaźniku pocztowym, gdy jego wewnętrzne hopy mają nazwy bez kropki (np. infrastruktura wychodząca OVH); dodano notatkę o potwierdzeniu SMTP AUTH/DKIM i podniesienie pewności dla wybranego hopu.
 
 ## Licencja i współpraca
 
