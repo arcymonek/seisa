@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.19 - 2026-09-27
+- **Docs:** added the missing changelog entries for 2.1.0-2.1.13.
+
 ## 2.1.18 - 2026-09-27
 - **Docs:** added the missing changelog entries for 2.1.14-2.1.17 and refreshed the READMEs' release highlights to match; `docs/{en,pl}/tabs.md`, `docs/{en,pl}/architecture.md` and `docs/email-analysis-guide.md` were already updated in those releases themselves.
 
@@ -18,6 +21,51 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 
 ## 2.1.14 - 2026-09-27
 - **AbuseIPDB tab:** the reported IP no longer gets stuck on a shared mail relay when its internal hops are named with bare, dotless identifiers (for example OVH's mail-out infrastructure) - the boundary walk now continues through them; added an SMTP-AUTH/DKIM corroboration note and a confidence bump for the selected hop.
+
+## 2.1.13 - 2026-09-26
+- **Email tab:** new "Analyze without LLM" button runs only the local deterministic checks (Received route, authentication, domain alignment, timeline, MIME structure, links, hidden content) - nothing is sent to OpenRouter and the result is not saved as an analysis.
+
+## 2.1.12 - 2026-09-26
+- Banners lost their fill: only the border carries the meaning (bad = red, warn = yellow, good = green, default = white), the text stays white.
+- **Removed:** the IP tab's batch mode and "Force refresh" button (and the 15-minute in-memory result cache behind it - every lookup is queried fresh now), the Email tab's follow-up-question feature (`email-ask.js`), and the Logs tab's auto-refresh.
+- **Email tab:** the Received table is wider so its columns no longer crowd the hostnames and notes.
+- "Expand all" / "Collapse all" buttons for groups of collapsible cards (`frontend/js/util.js`); assorted wording fixes across the tabs.
+
+## 2.1.11 - 2026-09-26
+- Reworded descriptions: the app subtitle, the History tab's second line (pinned entries mentioned before "Clear history", e-mail analyses deleted "manually") and the AbuseIPDB and Email tabs' LLM notices.
+
+## 2.1.10 - 2026-09-26
+- **Info tab:** the environment grid no longer shows a tile for WHOIS/rDNS (it needs no API key); a note explains why; small wording fixes to the description.
+
+## 2.1.9 - 2026-09-26
+- **Info tab:** service status and API limits are shown as tiles instead of a table, with the environment tile first and the notes below a divider.
+
+## 2.1.8 - 2026-09-26
+- **Info tab:** the license link is no longer italic.
+
+## 2.1.7 - 2026-09-26
+- **Info tab:** the status and limits table is full-width and column-aligned, without asterisks; a divider sits under the "Refresh limits" row.
+
+## 2.1.6 - 2026-09-26
+- **Info tab:** the "limit exceeded" badge moved under the values, labels shortened, and the table is fitted to its content instead of stretching full-width.
+
+## 2.1.5 - 2026-09-26
+- **Info tab:** API usage is shown as "used/limit | share" instead of a bar.
+
+## 2.1.4 - 2026-09-26
+- **Info tab:** the usage column has a fixed-width number next to a short bar.
+
+## 2.1.3 - 2026-09-26
+- **Info tab:** shorter key and source labels; the OpenRouter row no longer names the model.
+
+## 2.1.2 - 2026-09-26
+- **Info tab:** the description matches what the tab actually shows; the author's e-mail address changed.
+
+## 2.1.1 - 2026-09-26
+- **Info tab:** the status-and-limits table is more compact, the environment fields are laid out in rows, and the hint text is shorter.
+
+## 2.1.0 - 2026-09-26
+- **Info tab:** the separate "Service status" and "API limits" cards are merged into one "Status and API limits" card, with a new environment grid (address, whether `.env` is present, OS, Python and FastAPI versions).
 
 ## 2.0.92 - 2026-09-26
 - **Logs tab:** the sentence about expanding entries is on its own line in the description.
