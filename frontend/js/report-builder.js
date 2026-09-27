@@ -6,7 +6,7 @@
 // report-history.js (the log of sent reports), report-export.js (Markdown).
 import { api } from "./api.js";
 import { t, fmtDateTime, registerDirtyCheck } from "./i18n.js";
-import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, tilesHtml, verdictBannerHtml } from "./report-result.js";
+import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, legendHtml, tilesHtml, verdictBannerHtml } from "./report-result.js";
 import { reportMarkdown } from "./report-export.js";
 import { findReport, initReportHistory, refreshReportHistory } from "./report-history.js";
 import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
@@ -96,6 +96,7 @@ export function initReportBuilder(container) {
         <pre class="raw-json" id="rb-payload-pre"></pre>
       </details>
       <div id="rb-checks-slot"></div>
+      ${legendHtml()}
 
       <div class="action-row">
         <button class="primary" id="rb-submit" disabled>${e(t("rb.submit"))}</button>

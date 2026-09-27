@@ -6,6 +6,7 @@ import { t, tn, fmtDateTime } from "./i18n.js";
 import { chips, countryName, kvHtml, numberedJson, tileHtml, toggleMoreChips } from "./lookup-result.js";
 import { defangUrl } from "./markdown-render.js";
 import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
+import { glossAbbr } from "./glossary.js";
 
 const LEVEL_TONE = { high: "bad", medium: "warn", low: "good", unknown: "info" };
 const NEW_CERT_DAYS = 7;
@@ -61,7 +62,7 @@ function tilesHtml(summary) {
   if (v.score != null) tiles.push(tileHtml(t("usr.kpi_score"), v.score, v.categories.join(", ")));
   if (isSet(page.status)) tiles.push(tileHtml(t("usr.kpi_status"), page.status, [page.mime_type, page.server].filter(Boolean).join(" - ")));
   if (page.country) tiles.push(tileHtml(t("usr.kpi_country"), page.country, countryName(page.country, false)));
-  if (page.asn) tiles.push(tileHtml("ASN", page.asn, page.asn_name || ""));
+  if (page.asn) tiles.push(tileHtml("ASN", page.asn, page.asn_name || "", null, "lookup.gl.asn"));
   if (isSet(stats.requests)) tiles.push(tileHtml(t("usr.kpi_requests"), stats.requests, t("usr.kpi_requests_sub", { domains: stats.domains, ips: stats.ips })));
   if (tls && isSet(tls.age_days)) {
     const fresh = tls.age_days < NEW_CERT_DAYS ? `<span class="badge sm conflict" title="${e(t("usr.cert_new_title"))}">${e(t("usr.cert_new"))}</span>` : "";
@@ -94,22 +95,22 @@ function redirectsHtml(redirects) {
 function identityHtml(summary) {
   const { page } = summary;
   const rows = [];
-  const add = (label, html) => html && rows.push([label, html]);
+  const add = (label, html, glKey) => html && rows.push([label, html, glKey]);
   add(t("usr.f.submitted"), monoUrl(summary.submitted_url));
   add(t("usr.f.final"), page.final_url && page.final_url !== summary.submitted_url ? monoUrl(page.final_url) : "");
   if (summary.redirects.length) add(t("usr.f.redirects"), redirectsHtml(summary.redirects));
   add(t("usr.f.title"), page.title ? e(page.title) : "");
   add(t("usr.f.domain"), page.domain ? `${mono(page.domain)} <button type="button" class="secondary mini inline" data-domain="${e(page.domain)}">${e(t("usr.check_domain"))}</button>` : "");
-  add(t("usr.f.apex"), page.apex_domain && page.apex_domain !== page.domain ? mono(page.apex_domain) : "");
+  add(t("usr.f.apex"), page.apex_domain && page.apex_domain !== page.domain ? mono(page.apex_domain) : "", "usr.gl.apex");
   if (page.ip)
     add(t("usr.f.ip"), `${mono(page.ip)} <button type="button" class="secondary mini inline" data-ip="${e(page.ip)}">${e(t("usr.check_ip"))}</button>`);
   add(t("usr.f.location"), [page.city, page.country && countryName(page.country)].filter(Boolean).map(e).join(", "));
   add(t("usr.f.ptr"), page.ptr ? mono(page.ptr) : "");
   add(t("usr.f.server"), page.server ? e(page.server) : "");
   add(t("usr.f.mime"), page.mime_type ? mono(page.mime_type) : "");
-  add(t("usr.f.umbrella"), isSet(page.umbrella_rank) ? e(page.umbrella_rank) : "");
+  add(t("usr.f.umbrella"), isSet(page.umbrella_rank) ? e(page.umbrella_rank) : "", "usr.gl.umbrella");
   add(t("usr.f.scanned_at"), summary.scanned_at ? e(fmtDateTime(summary.scanned_at)) : "");
-  add(t("usr.f.visibility"), summary.visibility ? e(t("urlscan.vis." + summary.visibility)) : "");
+  add(t("usr.f.visibility"), summary.visibility ? e(t("urlscan.vis." + summary.visibility)) : "", "usr.gl.visibility");
   return `<h3>${e(t("usr.h_identity"))}</h3><div class="card">${kvHtml(rows)}</div>`;
 }
 
@@ -134,9 +135,9 @@ function verdictCard(summary) {
         .join("<br>"),
     ]);
   if (v.tags.length) rows.push([t("usr.f.tags"), chips(v.tags)]);
-  if (v.engines) rows.push([t("usr.f.engines"), e(`${v.engines.malicious} / ${v.engines.total}`)]);
-  if (v.community) rows.push([t("usr.f.community"), e(`${v.community.malicious} / ${v.community.total}`)]);
-  if (isSet(v.flagged_requests)) rows.push([t("usr.f.flagged"), e(v.flagged_requests)]);
+  if (v.engines) rows.push([t("usr.f.engines"), e(`${v.engines.malicious} / ${v.engines.total}`), "usr.gl.engines"]);
+  if (v.community) rows.push([t("usr.f.community"), e(`${v.community.malicious} / ${v.community.total}`), "usr.gl.community"]);
+  if (isSet(v.flagged_requests)) rows.push([t("usr.f.flagged"), e(v.flagged_requests), "usr.gl.flagged"]);
   const signal = v.level === "high" || v.level === "medium";
   return card(t("usr.c_verdict"), {
     key: "verdict",
@@ -213,6 +214,15 @@ function rawCard(raw) {
   return `<details class="fact-block raw" data-raw><summary>${e(t("lookup.raw_response"))}</summary><pre class="raw-json"></pre></details>`;
 }
 
+// ---- legend ----
+
+const LEGEND = ["score", "verdict", "engines_community", "categories_brands", "flagged", "cert", "umbrella", "apex", "forms", "visibility"];
+
+function legendHtml() {
+  const rows = LEGEND.map((id) => [t("usr.legend_term." + id), e(t("usr.legend." + id))]);
+  return `<details class="fact-block legend"><summary>${e(t("usr.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
+}
+
 // ---- entry point ----
 
 // opts: screenshotUrl (a live scan: the picture is served by our backend), thumbnail (History: a data URI), raw (the
@@ -223,7 +233,7 @@ export function renderUrlscanResult(summary, opts = {}) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(summary.submitted_url)}</code>
       <button type="button" class="secondary mini" data-copy title="${e(t("usr.copy_title"))}">${e(t("common.copy"))}</button></h2>
     ${bannerHtml(summary)}${tilesHtml(summary)}${shotHtml(opts)}${identityHtml(summary)}
-    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}`;
+    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}${legendHtml()}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button, img");

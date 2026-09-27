@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.20</b></p>
+<p align="center"><b>Seisa 2.1.22</b></p>
 
 # Seisa
 
@@ -36,7 +36,7 @@ Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-ma
 | [Logs](docs/en/tabs.md#logs) | Errors and warnings of every service | nothing | nothing |
 | [Info](docs/en/tabs.md#info) | Version, key status, API limits, recent changes, license | nothing | quota requests only on "Refresh limits" |
 
-Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner (no fill, only its border is coloured red, amber or green), summary tiles, then collapsible cards that open by themselves only when they carry a signal.
+Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner (no fill, only its border is coloured red, amber or green), summary tiles, then collapsible cards that open by themselves only when they carry a signal; a plain-language "Explanations" card and contextual glossary tooltips (hover or keyboard focus on a dotted-underline term) turn the technical detail into something a non-specialist can read.
 
 ## Quick start
 
@@ -150,6 +150,8 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 Recent feature highlights below; the full list - including maintenance-only releases such as documentation fixes - is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the most recent ones from the git log.
 
+- **2.1.22** - URLScan and AbuseIPDB tabs now also end with a plain-language "Explanations" card and glossary tooltips, matching IP and DMARC.
+- **2.1.21** - IP and DMARC tabs: the "Explanations" cards were rewritten in plain language for non-specialists, and jargon labels (ASN, reverse DNS, SPF/DKIM/DMARC/CAA records, the AbuseIPDB confidence score...) now carry a contextual glossary tooltip, the same mechanism already used in the Email tab.
 - **2.1.20** - Docs: README trimmed and de-duplicated against `docs/` - a table of contents, a literal `git clone` command, where local data lives and how to wipe it; the "what leaves your machine" table is now a short excerpt linking to the full one in `docs/privacy-and-security.md`, and `docs/configuration.md`'s `.env` keys table now links back to the README instead of repeating it.
 - **2.1.17** - AbuseIPDB tab: every hop in the address card now shows a private/public label and its own SMTP-AUTH/DKIM corroboration badge, not just the boundary hop; `is_reportable_ip` shares its private/special-IP check with the rest of the tool instead of a third, separate copy of it.
 - **2.1.16** - Email tab: the "sender IP" fact and the route diagram now walk through an external relay's own internal hops (the same mechanism as the AbuseIPDB tab), fixing a wrong sender IP for chains that span more than one mail operator.

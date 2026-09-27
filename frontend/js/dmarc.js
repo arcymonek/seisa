@@ -8,6 +8,7 @@ import { api } from "./api.js";
 import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
 import { downloadMarkdown, escapeHtml as e } from "./util.js";
+import { glossAbbr } from "./glossary.js";
 
 const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
 const SOURCE_LIMIT = 50; // rows shown before the "show all" button
@@ -574,7 +575,7 @@ const tokenText = (x) => `${x.name}=${x.value}${x.def ? ` (${t("dmarc.default")}
 function reportFields(m) {
   const recs = allRecords.filter((r) => r.reportIdx === m.idx);
   const fields = [];
-  const add = (label, html, text) => fields.push({ label, html, text });
+  const add = (label, html, text, glKey) => fields.push({ label, html, text, glKey });
   const plain = (label, value) => add(label, e(value), value);
 
   add(t("dmarc.f_file"), `<span class="mono">${e(m.filename)}</span>`, m.filename);
@@ -586,7 +587,7 @@ function reportFields(m) {
   plain(t("dmarc.f_period"), `${fmtDateTime(m.begin)} - ${fmtDateTime(m.end)}`);
   plain(t("dmarc.f_domain"), m.domain);
   const policy = policyTokens(m);
-  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "));
+  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "), "dmarc.gl.policy");
   const align = [
     { name: "adkim", label: "DKIM", value: m.adkim },
     { name: "aspf", label: "SPF", value: m.aspf },
@@ -596,6 +597,7 @@ function reportFields(m) {
     t("dmarc.f_alignment"),
     align.map((x) => `${e(alignPart(x))}${x.value ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`}`).join(" · "),
     align.map((x) => alignPart(x) + (x.value ? "" : ` (${t("dmarc.default")})`)).join(", "),
+    "dmarc.gl.alignment",
   );
   plain(t("dmarc.f_contents"), `${tn("dmarc.records", recs.length)}, ${tn("dmarc.messages", sumBy(recs, "count"))}`);
   if (m.errors.length) add(t("dmarc.f_errors"), m.errors.map((x) => `<div class="bad">${e(x)}</div>`).join(""), m.errors.join("; "));
@@ -604,7 +606,7 @@ function reportFields(m) {
 }
 
 function reportHtml(m, open) {
-  const kv = reportFields(m).map((f) => `<dt>${e(f.label)}</dt><dd>${f.html}</dd>`);
+  const kv = reportFields(m).map((f) => `<dt>${f.glKey ? glossAbbr(f.label, f.glKey) : e(f.label)}</dt><dd>${f.html}</dd>`);
   const flag = m.errors.length ? ` · <span class="bad">⚠ ${e(t("dmarc.f_errors"))}</span>` : "";
   return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary><dl class="kv">${kv.join("")}</dl></details>`;
 }

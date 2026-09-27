@@ -4,7 +4,7 @@
 
 ## Zakładki
 
-Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk informacji ([Informacje](#informacje)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Informacje mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale.
+Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk informacji ([Informacje](#informacje)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Informacje mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
 
 ### IP
 
@@ -35,6 +35,7 @@ Co dostajesz:
 - **Wiadomości w czasie:** wykres słupkowy (wiadomości na dzień, udział niezgodnych na czerwono), gdy raporty obejmują co najmniej dwa dni.
 - **Porównanie z poprzednim importem** tej samej domeny (z [Historii](#historia)): nowe źródła, źródła, których już nie ma, źródła, które pogorszyły wynik, oraz zgodność z DMARC przed i teraz.
 - **Eksport:** "Zapisz .md" (natywne okno wyboru miejsca zapisu w przeglądarce) albo kopiowanie; Markdown zawiera cały raport, także tabelę tożsamości.
+- **Pomoc w prostym języku:** zwijana sekcja "Wyjaśnienia" (wynik, ryzyko źródła a sygnał, zgodność tożsamości, confidence score, GreyNoise/RIOT, porównanie...) pisana najpierw dla nieprofesjonalistów, potem ze szczegółami technicznymi; żargonowe etykiety (ASN, pola RDAP, własne rekordy SPF/DKIM/DMARC/CAA domeny) mają dymek glosariusza.
 
 <details>
 <summary>Szczegóły: model punktacji, karta tożsamości, surowe odpowiedzi</summary>
@@ -64,6 +65,7 @@ Co dostajesz:
 - **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
 - **Kilka adresów naraz:** wklej do 5 adresów oddzielonych spacją, przecinkiem lub nową linią; są zgłaszane po kolei (z przerwą, żeby nie przekroczyć limitu zapytań) i pokazane na liście z poziomem ryzyka każdego, "Otwórz raport" i linkiem do urlscan.io. Każdy zakończony skan trafia do Historii (bez miniatury).
 - **Eksport:** "Zapisz .md" i "Kopiuj Markdown"; w eksporcie adresy znalezione na skanowanej stronie są zdefangowane. Na ekranie adresy (skanowany URL, łańcuch przekierowań, kontaktowane domeny, linki, listy wcześniejszych i wsadowych skanów) są pokazane w całości, jako zwykły tekst, który nigdy nie jest klikalny.
+- **Pomoc w prostym języku:** zwijana sekcja "Wyjaśnienia" (wynik i skala urlscan.io, silniki a społeczność, kategorie/marki, oznaczone żądania, wiek certyfikatu, ranking Umbrella, domena-matka a subdomena, sygnały formularzy, widoczność skanu) pisana najpierw dla nieprofesjonalistów; żargonowe etykiety jak ASN, liczniki werdyktów silników/społeczności i pole domeny-matki mają dymek glosariusza.
 
 <details>
 <summary>Szczegóły: zlecanie skanu, czyszczenie adresu, karta Formularze, historia</summary>
@@ -113,7 +115,7 @@ Co dostajesz:
 
 **geo i dalsze kroki.** Opcjonalny przycisk "geo (RDAP)" w rozwiniętym wierszu pyta backend o ten jeden adres IP (wyłącznie po kliknięciu). Backend odpytuje RDAP, tę samą usługę co zakładka IP, a wiersz pokazuje kraj rejestracji, właściciela, nazwę sieci i nazwę odwrotnego DNS. Gdy nazwa rDNS należy do znanego nadawcy (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp i kilku innych) **i** wskazuje z powrotem na ten sam adres, wiersz to zaznacza; sam PTR nic nie dowodzi, bo właściciel bloku IP ustawia go dowolnie. RDAP nie zawiera ASN, więc go tu nie ma; jest w zakładce [IP](#ip). Stamtąd można przejść do pełnego sprawdzenia reputacji (zakładka [IP](#ip)) albo do przygotowania zgłoszenia AbuseIPDB.
 
-**Wyjaśnienia i eksport.** Zakładkę zamyka sekcja wyjaśnień pojęć: SPF, DKIM, polityka, tabela, poziomy ryzyka, kafelki, geo/rDNS/znany nadawca, wskazówki naprawy oraz porównanie z wykresem, jako zwijana karta domyślnie zwinięta. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
+**Wyjaśnienia i eksport.** Zakładkę zamyka sekcja wyjaśnień pojęć: SPF, DKIM, polityka, tabela, poziomy ryzyka, kafelki, geo/rDNS/znany nadawca, wskazówki naprawy oraz porównanie z wykresem, jako zwijana karta domyślnie zwinięta, pisana najpierw prostym językiem, potem ze szczegółami technicznymi. Etykiety "Polityka" i "Zgodność" na liście pól każdego raportu mają też krótki dymek glosariusza po najechaniu lub zaznaczeniu. Eksport Markdown zawiera podsumowanie, raporty, źródła i każdy rekord (wartości z XML trafiają do bloków kodu).
 
 </details>
 
@@ -213,6 +215,8 @@ Słowami: kod wyciąga fakty, opcjonalny LLM ocenia i pisze komentarz, pokazywan
 | Informacyjne | Spoofing, dopasowanie kategorii, lokalny skan danych osobowych, opinia modelu o PII | podpowiedź do przeczytania przed wysłaniem |
 
 Data do godziny w przyszłość liczy się jako "teraz", żeby tolerować przesunięcie zegara; dalsza data z przyszłości nie przechodzi. Spoofing ma jeden z trzech stanów, zawsze z krótkim uzasadnieniem: wykryty (fail SPF/DMARC), nie wykryty (uwierzytelnianie przeszło) albo nie da się ocenić (brak lub niejednoznaczne wyniki SPF/DKIM/DMARC w wklejonym źródle). Backend liczy twarde sprawdzenia od nowa przy każdej zmianie i przy wysyłce, niezależnie od stanu formularza.
+
+**Pomoc w prostym języku:** zwijana sekcja "Wyjaśnienia" tuż pod kontrolami (wymagane a blokujące a informacyjne, hop graniczny, SMTP-AUTH zweryfikowany, sztuczka z podwójnym rozszerzeniem, reguła 15 minut, maskowanie danych osobowych i to, dlaczego kwalifikowalność tutaj jest osobną sprawą od wyniku ryzyka 0-100 adresu w zakładce IP) jest pisana najpierw dla nieprofesjonalistów; plakietki hopu granicznego i SMTP-AUTH oraz kilka etykiet kontroli mają też krótki dymek glosariusza.
 
 <details>
 <summary>Szczegóły: dziesięć kroków workflow</summary>

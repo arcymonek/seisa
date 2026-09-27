@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.20</b></p>
+<p align="center"><b>Seisa 2.1.22</b></p>
 
 # Seisa
 
@@ -36,7 +36,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 | [Logi](docs/pl/tabs.md#logi) | Błędy i ostrzeżenia każdej usługi | niczego | nic |
 | [Informacje](docs/pl/tabs.md#informacje) | Wersja, status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
 
-Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał.
+Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał; sekcja "Wyjaśnienia" pisana zrozumiałym językiem i kontekstowe dymki (glosariusz - najedź myszą albo zaznacz klawiaturą podkreślony na kropki termin) tłumaczą żargon także dla osób bez technicznego przygotowania.
 
 ## Szybki start
 
@@ -150,6 +150,8 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
 
+- **2.1.22** - zakładki URLScan i AbuseIPDB też kończą się teraz sekcją "Wyjaśnienia" pisaną zrozumiałym językiem i dymkami glosariusza, tak jak IP i DMARC.
+- **2.1.21** - zakładki IP i DMARC: sekcje "Wyjaśnienia" przepisane zrozumiałym językiem dla nieprofesjonalistów, a żargonowe etykiety (ASN, odwrotny DNS, rekordy SPF/DKIM/DMARC/CAA, confidence score AbuseIPDB...) mają teraz kontekstowy dymek glosariusza - ten sam mechanizm co już w zakładce Email.
 - **2.1.20** - Dokumentacja: README skrócone i odchudzone z duplikatów wobec `docs/` - spis treści, dosłowna komenda `git clone`, informacja gdzie leżą lokalne dane i jak je wyczyścić; tabela "co opuszcza komputer" to teraz krótki wyciąg z linkiem do pełnej wersji w `docs/privacy-and-security.md`, a tabela kluczy `.env` w `docs/configuration.md` linkuje teraz z powrotem do README zamiast ją powielać.
 - **2.1.17** - zakładka AbuseIPDB: każdy hop w karcie adresu ma teraz oznaczenie prywatny/publiczny i własną plakietkę potwierdzenia SMTP AUTH/DKIM, nie tylko hop graniczny; `is_reportable_ip` korzysta teraz ze wspólnej klasyfikacji prywatnych/specjalnych adresów IP zamiast trzeciej, osobnej kopii tej logiki.
 - **2.1.16** - zakładka Email: fakt "IP nadawcy" i diagram trasy przechodzą teraz przez wewnętrzne hopy zewnętrznego przekaźnika (ten sam mechanizm co w zakładce AbuseIPDB), co naprawia błędny adres nadawcy dla łańcuchów obejmujących więcej niż jednego operatora poczty.

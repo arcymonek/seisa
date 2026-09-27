@@ -3,6 +3,19 @@
 // responses are not kept); everything that came from a third party goes through escapeHtml.
 import { t, tn, fmtDateTime, getLocale } from "./i18n.js";
 import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
+import { glossAbbr } from "./glossary.js";
+
+// Identity field keys that carry enough jargon to deserve a one-sentence glossary tooltip next to their label.
+const GLOSS_FIELD = {
+  asn: "lookup.gl.asn",
+  network: "lookup.gl.network",
+  rdns: "lookup.gl.rdns",
+  nameservers: "lookup.gl.nameservers",
+  mx: "lookup.gl.mx",
+  spf: "lookup.gl.spf_record",
+  dmarc: "lookup.gl.dmarc_record",
+  caa: "lookup.gl.caa",
+};
 
 // Display-only metadata per service; the descriptions live in the i18n catalog (md.service.<id>).
 const SERVICES = {
@@ -172,7 +185,7 @@ function renderValue(def, v) {
 }
 
 export function kvHtml(rows) {
-  return `<dl class="kv">${rows.map(([label, html]) => `<dt>${e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
+  return `<dl class="kv">${rows.map(([label, html, glKey]) => `<dt>${glKey ? glossAbbr(label, glKey) : e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
 }
 
 // ---- verdict banner + tiles ----
@@ -207,8 +220,8 @@ function comparisonHtml(result) {
     ${points.length > 2 ? `<span class="spark" title="${e(t("lookup.compare_trend", { n: points.length }))}">${bars}</span>` : ""}</div>`;
 }
 
-export function tileHtml(label, value, sub, mark) {
-  return `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}${mark ? ` ${mark}` : ""}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
+export function tileHtml(label, value, sub, mark, glKey) {
+  return `<div class="kpi"><span class="kpi-label">${glKey ? glossAbbr(label, glKey) : e(label)}</span><span class="kpi-value">${e(value)}${mark ? ` ${mark}` : ""}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
 }
 
 function agreementMark(field) {
@@ -224,7 +237,9 @@ function tilesHtml(result) {
 
   const ab = svc("abuseipdb");
   if (ab && ab.abuse_confidence_score != null)
-    tiles.push(tileHtml(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 })));
+    tiles.push(
+      tileHtml(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 }), null, "lookup.gl.confidence")
+    );
   const vt = svc("virustotal");
   if (vt && vt.total_engines)
     tiles.push(tileHtml(t("lookup.kpi_detections"), `${(vt.malicious || 0) + (vt.suspicious || 0)}/${vt.total_engines}`, t("lookup.kpi_detections_sub", { malicious: vt.malicious || 0, suspicious: vt.suspicious || 0 })));
@@ -238,7 +253,7 @@ function tilesHtml(result) {
   const asn = idf("asn");
   if (asn) {
     const org = idf("organization");
-    tiles.push(tileHtml("ASN", asn.value, org ? org.value : "", agreementMark(asn)));
+    tiles.push(tileHtml("ASN", asn.value, org ? org.value : "", agreementMark(asn), "lookup.gl.asn"));
   }
   const usage = idf("usage_type");
   if (usage) tiles.push(tileHtml(t("lookup.kpi_type"), usage.value, idf("tor") ? t("lookup.tor_node") : ""));
@@ -313,9 +328,10 @@ function identityValue(field, value) {
 
 function identityRow(field) {
   const label = t("lookup.fi." + field.key);
+  const glKey = GLOSS_FIELD[field.key];
   if (field.key === "addresses") {
     const buttons = field.value.split(", ").map((ip) => `<button type="button" class="tag" data-check-ip="${e(ip)}" title="${e(t("lookup.check_ip"))}">${e(ip)}</button>`);
-    return [label, `<span class="chips">${buttons.join("")}</span>`];
+    return [label, `<span class="chips">${buttons.join("")}</span>`, glKey];
   }
   const badge = `<span class="badge sm ${field.status}" title="${e(t("lookup.agreement_title." + field.status))}">${e(agreementText(field))}</span>`;
   const mono = ["asn", "network", "rdns", "nameservers", "addresses", "mx", "spf", "dmarc", "caa"].includes(field.key);
@@ -324,10 +340,10 @@ function identityRow(field) {
     const list = field.variants
       .map((v) => `<li>${e(identityValue(field, v.value))} <span class="muted">- ${e(v.sources.map(serviceTitle).join(", "))}</span></li>`)
       .join("");
-    return [label, `<details class="ident-var"><summary>${shown} ${badge}</summary><ul>${list}</ul></details>`];
+    return [label, `<details class="ident-var"><summary>${shown} ${badge}</summary><ul>${list}</ul></details>`, glKey];
   }
   const sources = field.status === "single" ? ` <span class="muted">(${e(serviceTitle(field.variants[0].sources[0]))})</span>` : "";
-  return [label, `${shown} ${badge}${sources}`];
+  return [label, `${shown} ${badge}${sources}`, glKey];
 }
 
 function identityHtml(identity, type) {

@@ -2,8 +2,9 @@
 // card with the checks before sending. Pure renderers: they take data and return HTML (everything from the e-mail goes
 // through escapeHtml); the state and the events live in report-builder.js.
 import { t, tn } from "./i18n.js";
-import { tileHtml } from "./lookup-result.js";
+import { kvHtml, tileHtml } from "./lookup-result.js";
 import { escapeHtml as e } from "./util.js";
+import { glossAbbr } from "./glossary.js";
 
 const AGE_LIMIT_DAYS = 60; // AbuseIPDB reporting policy (the backend enforces it as well)
 const STATUS_CLASS = { pass: "auto-pass", fail: "auto-fail", none: "auto-none", unknown: "auto-pending" };
@@ -58,14 +59,14 @@ export function abuseTileHtml(info) {
   if (!info || info.status !== "ok") return "";
   const tone = info.is_whitelisted ? "warn" : "";
   const sub = info.total_reports ? t("rb.kpi_abuse_sub", { reports: info.total_reports, users: info.num_distinct_users }) : t("rb.ip_info_none");
-  return withTone(tileHtml(t("rb.kpi_abuse"), `${info.abuse_confidence_score ?? 0}%`, sub), tone);
+  return withTone(tileHtml(t("rb.kpi_abuse"), `${info.abuse_confidence_score ?? 0}%`, sub, null, "rb.gl.confidence"), tone);
 }
 
 // ---- the address chain, with the option to pick another address ----
 
 function hopRow(hop, cand) {
-  const boundary = hop.is_boundary ? ` <span class="badge sm agree">${e(t("rb.boundary_hop"))}</span>` : "";
-  const smtpAuth = hop.auth_consistent === true ? ` <span class="badge sm agree">${e(t("rb.smtp_auth_verified"))}</span>` : "";
+  const boundary = hop.is_boundary ? ` <span class="badge sm agree">${glossAbbr(t("rb.boundary_hop"), "rb.gl.boundary_hop")}</span>` : "";
+  const smtpAuth = hop.auth_consistent === true ? ` <span class="badge sm agree">${glossAbbr(t("rb.smtp_auth_verified"), "rb.gl.smtp_auth")}</span>` : "";
   const priv = hop.is_private === true ? ` <span class="badge sm single">${e(t("rb.ip_private"))}</span>` : "";
   const reported = cand && cand.reported ? ` <span class="badge sm single">${e(t("rb.already_reported"))}</span>` : "";
   const use = cand ? `<button type="button" class="secondary mini inline" data-use-ip="${e(cand.ip)}">${e(t("rb.use_ip"))}</button>` : "";
@@ -122,8 +123,22 @@ const LABELS = {
 
 export const checkLabel = (key) => t(LABELS[key]);
 
+// Check keys jargon-y enough to deserve a one-sentence glossary tooltip next to their label.
+const ITEM_GLOSS = { cooldown: "rb.gl.cooldown", spoofing: "rb.gl.spoofing", pii_scan: "rb.gl.pii" };
+
 function item(key, status, note) {
-  return `<div class="checklist-item ${STATUS_CLASS[status] || STATUS_CLASS.unknown}">${e(t(LABELS[key]))}${note ? " - " + e(note) : ""}</div>`;
+  const glKey = ITEM_GLOSS[key];
+  const label = glKey ? glossAbbr(t(LABELS[key]), glKey) : e(t(LABELS[key]));
+  return `<div class="checklist-item ${STATUS_CLASS[status] || STATUS_CLASS.unknown}">${label}${note ? " - " + e(note) : ""}</div>`;
+}
+
+// ---- legend ----
+
+const LEGEND = ["groups", "boundary_hop", "smtp_auth", "double_extension", "cooldown", "pii", "confidence", "qualifies"];
+
+export function legendHtml() {
+  const rows = LEGEND.map((id) => [t("rb.legend_term." + id), e(t("rb.legend." + id))]);
+  return `<details class="fact-block legend"><summary>${e(t("rb.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
 }
 
 // model: {required: [[key, status, note]], blocking: [...], info: [...], failing: n}

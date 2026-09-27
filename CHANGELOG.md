@@ -4,6 +4,14 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.22 - 2026-09-27
+- **UI:** URLScan and AbuseIPDB tabs now end with a collapsible "Explanations" card, matching IP and DMARC - written for non-specialists first (score/scale, engines vs. community, categories/brands, flagged requests, certificate age, Umbrella rank, apex vs. subdomain, form signals, visibility for URLScan; the three check groups, boundary hop, SMTP-AUTH, double extension, the 15-minute rule, PII masking, and eligibility vs. risk score for AbuseIPDB). The same `frontend/js/glossary.js` glossary tooltip now also covers ASN, the engine/community counts, the apex domain, the boundary-hop and SMTP-AUTH badges and a few check labels in both tabs.
+- **Docs:** `docs/{en,pl}/tabs.md` and `docs/{en,pl}/architecture.md` updated to describe the new sections and the shared glossary helper.
+
+## 2.1.21 - 2026-09-27
+- **UI:** rewrote the IP and DMARC tab "Explanations" text for non-specialists - a plain-language sentence with an everyday analogy first, technical detail (with abbreviations expanded) after - and added a small shared `frontend/js/glossary.js` helper that puts the same contextual glossary tooltip (as already used in the Email tab) on jargon labels such as ASN, reverse DNS, the domain's own SPF/DKIM/DMARC/CAA records, the AbuseIPDB confidence score, and the DMARC report's Policy/Alignment fields.
+- **Docs:** README and `docs/{en,pl}/tabs.md` now mention the "Explanations" cards and glossary tooltips as part of the shared tab layout.
+
 ## 2.1.20 - 2026-09-27
 - **Docs:** README audit - added a table of contents, a literal `git clone` command, where local data lives (`data/`, `logs/`) and how to wipe it, a verification pointer for "local by design"/"no telemetry", and moved the "pull requests are not accepted, issues are welcome" note next to the project description instead of the bottom of the License section; the license badge is now a link to `LICENSE`.
 - **Docs:** removed 20 leftover `<!-- Screenshot to add -->` placeholder comments (README x2, `docs/{en,pl}/tabs.md` x8 each) - no `docs/img/` directory ever existed.

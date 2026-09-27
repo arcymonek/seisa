@@ -4,7 +4,7 @@
 
 ## Tabs
 
-The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round info button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards that open by themselves only when they carry a signal.
+The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round info button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards that open by themselves only when they carry a signal; most of them also offer a plain-language "Explanations" card and glossary tooltips on jargon terms (a dotted underline - hover or keyboard focus shows the definition).
 
 ### IP
 
@@ -35,6 +35,7 @@ What you get:
 - **Mail volume per day:** a bar chart (messages per day, the failing share in red) when the reports span at least two days.
 - **Comparison with the previous import** of the same domain (from [History](#history)): new sources, sources that are gone, sources that got worse and the DMARC pass rate before and now.
 - **Export:** "Save .md" (the browser's native save dialog) or copy; the Markdown contains the whole report including the identity table.
+- **Plain-language help:** a collapsible "Explanations" card (score, source risk vs. signal, identity agreement, confidence score, GreyNoise/RIOT, comparison...) written for non-specialists first, technical detail after; jargon labels (ASN, RDAP fields, the domain's own SPF/DKIM/DMARC/CAA records) carry a glossary tooltip.
 
 <details>
 <summary>Details: the scoring model, the identity card, raw responses</summary>
@@ -64,6 +65,7 @@ What you get:
 - **Compare with the previous scan:** finds the newest earlier scan of the domain (the very same URL first), fetches it and shows a side-by-side table - risk level, score, redirects, IP, ASN, server, certificate, forms, technologies - with unchanged rows dimmed, plus the domains that appeared or disappeared.
 - **Several addresses at once:** paste up to 5 addresses separated by spaces, commas or new lines; they are submitted one by one (with a pause, to stay within the rate limit) and shown in a list with the risk level of each, "Open report" and a link to urlscan.io. Every finished scan is saved in the History (without a thumbnail).
 - **Export:** "Save .md" and "Copy Markdown"; in the export addresses found on the scanned page are defanged. On screen the addresses (the scanned URL, the redirect chain, contacted domains, links, the lists of earlier and batch scans) are shown in full, as plain text that is never clickable.
+- **Plain-language help:** a collapsible "Explanations" card (the urlscan.io score and scale, engines vs. community, categories/brands, flagged requests, certificate age, the Umbrella rank, the apex domain vs. a subdomain, form signals, scan visibility) written for non-specialists first; jargon labels such as ASN, the engine/community verdict counts and the apex domain field carry a glossary tooltip.
 
 <details>
 <summary>Details: submission, cleaning, the Forms card, history</summary>
@@ -113,7 +115,7 @@ What you get:
 
 **geo and next steps.** The optional "geo (RDAP)" button in the expanded row asks the backend about that single IP address (only on click). The backend queries RDAP, the same service as the IP tab, and the row shows the registration country, the owner, the network name and the reverse DNS name. When the reverse DNS name belongs to a well-known sender (Google, Microsoft 365, Amazon SES, SendGrid, Mailgun, Mailchimp and a few more) **and** resolves back to the same address, the row says so; a PTR alone would prove nothing, because whoever owns an IP block sets its PTR freely. RDAP has no ASN, so none is shown; the [IP](#ip) tab has it. From there you can jump to a full reputation check (the [IP](#ip) tab) or to preparing an AbuseIPDB report.
 
-**Explanations and export.** An explanations section covering SPF, DKIM, the policy terms, the table, the risk levels, the tiles, geo/rDNS/known sender, the fix hints and the comparison with the chart closes the tab as a collapsible card, folded by default. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
+**Explanations and export.** An explanations section covering SPF, DKIM, the policy terms, the table, the risk levels, the tiles, geo/rDNS/known sender, the fix hints and the comparison with the chart closes the tab as a collapsible card, folded by default, written in plain language first and technical detail after. The Policy and Alignment labels in each report's field list also carry a short glossary tooltip on hover or focus. The Markdown export holds the summary, the reports, the sources and every record (values from the XML sit in code spans).
 
 </details>
 
@@ -213,6 +215,8 @@ In words: the code extracts the facts, the optional LLM assesses and writes the 
 | Informational | Spoofing, category fit, the local personal-data scan, the model's PII opinion | a hint to read before sending |
 
 A date up to one hour in the future counts as "now" to tolerate a clock offset; a further future date fails. Spoofing is one of three states, always with a short reason: detected (SPF/DMARC fail), not detected (authentication passed) or cannot be assessed (no or ambiguous SPF/DKIM/DMARC results in the pasted source). The backend recomputes the hard checks on every change and again when sending, independently of the state of the form.
+
+**Plain-language help:** a collapsible "Explanations" card right below the checks (required vs. blocking vs. informational, the boundary hop, SMTP-AUTH verified, the double-extension trick, the 15-minute repeat rule, personal-data masking, and why eligibility here is a separate question from the address's 0-100 risk score in the IP tab) is written for non-specialists first; the boundary-hop and SMTP-AUTH badges and a few check labels also carry a short glossary tooltip.
 
 <details>
 <summary>Details: the ten steps of the workflow</summary>
