@@ -83,9 +83,10 @@ function filterRows(fl) {
 // derived values (shared by the tiles, the cards and the comparison of two analyses)
 // ---------------------------------------------------------------------------
 
-// Index of the trusted Received entry: the oldest one when one operator wrote the whole chain (the higher entries are
-// its internal hops), otherwise the topmost one (written by the recipient's own server). Mirrors backend _received_hops.
-export const trustIndex = (f) => (f.single_operator ? f.received.length - 1 : 0);
+// Index of the trusted Received entry - computed backend-side in _received_hops (single-operator chains: the
+// oldest entry; otherwise the topmost one, or a deeper hop when the code walked through a same-relay internal
+// chain to find it), so the KPI tile and the route diagram always agree on the same hop.
+export const trustIndex = (f) => f.trust_index ?? 0;
 
 // SPF / DKIM / DMARC as written by the recipient's server (Authentication-Results with a matching authserv-id).
 export function authSummary(f) {
@@ -201,11 +202,12 @@ export function routeHtml(f) {
   const rec = f.received;
   if (!rec.length) return "";
   const ti = trustIndex(f);
-  const single = !!f.single_operator;
   const fromDomain = (f.identity.find((r) => r.field === "From") || {}).domain || f.overview.from || "?";
   const nodes = [`<div class="em-hop ghost"><span class="em-hop-title">${e(t("em.route.sender"))}</span><span class="mono">${e(fromDomain)}</span><span class="muted">${e(t("em.route.claimed"))}</span></div>`];
   [...rec].reverse().forEach((r) => {
-    const kind = r.index === ti ? "boundary" : single ? "internal" : "untrusted";
+    // Matches the backend's own role assignment in _received_hops: hops before the trust boundary are its
+    // internal relay hops, hops after are unverified - true for the single-operator, walked and plain cases alike.
+    const kind = r.index === ti ? "boundary" : r.index < ti ? "internal" : "untrusted";
     const host = r.from_host || r.helo || "?";
     nodes.push(`<span class="em-arrow" aria-hidden="true">→</span>
       <div class="em-hop ${kind}" title="${e(r.role || "")}">

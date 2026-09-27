@@ -40,6 +40,7 @@
   "forensics.trust_note": "Cały łańcuch Received należy do jednego operatora ({operator}) - to infrastruktura odbiorcy. Granicą zaufania jest najstarszy wpis (#{index}): to on zapisał adres IP połączenia; wyższe wpisy to wewnętrzne skoki tego samego operatora.",
   "forensics.role.top": "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)",
   "forensics.role.below": "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora",
+  "forensics.role.walked_boundary": "granica zaufania - tu zewnętrzny operator zapisał adres faktycznie łączącego się klienta; wcześniejsze wpisy to jego własna wewnętrzna sieć przekazująca wiadomość dalej",
   "forensics.dkim_unusual": "nietypowa",
   "forensics.flag.dkim_sha1": "DKIM `d={d}` używa {a} (SHA-1 jest przestarzały, RFC 8301).",
   "forensics.flag.domainkey": "Obecny nagłówek `DomainKey-Signature` (przestarzały poprzednik DKIM).",

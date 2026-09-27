@@ -40,6 +40,7 @@
   "forensics.trust_note": "The whole Received chain belongs to one operator ({operator}) - it is the recipient's infrastructure. The trust boundary is the oldest entry (#{index}): it recorded the IP address of the connection; the higher entries are internal hops of the same operator.",
   "forensics.role.top": "the top one - added by the recipient's server (trust boundary)",
   "forensics.role.below": "below the trust boundary - unverified unless its author is trusted",
+  "forensics.role.walked_boundary": "trust boundary - here the external operator recorded the address of the actually connecting client; the entries above are its own internal network forwarding the message onward",
   "forensics.dkim_unusual": "unusual",
   "forensics.flag.dkim_sha1": "DKIM `d={d}` uses {a} (SHA-1 is deprecated, RFC 8301).",
   "forensics.flag.domainkey": "The `DomainKey-Signature` header is present (an obsolete predecessor of DKIM).",

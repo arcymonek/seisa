@@ -140,6 +140,11 @@ the response-language column of section 0:
   boundary is the **oldest** entry (the one that recorded the IP address of the connection from outside) and
   the higher entries are internal hops. Explain that an internal route does not prove the credibility of the
   sender, only who provides the recipient's mailbox.
+- **A chain spanning more than one operator.** When the recipient's own server hands the message to a separate,
+  external operator (e.g. a bulk-mail provider), the deterministic analysis may still find the trust boundary
+  deeper in the chain, inside that external operator's own internal hops, rather than at the very top - use the
+  hop the analysis marks this way, not the newest entry, and explain the earlier hops as that operator's own
+  network forwarding the message onward.
 - **The route of this message** in a code block (arrows `->`), marking which hops are under the control of the
   recipient.
 - Only those abbreviations that actually occur (MTA, MUA, MDA/LDA, LMTP, ESMTP, TLS).

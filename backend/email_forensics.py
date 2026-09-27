@@ -22,7 +22,7 @@ from email.utils import parseaddr, parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
 
-from backend.email_parser import parse_received_header
+from backend.email_parser import find_boundary_index, parse_received_header
 from backend.i18n import t
 from backend.mail_trust import (
     domains_consistent,
@@ -631,8 +631,9 @@ def _header_hygiene(ctx: _Ctx) -> tuple[list, dict, list, list[str]]:
     return dup, casing_variants, encoded_words, placeholders
 
 
-def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
-    """The Received chain with per-hop findings and, when one operator wrote all of it, the trust boundary."""
+def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
+    """The Received chain with per-hop findings, the trust boundary (when one operator wrote the whole chain)
+    and the index of the hop the "sender IP" fact should point to."""
     received = []
     recv_raw = ctx.all_of("received")
     for idx, raw in enumerate(recv_raw):
@@ -699,10 +700,11 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
             if (by_host := (r["by_host"] or "").strip("[]")) and not is_dotless_internal_hop(by_host, r["ip"])
         }
         by_fams.discard(None)
-        trust_index = len(received) - 1
-        oldest_ip = received[trust_index]["ip"]
+        oldest_index = len(received) - 1
+        oldest_ip = received[oldest_index]["ip"]
         if len(received) > 1 and len(by_fams) == 1 and oldest_ip and not is_special_ip(oldest_ip):
             single_operator = next(iter(by_fams))
+            trust_index = oldest_index
             for r in received:
                 r["role"] = (
                     t("forensics.role.oldest_operator")
@@ -712,10 +714,26 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
             trust_note = t("forensics.trust_note", operator=single_operator, index=trust_index)
             ctx.flag("info", trust_note)
         else:
-            received[0]["role"] = t("forensics.role.top")
-            for r in received[1:]:
-                r["role"] = t("forensics.role.below")
-    return received, single_operator, trust_note
+            # No single operator wrote the whole chain - but the top hop (written by the recipient's own
+            # server) may itself be just a relay: walk through same-relay internal hops (the exact algorithm
+            # the AbuseIPDB tab uses to pick its report IP) to see if a deeper hop is the real trust boundary.
+            walked_index, _walk_confidence = find_boundary_index(recv_raw)
+            walked_ip = received[walked_index]["ip"] if walked_index is not None else None
+            if walked_index is not None and walked_index > 0 and walked_ip and not is_special_ip(walked_ip):
+                trust_index = walked_index
+                for r in received:
+                    if r["index"] < trust_index:
+                        r["role"] = t("forensics.role.internal_hop")
+                    elif r["index"] == trust_index:
+                        r["role"] = t("forensics.role.walked_boundary")
+                    else:
+                        r["role"] = t("forensics.role.below")
+            else:
+                trust_index = 0
+                received[0]["role"] = t("forensics.role.top")
+                for r in received[1:]:
+                    r["role"] = t("forensics.role.below")
+    return received, single_operator, trust_note, trust_index
 
 
 def _authentication(ctx: _Ctx, received: list[dict]) -> list[dict]:
@@ -1003,7 +1021,7 @@ def compute_facts(src: str) -> dict:
     ctx = _Ctx(src)
     overview = _overview(ctx)
     dup, casing_variants, encoded_words, placeholders = _header_hygiene(ctx)
-    received, single_operator, trust_note = _received_hops(ctx)
+    received, single_operator, trust_note, trust_index = _received_hops(ctx)
     auth = _authentication(ctx, received)
     dkim, arc = _dkim_arc(ctx)
     identity_rows, unsub_hdr, unsub_urls = _identity(ctx, dkim, auth)
@@ -1022,6 +1040,7 @@ def compute_facts(src: str) -> dict:
         "received": received,
         "trust_note": trust_note,
         "single_operator": single_operator,
+        "trust_index": trust_index,
         "filters": filters,
         "auth": auth,
         "dkim": dkim,

@@ -203,6 +203,19 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     return boundary, hops, confidence, reasoning
 
 
+def find_boundary_index(received_headers: list[str]) -> tuple[int | None, str]:
+    """Public, tab-agnostic wrapper around _find_boundary_hop: runs the exact same walk used to pick the
+    AbuseIPDB report's IP (including walking through same-relay internal hops, dotless pod names included),
+    but returns just the resulting hop INDEX (into `received_headers`, newest-first) and confidence - not
+    AbuseIPDB's own worded reasoning - so other callers (the Email tab) can reuse the walk's result under
+    their own wording instead of adopting `parser.*` phrasing. None means no usable boundary was found
+    (e.g. the message never left a single shared provider, or no IP could be recovered at all)."""
+    boundary, hops, confidence, _reasoning = _find_boundary_hop(received_headers)
+    if boundary is None:
+        return None, confidence
+    return next(i for i, h in enumerate(hops) if h is boundary), confidence
+
+
 def _parse_auth_results(header_value: str) -> dict[str, str]:
     out = {}
     for mechanism in ("spf", "dkim", "dmarc"):
