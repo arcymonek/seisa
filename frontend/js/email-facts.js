@@ -257,9 +257,12 @@ export function factCardsHtml(f) {
     (f.trust_note ? `<div class="banner info">${e(f.trust_note)}</div>` : "") +
     table(["#", "from (HELO) / PTR", "IP", "by", `with / TLS / ${t("em.f.time_utc")}`, t("em.f.role_notes")],
       f.received.map((r) => [
-        r.index, mono(r.from_host) + (r.ptr && r.ptr !== r.from_host ? `<div>${mono(r.ptr)} <span class="muted">PTR</span></div>` : ""), mono(r.ip), mono(r.by_host),
+        r.index, mono(r.from_host) + (r.ptr && r.ptr !== r.from_host ? `<div>${mono(r.ptr)} <span class="muted">PTR</span></div>` : ""),
+        mono(r.ip) + (r.is_private === true ? ` <span class="badge sm single">${e(t("em.f.ip_private"))}</span>` : ""),
+        mono(r.by_host),
         `${e(r.with || "")} ${r.tls ? `<span class="muted">${e(r.tls)}</span>` : ""}<div class="muted">${e(r.time_utc || "")}</div>`,
-        `<span class="muted">${e(r.role || "")}</span>` + r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join("") +
+        `<span class="muted">${e(r.role || "")}</span>` + (r.auth_consistent === true ? ` <span class="badge sm agree">${e(t("em.f.smtp_auth_verified"))}</span>` : "") +
+          r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join("") +
           `<div class="em-row-actions">${ipBtn(r.ip)}${srcBtn(r.raw)}</div>`,
       ]), "em-recv")));
 

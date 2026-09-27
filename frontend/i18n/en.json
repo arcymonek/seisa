@@ -532,6 +532,8 @@
   "em.f.received_help": "Trust boundary: only the Received header added by the recipient's server is reliable. The roles below are a code heuristic; the final assessment is made by the analysis.",
   "em.f.time_utc": "Time UTC",
   "em.f.role_notes": "Role / notes",
+  "em.f.ip_private": "private",
+  "em.f.smtp_auth_verified": "SMTP-AUTH verified",
   "em.f.auth": "Authentication: SPF / DKIM / DMARC / ARC",
   "em.f.auth_count": "Authentication: SPF / DKIM / DMARC / ARC ({n} result headers)",
   "em.f.auth_help": "Only the Authentication-Results written by the recipient's server (authserv-id) counts. A result written by anyone else is just their claim.",

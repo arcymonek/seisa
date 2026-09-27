@@ -24,6 +24,15 @@ from urllib.parse import parse_qsl, urlsplit
 
 from backend.email_parser import parse_received_header
 from backend.i18n import t
+from backend.mail_trust import (
+    domains_consistent,
+    family,
+    hop_specific_auth,
+    is_dotless_internal_hop,
+    is_special_ip,
+    parse_ip,
+    registrable_domain,
+)
 
 MAX_LLM_SOURCE_CHARS = 120_000
 MAX_DECODED_TEXT_CHARS = 60_000
@@ -36,10 +45,6 @@ SINGLE_INSTANCE_HEADERS = {
 TZ_ABBR = {
     "UTC": 0, "GMT": 0, "Z": 0, "PDT": -700, "PST": -800, "MDT": -600, "MST": -700, "CDT": -500, "CST": -600,
     "EDT": -400, "EST": -500, "CET": 100, "CEST": 200, "BST": 100, "EET": 200, "EEST": 300, "JST": 900, "IST": 530,
-}
-TWO_LEVEL_SUFFIXES = {
-    "co.uk", "org.uk", "ac.uk", "com.au", "net.au", "com.pl", "net.pl", "org.pl", "co.jp", "com.br", "co.nz",
-    "com.tr", "co.za", "com.cn", "co.in", "com.mx", "com.ar", "co.kr",
 }
 ABUSED_HOSTS = (
     "storage.googleapis.com", "docs.google.com", "drive.google.com", "forms.gle", "sites.google.com",
@@ -195,40 +200,6 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
 # ---------------------------------------------------------------------------
 # helpers
 # ---------------------------------------------------------------------------
-
-def registrable_domain(host: str | None) -> str | None:
-    if not host:
-        return None
-    host = host.strip().strip(".").lower()
-    if re.fullmatch(r"[\d.]+|[0-9a-f:]+", host) and (":" in host or host.count(".") == 3):
-        return None  # an IP address
-    labels = host.split(".")
-    if len(labels) < 2:
-        return host
-    if ".".join(labels[-2:]) in TWO_LEVEL_SUFFIXES and len(labels) >= 3:
-        return ".".join(labels[-3:])
-    return ".".join(labels[-2:])
-
-
-# Domain families of one mail operator: Received/Authentication-Results of the same operator may use different domains.
-PROVIDER_FAMILIES = {
-    "microsoft": {"microsoft.com", "outlook.com", "office365.com", "office.com", "hotmail.com", "live.com", "msn.com"},
-    "google": {"google.com", "gmail.com", "googlemail.com"},
-    "yahoo": {"yahoo.com", "yahoodns.net", "yahoo.co.jp"},
-    "apple": {"icloud.com", "me.com", "apple.com"},
-    "proton": {"proton.me", "protonmail.ch", "protonmail.com"},
-}
-
-
-def family(domain: str | None) -> str | None:
-    """Operator family key for a domain (an unknown domain is its own family)."""
-    if not domain:
-        return None
-    for key, members in PROVIDER_FAMILIES.items():
-        if domain in members:
-            return key
-    return domain
-
 
 def _addr_domain(value: str | None) -> tuple[str | None, str | None]:
     if not value:
@@ -690,6 +661,7 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
         m_tls = re.search(r"\((TLS[\w.]*|version=[^)]*)\)|\b(TLS[\w.]+)", raw)
         received.append({
             "index": idx, "from_host": hop["from_host"], "ip": hop["ip"], "by_host": hop["by_host"],
+            "is_private": is_special_ip(hop["ip"]) if hop["ip"] else None,
             "helo": m_helo.group(1) if m_helo else None, "ptr": m_ptr.group(1) if m_ptr else None, "with": m_with.group(1) if m_with else None,
             "tls": (m_tls.group(0)[:160] if m_tls else None), "time_utc": _fmt_utc(ts), "_ts": ts,
             "flags": hop_flags, "raw": hop["raw"][:400],
@@ -698,15 +670,39 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None]:
             # with direct acceptance by a large operator an identical time is normal - information only
             level = "info" if f in info_hop_flags else "warn"
             ctx.flag(level, t("forensics.flag.hop", idx=idx, text=f))
+
+    # SMTP-AUTH/DKIM corroboration per hop, positionally correlated (never by text match, which a forged header
+    # could defeat) - purely informational: it never changes which hop is the trust boundary, only annotates one.
+    hop_auth = hop_specific_auth(ctx.headers, len(received))
+    for r in received:
+        corroboration = hop_auth.get(r["index"])
+        account = corroboration.get("smtp_auth_account") if corroboration else None
+        if not corroboration or corroboration.get("auth") != "pass" or not account:
+            r["smtp_auth_account"], r["dkim_domain"], r["auth_consistent"] = None, None, None
+            continue
+        dkim_domain = corroboration.get("dkim_domain")
+        account_domain = account.split("@")[-1] if "@" in account else None
+        r["smtp_auth_account"] = account
+        r["dkim_domain"] = dkim_domain
+        r["auth_consistent"] = domains_consistent(account_domain, dkim_domain) if dkim_domain else None
+
     single_operator = None
     trust_note = None
     trust_index = 0
     if received:
-        by_fams = {family(registrable_domain((r["by_host"] or "").strip("[]"))) for r in received}
+        # A by_host without a dot (e.g. a Kubernetes pod name) says nothing about which operator owns the hop
+        # as long as its own recorded IP is private/absent - so it is excluded here rather than counted as a
+        # spurious "different family", the same way an unparseable domain (None) already was.
+        by_fams = {
+            family(registrable_domain(by_host))
+            for r in received
+            if (by_host := (r["by_host"] or "").strip("[]")) and not is_dotless_internal_hop(by_host, r["ip"])
+        }
         by_fams.discard(None)
-        if len(received) > 1 and len(by_fams) == 1:
+        trust_index = len(received) - 1
+        oldest_ip = received[trust_index]["ip"]
+        if len(received) > 1 and len(by_fams) == 1 and oldest_ip and not is_special_ip(oldest_ip):
             single_operator = next(iter(by_fams))
-            trust_index = len(received) - 1
             for r in received:
                 r["role"] = (
                     t("forensics.role.oldest_operator")
@@ -980,11 +976,13 @@ def _ips(ctx: _Ctx, received: list[dict]) -> list[dict]:
     ips = []
     for r in received:
         if r["ip"]:
-            ips.append({"ip": r["ip"], "where": f"Received #{r['index']}"})
+            ips.append({"ip": r["ip"], "where": f"Received #{r['index']}", "is_private": r["is_private"]})
     for name in ("x-originating-ip", "x-sender-ip"):
         v = ctx.first(name)
         if v:
-            ips.append({"ip": v.strip("[] ")[:45], "where": name})
+            candidate = v.strip("[] ")[:45]
+            parsed = parse_ip(candidate)
+            ips.append({"ip": candidate, "where": name, "is_private": is_special_ip(parsed) if parsed else None})
     if ctx.first("x-originating-ip"):
         ctx.flag("info", t("forensics.flag.x_originating"))
 

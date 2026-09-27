@@ -552,6 +552,8 @@
   "em.f.received_help": "Granica zaufania: wiarygodny jest tylko Received dopisany przez serwer odbiorcy. Role poniżej to heurystyka kodu, ostateczną ocenę robi analiza.",
   "em.f.time_utc": "Czas UTC",
   "em.f.role_notes": "Rola / uwagi",
+  "em.f.ip_private": "prywatne",
+  "em.f.smtp_auth_verified": "SMTP AUTH zweryfikowany",
   "em.f.auth": "Uwierzytelnianie: SPF / DKIM / DMARC / ARC",
   "em.f.auth_count": "Uwierzytelnianie: SPF / DKIM / DMARC / ARC ({n} nagłówków wyników)",
   "em.f.auth_help": "Liczy się tylko Authentication-Results napisany przez serwer odbiorcy (authserv-id). Wynik napisany przez kogoś innego to jego deklaracja.",

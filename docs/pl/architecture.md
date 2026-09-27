@@ -31,7 +31,7 @@ flowchart LR
   L --> X
 ```
 
-Słowami: przeglądarka rozmawia z routerami (`backend/routers/`); sprawdzenie IP przechodzi przez agregator, który równolegle odpytuje usługi z `backend/services/` i liczy wynik w `backend/scoring.py`; zakładki Email i AbuseIPDB używają `email_forensics.py`, `email_parser.py` i `report_builder.py` dla części deterministycznej oraz `services/llm_analyzer.py` dla części LLM; wszystko, co trwałe, przechodzi przez `storage.py`, `analyses.py` i `logging_config.py`.
+Słowami: przeglądarka rozmawia z routerami (`backend/routers/`); sprawdzenie IP przechodzi przez agregator, który równolegle odpytuje usługi z `backend/services/` i liczy wynik w `backend/scoring.py`; zakładki Email i AbuseIPDB używają `email_forensics.py`, `email_parser.py` i `report_builder.py` dla części deterministycznej (obie współdzielą pomocnicze funkcje łańcucha zaufania w `mail_trust.py`) oraz `services/llm_analyzer.py` dla części LLM; wszystko, co trwałe, przechodzi przez `storage.py`, `analyses.py` i `logging_config.py`.
 
 <details>
 <summary>Drzewo plików</summary>
@@ -60,6 +60,7 @@ seisa/
 │   ├── logging_config.py     # logi WARNING+ do logs/*.jsonl
 │   ├── email_parser.py       # wyciąganie faktów z surowego e-maila (zakładka AbuseIPDB)
 │   ├── email_forensics.py    # analiza deterministyczna źródła e-maila (zakładka Email)
+│   ├── mail_trust.py         # wspólne funkcje zaufania łańcucha Received/domen/IP/SMTP AUTH (obie zakładki)
 │   ├── citation_check.py     # lokalna kontrola cytatów LLM względem źródła
 │   ├── analyses.py           # zapis analiz e-maili w data/analyses/
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/

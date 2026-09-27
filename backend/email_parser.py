@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html as html_module
-import ipaddress
 import re
 from datetime import timezone
 from email import message_from_string
@@ -9,6 +8,16 @@ from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 
 from backend.i18n import t
+from backend.mail_trust import (
+    PROVIDER_FAMILIES,
+    domains_consistent,
+    family,
+    hop_specific_auth,
+    is_dotless_internal_hop,
+    is_special_ip,
+    parse_ip,
+    registrable_domain,
+)
 from backend.report_utils import attack_age, is_reportable_ip
 
 _BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
@@ -63,20 +72,6 @@ def _refold_headers(raw_email: str) -> str:
     return "\n".join(out)
 
 
-def _parse_ip(candidate: str | None) -> str | None:
-    if not candidate:
-        return None
-    try:
-        return str(ipaddress.ip_address(candidate.strip()))
-    except ValueError:
-        return None
-
-
-def _is_special_ip(ip_str: str) -> bool:
-    ip = ipaddress.ip_address(ip_str)
-    return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
-
-
 def _extract_ip_candidates(text: str) -> list[str]:
     """Collects all IP addresses mentioned in the "from" clause of a Received header - both in the [IP] form
     (MTA convention for rDNS/real IP) and in plain parentheses (which may also hold host names such as
@@ -86,10 +81,10 @@ def _extract_ip_candidates(text: str) -> list[str]:
     candidates = []
     for pattern in (_BRACKET_RE, _PAREN_RE):
         for m in pattern.finditer(text):
-            ip = _parse_ip(m.group(1))
+            ip = parse_ip(m.group(1))
             if ip:
                 candidates.append(ip)
-    public = [ip for ip in candidates if not _is_special_ip(ip)]
+    public = [ip for ip in candidates if not is_special_ip(ip)]
     return public or candidates
 
 
@@ -100,35 +95,8 @@ def parse_received_header(raw_header: str) -> dict:
     by_host = match.group("by").rstrip(";,") if match else None
     from_host = from_raw.split(" ", 1)[0].strip("[]") if from_raw else None
     candidates = _extract_ip_candidates(from_raw)
-    ip = candidates[0] if candidates else _parse_ip(from_host)
+    ip = candidates[0] if candidates else parse_ip(from_host)
     return {"raw": normalized, "from_host": from_host, "by_host": by_host, "ip": ip, "is_boundary": False}
-
-
-def _registrable_domain(host: str | None) -> str | None:
-    """Last 2 labels of a host name (e.g. 'sub.foo.outlook.com' -> 'outlook.com').
-    Returns None for IP addresses (no "trust domain" can be determined for them)."""
-    if not host or _parse_ip(host) is not None:
-        return None
-    labels = host.lower().split(".")
-    return ".".join(labels[-2:]) if len(labels) >= 2 else host.lower()
-
-
-def _is_dotless_internal_hop(host: str | None, ip: str | None) -> bool:
-    """A bare internal identifier (e.g. a Kubernetes pod name such as 'ghost-submission-c7b579475-4mz8d') has no
-    dot and cannot, by definition, belong to some OTHER external domain the way a real host name could - but only
-    when the IP recorded alongside it is itself private/absent. A dotless name paired with a public IP is NOT
-    waved through: it stops the walk and surfaces as a normal candidate instead of being silently skipped, since
-    a genuinely external hop should never be mistaken for an internal relay step."""
-    if not host or "." in host or _parse_ip(host) is not None:
-        return False
-    return ip is None or _is_special_ip(ip)
-
-
-# Shared relays of large providers: their IP is not the sender's address and must not be reported.
-_SHARED_PROVIDER_DOMAINS = {
-    "outlook.com", "office365.com", "office.com", "microsoft.com", "hotmail.com", "live.com",
-    "google.com", "googlemail.com",
-}
 
 
 def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
@@ -138,31 +106,31 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
     one whose "from" is outside it - there the provider recorded the address of the connecting client. Some
     providers (e.g. OVH's "ghost" mail-out) name their internal hops after bare, dotless pod/container
     identifiers instead of a subdomain - those also count as "still inside the relay" via
-    _is_dotless_internal_hop, but only while their own recorded IP is itself private/absent, so a genuinely
+    is_dotless_internal_hop, but only while their own recorded IP is itself private/absent, so a genuinely
     external hop is never mistaken for an internal one.
     Returns (hop index, description of the walk, whether the message originated inside a shared provider)."""
     cur = start
     visited = []
     origin_inside_provider = False
     while True:
-        relay = _registrable_domain(hops[cur]["from_host"])
+        relay = registrable_domain(hops[cur]["from_host"])
         nxt = cur + 1
         if not relay or nxt >= len(hops) or (
-            _registrable_domain(hops[nxt]["by_host"]) != relay
-            and not _is_dotless_internal_hop(hops[nxt]["by_host"], hops[nxt]["ip"])
+            registrable_domain(hops[nxt]["by_host"]) != relay
+            and not is_dotless_internal_hop(hops[nxt]["by_host"], hops[nxt]["ip"])
         ):
             break
         j = nxt
         while j < len(hops) and (
-            _registrable_domain(hops[j]["from_host"]) == relay
-            or _is_dotless_internal_hop(hops[j]["from_host"], hops[j]["ip"])
+            registrable_domain(hops[j]["from_host"]) == relay
+            or is_dotless_internal_hop(hops[j]["from_host"], hops[j]["ip"])
         ):
             j += 1
         if j >= len(hops):
-            origin_inside_provider = relay in _SHARED_PROVIDER_DOMAINS
+            origin_inside_provider = family(relay) in PROVIDER_FAMILIES
             break
         found_ip = hops[j]["ip"]
-        if not found_ip or _is_special_ip(found_ip):
+        if not found_ip or is_special_ip(found_ip):
             break  # the older hop is the provider's internal network (private address) - stay at the current one
         visited.append(relay)
         cur = j
@@ -188,13 +156,13 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
 
     # Trusted domain = "by" of the newest hop that gives it (the first Gmail header is "by <id> with SMTP"
     # without a host, so we take the first hop with a recognisable "by").
-    trusted_suffix = next((d for d in (_registrable_domain(h["by_host"]) for h in hops) if d), None)
+    trusted_suffix = next((d for d in (registrable_domain(h["by_host"]) for h in hops) if d), None)
     boundary_index = len(hops) - 1
     left_trusted_domain = False
     for i, hop in enumerate(hops):
         if hop["from_host"] is None and hop["ip"] is None:
             continue  # hop without "from" (the recipient's own entry) - it says nothing about the sender
-        if trusted_suffix and _registrable_domain(hop["from_host"]) == trusted_suffix:
+        if trusted_suffix and registrable_domain(hop["from_host"]) == trusted_suffix:
             continue
         boundary_index = i
         left_trusted_domain = True
@@ -244,56 +212,7 @@ def _parse_auth_results(header_value: str) -> dict[str, str]:
     return out
 
 
-_SMTP_AUTH_RE = re.compile(r"(?<!smtp\.)\bauth=(\w+)", re.IGNORECASE)
-_SMTP_AUTH_ACCOUNT_RE = re.compile(r"smtp\.auth=([^\s;]+)", re.IGNORECASE)
-_DKIM_DOMAIN_RE = re.compile(r"header\.d=([^\s;]+)", re.IGNORECASE)
 _CONFIDENCE_LADDER = {"low": "medium", "medium": "high", "high": "high"}
-
-
-def _parse_hop_auth(header_value: str) -> dict | None:
-    """SMTP-AUTH/DKIM details from a single Authentication-Results value - distinct from _parse_auth_results,
-    which only reads the generic spf/dkim/dmarc verdicts used for the unrelated spoofing_suspected flag. Returns
-    None when there is no `auth=` (SMTP-AUTH) verdict at all - a message with only spf/dkim/dmarc gives no
-    SMTP-AUTH signal to correlate with a hop."""
-    auth_match = _SMTP_AUTH_RE.search(header_value)
-    if not auth_match:
-        return None
-    account_match = _SMTP_AUTH_ACCOUNT_RE.search(header_value)
-    dkim_match = re.search(r"\bdkim=(\w+)", header_value, re.IGNORECASE)
-    domain_match = _DKIM_DOMAIN_RE.search(header_value)
-    dkim_domain = domain_match.group(1).strip('"') if domain_match and dkim_match and dkim_match.group(1).lower() == "pass" else None
-    return {
-        "auth": auth_match.group(1).lower(),
-        "smtp_auth_account": account_match.group(1).strip('"') if account_match else None,
-        "dkim_domain": dkim_domain,
-    }
-
-
-def _hop_specific_auth(msg: Message, hop_count: int) -> dict[int, dict]:
-    """Maps hop index -> _parse_hop_auth result, but only for an Authentication-Results header that is the
-    IMMEDIATE next header (in the original, unsorted header order) after that hop's Received line - the exact
-    pattern real MTAs use when they stamp both at once. This positional check (not a text/authserv-id match) is
-    what keeps the signal from being spoofed by a fake Authentication-Results header planted elsewhere in a
-    forged message: anywhere else, it is simply not correlated with any hop."""
-    items = list(msg.items())
-    received_positions = [i for i, (name, _) in enumerate(items) if name.lower() == "received"]
-    result: dict[int, dict] = {}
-    for hop_idx, pos in enumerate(received_positions[:hop_count]):
-        nxt = pos + 1
-        if nxt < len(items) and items[nxt][0].lower() == "authentication-results":
-            parsed = _parse_hop_auth(items[nxt][1])
-            if parsed:
-                result[hop_idx] = parsed
-    return result
-
-
-def _domains_consistent(a: str | None, b: str | None) -> bool:
-    """Label-boundary-safe domain comparison (same pattern as known_senders.match_known_sender) - never a naive
-    substring check, which a lookalike domain could defeat."""
-    if not a or not b:
-        return False
-    a, b = a.lower().rstrip("."), b.lower().rstrip(".")
-    return a == b or a.endswith("." + b) or b.endswith("." + a)
 
 
 def _apply_auth_corroboration(confidence: str, reasoning: str, corroboration: dict) -> tuple[str, str, dict | None]:
@@ -305,7 +224,7 @@ def _apply_auth_corroboration(confidence: str, reasoning: str, corroboration: di
         return confidence, reasoning, None
     dkim_domain = corroboration.get("dkim_domain")
     account_domain = account.split("@")[-1] if "@" in account else None
-    if dkim_domain and _domains_consistent(account_domain, dkim_domain):
+    if dkim_domain and domains_consistent(account_domain, dkim_domain):
         reasoning += " " + t("parser.smtp_auth_consistent", account=account, domain=dkim_domain)
         confidence = _CONFIDENCE_LADDER.get(confidence, confidence)
         return confidence, reasoning, {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": True}
@@ -415,7 +334,7 @@ def parse_email(source: str | Message) -> dict:
     trusted_ip = boundary_hop["ip"] if boundary_hop else None
 
     boundary_index = next((i for i, h in enumerate(hop_chain) if h.get("is_boundary")), None)
-    hop_auth = _hop_specific_auth(msg, len(hop_chain))
+    hop_auth = hop_specific_auth(list(msg.items()), len(hop_chain))
     boundary_auth_corroboration = None
     if boundary_index is not None and boundary_index in hop_auth:
         ip_confidence, ip_reasoning, boundary_auth_corroboration = _apply_auth_corroboration(

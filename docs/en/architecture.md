@@ -31,7 +31,7 @@ flowchart LR
   L --> X
 ```
 
-In words: the browser talks to routers (`backend/routers/`); a lookup goes through the aggregator, which queries the services in `backend/services/` in parallel and computes the score in `backend/scoring.py`; the e-mail and AbuseIPDB tabs use `email_forensics.py`, `email_parser.py` and `report_builder.py` for the deterministic part and `services/llm_analyzer.py` for the LLM part; everything persistent goes through `storage.py`, `analyses.py` and `logging_config.py`.
+In words: the browser talks to routers (`backend/routers/`); a lookup goes through the aggregator, which queries the services in `backend/services/` in parallel and computes the score in `backend/scoring.py`; the e-mail and AbuseIPDB tabs use `email_forensics.py`, `email_parser.py` and `report_builder.py` for the deterministic part (both sharing the mail relay-chain trust helpers in `mail_trust.py`) and `services/llm_analyzer.py` for the LLM part; everything persistent goes through `storage.py`, `analyses.py` and `logging_config.py`.
 
 <details>
 <summary>The file tree</summary>
@@ -60,6 +60,7 @@ seisa/
 │   ├── logging_config.py     # WARNING+ logs to logs/*.jsonl
 │   ├── email_parser.py       # fact extraction from the raw e-mail (AbuseIPDB tab)
 │   ├── email_forensics.py    # deterministic analysis of the e-mail source (Email tab)
+│   ├── mail_trust.py         # shared Received-chain/domain/IP/SMTP-AUTH trust helpers (both tabs)
 │   ├── citation_check.py     # local check of the LLM's quotes against the source
 │   ├── analyses.py           # storage of e-mail analyses in data/analyses/
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
