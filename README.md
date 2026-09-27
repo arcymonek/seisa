@@ -1,15 +1,17 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.19</b></p>
+<p align="center"><b>Seisa 2.1.20</b></p>
 
 # Seisa
 
 **English** | [Polski](README.pl.md)
 
-![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
+
+[Quick start](#quick-start) · [Configuration](#configuration) · [Privacy and data flow](#privacy-and-data-flow) · [Documentation](#documentation) · [Changelog](#changelog) · [License and contributing](#license-and-contributing)
 
 **Seisa** is a local tool for looking closely at suspicious things without handing them to yet another web service: IP reputation from several sources merged into one explained score, live URL scans, DMARC aggregate reports, an educational analysis of an e-mail's source and the preparation of AbuseIPDB abuse reports. It is one Python process on `127.0.0.1` with no login, no database and no build step.
 
-<!-- Screenshot to add: docs/img/hero-ip.png (the IP tab with a verdict and the address identity card) -->
+Bug reports and feature ideas are welcome as issues; code changes (pull requests) are not accepted - see [CONTRIBUTING.md](CONTRIBUTING.md), or [Forking and extending](docs/en/extending.md) if you want to fork and modify Seisa yourself.
 
 - **Local by design.** It listens only on `127.0.0.1` and sends nothing anywhere except the actions you start yourself; [what leaves your machine](#what-leaves-your-machine) is one table.
 - **Explains instead of only scoring.** Every score shows the sources behind it; the e-mail analysis teaches how to read headers instead of only giving a verdict.
@@ -34,8 +36,6 @@ Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-ma
 | [Logs](docs/en/tabs.md#logs) | Errors and warnings of every service | nothing | nothing |
 | [Info](docs/en/tabs.md#info) | Version, key status, API limits, recent changes, license | nothing | quota requests only on "Refresh limits" |
 
-<!-- Screenshots to add: docs/img/tab-*.png (one per tab, see the Tabs section) -->
-
 Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner (no fill, only its border is coloured red, amber or green), summary tiles, then collapsible cards that open by themselves only when they carry a signal.
 
 ## Quick start
@@ -48,9 +48,11 @@ Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the 
 
 ### Install and run
 
-Get the code (clone the repository or unpack a release archive) and, in the project directory:
+Get the code and, in the project directory:
 
 ```bash
+git clone https://github.arcymonek.eu/arcy/seisa.git
+cd seisa
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 cp .env.example .env
@@ -97,7 +99,9 @@ Copy `.env.example` to `.env`, fill in the keys you have and make the file reada
 | `ABUSEIPDB_API_KEY` | yes, for AbuseIPDB (reading and reports) | [abuseipdb.com](https://www.abuseipdb.com) |
 | `GREYNOISE_API_KEY` | yes, for GreyNoise | [greynoise.io](https://www.greynoise.io) |
 | `OPENROUTER_API_KEY` | no, optional | [openrouter.ai](https://openrouter.ai) - enables the LLM analysis in the Email tab and the eligibility assessment and draft report comment in the AbuseIPDB tab |
-| `OPENROUTER_MODEL` | no | `anthropic/claude-sonnet-4.5` by default - verify the exact slug on the OpenRouter model list |
+| `OPENROUTER_MODEL` | no | `anthropic/claude-sonnet-4.5` by default |
+
+> `OPENROUTER_MODEL` is a model slug on OpenRouter, and OpenRouter renames and retires slugs over time - verify the exact current one on its model list before relying on the default.
 
 > **Warning:** the Cloudflare key **must be a scoped API Token with Radar read permission, not the old Global API Key** (the latter gives a 401 error).
 
@@ -107,24 +111,24 @@ Limits, throttling and the free-plan quotas: [Configuration and limits](docs/en/
 
 ## Privacy and data flow
 
-Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine except what is listed here, and every row is triggered by an action of yours. The frontend loads nothing from a CDN, no fonts, no analytics; `marked.min.js` is bundled.
+Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine except what is listed here, and every row is triggered by an action of yours. The frontend loads nothing from a CDN, no fonts, no analytics; `marked.min.js` is bundled. This is a source-available tool with no build step and no obfuscation - if you would rather verify "local by design" and "no telemetry" yourself than take them on faith, `backend/` is short enough to read, and every outgoing call it makes is the ones listed below.
 
 ### What leaves your machine
 
+The most common actions, condensed - the full table of every action, including the rarer ones (DMARC's optional geo lookup, the Info tab's "Refresh limits", the Cisco Talos button), is in [What leaves your machine](docs/en/privacy-and-security.md#what-leaves-your-machine).
+
 | Action | What is sent | To | When |
 |---|---|---|---|
-| IP lookup | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key | when you run the lookup |
-| IP lookup, free part | the IP address or a domain name | `rdap.org` (an RDAP bootstrap that redirects to the regional registry), your DNS resolver (reverse DNS; for a domain the A, AAAA, NS, MX, CAA and TXT records, plus one query for a random subdomain to detect wildcard DNS and one A query per name server), and WHOIS servers for domain names (`python-whois`) | when you run the lookup |
-| URL scan | the URL, the chosen visibility and, if you set them, the scan country and the user agent; the domain in the "History" search of earlier scans; the scan id when the result, the screenshot and the DOM are fetched | urlscan.io | when you scan |
-| DMARC "geo (RDAP)" | one IP address, from the backend | RDAP (`rdap.org`, then the regional registry) and your DNS resolver (reverse and forward lookup), as in the IP tab | only on the click in an expanded row |
+| IP lookup | the IP address or a domain name | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - only those with a key - plus the free RDAP/DNS lookups | when you run the lookup |
+| URL scan | the URL and, if you set them, the scan country and the user agent | urlscan.io | when you scan |
 | Email: "Analyze" (not "Analyze without LLM"), "Finish the analysis" | the whole e-mail source (with personal data) | OpenRouter | only on that click; the interface says so before sending |
-| AbuseIPDB: "Analyze" | the whole e-mail source | OpenRouter | only on that click |
-| AbuseIPDB: address check | the IP | AbuseIPDB (`/check`) | when an IP is entered and a key exists |
-| AbuseIPDB: "Send" | the IP, categories, timestamp, comment | AbuseIPDB (`/report`) - **public** | only on a deliberate click |
-| Info: "Refresh limits" | your keys' quota requests | VirusTotal, urlscan.io, OpenRouter | only on the click; none of these calls uses quota |
-| Cisco Talos | nothing from Seisa; the button only helps you open Talos yourself | - | you click it |
+| AbuseIPDB: "Analyze", then "Send" | the whole e-mail source on "Analyze"; the IP, categories, timestamp and comment on "Send" | OpenRouter, then AbuseIPDB (`/report`) - **public** | only on that click; "Send" is a deliberate, separate click |
 
 Seisa's requests to OpenRouter identify the application as Seisa. Everything else in the interface (History, Logs, comparisons, exports, the citation check, the duplicate check) is local.
+
+### What stays on your machine
+
+Everything that is not sent out is kept in two gitignored folders under the project directory: `data/` (history, saved e-mail analyses with the raw messages, the AbuseIPDB report log, usage counters) and `logs/` (errors and warnings) - files `0600`, the `data/analyses/` directory `0700`. There is no authentication, so treat these folders like the raw e-mails they can contain: to wipe everything, delete `data/` and `logs/`, or use "Clear" in the History and Logs tabs for a more selective cleanup. Full list and the reasoning: [What stays local](docs/en/privacy-and-security.md#what-stays-local).
 
 ### Threat model
 
@@ -144,12 +148,12 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 ## Changelog
 
-The latest releases; every release is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the recent ones from the git log.
+Recent feature highlights below; the full list - including maintenance-only releases such as documentation fixes - is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the most recent ones from the git log.
 
+- **2.1.20** - Docs: README trimmed and de-duplicated against `docs/` - a table of contents, a literal `git clone` command, where local data lives and how to wipe it; the "what leaves your machine" table is now a short excerpt linking to the full one in `docs/privacy-and-security.md`, and `docs/configuration.md`'s `.env` keys table now links back to the README instead of repeating it.
 - **2.1.17** - AbuseIPDB tab: every hop in the address card now shows a private/public label and its own SMTP-AUTH/DKIM corroboration badge, not just the boundary hop; `is_reportable_ip` shares its private/special-IP check with the rest of the tool instead of a third, separate copy of it.
 - **2.1.16** - Email tab: the "sender IP" fact and the route diagram now walk through an external relay's own internal hops (the same mechanism as the AbuseIPDB tab), fixing a wrong sender IP for chains that span more than one mail operator.
 - **2.1.15** - Email tab: trust-boundary detection now recognises internal relay hops named with bare, dotless identifiers instead of miscounting them as a different operator; every hop's IP is marked private or public and gets an SMTP-AUTH/DKIM corroboration note. Domain/IP/relay-trust logic shared by the Email and AbuseIPDB tabs is consolidated into `backend/mail_trust.py`.
-- **2.1.14** - AbuseIPDB tab: the reported IP no longer gets stuck on a shared mail relay when its internal hops are named with bare, dotless identifiers (for example OVH's mail-out infrastructure); added an SMTP-AUTH/DKIM corroboration note and a confidence bump for the selected hop.
 
 ## License and contributing
 

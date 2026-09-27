@@ -12,8 +12,6 @@ Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email
 
 **Wejście:** adres IP lub nazwa domeny | **Wynik:** raport (werdykt, kafelki, karta tożsamości, karty źródeł) | **Wysyła na zewnątrz:** adres do usług, dla których masz klucze, oraz darmowe zapytania RDAP i DNS | **Klucze:** każda usługa opcjonalna. Skanowanie URL jest w zakładce [URLScan](#urlscan).
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-ip.png -->
-
 | Usługa | Co dostarcza |
 |---|---|
 | [VirusTotal](https://www.virustotal.com) | detekcje silników AV, reputacja, ASN, kategorie, tagi, WHOIS |
@@ -55,8 +53,6 @@ Co dostajesz:
 
 **Wejście:** adres URL albo do 5 adresów naraz (przyjmuje zdefangowane linki) | **Wynik:** werdykt, zrzut ekranu, tożsamość strony, karty szczegółów | **Wysyła na zewnątrz:** adres URL do urlscan.io | **Klucze:** `URLSCAN_API_KEY`.
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-urlscan.png -->
-
 Co dostajesz:
 
 - **Baner werdyktu** w kolorze z wyniku urlscan.io oraz werdyktów silników i społeczności; "brak werdyktu" jest pokazany neutralnie i wprost nie jako "bezpieczne".
@@ -94,8 +90,6 @@ Co dostajesz:
 
 **Wejście:** raporty `.xml`, `.gz` lub `.zip` dokładnie takie, jakie wysyłają dostawcy (Google, Microsoft i inni) | **Wynik:** werdykt, kafelki, wskazówki o polityce, źródła zagregowane wg IP | **Wysyła na zewnątrz:** nic z przeglądarki (opcjonalny przycisk geo każe backendowi zapytać RDAP o jeden adres IP, tak jak zakładka IP) | **Klucze:** brak.
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-dmarc.png -->
-
 Co dostajesz:
 
 - **Rozpakowywanie i parsowanie w 100% w przeglądarce**; raport wgrany dwa razy (ten sam dostawca i ID raportu) jest pomijany i oznaczony na liście plików.
@@ -128,8 +122,6 @@ Co dostajesz:
 > Edukacyjna analiza źródła e-maila: co mówią nagłówki, dlaczego i co z tym zrobić.
 
 **Wejście:** wklejony kod źródłowy (nagłówki + treść) albo plik `.eml` (UTF-8 lub windows-1252; koperta mbox i zakończenia linii są normalizowane) | **Wynik:** od razu ustalenia deterministyczne, opcjonalnie lekcja LLM | **Wysyła na zewnątrz:** przy "Analizuj" cały kod źródłowy do OpenRouter | **Klucze:** `OPENROUTER_API_KEY` dla części LLM. Binarne załączniki base64 nigdy nie idą do modelu (zostaje tylko ich rozmiar i sha256); tekstowe części base64 są dekodowane.
-
-<!-- Zrzuty ekranu do dodania: docs/img/tab-email-overview.png i docs/img/tab-email-lesson.png -->
 
 Co dostajesz:
 
@@ -198,8 +190,6 @@ Jak w zakładkach IP, DMARC i URLScan:
 
 **Wejście:** surowy kod źródłowy podejrzanego e-maila (opcjonalnie; można też zacząć od samego IP) | **Wynik:** sprawdzone zgłoszenie gotowe do wysłania | **Wysyła na zewnątrz:** przy "Analizuj" kod źródłowy do OpenRouter; IP oraz, po "Wyślij", zgłoszenie do AbuseIPDB | **Klucze:** `ABUSEIPDB_API_KEY`; `OPENROUTER_API_KEY` opcjonalnie. Workflow jest zgodny z [polityką raportowania AbuseIPDB](../abuseipdb-reporting-policy.md) (limit 60 dni, zakaz zgłaszania na podstawie samego confidence score, limit 1024 znaków komentarza itd.). Zakładki Email i AbuseIPDB to dwa różne narzędzia, które dzielą tylko drobne elementy UI oraz LLM działający na kodzie e-maila: Email uczy, ta zakładka zgłasza.
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-abuseipdb.png -->
-
 ```mermaid
 flowchart LR
   A[Surowy kod e-maila lub samo IP] --> B[Ekstrakcja deterministyczna: IP źródłowe, SPF/DKIM/DMARC, załączniki]
@@ -253,8 +243,6 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 **Przechowuje:** wyszukiwania IP, skany URL (otwierane z powrotem w zakładce URLScan, z miniaturą zrzutu ekranu), importy DMARC, zapisane analizy e-maili (otwierane w zakładce Email) i przyjęte zgłoszenia AbuseIPDB (otwierane jako szkic w zakładce AbuseIPDB) | **Wysyła na zewnątrz:** nic.
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-history.png -->
-
 - **Kafelki podsumowania** (suma, po jednym na typ, liczba wpisów o wysokim ryzyku), które działają też jako filtry: kliknięcie filtruje listę, drugie kliknięcie "Wysokie ryzyko" zdejmuje filtr. Pod nimi, między dwiema liniami, przyciski akcji (Odśwież, eksporty, Wyczyść historię) z liczbą widocznych wpisów; dalej jeden rząd z chipami zakresu dat po lewej i chipami ryzyka po prawej, a nad listą pole wyszukiwania w etykietach z podpowiedzią i przyciskiem porównania obok.
 - **Karty pogrupowane po dniach** (przypięte na początku): typ, etykieta, ryzyko, język wpisu, gdy różni się od języka interfejsu, i informacja, jak dawno powstał (dokładny czas w dymku). Lista pokazuje 25 najnowszych wpisów, które nie są przypięte. Jeśli ten sam IP, URL lub domena była wcześniej oceniona inaczej, karta o tym informuje ("Wcześniej: Niskie").
 - **Akcje na karcie:** "Otwórz ponownie" (sprawdzenie IP rozwija się w karcie, pozostałe otwierają się w swojej zakładce), "Powtórz" (IP i skan URL: uruchamia sprawdzenie jeszcze raz w jego zakładce,  - każde sprawdzenie IP pyta usługi od nowa), "Przypnij" / "Odepnij" (IP, skan URL i DMARC: przypięty wpis nigdy nie wypada z limitu i przeżywa "Wyczyść historię") i "Usuń" (dwa kliknięcia; nie dotyczy zgłoszeń - lokalny log zgłoszeń jest śladem audytowym).
@@ -267,8 +255,6 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 **Przechowuje:** poziom WARNING i wyżej | **Wysyła na zewnątrz:** nic.
 
-<!-- Zrzut ekranu do dodania: docs/img/tab-logs.png -->
-
 - **Kafelki podsumowania** (błędy, ostrzeżenia, usługa z największą liczbą wpisów, ostatni wpis) albo, gdy nie ma czego pokazać, zielony baner. Pod nimi, między dwiema liniami, są przyciski **Odśwież** i **Wyczyść logi**.
 - **Filtry:** chipy zakresu dat (dziś / 3 dni / tydzień / miesiąc / wszystkie; domyślnie wszystkie), poziomu (wszystkie / błędy / ostrzeżenia) i usługi (budowane z wpisów, z liczbą przy każdej) oraz pole wyszukiwania w wiadomościach. Kafelki i liczby przy chipach zawsze opisują cały zakres dat; poziom, usługa i wyszukiwanie tylko zawężają listę.
 - **Zwijane karty wpisów** (czas, poziom, usługa i pierwsza linia wiadomości; pełny tekst, np. cały błąd API, otwiera się kliknięciem i można go skopiować); karty, które otworzyłeś, zostają otwarte po odświeżeniu.
@@ -280,8 +266,6 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 > Okrągły przycisk informacji na prawym końcu rzędu zakładek: krótki opis Seisy i jej stanu.
 
 **Pokazuje:** wersję (czytaną z nagłówka strony) z datą ostatniej aktualizacji, ile usług ma ustawiony klucz API, model LLM albo "wyłączony" | **Wysyła na zewnątrz:** nic, poza zapytaniami o limity po "Odśwież limity".
-
-<!-- Zrzut ekranu do dodania: docs/img/tab-info.png -->
 
 Pod kafelkami podsumowania dwa kafelki obok siebie: **Autor** (e-mail, GitHub, strona www) i **Nazwa** (znaczenie nazwy, 精査, *せいさ*). Dalej zwijane karty w tej kolejności (karta, którą otworzysz, zostaje otwarta po powrocie do zakładki):
 

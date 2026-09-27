@@ -12,8 +12,6 @@ The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [
 
 **Input:** an IP address or a domain name | **Output:** a report (verdict, tiles, identity card, source cards) | **Sends out:** the address to the services you have keys for, plus free RDAP and DNS lookups | **Keys:** each service optional. Scanning a URL lives in the [URLScan](#urlscan) tab.
 
-<!-- Screenshot to add: docs/img/tab-ip.png -->
-
 | Service | What it provides |
 |---|---|
 | [VirusTotal](https://www.virustotal.com) | AV engine detections, reputation, ASN, categories, tags, WHOIS |
@@ -55,8 +53,6 @@ What you get:
 
 **Input:** a URL or up to 5 URLs at once (defanged links accepted) | **Output:** verdict, screenshot, page identity, detail cards | **Sends out:** the URL to urlscan.io | **Keys:** `URLSCAN_API_KEY`.
 
-<!-- Screenshot to add: docs/img/tab-urlscan.png -->
-
 What you get:
 
 - **A verdict banner** coloured from the urlscan.io score and the engine and community verdicts; "no verdict" is shown neutrally and explicitly not as "safe".
@@ -94,8 +90,6 @@ What you get:
 
 **Input:** `.xml`, `.gz` or `.zip` reports exactly as providers send them (Google, Microsoft and others) | **Output:** verdict, tiles, policy hints, sources aggregated by IP | **Sends out:** nothing from the browser (the optional geo button makes the backend ask RDAP about one IP, as the IP tab does) | **Keys:** none.
 
-<!-- Screenshot to add: docs/img/tab-dmarc.png -->
-
 What you get:
 
 - **Unpacking and parsing 100% in the browser**; a report loaded twice (the same provider and report ID) is skipped and marked in the file list.
@@ -128,8 +122,6 @@ What you get:
 > An educational analysis of an e-mail's source: what the headers say, why, and what to do.
 
 **Input:** the pasted source (headers + body) or an `.eml` file (UTF-8 or windows-1252; the mbox envelope and line endings are normalised) | **Output:** deterministic findings at once, plus an optional LLM lesson | **Sends out:** with "Analyze", the whole source to OpenRouter | **Keys:** `OPENROUTER_API_KEY` for the LLM part. Binary base64 attachments never go to the model (only their size and sha256 stay); text base64 parts are decoded.
-
-<!-- Screenshots to add: docs/img/tab-email-overview.png and docs/img/tab-email-lesson.png -->
 
 What you get:
 
@@ -198,8 +190,6 @@ Like the IP, DMARC and URLScan tabs:
 
 **Input:** the raw source of a suspicious e-mail (optional; you can also start from an IP alone) | **Output:** a checked report ready to send | **Sends out:** the source to OpenRouter on "Analyze"; the IP and, on "Send", the report to AbuseIPDB | **Keys:** `ABUSEIPDB_API_KEY`; `OPENROUTER_API_KEY` optional. The workflow follows the [AbuseIPDB reporting policy](../abuseipdb-reporting-policy.md) (60-day limit, no reporting based on the confidence score alone, the 1024-character comment limit and so on). The Email and AbuseIPDB tabs are two different tools that only share small UI elements and the LLM on an e-mail's source: the Email tab teaches, this one reports.
 
-<!-- Screenshot to add: docs/img/tab-abuseipdb.png -->
-
 ```mermaid
 flowchart LR
   A[Raw e-mail source or an IP] --> B[Deterministic extraction: source IP, SPF/DKIM/DMARC, attachments]
@@ -253,8 +243,6 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 **Keeps:** IP lookups, URL scans (reopened in the URLScan tab, with a thumbnail of the screenshot), DMARC imports, saved e-mail analyses (reopened in the Email tab) and accepted AbuseIPDB reports (reopened as a draft in the AbuseIPDB tab) | **Sends out:** nothing.
 
-<!-- Screenshot to add: docs/img/tab-history.png -->
-
 - **Summary tiles** (the total, one per type, the number of high-risk entries) that also work as filters: a click filters the list, a second click on "High risk" removes the filter. Under them, between two rules, sit the action buttons (Refresh, exports, Clear history) with the count of visible entries; then one row with the date-range chips on the left and the risk chips on the right, and above the list a search box over the labels with the comparison hint and button beside it.
 - **Cards grouped by day** (pinned ones first), showing the type, label, risk, the language of the entry when it differs from the interface, and how long ago it was made (the exact time is in the tooltip). The list shows the newest 25 entries that are not pinned. When the same IP, URL or domain was rated differently earlier, the card says so ("Earlier: Low").
 - **Actions on a card:** "Reopen" (an IP check unfolds inside the card, the others open in their own tab), "Repeat" (IP and URL scan: runs the check again in its tab,  - every IP check queries the services afresh), "Pin" / "Unpin" (IP, URL scan and DMARC: a pinned entry never falls out of the size limit and survives "Clear history") and "Delete" (two clicks; not for reports - the local report log is an audit trail).
@@ -267,8 +255,6 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 **Keeps:** WARNING level and above | **Sends out:** nothing.
 
-<!-- Screenshot to add: docs/img/tab-logs.png -->
-
 - **Summary tiles** (errors, warnings, the service with the most entries, the last entry) or, when there is nothing to show, a green banner. Under them, between two rules, are the **Refresh** and **Clear logs** buttons.
 - **Filters:** chips for the date range (today / 3 days / week / month / all; the default is all), the level (all / errors / warnings) and the service (built from the entries, each with a count), and a search box over the messages. The tiles and chip counts always describe the whole date range; the level, service and search only narrow the list.
 - **Collapsible entry cards** (time, level, service and the first line of the message; the full text, for example a whole API error, opens on a click and can be copied); the cards you opened stay open across refreshes.
@@ -280,8 +266,6 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 > The round info button at the far right of the tab row: a short description of Seisa and its state.
 
 **Shows:** the version (read from the page header) with the date of the last update, how many services have an API key set, the LLM model or "off" | **Sends out:** nothing, except quota requests on "Refresh limits".
-
-<!-- Screenshot to add: docs/img/tab-info.png -->
 
 Below the summary tiles, two tiles side by side: **Author** (e-mail, GitHub, website) and **Name** (the meaning of the name, 精査, *せいさ*). Then collapsible cards in this order (a card you opened stays open when you come back to the tab):
 

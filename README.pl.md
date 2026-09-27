@@ -1,15 +1,17 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.19</b></p>
+<p align="center"><b>Seisa 2.1.20</b></p>
 
 # Seisa
 
 [English](README.md) | **Polski**
 
-![Licencja: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/licencja-PolyForm%20Noncommercial%201.0.0-blue) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
+[![Licencja: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/licencja-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
+
+[Szybki start](#szybki-start) · [Konfiguracja](#konfiguracja) · [Prywatność i przepływ danych](#prywatność-i-przepływ-danych) · [Dokumentacja](#dokumentacja) · [Historia zmian](#historia-zmian) · [Licencja i współpraca](#licencja-i-współpraca)
 
 **Seisa** to lokalne narzędzie do dokładnego przyjrzenia się podejrzanym rzeczom bez oddawania ich kolejnej usłudze w sieci: reputacja adresu IP z kilku źródeł scalona w jeden objaśniony wynik, żywe skany URL, raporty zbiorcze DMARC, edukacyjna analiza źródła e-maila i przygotowywanie zgłoszeń nadużyć do AbuseIPDB. To jeden proces Pythona na `127.0.0.1`, bez logowania, bez bazy danych i bez etapu budowania.
 
-<!-- Zrzut ekranu do dodania: docs/img/hero-ip.png (zakładka IP z werdyktem i kartą tożsamości adresu) -->
+Zgłoszenia błędów i pomysły na funkcje są mile widziane jako issues; zmiany w kodzie (pull requesty) nie są przyjmowane - zobacz [CONTRIBUTING.md](CONTRIBUTING.md) albo [Fork i rozszerzanie](docs/pl/extending.md), jeśli chcesz zrobić fork i zmienić Seisę samodzielnie.
 
 - **Lokalne z założenia.** Nasłuchuje wyłącznie na `127.0.0.1` i nie wysyła nic nigdzie poza akcjami, które sam uruchamiasz; [co opuszcza Twój komputer](#co-opuszcza-twój-komputer) to jedna tabela.
 - **Wyjaśnia, zamiast tylko punktować.** Każdy wynik pokazuje źródła, na których się opiera; analiza e-maila uczy czytać nagłówki, a nie tylko wydaje werdykt.
@@ -34,8 +36,6 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 | [Logi](docs/pl/tabs.md#logi) | Błędy i ostrzeżenia każdej usługi | niczego | nic |
 | [Informacje](docs/pl/tabs.md#informacje) | Wersja, status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
 
-<!-- Zrzuty ekranu do dodania: docs/img/tab-*.png (po jednym na zakładkę, patrz sekcja Zakładki) -->
-
 Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał.
 
 ## Szybki start
@@ -48,9 +48,11 @@ Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od poc
 
 ### Instalacja i uruchomienie
 
-Pobierz kod (sklonuj repozytorium albo rozpakuj archiwum wydania) i w katalogu projektu:
+Pobierz kod i w katalogu projektu:
 
 ```bash
+git clone https://github.arcymonek.eu/arcy/seisa.git
+cd seisa
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 cp .env.example .env
@@ -97,7 +99,9 @@ Skopiuj `.env.example` do `.env`, uzupełnij klucze, które masz, i ustaw plikow
 | `ABUSEIPDB_API_KEY` | tak, dla AbuseIPDB (odczyt i zgłoszenia) | [abuseipdb.com](https://www.abuseipdb.com) |
 | `GREYNOISE_API_KEY` | tak, dla GreyNoise | [greynoise.io](https://www.greynoise.io) |
 | `OPENROUTER_API_KEY` | nie, opcjonalny | [openrouter.ai](https://openrouter.ai) - włącza analizę LLM w zakładce Email oraz ocenę kwalifikowalności e-maila i szkic komentarza zgłoszenia w zakładce AbuseIPDB |
-| `OPENROUTER_MODEL` | nie | domyślnie `anthropic/claude-sonnet-4.5` - zweryfikuj dokładny slug na liście modeli OpenRouter |
+| `OPENROUTER_MODEL` | nie | domyślnie `anthropic/claude-sonnet-4.5` |
+
+> `OPENROUTER_MODEL` to slug modelu w OpenRouter, a OpenRouter z czasem zmienia nazwy i wycofuje sloty - przed poleganiem na wartości domyślnej zweryfikuj aktualny slug na liście modeli.
 
 > **Uwaga:** klucz Cloudflare **musi być zakresowanym API Tokenem z uprawnieniem odczytu Radar, nie starym Global API Key** (ten drugi daje błąd 401).
 
@@ -107,24 +111,24 @@ Limity, ograniczenia i limity darmowych planów: [Konfiguracja i limity](docs/pl
 
 ## Prywatność i przepływ danych
 
-Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcza komputera poza tym, co jest wypisane tutaj, a każdy wiersz jest wywoływany Twoją akcją. Frontend nie ładuje niczego z CDN, żadnych czcionek ani analityki; `marked.min.js` jest dołączony lokalnie.
+Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcza komputera poza tym, co jest wypisane tutaj, a każdy wiersz jest wywoływany Twoją akcją. Frontend nie ładuje niczego z CDN, żadnych czcionek ani analityki; `marked.min.js` jest dołączony lokalnie. To narzędzie source-available, bez etapu budowania i bez zaciemniania kodu - jeśli wolisz sam zweryfikować "lokalne z założenia" i "bez telemetrii" niż wierzyć na słowo, `backend/` jest wystarczająco krótki, by go przejrzeć, a każde wychodzące wywołanie sieciowe to dokładnie te wymienione niżej.
 
 ### Co opuszcza Twój komputer
 
+Najczęstsze akcje, w skrócie - pełna tabela każdej akcji, w tym rzadszych (opcjonalny geolookup w DMARC, "Odśwież limity" w zakładce Informacje, przycisk Cisco Talos), jest w [Co opuszcza Twój komputer](docs/pl/privacy-and-security.md#co-opuszcza-twój-komputer).
+
 | Akcja | Co jest wysyłane | Dokąd | Kiedy |
 |---|---|---|---|
-| Sprawdzenie IP | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem | gdy uruchamiasz sprawdzenie |
-| Sprawdzenie IP, część darmowa | adres IP lub nazwa domeny | `rdap.org` (bootstrap RDAP, który przekierowuje do właściwego rejestru regionalnego), Twój resolver DNS (odwrotny DNS; dla domeny rekordy A, AAAA, NS, MX, CAA i TXT oraz jedno zapytanie o losową subdomenę, które wykrywa wildcard DNS, i po jednym zapytaniu A o każdy serwer nazw) oraz serwery WHOIS dla nazw domen (`python-whois`) | gdy uruchamiasz sprawdzenie |
-| Skan URL | adres URL, wybrana widoczność i, jeśli je ustawisz, kraj skanu oraz user agent; domena w wyszukiwaniu "Historia" (wcześniejsze skany); identyfikator skanu przy pobieraniu wyniku, zrzutu i DOM | urlscan.io | gdy skanujesz |
-| DMARC "geo (RDAP)" | jeden adres IP, z backendu | RDAP (`rdap.org`, potem właściwy rejestr regionalny) i Twój resolver DNS (zapytanie odwrotne i wprost), jak w zakładce IP | tylko po kliknięciu w rozwiniętym wierszu |
+| Sprawdzenie IP | adres IP lub nazwa domeny | VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise - tylko te z kluczem - oraz darmowe zapytania RDAP/DNS | gdy uruchamiasz sprawdzenie |
+| Skan URL | adres URL i, jeśli je ustawisz, kraj skanu oraz user agent | urlscan.io | gdy skanujesz |
 | Email: "Analizuj" (nie "Analizuj bez LLM"), "Dokończ analizę" | cały kod źródłowy e-maila (z danymi osobowymi) | OpenRouter | tylko po tym kliknięciu; interfejs mówi o tym przed wysyłką |
-| AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
-| AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |
-| AbuseIPDB: "Wyślij" | IP, kategorie, timestamp, komentarz | AbuseIPDB (`/report`) - **publicznie** | tylko po świadomym kliknięciu |
-| Informacje: "Odśwież limity" | zapytania o limity z Twoimi kluczami | VirusTotal, urlscan.io, OpenRouter | tylko po kliknięciu; żadne z tych zapytań nie zużywa limitu |
-| Cisco Talos | nic z Seisy; przycisk tylko pomaga Ci samodzielnie otworzyć Talos | - | gdy klikniesz |
+| AbuseIPDB: "Analizuj", potem "Wyślij" | cały kod źródłowy e-maila przy "Analizuj"; IP, kategorie, timestamp i komentarz przy "Wyślij" | OpenRouter, potem AbuseIPDB (`/report`) - **publicznie** | tylko po tym kliknięciu; "Wyślij" to osobne, świadome kliknięcie |
 
 Zapytania Seisy do OpenRouter przedstawiają aplikację jako Seisa. Wszystko inne w interfejsie (Historia, Logi, porównania, eksporty, kontrola cytatów, wykrywanie duplikatów) jest lokalne.
+
+### Co zostaje na Twoim komputerze
+
+Wszystko, co nie jest wysyłane, zostaje w dwóch gitignorowanych katalogach w katalogu projektu: `data/` (historia, zapisane analizy e-maili z surowymi wiadomościami, log zgłoszeń AbuseIPDB, liczniki zużycia) i `logs/` (błędy i ostrzeżenia) - pliki `0600`, katalog `data/analyses/` `0700`. Nie ma uwierzytelniania, więc traktuj te katalogi jak surowe e-maile, które mogą zawierać: żeby wyczyścić wszystko, usuń `data/` i `logs/`, albo użyj "Wyczyść" w zakładkach Historia i Logi do bardziej wybiórczego czyszczenia. Pełna lista i uzasadnienie: [Co zostaje lokalnie](docs/pl/privacy-and-security.md#co-zostaje-lokalnie).
 
 ### Model zagrożeń
 
@@ -144,12 +148,12 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 ## Historia zmian
 
-Najnowsze wydania; każde wydanie jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje ostatnie z git log.
+Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
 
+- **2.1.20** - Dokumentacja: README skrócone i odchudzone z duplikatów wobec `docs/` - spis treści, dosłowna komenda `git clone`, informacja gdzie leżą lokalne dane i jak je wyczyścić; tabela "co opuszcza komputer" to teraz krótki wyciąg z linkiem do pełnej wersji w `docs/privacy-and-security.md`, a tabela kluczy `.env` w `docs/configuration.md` linkuje teraz z powrotem do README zamiast ją powielać.
 - **2.1.17** - zakładka AbuseIPDB: każdy hop w karcie adresu ma teraz oznaczenie prywatny/publiczny i własną plakietkę potwierdzenia SMTP AUTH/DKIM, nie tylko hop graniczny; `is_reportable_ip` korzysta teraz ze wspólnej klasyfikacji prywatnych/specjalnych adresów IP zamiast trzeciej, osobnej kopii tej logiki.
 - **2.1.16** - zakładka Email: fakt "IP nadawcy" i diagram trasy przechodzą teraz przez wewnętrzne hopy zewnętrznego przekaźnika (ten sam mechanizm co w zakładce AbuseIPDB), co naprawia błędny adres nadawcy dla łańcuchów obejmujących więcej niż jednego operatora poczty.
 - **2.1.15** - zakładka Email: wykrywanie granicy zaufania rozpoznaje teraz wewnętrzne hopy przekaźnika nazwane gołymi identyfikatorami bez kropki, zamiast błędnie liczyć je jako innego operatora; każdy adres IP w łańcuchu ma oznaczenie prywatny/publiczny i notatkę o potwierdzeniu SMTP AUTH/DKIM. Logika domen/IP/zaufania łańcucha, współdzielona przez zakładki Email i AbuseIPDB, została skonsolidowana w `backend/mail_trust.py`.
-- **2.1.14** - zakładka AbuseIPDB: zgłaszany adres IP nie utyka już na współdzielonym przekaźniku pocztowym, gdy jego wewnętrzne hopy mają nazwy bez kropki (np. infrastruktura wychodząca OVH); dodano notatkę o potwierdzeniu SMTP AUTH/DKIM i podniesienie pewności dla wybranego hopu.
 
 ## Licencja i współpraca
 

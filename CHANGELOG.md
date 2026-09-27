@@ -4,6 +4,11 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.20 - 2026-09-27
+- **Docs:** README audit - added a table of contents, a literal `git clone` command, where local data lives (`data/`, `logs/`) and how to wipe it, a verification pointer for "local by design"/"no telemetry", and moved the "pull requests are not accepted, issues are welcome" note next to the project description instead of the bottom of the License section; the license badge is now a link to `LICENSE`.
+- **Docs:** removed 20 leftover `<!-- Screenshot to add -->` placeholder comments (README x2, `docs/{en,pl}/tabs.md` x8 each) - no `docs/img/` directory ever existed.
+- **Docs:** de-duplicated two tables that had drifted out of sync risk - the `.env` keys table is now only in the README (`docs/{en,pl}/configuration.md` links back to it), and the "what leaves your machine" table is now only fully listed in `docs/{en,pl}/privacy-and-security.md` (the README keeps a short excerpt of the most common actions, with a link to the full table). The README's own "Changelog" excerpt now skips maintenance-only entries and stays in sync with the version header.
+
 ## 2.1.19 - 2026-09-27
 - **Docs:** added the missing changelog entries for 2.1.0-2.1.13.
 
