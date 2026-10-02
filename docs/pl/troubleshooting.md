@@ -8,7 +8,7 @@
 
 **Cloudflare Radar odpowiada 401.** Klucz to prawdopodobnie stary Global API Key. Utwórz zakresowany API Token z uprawnieniem odczytu Radar.
 
-**Wywołanie OpenRouter kończy się błędem.** Otwórz zakładkę [Logi](tabs.md#logi) i zobacz wpisy `open_router` (limity, brak środków, błędy dostawcy, timeouty). Jeśli komunikat mówi, że model odmówił analizy wiadomości (`content_filter` / `refusal` w logu), jego własny filtr bezpieczeństwa zablokował odpowiedź - zwykle przy próbkach phishingu lub malware; ponowienie nie pomoże, ustaw inny model w `OPENROUTER_MODEL`. Zweryfikuj też dokładny slug modelu (`OPENROUTER_MODEL`) na bieżącej liście modeli OpenRouter.
+**Wywołanie OpenRouter kończy się błędem.** Otwórz zakładkę [Logi](tabs.md#logi) i zobacz wpisy `open_router` (limity, brak środków, błędy dostawcy, timeouty). Jeśli komunikat mówi, że model odmówił analizy wiadomości (`content_filter` / `refusal` w logu), jego własny filtr bezpieczeństwa zablokował odpowiedź - np. gdy dostaje wiadomość, której nie może odczytać (niezdekodowane base64); ponowienie nie pomoże, ustaw inny model w `OPENROUTER_MODEL`. Zweryfikuj też dokładny slug modelu (`OPENROUTER_MODEL`) na bieżącej liście modeli OpenRouter.
 
 **Analiza LLM urywa się w połowie.** Osiągnięto limit odpowiedzi. Kliknij "Dokończ analizę": model dostaje dotychczasowy tekst i dopisuje brakujące części.
 

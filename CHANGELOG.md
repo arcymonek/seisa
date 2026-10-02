@@ -4,6 +4,10 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.25 - 2026-10-02
+- **Fix:** AbuseIPDB tab: the model refused to analyse e-mails whose body is base64 (e.g. phishing sent through an e-mail provider). The tab sent the raw source, so the model saw walls of base64 instead of the message, while the Email tab, which decodes text parts first, worked on the very same file. AbuseIPDB now sends the same prepared source as the Email tab (headers unchanged, base64 text parts decoded, binary parts replaced by a size + sha256 marker), fenced with the `EMAIL-START`/`EMAIL-END` markers as untrusted data. The facts (IP, SPF/DKIM/DMARC) are still computed from the original source. The markers moved to `backend/email_forensics.py` and are shared by both tabs.
+- **Fix:** removed the retry without `response_format` added in 2.1.23 (it rested on a wrong diagnosis); an empty non-refusal answer is retried once with the same request again. Model refusals are still recognised and reported (2.1.24), and the extended log line stays.
+
 ## 2.1.24 - 2026-10-02
 - **Fix:** AbuseIPDB tab: the "invalid response ... start of the response: ''" error was in fact a refusal by the model's own safety filter (`finish_reason=content_filter`, `native_finish_reason=refusal`), not a JSON-format problem as 2.1.23 assumed. Seisa now recognises a refusal, shows a clear message that suggests trying another model in `OPENROUTER_MODEL`, and no longer wastes a second identical request on it.
 

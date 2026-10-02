@@ -25,7 +25,14 @@ from backend.analyses import (
 )
 from backend.citation_check import verify_citations
 from backend.config import EMAIL_GUIDE_FILE, MAX_SOURCE_CHARS, settings
-from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
+from backend.email_forensics import (
+    EMAIL_END,
+    EMAIL_START,
+    compute_facts,
+    decoded_text_parts,
+    normalize_source,
+    prepare_for_llm,
+)
 from backend.i18n import current_lang, t
 from backend.services.llm_analyzer import llm_analyzer
 from backend.sse import sse
@@ -33,9 +40,6 @@ from backend.verdict import parse_verdict
 
 router = APIRouter()
 logger = logging.getLogger("app")
-
-EMAIL_START = "===EMAIL-START==="
-EMAIL_END = "===EMAIL-END==="
 
 # The prompts are input for the model, not UI text: they are written once, in English. The language of the
 # answer is set by an explicit directive (see _language_directive) at the start of the system prompt and again at

@@ -36,6 +36,9 @@ from backend.mail_trust import (
 
 MAX_LLM_SOURCE_CHARS = 120_000
 MAX_DECODED_TEXT_CHARS = 60_000
+# Markers that fence the quoted message in an LLM prompt: everything between them is UNTRUSTED data, not instructions.
+EMAIL_START = "===EMAIL-START==="
+EMAIL_END = "===EMAIL-END==="
 
 VALID_CTE = {"7bit", "8bit", "binary", "quoted-printable", "base64"}
 SINGLE_INSTANCE_HEADERS = {

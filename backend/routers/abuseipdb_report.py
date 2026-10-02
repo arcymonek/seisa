@@ -21,6 +21,7 @@ from backend.email_parser import (
     parse_email,
     parse_message,
 )
+from backend.email_forensics import normalize_source, prepare_for_llm
 from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import (
@@ -140,11 +141,15 @@ async def analyze_email(req: EmailAnalyzeRequest):
     msg = parse_message(req.raw_email)
     facts = parse_email(msg)
 
+    # The model gets the same prepared source as the Email tab (text parts decoded from base64, binary parts replaced
+    # by a size + sha256 marker, headers untouched). The facts above are still computed from the original source.
+    prepared, _prep_notes = prepare_for_llm(normalize_source(req.raw_email))
+
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
         llm_analysis = await llm_analyzer.analyze_email(
             facts,
-            req.raw_email,
+            prepared,
             current_lang(),
         )
 
@@ -167,7 +172,7 @@ async def analyze_email(req: EmailAnalyzeRequest):
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
         "usage": usage,
-        "llm_input": {"chars": len(req.raw_email)},
+        "llm_input": {"chars": len(prepared)},
         "report_comment": report_comment,
     }
 
