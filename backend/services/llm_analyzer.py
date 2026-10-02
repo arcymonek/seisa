@@ -195,6 +195,14 @@ class LlmAnalyzer:
             if choice.get("finish_reason") == "length":
                 logger.warning("OpenRouter: model response truncated (finish_reason=length), the JSON may be incomplete")
             content = choice["message"]["content"]
+            if choice.get("finish_reason") == "content_filter" or choice.get("native_finish_reason") == "refusal":
+                # The model itself refused (safety filter): the same request would be refused again, so no retry.
+                reason = choice.get("native_finish_reason") or choice.get("finish_reason")
+                logger.warning(
+                    f"OpenRouter: model refusal (finish_reason={choice.get('finish_reason')!r} "
+                    f"native_finish_reason={choice.get('native_finish_reason')!r} provider={body.get('provider')!r})"
+                )
+                return {"error": t("or.refusal", reason=reason)}
             try:
                 result = _parse_json_content(content)
             except json.JSONDecodeError as exc:

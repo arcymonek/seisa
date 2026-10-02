@@ -227,6 +227,7 @@
   "or.hint.502": "the model or provider is unavailable",
   "or.hint.503": "no provider available for the model",
   "or.unknown_error": "unknown OpenRouter error",
+  "or.refusal": "the model refused to analyse this message (its safety filter blocked the answer, finish_reason={reason}). This is not a Seisa error and retrying does not help - try another model in OPENROUTER_MODEL",
   "or.invalid_response": "invalid OpenRouter response ({detail})",
   "email.empty_source": "The e-mail source is empty.",
   "email.source_too_large": "The source is too large ({size} characters, limit {limit}).",

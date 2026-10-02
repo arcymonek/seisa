@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.24 - 2026-10-02
+- **Fix:** AbuseIPDB tab: the "invalid response ... start of the response: ''" error was in fact a refusal by the model's own safety filter (`finish_reason=content_filter`, `native_finish_reason=refusal`), not a JSON-format problem as 2.1.23 assumed. Seisa now recognises a refusal, shows a clear message that suggests trying another model in `OPENROUTER_MODEL`, and no longer wastes a second identical request on it.
+
 ## 2.1.23 - 2026-10-02
 - **Fix:** AbuseIPDB tab: when OpenRouter returned an empty message ("invalid response ... start of the response: ''"), the automatic retry sent the identical request and failed the same way. The retry now drops the strict `response_format: json_object` option (the prompt still demands JSON and the parser tolerates a code fence), and the log line for an unparseable answer now also records `finish_reason`, `native_finish_reason`, any `refusal`, the provider and the token count, so the real cause is visible if it persists.
 

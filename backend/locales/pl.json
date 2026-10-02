@@ -227,6 +227,7 @@
   "or.hint.502": "model lub dostawca niedostępny",
   "or.hint.503": "brak dostępnego dostawcy dla modelu",
   "or.unknown_error": "nieznany błąd OpenRouter",
+  "or.refusal": "model odmówił analizy tej wiadomości (jego filtr bezpieczeństwa zablokował odpowiedź, finish_reason={reason}). To nie jest błąd Seisy, a ponowienie nie pomoże - spróbuj innego modelu w OPENROUTER_MODEL",
   "or.invalid_response": "nieprawidłowa odpowiedź OpenRouter ({detail})",
   "email.empty_source": "Puste źródło e-maila.",
   "email.source_too_large": "Źródło jest za duże ({size} znaków, limit {limit}).",

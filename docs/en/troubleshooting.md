@@ -8,7 +8,7 @@
 
 **Cloudflare Radar answers 401.** The key is probably the old Global API Key. Create a scoped API Token with Radar read permission.
 
-**An OpenRouter call fails.** Open the [Logs](tabs.md#logs) tab and look at the `open_router` entries (limits, insufficient credits, provider errors, timeouts). Also verify the exact model slug (`OPENROUTER_MODEL`) on the current OpenRouter model list.
+**An OpenRouter call fails.** Open the [Logs](tabs.md#logs) tab and look at the `open_router` entries (limits, insufficient credits, provider errors, timeouts). If the message says the model refused to analyse the message (`content_filter` / `refusal` in the log), the model's own safety filter blocked the answer - typically for phishing or malware samples; retrying does not help, set a different model in `OPENROUTER_MODEL`. Also verify the exact model slug (`OPENROUTER_MODEL`) on the current OpenRouter model list.
 
 **The LLM analysis stops in the middle.** The response limit was reached. Click "Finish the analysis": the model gets the text so far and writes the missing parts.
 
