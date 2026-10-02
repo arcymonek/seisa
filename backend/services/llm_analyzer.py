@@ -138,16 +138,18 @@ class LlmAnalyzer:
 
     async def _chat_json(self, system_prompt: str, user_content: str) -> dict | None:
         """The model is sometimes non-deterministic: it may wrap the JSON in ```json ... ``` or return a broken
-        JSON. A syntactically invalid answer is retried once (network and HTTP errors are not retried)."""
+        JSON. A syntactically invalid or empty answer is retried once WITHOUT the strict `response_format` (some
+        providers return an empty message for json_object; the prompt itself demands JSON and the parser tolerates
+        a fence). Network and HTTP errors are not retried."""
         result = await self._chat_json_once(system_prompt, user_content)
         if isinstance(result, dict) and result.pop("_retryable", False):
-            logger.warning("OpenRouter: invalid JSON in the model response, retrying the request once")
-            result = await self._chat_json_once(system_prompt, user_content)
+            logger.warning("OpenRouter: invalid JSON in the model response, retrying the request once without response_format")
+            result = await self._chat_json_once(system_prompt, user_content, json_mode=False)
             if isinstance(result, dict):
                 result.pop("_retryable", None)
         return result
 
-    async def _chat_json_once(self, system_prompt: str, user_content: str) -> dict | None:
+    async def _chat_json_once(self, system_prompt: str, user_content: str, json_mode: bool = True) -> dict | None:
         headers = {
             "Authorization": f"Bearer {settings.openrouter_api_key}",
             "Content-Type": "application/json",
@@ -159,9 +161,10 @@ class LlmAnalyzer:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
-            "response_format": {"type": "json_object"},
             "usage": {"include": True},
         }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
         try:
             async with httpx.AsyncClient(timeout=60) as client:
                 resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
@@ -196,7 +199,14 @@ class LlmAnalyzer:
                 result = _parse_json_content(content)
             except json.JSONDecodeError as exc:
                 text = t("or.invalid_response", detail=describe_exception(exc))
-                logger.warning(f"OpenRouter: invalid response ({describe_exception(exc)}); start of the response: {(content or '')[:200]!r}")
+                usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
+                logger.warning(
+                    f"OpenRouter: invalid response ({describe_exception(exc)}); start of the response: {(content or '')[:200]!r}; "
+                    f"json_mode={json_mode} finish_reason={choice.get('finish_reason')!r} "
+                    f"native_finish_reason={choice.get('native_finish_reason')!r} "
+                    f"refusal={str(choice['message'].get('refusal') or '')[:200]!r} "
+                    f"provider={body.get('provider')!r} completion_tokens={usage.get('completion_tokens')}"
+                )
                 return {"error": text, "_retryable": True}
             if isinstance(result, dict) and isinstance(body.get("usage"), dict):
                 result["_usage"] = body["usage"]

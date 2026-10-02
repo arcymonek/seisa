@@ -4,6 +4,9 @@ All notable changes to Seisa, newest first. Every release raises the version by 
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
+## 2.1.23 - 2026-10-02
+- **Fix:** AbuseIPDB tab: when OpenRouter returned an empty message ("invalid response ... start of the response: ''"), the automatic retry sent the identical request and failed the same way. The retry now drops the strict `response_format: json_object` option (the prompt still demands JSON and the parser tolerates a code fence), and the log line for an unparseable answer now also records `finish_reason`, `native_finish_reason`, any `refusal`, the provider and the token count, so the real cause is visible if it persists.
+
 ## 2.1.22 - 2026-09-27
 - **UI:** URLScan and AbuseIPDB tabs now end with a collapsible "Explanations" card, matching IP and DMARC - written for non-specialists first (score/scale, engines vs. community, categories/brands, flagged requests, certificate age, Umbrella rank, apex vs. subdomain, form signals, visibility for URLScan; the three check groups, boundary hop, SMTP-AUTH, double extension, the 15-minute rule, PII masking, and eligibility vs. risk score for AbuseIPDB). The same `frontend/js/glossary.js` glossary tooltip now also covers ASN, the engine/community counts, the apex domain, the boundary-hop and SMTP-AUTH badges and a few check labels in both tabs.
 - **Docs:** `docs/{en,pl}/tabs.md` and `docs/{en,pl}/architecture.md` updated to describe the new sections and the shared glossary helper.
