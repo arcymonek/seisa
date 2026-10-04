@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
 ├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
 ├── SECURITY.md              # jak zgłosić podatność
-├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
+├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts i, przy pull requestach, reguła wersji dla całej gałęzi)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache/CSP, strażnika originu i języka, kontrola Host, obsługa błędów
 │   ├── config.py             # ścieżki, limity, ustawienia z .env
@@ -86,14 +86,15 @@ seisa/
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej
 │   └── vendor/marked.min.js   # renderowanie Markdown, dołączone lokalnie (bez CDN)
-├── tests/                   # testy jednostkowe pytest (`python3 -m pytest -q`): pomocnicze funkcje zaufania poczty, scoring, budowanie zgłoszeń, parser e-maili i forensyka; `conftest.py` kieruje data/ do katalogu tymczasowego
+├── tests/                   # testy jednostkowe pytest (`python3 -m pytest -q`): pomocnicze funkcje zaufania poczty, scoring, budowanie zgłoszeń, parser e-maili i forensyka, hook git (`test_pre_commit_hook.py`); `conftest.py` kieruje data/ do katalogu tymczasowego
 │   ├── fixtures/            # SYNTETYCZNE e-maile (.eml) do porównań; fikcyjne dane (domeny .example, zakresy adresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 │   │   └── unit/            # dodatkowe przypadki syntetyczne tylko dla pytest (prompt injection, kodowania, uszkodzone nagłówki); podkatalog celowo, żeby płaski glob `*.eml` w `api_harness.py` i `dump_facts.py` ich nie widział
 │   └── private/             # opcjonalne PRAWDZIWE e-maile z oczekiwanymi wynikami dla `test_corpus.py` (gitignored, nigdy nie commitowane)
 ├── scripts/
 │   ├── api_harness.py         # test end-to-end: każdy endpoint API z zamockowanymi usługami zewnętrznymi (także `--serve PORT`)
 │   ├── dump_facts.py          # zrzuca analizę deterministyczną fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
-│   └── check_i18n.py          # sprawdza katalogi PL/EN, zgodność README i docs, martwe linki i wersję; `--strict` szuka polskich literałów w kodzie
+│   ├── check_i18n.py          # sprawdza katalogi PL/EN, zgodność README i docs, martwe linki i wersję; `--strict` szuka polskich literałów w kodzie
+│   └── hooks/pre-commit       # hook git (włączany `git config core.hooksPath scripts/hooks`): zakazane pliki, długi myślnik, pary PL/EN, check_i18n na indeksie, jeden krok wersji; `--range BASE` sprawdza całą gałąź (CI)
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
 ├── logs/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
 └── docs/

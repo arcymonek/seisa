@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
-├── .github/                 # ISSUE_TEMPLATE/ (bug report template), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
+├── .github/                 # ISSUE_TEMPLATE/ (bug report template), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts and, on pull requests, the version rule of the whole branch)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env
@@ -86,14 +86,15 @@ seisa/
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
-├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics; `conftest.py` points data/ at a temporary directory
+├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics, the git hook (`test_pre_commit_hook.py`); `conftest.py` points data/ at a temporary directory
 │   ├── fixtures/            # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 │   │   └── unit/            # extra synthetic cases used only by pytest (prompt injection, encodings, damaged headers); a subfolder on purpose, so the flat `*.eml` glob of `api_harness.py` and `dump_facts.py` does not see it
 │   └── private/             # optional REAL e-mails with expected results for `test_corpus.py` (gitignored, never committed)
 ├── scripts/
 │   ├── api_harness.py         # end-to-end test: every API endpoint with all external services mocked (also `--serve PORT`)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
-│   └── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
+│   ├── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
+│   └── hooks/pre-commit       # git hook (enable with `git config core.hooksPath scripts/hooks`): forbidden files, long dash, PL/EN pairs, check_i18n on the index, one version step; `--range BASE` checks a whole branch (CI)
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
 ├── logs/                    # error logs, one .jsonl file per day (gitignored)
 └── docs/
