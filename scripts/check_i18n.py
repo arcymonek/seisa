@@ -14,6 +14,7 @@ import ast
 import json
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -266,20 +267,30 @@ def check_markdown_links() -> None:
                         errors.append(f"{rel_f}:{n}: dead anchor {target}")
 
 
+# The five places that carry the version: (label, file relative to the project root, regex with the version as group 1).
+# scripts/hooks/pre-commit reuses this table, so the hook and this check cannot disagree about where the version lives.
+VERSION_PLACES = (
+    ("index.html <title>", "frontend/index.html", r"<title>Seisa ([\d.]+)</title>"),
+    ("index.html header", "frontend/index.html", r"<small>([\d.]+)</small>"),
+    ("index.html footer", "frontend/index.html", r"<footer>Seisa ([\d.]+)"),
+    ("README.md", "README.md", r"<b>Seisa ([\d.]+)</b>"),
+    ("README.pl.md", "README.pl.md", r"<b>Seisa ([\d.]+)</b>"),
+)
+
+
+def read_versions(read: Callable[[str], str]) -> dict[str, str]:
+    """The version found in each of the five places ('?' where the pattern does not match); `read` returns a file's text by relative path."""
+    found: dict[str, str] = {}
+    for label, rel, pattern in VERSION_PLACES:
+        m = re.search(pattern, read(rel))
+        found[label] = m.group(1) if m else "?"
+    return found
+
+
 def check_versions() -> None:
     """The visible version must be identical everywhere: 3x index.html (title, header, footer) + 2x README."""
-    found: dict[str, str] = {}
     html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
-    for label, pattern in (
-        ("index.html <title>", r"<title>Seisa ([\d.]+)</title>"),
-        ("index.html header", r"<small>([\d.]+)</small>"),
-        ("index.html footer", r"<footer>Seisa ([\d.]+)"),
-    ):
-        m = re.search(pattern, html)
-        found[label] = m.group(1) if m else "?"
-    for name in ("README.md", "README.pl.md"):
-        m = re.search(r"<b>Seisa ([\d.]+)</b>", (ROOT / name).read_text(encoding="utf-8"))
-        found[name] = m.group(1) if m else "?"
+    found = read_versions(lambda rel: (ROOT / rel).read_text(encoding="utf-8"))
     if len(set(found.values())) != 1:
         errors.append(f"version differs between places: {found}")
     m = re.search(r'<meta name="seisa-release-date" content="(\d{4}-\d{2}-\d{2})"', html)

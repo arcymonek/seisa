@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+"""Git pre-commit hook for Seisa. Enable once per clone (hooks in .git/hooks are not versioned, this directory is):
+
+    git config core.hooksPath scripts/hooks
+
+What it checks, always on what is STAGED (the index), not on the working tree:
+
+  1. Forbidden files: CLAUDE.md, .env, data/, logs/, tests/private/, reports/ (except .gitkeep). They are gitignored,
+     so this only catches `git add -f`.
+  2. No long dash (U+2014) in added lines (all files except frontend/vendor/, which is third-party code).
+  3. Language pairs: README.md <-> README.pl.md and docs/en/X.md <-> docs/pl/X.md must be staged together.
+     `SEISA_ONE_LANG=1 git commit ...` skips ONLY this rule (a typo fixed in one language); everything else still runs.
+  4. scripts/check_i18n.py --strict, run on an export of the index: catalogs, heading parity, dead links, the same
+     version in all five places.
+  5. Version step: if the version differs from the one on `main` (merge-base), the difference must be exactly one
+     allowed step: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice.
+
+`pre-commit --range BASE` (used by CI on pull requests, also runnable by hand) checks the whole branch instead of
+one commit: when PROGRAM files changed since the merge-base with BASE the version must have gone up by one allowed
+step, and when none did it must be unchanged. A change that really needs no bump (comments only) is declared with a
+`No-version-bump: <reason>` line in a commit message of the branch.
+
+There is deliberately no switch that turns everything off. `git commit --no-verify` does, and CLAUDE.md allows it
+only after the risk has been discussed.
+"""
+from __future__ import annotations
+
+import importlib.util
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+EM_DASH = "\u2014"
+
+# Files that stay gitignored on purpose; `git add -f` is the only way they could reach a commit.
+FORBIDDEN_NAMES = {"CLAUDE.md": "private working rules", ".env": "API keys"}
+FORBIDDEN_PREFIXES = {
+    "data/": "local data (raw e-mails)",
+    "logs/": "local logs",
+    "tests/private/": "real e-mails",
+    "reports/": "private working notes",
+}
+
+# The PROGRAM, as defined in CLAUDE.md ("Wersjonowanie"): a change here needs a version bump.
+PROGRAM_PREFIXES = ("backend/", "frontend/")
+PROGRAM_FILES = {
+    "requirements.txt",
+    "requirements.lock",
+    "seisa.sh",
+    "docs/abuseipdb-reporting-policy.md",
+    "docs/email-analysis-guide.md",
+}
+BASE_CANDIDATES = ("main", "origin/main", "github/main")
+
+
+class GitError(Exception):
+    pass
+
+
+def git(*args: str, check: bool = True) -> str:
+    p = subprocess.run(
+        ["git", "-c", "core.quotepath=off", *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
+    if check and p.returncode != 0:
+        raise GitError(f"git {' '.join(args)}: {p.stderr.strip()}")
+    return p.stdout if p.returncode == 0 else ""
+
+
+def show(spec: str) -> str | None:
+    """Text of `<rev>:<path>` (rev empty = the index), None when it does not exist."""
+    return show_many([spec])[spec]
+
+
+def show_many(specs: list[str]) -> dict[str, str | None]:
+    """Several `<rev>:<path>` blobs with ONE git process (starting a process is the slow part of a hook)."""
+    p = subprocess.run(["git", "cat-file", "--batch"], input="".join(f"{s}\n" for s in specs).encode(), capture_output=True)
+    out, pos, res = p.stdout, 0, {}
+    for spec in specs:
+        end = out.index(b"\n", pos)
+        header = out[pos:end].split()
+        pos = end + 1
+        if len(header) == 3 and header[1] == b"blob":
+            size = int(header[2])
+            res[spec] = out[pos:pos + size].decode("utf-8", errors="replace")
+            pos += size + 1
+        else:
+            res[spec] = None
+    return res
+
+
+def is_program_file(path: str) -> bool:
+    return path.startswith(PROGRAM_PREFIXES) or path in PROGRAM_FILES
+
+
+def forbidden_reason(path: str) -> str | None:
+    p = Path(path)
+    if p.name == ".gitkeep":
+        return None
+    if p.name in FORBIDDEN_NAMES:
+        return FORBIDDEN_NAMES[p.name]
+    for prefix, why in FORBIDDEN_PREFIXES.items():
+        if path.startswith(prefix):
+            return why
+    return None
+
+
+def twin_of(path: str) -> str | None:
+    if path == "README.md":
+        return "README.pl.md"
+    if path == "README.pl.md":
+        return "README.md"
+    m = re.fullmatch(r"docs/(en|pl)/(.+\.md)", path)
+    if m:
+        return f"docs/{'pl' if m[1] == 'en' else 'en'}/{m[2]}"
+    return None
+
+
+def parse_version(v: str) -> tuple[int, int, int] | None:
+    m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", v)
+    return (int(m[1]), int(m[2]), int(m[3])) if m else None
+
+
+def is_next_version(old: str, new: str) -> bool:
+    """True when `new` is exactly one allowed step after `old`: Z+1, Y+1 with Z=0, or X+1 with Y=Z=0 (Z has no upper limit)."""
+    o, n = parse_version(old), parse_version(new)
+    if o is None or n is None:
+        return False
+    return n in {(o[0], o[1], o[2] + 1), (o[0], o[1] + 1, 0), (o[0] + 1, 0, 0)}
+
+
+def added_lines() -> list[tuple[str, int, str]]:
+    """(path, line number, text) of every line the staged change adds."""
+    out: list[tuple[str, int, str]] = []
+    path, lineno, in_header = "", 0, False
+    for line in git("diff", "--cached", "-U0", "--no-color", "--no-ext-diff", "--diff-filter=ACMR").splitlines():
+        if line.startswith("diff --git "):
+            in_header = True
+        elif in_header:
+            if line.startswith("+++ "):
+                path = line[6:] if line.startswith("+++ b/") else line[4:]
+            elif line.startswith("@@"):
+                in_header = False
+        if in_header:
+            continue
+        if line.startswith("@@"):
+            m = re.search(r"\+(\d+)", line)
+            lineno = int(m[1]) if m else 0
+        elif line.startswith("+"):
+            out.append((path, lineno, line[1:]))
+            lineno += 1
+    return out
+
+
+def check_forbidden(staged: list[str]) -> list[str]:
+    return [f"FORBIDDEN FILE: {f} ({why}); it is gitignored, never force-add it" for f in staged if (why := forbidden_reason(f))]
+
+
+def check_long_dash(added: list[tuple[str, int, str]]) -> list[str]:
+    return [
+        f"LONG DASH (U+2014) at {path}:{n}, use '-'"
+        for path, n, text in added
+        if EM_DASH in text and not path.startswith("frontend/vendor/")
+    ]
+
+
+def check_pairs(staged: list[str]) -> list[str]:
+    if os.environ.get("SEISA_ONE_LANG") == "1":
+        return []
+    have = set(staged)
+    problems = []
+    for f in staged:
+        twin = twin_of(f)
+        if twin and twin not in have:
+            problems.append(f"LANGUAGE PAIR: {f} is staged but {twin} is not (change both, or SEISA_ONE_LANG=1 for a one-language fix)")
+    return problems
+
+
+def load_check_i18n(root: Path):
+    spec = importlib.util.spec_from_file_location("seisa_check_i18n", root / "scripts" / "check_i18n.py")
+    if spec is None or spec.loader is None:
+        raise GitError(f"cannot load {root / 'scripts' / 'check_i18n.py'}")
+    mod = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(mod)
+    except (Exception, SystemExit) as e:  # a broken staged check_i18n.py must stop the commit with a message; SystemExit would end the hook with the module's exit code, maybe 0
+        raise GitError(f"cannot import scripts/check_i18n.py: {e!r}") from e
+    if not (hasattr(mod, "VERSION_PLACES") and hasattr(mod, "read_versions")):
+        raise GitError("scripts/check_i18n.py lacks VERSION_PLACES/read_versions (the hook reads the version places from it): stage the matching check_i18n.py too")
+    return mod
+
+
+def base_commit() -> str | None:
+    """Where the branch left `main` (HEAD itself on main); None before the first commit."""
+    for cand in BASE_CANDIDATES:
+        mb = git("merge-base", "HEAD", cand, check=False).strip()
+        if mb:
+            return mb
+    return git("rev-parse", "--verify", "-q", "HEAD", check=False).strip() or None
+
+
+def versions_at(ci, revs: list[str]) -> list[dict[str, str]]:
+    """The version in each of the five places at each rev (empty rev = the index), all files read in one git call."""
+    files = sorted({rel for _, rel, _ in ci.VERSION_PLACES})
+    blobs = show_many([f"{rev}:{rel}" for rev in revs for rel in files])
+    result = []
+    for rev in revs:
+
+        def read(rel: str, rev: str = rev) -> str:
+            text = blobs[f"{rev}:{rel}"]
+            if text is None:
+                raise GitError(f"{rel} does not exist in {rev or 'the index'}")
+            return text
+
+        result.append(ci.read_versions(read))
+    return result
+
+
+def check_version_step(ci, base: str | None) -> list[str]:
+    if base is None:
+        return []
+    new, old = versions_at(ci, ["", base])
+    if len(set(new.values())) != 1 or len(set(old.values())) != 1:
+        return []  # inconsistent places are reported by check_i18n; the step is meaningless then
+    nv, ov = next(iter(new.values())), next(iter(old.values()))
+    if nv != ov and not is_next_version(ov, nv):
+        return [f"VERSION STEP: {nv} after {ov} on main. Allowed: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0 (one bump per branch)"]
+    return []
+
+
+def run_check_i18n(root: Path) -> list[str]:
+    p = subprocess.run([sys.executable, str(root / "scripts" / "check_i18n.py"), "--strict"], cwd=root, capture_output=True, text=True)
+    if p.returncode == 0:
+        return []
+    return ["CHECK_I18N failed:", *("    " + ln for ln in (p.stdout + p.stderr).splitlines() if ln.strip())]
+
+
+def pre_commit() -> int:
+    if not git("diff", "--cached", "--name-only", "-z"):  # nothing staged at all; a commit that only DELETES files is not empty
+        return 0
+    staged = [f for f in git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0") if f]
+    problems = check_forbidden(staged) + check_long_dash(added_lines()) + check_pairs(staged)
+    with tempfile.TemporaryDirectory(prefix="seisa-precommit-") as tmp:
+        git("checkout-index", "-a", f"--prefix={tmp}/")
+        root = Path(tmp)
+        if (root / "scripts" / "check_i18n.py").exists():
+            problems += run_check_i18n(root)
+            problems += check_version_step(load_check_i18n(root), base_commit())
+        else:  # failing open here would let a commit that deletes the check switch the check off
+            problems.append("MISSING CHECK: scripts/check_i18n.py is not in the index (the i18n and version checks need it)")
+    if problems:
+        print("\n".join(problems))
+        print("Commit aborted. Fix the problems; --no-verify only after the risk has been discussed (CLAUDE.md).")
+        return 1
+    return 0
+
+
+def _neutral_index_html(ci, text: str) -> str:
+    """index.html with the version and the release date blanked out: a bump alone must not look like a program change."""
+    for _label, rel, pattern in ci.VERSION_PLACES:
+        if rel == "frontend/index.html":
+            text = re.sub(pattern, lambda m: m.group(0).replace(m.group(1), "@V@"), text)
+    return re.sub(r'(<meta name="seisa-release-date" content=")\d{4}-\d{2}-\d{2}', r"\1@D@", text)
+
+
+def range_check(base_ref: str) -> int:
+    top = Path(git("rev-parse", "--show-toplevel").strip())
+    ci = load_check_i18n(top)
+    base = git("merge-base", base_ref, "HEAD").strip()
+    new, old = versions_at(ci, ["HEAD", base])
+    if len(set(new.values())) != 1 or len(set(old.values())) != 1:
+        print(f"VERSION PLACES DISAGREE: at HEAD {new}, at the merge-base {old}")
+        return 1
+    nv, ov = next(iter(new.values())), next(iter(old.values()))
+    changed = [f for f in git("diff", "--name-only", "--no-renames", base, "HEAD").split("\n") if f]
+    program = []
+    for f in changed:
+        if not is_program_file(f):
+            continue
+        if f == "frontend/index.html":
+            before, after = show(f"{base}:{f}"), show(f"HEAD:{f}")
+            if before is not None and after is not None and _neutral_index_html(ci, before) == _neutral_index_html(ci, after):
+                continue
+        program.append(f)
+    waiver = re.search(r"^No-version-bump:[ \t]*(\S.*)$", git("log", "--format=%B", f"{base}..HEAD"), re.M)
+    problems = []
+    if nv != ov:
+        if not is_next_version(ov, nv):
+            problems.append(f"VERSION STEP: {nv} after {ov}. Allowed: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0")
+        if not program:
+            problems.append(f"VERSION BUMPED WITHOUT A PROGRAM CHANGE: {ov} -> {nv}, but no program file changed (the version tracks the program)")
+    elif program and not waiver:
+        problems.append(
+            f"PROGRAM CHANGED WITHOUT A VERSION BUMP (still {ov}): {', '.join(program[:5])}{' ...' if len(program) > 5 else ''}. "
+            "Bump the version in the last commit of the branch, or put 'No-version-bump: <reason>' in a commit message if it really needs none"
+        )
+    if problems:
+        print("\n".join(problems))
+        return 1
+    print(f"ok: version {ov} -> {nv}, program files changed: {len(program)}" + (f", waiver: {waiver[1]}" if waiver and nv == ov else ""))
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    try:
+        os.chdir(git("rev-parse", "--show-toplevel").strip())
+        if argv[:1] == ["--range"]:
+            if len(argv) != 2:
+                print("usage: pre-commit [--range BASE]", file=sys.stderr)
+                return 2
+            return range_check(argv[1])
+        return pre_commit()
+    except GitError as e:
+        print(f"pre-commit could not run: {e}")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

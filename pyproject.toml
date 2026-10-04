@@ -4,6 +4,8 @@
 line-length = 140
 target-version = "py311"
 extend-exclude = [".venv", "reports"]
+# The git hook has no .py extension (git needs the exact name), so ruff would skip it without this.
+extend-include = ["scripts/hooks/pre-commit"]
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "B", "UP", "SIM", "I", "PIE", "RET", "C4", "PERF", "RUF", "ASYNC"]
