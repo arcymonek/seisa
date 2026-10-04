@@ -15,6 +15,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.1.31 - 2026-10-04
+- **License:** changed from PolyForm Noncommercial 1.0.0 to the GNU General Public License, version 3 or (at your option) any later version (GPL-3.0-or-later). Seisa is now free software in the OSI sense: it may be used, changed and shared, also commercially, as long as modified versions stay under the same license with their source. Pull requests are now welcome (`CONTRIBUTING.md` rewritten; a contributor does not bump the version or edit the changelog, the maintainer does). New `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), a feature-idea issue template and a pull request checklist. The License card in the Info tab and the README and `docs/` follow. The new license applies from this release; copies obtained earlier keep the terms they came with.
+
 ## 2.1.30 - 2026-10-04
 - **Fix:** Email tab, Overview panel: the mirrored Checklist and Assessment sections now get glossary tooltips (SPF, DKIM, DMARC, ARC, PTR, SCL, HELO...) on first mention, tracked independently from the main Lesson panel's own cards, so a term already explained in one panel is still explained once in the other instead of never appearing there. (Written on 2026-09-27 as 2.1.23 and left on a side branch; re-applied on top of 2.1.29.)
 

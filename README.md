@@ -1,17 +1,17 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.30</b></p>
+<p align="center"><b>Seisa 2.1.31</b></p>
 
 # Seisa
 
 **English** | [Polski](README.pl.md)
 
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
 
 [Quick start](#quick-start) · [Configuration](#configuration) · [Privacy and data flow](#privacy-and-data-flow) · [Documentation](#documentation) · [Changelog](#changelog) · [License and contributing](#license-and-contributing)
 
 **Seisa** is a local tool for looking closely at suspicious things without handing them to yet another web service: IP reputation from several sources merged into one explained score, live URL scans, DMARC aggregate reports, an educational analysis of an e-mail's source and the preparation of AbuseIPDB abuse reports. It is one Python process on `127.0.0.1` with no login, no database and no build step.
 
-Bug reports and feature ideas are welcome as issues; code changes (pull requests) are not accepted - see [CONTRIBUTING.md](CONTRIBUTING.md), or [Forking and extending](docs/en/extending.md) if you want to fork and modify Seisa yourself.
+Free software (GPL-3.0-or-later). Bug reports, ideas and pull requests are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md), or [Forking and extending](docs/en/extending.md) if you want to fork and modify Seisa yourself.
 
 - **Local by design.** It listens only on `127.0.0.1` and sends nothing anywhere except the actions you start yourself; [what leaves your machine](#what-leaves-your-machine) is one table.
 - **Explains instead of only scoring.** Every score shows the sources behind it; the e-mail analysis teaches how to read headers instead of only giving a verdict.
@@ -111,7 +111,7 @@ Limits, throttling and the free-plan quotas: [Configuration and limits](docs/en/
 
 ## Privacy and data flow
 
-Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine except what is listed here, and every row is triggered by an action of yours. The frontend loads nothing from a CDN, no fonts, no analytics; `marked.min.js` is bundled. This is a source-available tool with no build step and no obfuscation - if you would rather verify "local by design" and "no telemetry" yourself than take them on faith, `backend/` is short enough to read, and every outgoing call it makes is the ones listed below.
+Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine except what is listed here, and every row is triggered by an action of yours. The frontend loads nothing from a CDN, no fonts, no analytics; `marked.min.js` is bundled. This is open-source software with no build step and no obfuscation - if you would rather verify "local by design" and "no telemetry" yourself than take them on faith, `backend/` is short enough to read, and every outgoing call it makes is the ones listed below.
 
 ### What leaves your machine
 
@@ -159,8 +159,10 @@ Recent feature highlights below; the full list - including maintenance-only rele
 
 ## License and contributing
 
-Seisa is made available under the [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) license - the full text is in the [LICENSE](LICENSE) file. The code is public (*source-available*), but **this is not an open-source license in the OSI sense**: you may use, copy, modify and distribute it (including forks) only for noncommercial purposes, among others personal, hobby, educational and research use and use by charitable, educational, public and government organisations. Commercial use (including selling, commercial forks and work for the profit of a company) requires a separate permission of the author.
+Seisa is free software, released under the [GNU General Public License, version 3 or (at your option) any later version](https://www.gnu.org/licenses/gpl-3.0.html) (GPL-3.0-or-later); the full text is in the [LICENSE](LICENSE) file. In plain words: you may use, study, copy, change and share Seisa, including for commercial purposes, as long as a modified version you pass on stays under the same license and comes with its source code.
 
-The bundled `frontend/vendor/marked.min.js` remains under its own MIT license (the header in the file).
+Copyright (C) 2026 Arkadiusz Polak. This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY, without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE; see the license for details.
 
-Rules for reporting bugs and contributing: [CONTRIBUTING.md](CONTRIBUTING.md) - external code changes (pull requests) are not accepted. Security issues: [SECURITY.md](SECURITY.md).
+The bundled `frontend/vendor/marked.min.js` remains under its own MIT license (the header in the file), which is compatible with the GPL.
+
+Contributions are welcome: bug reports, ideas and pull requests. How to report a bug and how to send a change: [CONTRIBUTING.md](CONTRIBUTING.md); the rules of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Security issues: [SECURITY.md](SECURITY.md).

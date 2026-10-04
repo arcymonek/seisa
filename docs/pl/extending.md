@@ -8,12 +8,14 @@ Wszystko, czego potrzebujesz, by zdecydować o forku i nad nim pracować, jest w
 
 ### Czy robić fork?
 
-| Wolno | Nie wolno |
-|---|---|
-| używać, kopiować, modyfikować i rozpowszechniać Seisę (także forki) do celów niekomercyjnych: użytek osobisty, hobbystyczny, edukacyjny i badawczy oraz użycie przez organizacje charytatywne, edukacyjne, publiczne i rządowe | używać komercyjnie: sprzedawać, robić komercyjne forki, pracować w celach zarobkowych firmy (wymaga to odrębnej zgody autora) |
-| zachować w forku plik `LICENSE` i jego linię "Required Notice" | przesyłać zmian w kodzie do repozytorium źródłowego: pull requesty nie są przyjmowane (zgłoszenia z pomysłami i błędami są mile widziane; zobacz [CONTRIBUTING.md](../../CONTRIBUTING.md)) |
+Seisa to wolne oprogramowanie na licencji [GPL-3.0-or-later](../../LICENSE), więc fork jest zawsze dozwolony. Zanim go zaczniesz, rozważ wysłanie zmiany do repozytorium źródłowego: pull requesty są mile widziane (zobacz [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
-To licencja *source-available*, nie licencja open source w rozumieniu OSI. Fork jest rozsądnym wyborem, jeśli chcesz zachować lokalne narzędzie o małej liczbie zależności i dopasować je do siebie: dodać źródło threat-intel, język, zakładkę, innego dostawcę LLM. Jest złym wyborem, jeśli potrzebujesz dostępu wielu użytkowników, uwierzytelniania, hostingu zdalnego albo bazy danych; to świadome poza-cele (patrz [Założenia projektowe i świadome ograniczenia](architecture.md#założenia-projektowe-i-świadome-ograniczenia)).
+| Wolno | Trzeba |
+|---|---|
+| używać, badać, kopiować, zmieniać i rozpowszechniać Seisę (także forki), do dowolnego celu, także komercyjnego | zachować zmienioną wersję, którą rozpowszechniasz, na tej samej licencji (GPL-3.0-or-later lub, według Twojego wyboru, nowszej) i dać odbiorcom jej kod źródłowy |
+| sprzedawać kopie lub oferować wsparcie dla niej | zachować informacje o prawach autorskich i licencji (`LICENSE`, notkę w README) oraz zaznaczyć, że wprowadziłeś zmiany |
+
+Fork jest rozsądnym wyborem, jeśli chcesz zachować lokalne narzędzie o małej liczbie zależności i dopasować je do siebie: dodać źródło threat-intel, język, zakładkę, innego dostawcę LLM. Jest złym wyborem, jeśli potrzebujesz dostępu wielu użytkowników, uwierzytelniania, hostingu zdalnego albo bazy danych; to świadome poza-cele (patrz [Założenia projektowe i świadome ograniczenia](architecture.md#założenia-projektowe-i-świadome-ograniczenia)).
 
 ### Jak rozszerzać
 

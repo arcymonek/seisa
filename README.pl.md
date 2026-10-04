@@ -1,17 +1,17 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.30</b></p>
+<p align="center"><b>Seisa 2.1.31</b></p>
 
 # Seisa
 
 [English](README.md) | **Polski**
 
-[![Licencja: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/licencja-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
+[![Licencja: GPL-3.0-or-later](https://img.shields.io/badge/licencja-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
 
 [Szybki start](#szybki-start) · [Konfiguracja](#konfiguracja) · [Prywatność i przepływ danych](#prywatność-i-przepływ-danych) · [Dokumentacja](#dokumentacja) · [Historia zmian](#historia-zmian) · [Licencja i współpraca](#licencja-i-współpraca)
 
 **Seisa** to lokalne narzędzie do dokładnego przyjrzenia się podejrzanym rzeczom bez oddawania ich kolejnej usłudze w sieci: reputacja adresu IP z kilku źródeł scalona w jeden objaśniony wynik, żywe skany URL, raporty zbiorcze DMARC, edukacyjna analiza źródła e-maila i przygotowywanie zgłoszeń nadużyć do AbuseIPDB. To jeden proces Pythona na `127.0.0.1`, bez logowania, bez bazy danych i bez etapu budowania.
 
-Zgłoszenia błędów i pomysły na funkcje są mile widziane jako issues; zmiany w kodzie (pull requesty) nie są przyjmowane - zobacz [CONTRIBUTING.md](CONTRIBUTING.md) albo [Fork i rozszerzanie](docs/pl/extending.md), jeśli chcesz zrobić fork i zmienić Seisę samodzielnie.
+Wolne oprogramowanie (GPL-3.0-or-later). Zgłoszenia błędów, pomysły i pull requesty są mile widziane - zobacz [CONTRIBUTING.md](CONTRIBUTING.md) albo [Fork i rozszerzanie](docs/pl/extending.md), jeśli chcesz zrobić fork i zmienić Seisę samodzielnie.
 
 - **Lokalne z założenia.** Nasłuchuje wyłącznie na `127.0.0.1` i nie wysyła nic nigdzie poza akcjami, które sam uruchamiasz; [co opuszcza Twój komputer](#co-opuszcza-twój-komputer) to jedna tabela.
 - **Wyjaśnia, zamiast tylko punktować.** Każdy wynik pokazuje źródła, na których się opiera; analiza e-maila uczy czytać nagłówki, a nie tylko wydaje werdykt.
@@ -111,7 +111,7 @@ Limity, ograniczenia i limity darmowych planów: [Konfiguracja i limity](docs/pl
 
 ## Prywatność i przepływ danych
 
-Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcza komputera poza tym, co jest wypisane tutaj, a każdy wiersz jest wywoływany Twoją akcją. Frontend nie ładuje niczego z CDN, żadnych czcionek ani analityki; `marked.min.js` jest dołączony lokalnie. To narzędzie source-available, bez etapu budowania i bez zaciemniania kodu - jeśli wolisz sam zweryfikować "lokalne z założenia" i "bez telemetrii" niż wierzyć na słowo, `backend/` jest wystarczająco krótki, by go przejrzeć, a każde wychodzące wywołanie sieciowe to dokładnie te wymienione niżej.
+Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcza komputera poza tym, co jest wypisane tutaj, a każdy wiersz jest wywoływany Twoją akcją. Frontend nie ładuje niczego z CDN, żadnych czcionek ani analityki; `marked.min.js` jest dołączony lokalnie. To oprogramowanie open source, bez etapu budowania i bez zaciemniania kodu - jeśli wolisz sam zweryfikować "lokalne z założenia" i "bez telemetrii" niż wierzyć na słowo, `backend/` jest wystarczająco krótki, by go przejrzeć, a każde wychodzące wywołanie sieciowe to dokładnie te wymienione niżej.
 
 ### Co opuszcza Twój komputer
 
@@ -159,8 +159,10 @@ Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto
 
 ## Licencja i współpraca
 
-Seisa jest udostępniona na licencji [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0) - pełny tekst w pliku [LICENSE](LICENSE). Kod jest publiczny (*source-available*), ale **to nie jest licencja open source w rozumieniu OSI**: wolno go używać, kopiować, modyfikować i rozpowszechniać (także forki) wyłącznie do celów niekomercyjnych, m.in. do użytku osobistego, hobbystycznego, edukacyjnego i badawczego oraz przez organizacje charytatywne, edukacyjne, publiczne i rządowe. Użycie komercyjne (w tym sprzedaż, komercyjne forki i praca w celach zarobkowych firmy) wymaga odrębnej zgody autora.
+Seisa to wolne oprogramowanie, udostępnione na licencji [GNU General Public License w wersji 3 lub (według Twojego wyboru) dowolnej nowszej](https://www.gnu.org/licenses/gpl-3.0.html) (GPL-3.0-or-later); pełny tekst jest w pliku [LICENSE](LICENSE). Po ludzku: wolno Ci używać, badać, kopiować, zmieniać i rozpowszechniać Seisę, także w celach komercyjnych, pod warunkiem że zmieniona wersja, którą przekazujesz dalej, zostaje na tej samej licencji i ma dołączony kod źródłowy.
 
-Dołączony `frontend/vendor/marked.min.js` pozostaje na własnej licencji MIT (nagłówek w pliku).
+Copyright (C) 2026 Arkadiusz Polak. Ten program jest wolnym oprogramowaniem: możesz go rozpowszechniać dalej i/lub modyfikować na warunkach Powszechnej Licencji Publicznej GNU, wydanej przez Fundację Wolnego Oprogramowania (Free Software Foundation), w wersji 3 tej Licencji lub (według Twojego wyboru) którejś z późniejszych wersji. Program jest rozpowszechniany z nadzieją, że będzie użyteczny, ale BEZ JAKIEJKOLWIEK GWARANCJI, nawet domyślnej gwarancji PRZYDATNOŚCI HANDLOWEJ albo PRZYDATNOŚCI DO OKREŚLONYCH ZASTOSOWAŃ; szczegóły w licencji (obowiązuje jej oryginalny, angielski tekst z pliku LICENSE).
 
-Zasady zgłaszania błędów i współpracy: [CONTRIBUTING.md](CONTRIBUTING.md) - zewnętrzne zmiany w kodzie (pull requesty) nie są przyjmowane. Problemy z bezpieczeństwem: [SECURITY.md](SECURITY.md).
+Dołączony `frontend/vendor/marked.min.js` pozostaje na własnej licencji MIT (nagłówek w pliku), zgodnej z GPL.
+
+Współpraca jest mile widziana: zgłoszenia błędów, pomysły i pull requesty. Jak zgłosić błąd i jak przesłać zmianę: [CONTRIBUTING.md](CONTRIBUTING.md); zasady zachowania: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Problemy z bezpieczeństwem: [SECURITY.md](SECURITY.md).

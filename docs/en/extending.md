@@ -8,12 +8,14 @@ Everything you need to decide about a fork and to work on one is in this documen
 
 ### Should you fork?
 
-| You may | You may not |
-|---|---|
-| use, copy, modify and distribute Seisa (forks included) for noncommercial purposes: personal, hobby, educational and research use, and use by charitable, educational, public and government organisations | use it commercially: selling it, commercial forks, work for the profit of a company (this needs a separate permission of the author) |
-| keep the `LICENSE` file and its "Required Notice" line in your fork | submit code changes upstream: pull requests are not accepted (issues with ideas and bug reports are welcome; see [CONTRIBUTING.md](../../CONTRIBUTING.md)) |
+Seisa is free software under the [GPL-3.0-or-later](../../LICENSE), so a fork is always allowed. Before you start one, consider sending the change upstream instead: pull requests are welcome (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
 
-This is a *source-available* license, not an open-source license in the OSI sense. A fork is a reasonable choice if you want to keep a local, dependency-light tool and adapt it: add a threat-intel source, a language, a tab, another LLM provider. It is a poor choice if you need multi-user access, authentication, remote hosting or a database; those are non-goals (see [Design decisions and non-goals](architecture.md#design-decisions-and-non-goals)).
+| You may | You must |
+|---|---|
+| use, study, copy, change and distribute Seisa (forks included), for any purpose, commercial use too | keep a modified version you distribute under the same license (GPL-3.0-or-later or, at your option, a later version) and give the recipients its source code |
+| sell copies or offer support for it | keep the copyright and license notices (`LICENSE`, the notice in the README) and say that you changed it |
+
+A fork is a reasonable choice if you want to keep a local, dependency-light tool and adapt it: add a threat-intel source, a language, a tab, another LLM provider. It is a poor choice if you need multi-user access, authentication, remote hosting or a database; those are non-goals (see [Design decisions and non-goals](architecture.md#design-decisions-and-non-goals)).
 
 ### How to extend
 

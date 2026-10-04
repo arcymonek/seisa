@@ -44,10 +44,11 @@ seisa/
 ├── CHANGELOG.md             # każde wydanie, od najnowszego
 ├── pyproject.toml           # konfiguracja ruff i pytest (tylko ustawienia narzędzi, to nie pakiet)
 ├── requirements-dev.txt     # narzędzia deweloperskie: requirements.txt plus pytest i ruff, ten ostatni przypięty do jednej serii wersji
-├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
-├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
+├── LICENSE                  # GNU General Public License v3 (projekt jest na GPL-3.0-or-later)
+├── CONTRIBUTING.md          # jak zgłosić błąd i przesłać zmianę (pull requesty są mile widziane)
+├── CODE_OF_CONDUCT.md       # zasady zachowania (Contributor Covenant 2.1)
 ├── SECURITY.md              # jak zgłosić podatność
-├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts i, przy pull requestach, reguła wersji i reguły dodanych linii dla całej gałęzi; przy pull requestach z forków tylko reguły dodanych linii, podbicie wersji dodaje opiekun)
+├── .github/                 # ISSUE_TEMPLATE/ (szablony zgłoszenia błędu i pomysłu na funkcję, link do SECURITY.md), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts i, przy pull requestach, reguła wersji i reguły dodanych linii dla całej gałęzi; przy pull requestach z forków tylko reguły dodanych linii, podbicie wersji dodaje opiekun)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache/CSP, strażnika originu i języka, kontrola Host, obsługa błędów
 │   ├── config.py             # ścieżki, limity, ustawienia z .env

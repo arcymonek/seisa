@@ -8,7 +8,7 @@ import { t, tn, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
 const AUTHOR_EMAIL = "seisa@arkadiuszpolak.pl";
-const LICENSE_URL = "https://polyformproject.org/licenses/noncommercial/1.0.0";
+const LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html";
 const AUTHOR_GITHUB = "https://github.com/arcymonek";
 const AUTHOR_SITE = "https://arkadiuszpolak.pl";
 
@@ -49,7 +49,7 @@ export function initAbout(container) {
       <div class="svc-grid"><div class="svc-card" id="ab-env"></div><div id="ab-limits" class="contents"></div></div>
       <div class="ab-notes muted">${e(t("about.status_hint"))}<br>${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
-    ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">PolyForm Noncommercial 1.0.0</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_commercial"))}</p>`)}
+    ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">GNU GPL-3.0-or-later</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_contribute"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
 }
