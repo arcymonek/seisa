@@ -1,2 +1,4 @@
 -r requirements.txt
 pytest>=8
+# pinned to one minor series: a new ruff minor adds rules and shows new findings in unchanged code
+ruff>=0.16,<0.17

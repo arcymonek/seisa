@@ -43,7 +43,7 @@ seisa/
 ├── README.md / README.pl.md  # the short README in English (the main one) and in Polish
 ├── CHANGELOG.md             # every release, newest first
 ├── pyproject.toml           # ruff and pytest configuration (tool settings only, not a package)
-├── requirements-dev.txt     # development tools: requirements.txt plus pytest (ruff is installed separately)
+├── requirements-dev.txt     # development tools: requirements.txt plus pytest and ruff, the latter pinned to one minor series
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability

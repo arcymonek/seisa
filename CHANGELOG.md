@@ -7,6 +7,7 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 ## Development
 - 2026-10-04: added a pytest unit-test suite (`tests/`, `requirements-dev.txt`, run with `python3 -m pytest -q`) covering the mail trust helpers, scoring, the AbuseIPDB report checks, the e-mail parser and forensics, plus a gitignored `tests/private/` for an optional local corpus of real e-mails. No change to the program.
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
+- 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
 ## 2.1.27 - 2026-10-04
 - **Maintenance:** code cleanup flagged by the current `ruff` (unused imports, import order, `contextlib.suppress` instead of `try`/`except`/`pass`, `zip(strict=True)` in the quota refresh, list literals instead of `str.split`). No change in behaviour: the API harness output and the e-mail facts dumps are byte-identical to 2.1.26.
