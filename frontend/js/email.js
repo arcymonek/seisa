@@ -563,7 +563,7 @@ function updateOverviewSections(parts, final) {
     if (overviewShown[key] === sig) return;
     overviewShown[key] = sig;
     sec.querySelector("h3").textContent = s.title;
-    lesson.renderInto(sec.querySelector(".em-flat > div"), s.md);
+    lesson.renderInto(sec.querySelector(".em-flat > div"), s.md, { glossaryOwner: key, overview: true });
   });
 }
 

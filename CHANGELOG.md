@@ -11,6 +11,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.1.30 - 2026-10-04
+- **Fix:** Email tab, Overview panel: the mirrored Checklist and Assessment sections now get glossary tooltips (SPF, DKIM, DMARC, ARC, PTR, SCL, HELO...) on first mention, tracked independently from the main Lesson panel's own cards, so a term already explained in one panel is still explained once in the other instead of never appearing there. (Written on 2026-09-27 as 2.1.23 and left on a side branch; re-applied on top of 2.1.29.)
+
 ## 2.1.29 - 2026-10-04
 - **Fix:** AbuseIPDB and Email tabs, found by checking real messages: (1) an address written without square brackets after a reverse-DNS name, `(host. 192.0.2.1)` (a Gmail form), is now read; before, such a message could end with "no sender IP found". (2) A hop is now compared with the recipient's operator by family, and Exchange Online's internal domain `exchangelabs.com` belongs to Microsoft; before, a genuine message to a Microsoft mailbox could end with a Microsoft-internal address at high confidence instead of the connecting client. (3) When the receiving server wrote a verified reverse-DNS name that belongs to another operator than the HELO name, the verified name is used, so a sender who introduces itself as a big provider is no longer skipped as "internal". (4) When the older lines of an unknown relay are not used, the reasoning now says so.
 

@@ -69,7 +69,8 @@ function checklistNote(md) {
 
 export function createLesson({ pane, viewer, onStructure, onSearch }) {
   const openState = loadOpenState();
-  const owners = new Map(); // glossary: term -> card index
+  const owners = new Map(); // glossary: term -> card index (main Lesson cards)
+  const overviewOwners = new Map(); // glossary: term -> section key (Overview panel), tracked apart from the Lesson cards
   const cards = []; // {det, target, md, role}
   const findCache = new Map();
   let programmatic = false;
@@ -161,15 +162,16 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     });
   }
 
-  function renderInto(target, md, { glossaryOwner = null, subsections = false } = {}) {
+  function renderInto(target, md, { glossaryOwner = null, subsections = false, overview = false } = {}) {
     const open = Array.from(target.querySelectorAll("details")).map((d) => d.open);
     renderMarkdownSafe(target, md);
     if (subsections) groupSubsections(target);
     wrapQuotes(target);
     markInline(target);
     if (glossaryOwner !== null) {
-      releaseTerms(owners, glossaryOwner);
-      applyGlossary(target, owners, glossaryOwner);
+      const scope = overview ? overviewOwners : owners;
+      releaseTerms(scope, glossaryOwner);
+      applyGlossary(target, scope, glossaryOwner);
     }
     target.querySelectorAll("details").forEach((d, i) => {
       if (open[i]) d.open = true;
@@ -333,6 +335,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     fallbackEl.textContent = "";
     titleEl.textContent = "";
     owners.clear();
+    overviewOwners.clear();
     findCache.clear();
     structured = false;
     hitIdx = -1;
