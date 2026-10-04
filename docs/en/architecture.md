@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
-├── .github/                 # ISSUE_TEMPLATE/ (bug report template) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
+├── .github/                 # ISSUE_TEMPLATE/ (bug report template), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env

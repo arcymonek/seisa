@@ -5,6 +5,7 @@ All notable changes to Seisa, newest first. Every change to the program itself r
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
 ## Development
+- 2026-10-04: added a pull request template (`.github/pull_request_template.md`: What / Why / Checked) and listed it, together with the CI workflow, in the file tree of `docs/{en,pl}/architecture.md`. No change to the program.
 - 2026-10-04: added GitHub Actions CI (`.github/workflows/ci.yml`: ruff, pytest, API harness, i18n check and facts dump on Python 3.11 and the latest 3.x), run on pull requests and on pushes to `main`. No change to the program.
 - 2026-10-04: history rewritten before the first push to GitHub (a local-only file removed from all commits, author unified); commit hashes from before this date changed. No change to the program.
 - 2026-10-04: added a pytest unit-test suite (`tests/`, `requirements-dev.txt`, run with `python3 -m pytest -q`) covering the mail trust helpers, scoring, the AbuseIPDB report checks, the e-mail parser and forensics, plus a gitignored `tests/private/` for an optional local corpus of real e-mails. No change to the program.
