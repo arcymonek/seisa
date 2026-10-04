@@ -14,7 +14,7 @@
 
 ## Stack
 
-Python 3.11+ with FastAPI, uvicorn, pydantic and pydantic-settings, httpx, python-whois and dnspython (`requirements.txt`; `requirements.lock` pins the tested versions). Frontend: plain JavaScript (ES modules), CSS, and `marked.min.js` bundled locally. Development tools (not dependencies): `ruff`. The only automated test is the API harness.
+Python 3.11+ with FastAPI, uvicorn, pydantic and pydantic-settings, httpx, python-whois and dnspython (`requirements.txt`; `requirements.lock` pins the tested versions). Frontend: plain JavaScript (ES modules), CSS, and `marked.min.js` bundled locally. Development tools (not dependencies): `ruff` and `pytest`. Automated checks: the pytest unit tests and the API harness, which GitHub Actions (`.github/workflows/ci.yml`) runs together with `ruff`, `check_i18n.py` and `dump_facts.py` on every pull request and every push to `main`.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
-├── .github/ISSUE_TEMPLATE/  # bug report template
+├── .github/                 # ISSUE_TEMPLATE/ (bug report template) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env

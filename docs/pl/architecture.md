@@ -14,7 +14,7 @@
 
 ## Stos technologiczny
 
-Python 3.11+ z FastAPI, uvicorn, pydantic i pydantic-settings, httpx, python-whois i dnspython (`requirements.txt`; `requirements.lock` przypina przetestowane wersje). Frontend: zwykły JavaScript (moduły ES), CSS i lokalnie dołączony `marked.min.js`. Narzędzia deweloperskie (nie zależności): `ruff`. Jedyny test automatyczny to harness API.
+Python 3.11+ z FastAPI, uvicorn, pydantic i pydantic-settings, httpx, python-whois i dnspython (`requirements.txt`; `requirements.lock` przypina przetestowane wersje). Frontend: zwykły JavaScript (moduły ES), CSS i lokalnie dołączony `marked.min.js`. Narzędzia deweloperskie (nie zależności): `ruff` i `pytest`. Kontrole automatyczne: testy jednostkowe pytest i harness API, które GitHub Actions (`.github/workflows/ci.yml`) uruchamia razem z `ruff`, `check_i18n.py` i `dump_facts.py` przy każdym pull requeście i każdym pushu na `main`.
 
 ## Architektura
 
@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
 ├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
 ├── SECURITY.md              # jak zgłosić podatność
-├── .github/ISSUE_TEMPLATE/  # szablon zgłoszenia błędu
+├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache/CSP, strażnika originu i języka, kontrola Host, obsługa błędów
 │   ├── config.py             # ścieżki, limity, ustawienia z .env
