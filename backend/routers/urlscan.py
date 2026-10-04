@@ -10,10 +10,10 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from backend.i18n import t
-from backend.services import urlscan as urlscan_service
-from backend.urlscan_input import InvalidScanUrl, normalize_scan_url
 from backend.scoring import HIGH_FROM, MEDIUM_FROM
+from backend.services import urlscan as urlscan_service
 from backend.urlscan_forms import extract_forms
+from backend.urlscan_input import InvalidScanUrl, normalize_scan_url
 from backend.urlscan_report import build_urlscan_markdown, build_urlscan_summary
 
 router = APIRouter()

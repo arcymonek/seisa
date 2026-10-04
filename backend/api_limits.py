@@ -286,7 +286,7 @@ async def refresh_live() -> dict[str, str]:
     results = await asyncio.gather(*jobs.values(), return_exceptions=True)
     usage = load_api_usage()
     errors: dict[str, str] = {}
-    for service, result in zip(jobs, results):
+    for service, result in zip(jobs, results, strict=True):
         if isinstance(result, Exception):
             errors[service] = _error_text(result)
             logging.getLogger(service if service != "openrouter" else "open_router").error(f"quota query failed: {errors[service]}")

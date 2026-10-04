@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import ipaddress
 import re
 from urllib.parse import quote
 
-from backend.i18n import t
 from backend.identity import build_domain_identity, build_identity
 from backend.markdown_report import build_markdown
 from backend.models import IndicatorType, LookupResult, ServiceResult
@@ -65,10 +65,8 @@ def normalize_indicator(raw: str) -> str:
         text = _PORT_RE.sub("", text)
     text = text.rstrip(".").lower()
     if not text.isascii():
-        try:
+        with contextlib.suppress(UnicodeError):
             text = text.encode("idna").decode("ascii")
-        except UnicodeError:
-            pass
     return text
 
 

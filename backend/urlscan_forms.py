@@ -51,7 +51,7 @@ def extract_forms(dom: str, page_url: str, page_domain: str | None) -> list[dict
     try:
         collector.feed(dom[:MAX_DOM_CHARS])
         collector.close()
-    except Exception:  # noqa: BLE001 - a malformed page must never break the report
+    except Exception:  # a malformed page must never break the report
         pass
     page_host = (page_domain or _host(page_url)).lower()
     forms: list[dict] = []

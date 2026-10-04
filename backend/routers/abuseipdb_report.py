@@ -16,12 +16,12 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.config import MAX_SOURCE_CHARS
+from backend.email_forensics import normalize_source, prepare_for_llm
 from backend.email_parser import (
     extract_addresses,
     parse_email,
     parse_message,
 )
-from backend.email_forensics import normalize_source, prepare_for_llm
 from backend.i18n import current_lang, t
 from backend.report_builder import ABUSEIPDB_CATEGORIES, build_comment, local_assessment, validate_hard_checks
 from backend.report_utils import (

@@ -13,7 +13,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from backend.config import FRONTEND_DIR
 from backend.i18n import reset_lang, set_lang, t
 from backend.logging_config import setup_logging
-from backend.routers import abuseipdb_report, about, dmarc, email_analysis, history, logs, lookup, urlscan
+from backend.routers import about, abuseipdb_report, dmarc, email_analysis, history, logs, lookup, urlscan
 
 setup_logging()
 app_logger = logging.getLogger("app")

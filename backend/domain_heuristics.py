@@ -6,13 +6,14 @@ on their own.
 """
 from __future__ import annotations
 
+import contextlib
 import math
 import unicodedata
 from dataclasses import dataclass
 
 from backend.i18n import t
 
-SUSPICIOUS_TLDS = frozenset("top xyz click zip mov tk ml ga cf gq icu buzz cyou rest".split())
+SUSPICIOUS_TLDS = frozenset(["top", "xyz", "click", "zip", "mov", "tk", "ml", "ga", "cf", "gq", "icu", "buzz", "cyou", "rest"])
 LURE_WORDS = ("login", "signin", "secure", "verify", "account", "update", "billing", "wallet", "paypal", "bank")
 MAX_RISK = 75.0
 
@@ -40,10 +41,8 @@ def _unicode_labels(domain: str) -> list[str]:
     labels = []
     for label in domain.split("."):
         if label.startswith("xn--"):
-            try:
+            with contextlib.suppress(UnicodeError):
                 label = label.encode("ascii").decode("idna")
-            except UnicodeError:
-                pass
         labels.append(label)
     return labels
 

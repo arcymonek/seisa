@@ -17,8 +17,9 @@ from __future__ import annotations
 
 import ipaddress
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from backend.i18n import t
 from backend.models import Identity, IdentityField, IdentityVariant, ServiceResult
@@ -58,8 +59,7 @@ DOMAIN_PRIORITY = {
 
 # Legal-form suffixes and filler words that say nothing about who the owner is.
 _ORG_NOISE = frozenset(
-    "ltd limited llc llp lp inc incorporated corp corporation co company gmbh bv sa srl sas sarl ag plc pty pte kft "
-    "oy ab as zoo sp the".split()
+    ["ltd", "limited", "llc", "llp", "lp", "inc", "incorporated", "corp", "corporation", "co", "company", "gmbh", "bv", "sa", "srl", "sas", "sarl", "ag", "plc", "pty", "pte", "kft", "oy", "ab", "as", "zoo", "sp", "the"]
 )
 _HOSTNAME = re.compile(r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+")
 
