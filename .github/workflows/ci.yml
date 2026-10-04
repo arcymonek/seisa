@@ -22,6 +22,8 @@ jobs:
         python-version: ["3.11", "3.x"]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the version rule below compares the pull request with the merge-base on main
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -35,3 +37,8 @@ jobs:
       - run: python scripts/api_harness.py
       - run: python scripts/check_i18n.py --strict
       - run: python scripts/dump_facts.py > /dev/null
+      - name: Version rule for the whole branch (pull requests only)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python scripts/hooks/pre-commit --range "origin/$BASE_REF"
