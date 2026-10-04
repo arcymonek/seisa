@@ -145,6 +145,9 @@ def base_repo(tmp_path_factory) -> Path:
     shutil.copy2(HOOK_SRC, d / "scripts" / "hooks" / "pre-commit")
     shutil.copy2(COMMIT_MSG_SRC, d / "scripts" / "hooks" / "commit-msg")
     git(d, "init", "-q", "-b", "main")
+    # `git commit` may start `gc --auto` in the background, which deletes loose objects while `repo` copies this directory
+    git(d, "config", "gc.auto", "0")
+    git(d, "config", "maintenance.auto", "false")
     commit_all(d, "base")
     return d
 
