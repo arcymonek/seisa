@@ -1,0 +1,25 @@
+Received: from smtp.shop.example (smtp.shop.example [198.51.100.20]) by mx.recipient.example with ESMTPS; Wed, 23 Sep 2026 10:00:05 +0000
+Authentication-Results: mx.recipient.example; spf=pass smtp.mailfrom=shop.example; dkim=pass header.d=shop.example; dmarc=pass header.from=shop.example
+From: =?UTF-8?Q?Za=C5=BC=C3=B3=C5=82=C4=87_Sklep?= <orders@shop.example>
+To: customer@recipient.example
+Subject: =?UTF-8?B?WmHFvMOzxYLEhyBnxJnFm2zEhSBqYcW6xYQgLSBmYWt0dXJh?=
+Date: Wed, 23 Sep 2026 10:00:00 +0000
+Message-ID: <enc1@shop.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="enc-b1"
+
+--enc-b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+Za=C5=BC=C3=B3=C5=82=C4=87 g=C4=99=C5=9Bl=C4=85 ja=C5=BA=C5=84.
+Send bitcoin to bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq today.
+
+--enc-b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: base64
+
+PGh0bWw+PGJvZHk+PHA+WmHFvMOzxYLEhyBnxJnFm2zEhSBqYcW6xYQ8L3A+PGEgaHJlZj0iaHR0
+cHM6Ly9zaG9wLmV4YW1wbGUvcGF5Ij5QYXk8L2E+PC9ib2R5PjwvaHRtbD4=
+
+--enc-b1--

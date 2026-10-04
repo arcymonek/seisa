@@ -1,0 +1,226 @@
+"""backend/email_parser.py: picking the sender's IP from the Received chain and reading the authentication verdicts.
+
+Expected values are derived by hand from the .eml files / strings below using RFC 5321 (Received), RFC 8601
+(Authentication-Results: the receiving server prepends its own header, so the TOPMOST one is the trustworthy one)
+and the "newest hop first" order of Received headers. They are never copied from the code's own output.
+
+Public stand-ins: 8.8.8.8, 1.1.1.1 and 9.9.9.9 are well-known public DNS resolvers (not "special" for the
+application); the documentation ranges are special on purpose, see test_mail_trust.py.
+"""
+from __future__ import annotations
+
+from email import message_from_string
+
+import pytest
+
+from backend.email_parser import find_boundary_index, parse_email, parse_received_header
+from tests.helpers import load_eml
+
+
+def build(received: list[str], extra: str = "", date: str = "Mon, 21 Sep 2026 17:00:00 +0000") -> str:
+    """A minimal e-mail: `received` is listed newest first, exactly as a mail server leaves the headers."""
+    lines = [f"Received: {r}" for r in received]
+    if extra.strip("\n"):  # an empty line would end the header block early
+        lines.append(extra.strip("\n"))
+    return "\n".join(
+        [*lines, "From: Sender <sender@example.org>", "To: me@example.net", "Subject: test",
+         f"Date: {date}", "Message-ID: <id1@example.org>", "", "body", ""]
+    )
+
+
+def received_of(src: str) -> list[str]:
+    return message_from_string(src).get_all("Received") or []
+
+
+# ---- parse_received_header ----
+
+def test_received_basic_fields():
+    hop = parse_received_header("from mail.example.org (mail.example.org [8.8.8.8]) by mx.example.net with ESMTPS id 1; Mon, 1 Jan 2026")
+    assert (hop["from_host"], hop["by_host"], hop["ip"]) == ("mail.example.org", "mx.example.net", "8.8.8.8")
+    assert hop["is_boundary"] is False
+
+
+def test_received_folded_header_is_read_like_a_single_line():
+    hop = parse_received_header("from a.example.org\n\t(a.example.org [8.8.8.8])\n\tby mx.example.net; x")
+    assert (hop["from_host"], hop["by_host"], hop["ip"]) == ("a.example.org", "mx.example.net", "8.8.8.8")
+
+
+def test_received_public_ip_in_parentheses_beats_loopback_in_brackets():
+    # Microsoft EOP style: `[127.0.0.1] (real_ip)` - the real client address is the one in parentheses
+    hop = parse_received_header("from [127.0.0.1] (8.8.8.8) by mx.example.net with SMTP; x")
+    assert hop["ip"] == "8.8.8.8"
+    assert hop["from_host"] == "127.0.0.1"
+
+
+def test_received_without_from_clause_has_no_host_and_no_ip():
+    hop = parse_received_header("by 2002:a05:6a00:1 with SMTP id abc; Mon, 21 Sep 2026 10:00:03 -0700 (PDT)")
+    assert hop["from_host"] is None and hop["ip"] is None
+
+
+def test_received_ipv6_address_in_brackets():
+    hop = parse_received_header("from mail.example.org (mail.example.org [2606:4700:4700::1111]) by mx.example.net with ESMTPS; x")
+    assert hop["ip"] == "2606:4700:4700::1111"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="FINDING: RFC 5321 section 4.1.3 writes IPv6 address literals as [IPv6:...] (Postfix does this in Received); "
+    "the parser reads the bracket content 'IPv6:2606:...' as an invalid IP and returns None",
+)
+def test_received_ipv6_literal_with_rfc5321_prefix():
+    hop = parse_received_header("from mail.example.org (mail.example.org [IPv6:2606:4700:4700::1111]) by mx.example.net with ESMTPS; x")
+    assert hop["ip"] == "2606:4700:4700::1111"
+
+
+# ---- find_boundary_index ----
+
+def test_boundary_of_an_empty_chain():
+    assert find_boundary_index([]) == (None, "low")
+
+
+def test_boundary_single_external_hop():
+    chain = ["from smtp.news.example (smtp.news.example [8.8.8.8]) by mx.recipient.example with ESMTPS; x"]
+    assert find_boundary_index(chain) == (0, "high")
+
+
+def test_boundary_is_the_hop_where_the_receiving_operator_recorded_an_outsider():
+    chain = [
+        "from relay.recipient.example (relay.recipient.example [10.0.0.2]) by mx.recipient.example with ESMTP; x",  # internal
+        "from mail.sender-corp.example (mail.sender-corp.example [8.8.8.8]) by relay.recipient.example with ESMTPS; x",  # outsider
+    ]
+    assert find_boundary_index(chain) == (1, "high")
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="FINDING (needs a decision, see the report): _walk_through_relays follows 'by' == previous 'from' links into "
+    "older hops. Those lines were written by the machine that connected to us, which can be the sender's own server, "
+    "so forged lines that follow the same pattern steer the reported IP to an innocent third party (here 9.9.9.9) "
+    "with confidence 'high'. The walk is deliberate (it is what makes provider relays such as Exchange Online work), "
+    "so this is a design limitation, not a typo-level bug.",
+)
+def test_forged_older_received_headers_do_not_move_the_boundary():
+    # The recipient's server recorded 8.8.8.8 (hop 0). Everything below was written by the sender and may claim anything,
+    # including that the message passed through 1.1.1.1 or through the recipient's own domain.
+    src = build(
+        [
+            "from evil-host.example.net (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; Mon, 21 Sep 2026 17:00:03 +0000",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by evil-host.example.net with ESMTP; Mon, 21 Sep 2026 17:00:01 +0000",
+            "from relay.recipient.example (relay.recipient.example [9.9.9.9]) by mail.bank.example with ESMTP; Mon, 21 Sep 2026 17:00:00 +0000",
+        ]
+    )
+    parsed = parse_email(src)
+    assert parsed["trusted_source_ip"] == "8.8.8.8"
+    assert parsed["received_chain"][0]["is_boundary"] is True
+
+
+# ---- parse_email on the synthetic fixtures (hand-read) ----
+
+def test_fixture_multihop_picks_the_client_behind_the_google_relays():
+    # three Received, all inside Google, the oldest recorded the connecting client 176.9.44.107 in parentheses
+    parsed = parse_email(load_eml("multihop.eml"))
+    assert parsed["trusted_source_ip"] == "176.9.44.107"
+    assert parsed["ip_ok"] is True
+    assert parsed["ip_confidence"] == "high"
+    assert [h["is_boundary"] for h in parsed["received_chain"]] == [False, False, True]
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == (None, None, None)
+    assert parsed["spoofing_suspected"] is False
+
+
+def test_fixture_newsletter_is_authenticated_and_not_suspicious():
+    parsed = parse_email(load_eml("newsletter.eml"))
+    assert parsed["trusted_source_ip"] == "192.0.2.10"
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == ("pass", "pass", "pass")
+    assert parsed["spoofing_suspected"] is False
+    assert parsed["ip_ok"] is False  # the documentation range is never reportable
+    assert parsed["attachments"] == []
+
+
+def test_fixture_phishing_failed_authentication_is_flagged():
+    parsed = parse_email(load_eml("phishing.eml"))
+    assert parsed["trusted_source_ip"] == "203.0.113.45"  # hop 0, written by the recipient's own server
+    assert parsed["trusted_source_ip"] != "198.51.100.7"  # the X-Originating-IP header is sender-controlled text
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == ("fail", "none", "fail")
+    assert parsed["spoofing_suspected"] is True
+    assert [a["filename"] for a in parsed["attachments"]] == ["invoice.pdf.exe"]
+    assert parsed["attachments"][0]["apparent_extension"] == "pdf"
+    assert parsed["attachments"][0]["declared_extension"] == "exe"
+
+
+def test_fixture_relay_walks_through_pods_to_the_authenticated_client():
+    parsed = parse_email(load_eml("ovh_style_relay.eml"))
+    assert parsed["trusted_source_ip"] == "154.16.88.201"
+    assert parsed["ip_ok"] is True
+    assert [h["is_boundary"] for h in parsed["received_chain"]] == [False, False, False, True]
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == ("pass", "pass", "pass")
+    assert parsed["boundary_auth_corroboration"]["smtp_auth_account"] == "sales@brightfield-consult.example"
+
+
+# ---- authentication verdicts ----
+
+def test_no_authentication_results_means_no_verdict_and_no_spoofing_flag():
+    parsed = parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"]))
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == (None, None, None)
+    assert parsed["spoofing_suspected"] is False
+
+
+def test_topmost_authentication_results_wins_over_a_planted_one_below():
+    extra = (
+        "Authentication-Results: mx.recipient.example; spf=fail smtp.mailfrom=example.org; dmarc=fail header.from=example.org\n"
+        "Authentication-Results: fake.example; spf=pass; dkim=pass; dmarc=pass"
+    )
+    parsed = parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"], extra))
+    assert (parsed["spf"], parsed["dmarc"]) == ("fail", "fail")
+    assert parsed["spoofing_suspected"] is True
+
+
+def test_spoofing_flag_follows_spf_fail_or_dmarc_fail_only():
+    base = ["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"]
+    softfail = parse_email(build(base, "Authentication-Results: mx.recipient.example; spf=softfail; dkim=none; dmarc=pass"))
+    assert softfail["spoofing_suspected"] is False
+    dmarc_fail = parse_email(build(base, "Authentication-Results: mx.recipient.example; spf=pass; dmarc=fail"))
+    assert dmarc_fail["spoofing_suspected"] is True
+
+
+def test_verdicts_are_lowercased():
+    parsed = parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"],
+                               "Authentication-Results: mx.recipient.example; SPF=PASS; DKIM=Pass; DMARC=PASS"))
+    assert (parsed["spf"], parsed["dkim"], parsed["dmarc"]) == ("pass", "pass", "pass")
+
+
+# ---- degenerate input ----
+
+def test_message_without_received_has_no_ip_and_is_not_reportable():
+    parsed = parse_email(build([]))
+    assert parsed["trusted_source_ip"] is None
+    assert parsed["ip_ok"] is False
+    assert parsed["ip_confidence"] == "low"
+    assert parsed["received_chain"] == []
+
+
+def test_private_only_chain_is_not_reportable():
+    parsed = parse_email(build(["from localhost (localhost [127.0.0.1]) by mx.example.net; x"]))
+    assert parsed["ip_ok"] is False
+
+
+def test_old_message_fails_the_age_check():
+    parsed = parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"], date="Mon, 01 Jan 2024 00:00:00 +0000"))
+    assert parsed["age_ok"] is False
+    assert parsed["age_days"] > 60
+
+
+def test_unparseable_date_is_not_a_crash():
+    parsed = parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"], date="not a date"))
+    assert parsed["age_ok"] is False and parsed["date_parsed"] is None
+
+
+def test_attachment_detection_ignores_plain_body():
+    assert parse_email(build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"]))["attachments"] == []
+
+
+def test_bitcoin_address_in_body_is_found():
+    wallet = "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq"  # the BIP-173 example address
+    src = build(["from a.example.net (a.example.net [8.8.8.8]) by mx.recipient.example; x"]).replace("body", f"send bitcoin to {wallet} now")
+    parsed = parse_email(src)
+    assert parsed["btc_addresses_found"] == [wallet]
+    assert parsed["ransom_keywords_found"] is True

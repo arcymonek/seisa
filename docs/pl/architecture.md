@@ -42,7 +42,8 @@ seisa/
 ├── seisa.sh                 # skrypt startowy (uruchamia serwer i otwiera przeglądarkę)
 ├── README.md / README.pl.md  # krótkie README po angielsku (główne) i po polsku
 ├── CHANGELOG.md             # każde wydanie, od najnowszego
-├── pyproject.toml           # konfiguracja ruff (tylko linter, to nie pakiet)
+├── pyproject.toml           # konfiguracja ruff i pytest (tylko ustawienia narzędzi, to nie pakiet)
+├── requirements-dev.txt     # narzędzia deweloperskie: requirements.txt plus pytest (ruff instaluje się osobno)
 ├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
 ├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
 ├── SECURITY.md              # jak zgłosić podatność
@@ -85,9 +86,12 @@ seisa/
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej
 │   └── vendor/marked.min.js   # renderowanie Markdown, dołączone lokalnie (bez CDN)
-├── tests/fixtures/          # SYNTETYCZNE e-maile (.eml) do porównań; fikcyjne dane (domeny .example, zakresy adresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
+├── tests/                   # testy jednostkowe pytest (`python3 -m pytest -q`): pomocnicze funkcje zaufania poczty, scoring, budowanie zgłoszeń, parser e-maili i forensyka; `conftest.py` kieruje data/ do katalogu tymczasowego
+│   ├── fixtures/            # SYNTETYCZNE e-maile (.eml) do porównań; fikcyjne dane (domeny .example, zakresy adresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
+│   │   └── unit/            # dodatkowe przypadki syntetyczne tylko dla pytest (prompt injection, kodowania, uszkodzone nagłówki); podkatalog celowo, żeby płaski glob `*.eml` w `api_harness.py` i `dump_facts.py` ich nie widział
+│   └── private/             # opcjonalne PRAWDZIWE e-maile z oczekiwanymi wynikami dla `test_corpus.py` (gitignored, nigdy nie commitowane)
 ├── scripts/
-│   ├── api_harness.py         # jedyny test automatyczny: każdy endpoint API z zamockowanymi usługami zewnętrznymi (także `--serve PORT`)
+│   ├── api_harness.py         # test end-to-end: każdy endpoint API z zamockowanymi usługami zewnętrznymi (także `--serve PORT`)
 │   ├── dump_facts.py          # zrzuca analizę deterministyczną fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   └── check_i18n.py          # sprawdza katalogi PL/EN, zgodność README i docs, martwe linki i wersję; `--strict` szuka polskich literałów w kodzie
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)

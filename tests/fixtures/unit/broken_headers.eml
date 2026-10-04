@@ -1,0 +1,8 @@
+Subject: broken
+ continued line is fine
+this line is not a header at all
+From: Hidden <hidden@example.org>
+To: me@example.net
+Date: Wed, 23 Sep 2026 10:00:00 +0000
+
+body without any Received header

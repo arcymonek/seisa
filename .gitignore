@@ -12,5 +12,8 @@ data/*
 !data/.gitkeep
 logs/*
 !logs/.gitkeep
+# real e-mails for the optional local corpus test (never committed, see tests/test_corpus.py)
+tests/private/*
+!tests/private/.gitkeep
 # directory name used before 2.0.27 (until it is renamed by hand)
 logi/

@@ -42,7 +42,8 @@ seisa/
 ├── seisa.sh                 # start script (starts the server and opens the browser)
 ├── README.md / README.pl.md  # the short README in English (the main one) and in Polish
 ├── CHANGELOG.md             # every release, newest first
-├── pyproject.toml           # ruff configuration (linter only, not a package)
+├── pyproject.toml           # ruff and pytest configuration (tool settings only, not a package)
+├── requirements-dev.txt     # development tools: requirements.txt plus pytest (ruff is installed separately)
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
@@ -85,9 +86,12 @@ seisa/
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
-├── tests/fixtures/          # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
+├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics; `conftest.py` points data/ at a temporary directory
+│   ├── fixtures/            # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
+│   │   └── unit/            # extra synthetic cases used only by pytest (prompt injection, encodings, damaged headers); a subfolder on purpose, so the flat `*.eml` glob of `api_harness.py` and `dump_facts.py` does not see it
+│   └── private/             # optional REAL e-mails with expected results for `test_corpus.py` (gitignored, never committed)
 ├── scripts/
-│   ├── api_harness.py         # the only automated test: every API endpoint with all external services mocked (also `--serve PORT`)
+│   ├── api_harness.py         # end-to-end test: every API endpoint with all external services mocked (also `--serve PORT`)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   └── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)

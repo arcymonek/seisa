@@ -1,8 +1,11 @@
 # Changelog
 
-All notable changes to Seisa, newest first. Every release raises the version by 0.0.1 (after `X.Y.99` comes `X.(Y+1).0`), so the list is complete. The current version is shown in the page header and under the logo in [README.md](README.md).
+All notable changes to Seisa, newest first. Every change to the program itself raises the version (a fix or changed behaviour: last number; a new feature, tab, service or `.env` key: middle number, last back to 0), so the list of releases is complete. Changes that leave the program as it is (tests, scripts, documentation) are listed under Development without a version. The current version is shown in the page header and under the logo in [README.md](README.md).
 
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
+
+## Development
+- 2026-10-04: added a pytest unit-test suite (`tests/`, `requirements-dev.txt`, run with `python3 -m pytest -q`) covering the mail trust helpers, scoring, the AbuseIPDB report checks, the e-mail parser and forensics, plus a gitignored `tests/private/` for an optional local corpus of real e-mails. No change to the program.
 
 ## 2.1.25 - 2026-10-02
 - **Fix:** AbuseIPDB tab: the model refused to analyse e-mails whose body is base64 (e.g. phishing sent through an e-mail provider). The tab sent the raw source, so the model saw walls of base64 instead of the message, while the Email tab, which decodes text parts first, worked on the very same file. AbuseIPDB now sends the same prepared source as the Email tab (headers unchanged, base64 text parts decoded, binary parts replaced by a size + sha256 marker), fenced with the `EMAIL-START`/`EMAIL-END` markers as untrusted data. The facts (IP, SPF/DKIM/DMARC) are still computed from the original source. The markers moved to `backend/email_forensics.py` and are shared by both tabs.
