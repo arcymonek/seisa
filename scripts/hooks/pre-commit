@@ -13,7 +13,18 @@ What it checks, always on what is STAGED (the index), not on the working tree:
   4. scripts/check_i18n.py --strict, run on an export of the index: catalogs, heading parity, dead links, the same
      version in all five places.
   5. Version step: if the version differs from the one on `main` (merge-base), the difference must be exactly one
-     allowed step: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice.
+     allowed step: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice. A bump must come
+     together with its release notes: a `## X.Y.Z - YYYY-MM-DD` entry in CHANGELOG.md whose date is the one in
+     <meta name="seisa-release-date"> of frontend/index.html.
+  6. Privacy scan of added lines: no API-key-looking strings, no home directory paths (/Users/name/, /home/name/) and none
+     of your own host or domain names. The names live in a file OUTSIDE the repository, one per line (`#` comments;
+     a line starting with `!` is a string that is allowed, for example the author's public contact data, and is
+     removed before scanning): ~/.config/seisa/privacy-markers.txt, or the file named by SEISA_PRIVACY_MARKERS. Without
+     the file only the generic checks run and a note says so. The offending value is never printed.
+
+`pre-commit --commit-msg FILE` (called by the commit-msg hook next to this file) checks the commit message: no long
+dash, no Co-Authored-By trailer and no "Generated with Claude Code" footer (CLAUDE.md forbids them), and the same
+privacy scan.
 
 `pre-commit --range BASE` (used by CI on pull requests, also runnable by hand) checks the whole branch instead of
 one commit: when PROGRAM files changed since the merge-base with BASE the version must have gone up by one allowed
@@ -54,6 +65,10 @@ PROGRAM_FILES = {
     "docs/email-analysis-guide.md",
 }
 BASE_CANDIDATES = ("main", "origin/main", "github/main")
+
+# Privacy scan. Strings that look like a real key, and a home directory path other than an obvious placeholder.
+KEY_PATTERNS = (r"[0-9a-fA-F]{80}", r"sk-or-v1-[0-9a-fA-F]{20,}")
+HOME_PATH = re.compile(r"/(?:Users|home)/(?!(?:you|user|username|name|example|me)/)[A-Za-z0-9._-]+/")
 
 
 class GitError(Exception):
@@ -178,6 +193,61 @@ def check_pairs(staged: list[str]) -> list[str]:
     return problems
 
 
+def load_privacy_markers() -> tuple[list[str], list[str], bool]:
+    """(own names, allowed strings, whether the markers file exists). The file lives outside the repository."""
+    path = Path(os.environ.get("SEISA_PRIVACY_MARKERS") or Path.home() / ".config" / "seisa" / "privacy-markers.txt")
+    markers: list[str] = []
+    allowed: list[str] = []
+    if not path.is_file():
+        return markers, allowed, False
+    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        (allowed if line.startswith("!") else markers).append(line.lstrip("!").strip())
+    return markers, allowed, True
+
+
+def privacy_problems(entries: list[tuple[str, str]], markers: list[str], allowed: list[str]) -> list[str]:
+    """entries are (where, text). The matching value is deliberately not printed, only where it is."""
+    problems = []
+    for where, text in entries:
+        for a in allowed:
+            text = re.sub(re.escape(a), "", text, flags=re.IGNORECASE)
+        if any(re.search(pattern, text) for pattern in KEY_PATTERNS):
+            problems.append(f"PRIVACY: {where} looks like a real API key")
+        if HOME_PATH.search(text):
+            problems.append(f"PRIVACY: {where} contains a home directory path")
+        low = text.lower()
+        if any(m.lower() in low for m in markers):
+            problems.append(f"PRIVACY: {where} contains one of your own host, domain or other private names (privacy markers file)")
+    return problems
+
+
+def check_commit_message(text: str) -> list[str]:
+    body = "\n".join(line for line in text.splitlines() if not line.startswith("#"))  # '#' lines are git's own comments
+    problems = []
+    if EM_DASH in body:
+        problems.append("LONG DASH (U+2014) in the commit message, use '-'")
+    if re.search(r"^\s*co-authored-by:", body, re.IGNORECASE | re.MULTILINE):
+        problems.append("CO-AUTHORED-BY: Claude is not a co-author in this project (CLAUDE.md); remove the trailer")
+    if re.search(r"generated with .{0,40}claude", body, re.IGNORECASE):
+        problems.append("ATTRIBUTION: remove the 'Generated with Claude Code' footer (CLAUDE.md)")
+    markers, allowed, _ = load_privacy_markers()
+    return problems + privacy_problems([("the commit message", body)], markers, allowed)
+
+
+def release_notes_problems(version: str, changelog: str | None, html: str | None) -> list[str]:
+    """A new version needs its CHANGELOG entry, dated like the release date shown in the Info tab."""
+    m = re.search(rf"^## {re.escape(version)} - (\d{{4}}-\d{{2}}-\d{{2}})[ \t]*$", changelog or "", re.MULTILINE)
+    if not m:
+        return [f"CHANGELOG: no '## {version} - YYYY-MM-DD' entry for the new version (it goes in the same commit as the bump)"]
+    d = re.search(r'<meta name="seisa-release-date" content="(\d{4}-\d{2}-\d{2})"', html or "")
+    if not d or d[1] != m[1]:
+        return [f'RELEASE DATE: CHANGELOG says {m[1]} for {version}, <meta name="seisa-release-date"> says {d[1] if d else "nothing"}']
+    return []
+
+
 def load_check_i18n(root: Path):
     spec = importlib.util.spec_from_file_location("seisa_check_i18n", root / "scripts" / "check_i18n.py")
     if spec is None or spec.loader is None:
@@ -225,9 +295,13 @@ def check_version_step(ci, base: str | None) -> list[str]:
     if len(set(new.values())) != 1 or len(set(old.values())) != 1:
         return []  # inconsistent places are reported by check_i18n; the step is meaningless then
     nv, ov = next(iter(new.values())), next(iter(old.values()))
+    problems = []
     if nv != ov and not is_next_version(ov, nv):
-        return [f"VERSION STEP: {nv} after {ov} on main. Allowed: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0 (one bump per branch)"]
-    return []
+        problems.append(f"VERSION STEP: {nv} after {ov} on main. Allowed: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0 (one bump per branch)")
+    if nv != ov:
+        notes = show_many([":CHANGELOG.md", ":frontend/index.html"])
+        problems += release_notes_problems(nv, notes[":CHANGELOG.md"], notes[":frontend/index.html"])
+    return problems
 
 
 def run_check_i18n(root: Path) -> list[str]:
@@ -241,7 +315,12 @@ def pre_commit() -> int:
     if not git("diff", "--cached", "--name-only", "-z"):  # nothing staged at all; a commit that only DELETES files is not empty
         return 0
     staged = [f for f in git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0") if f]
-    problems = check_forbidden(staged) + check_long_dash(added_lines()) + check_pairs(staged)
+    added = added_lines()
+    problems = check_forbidden(staged) + check_long_dash(added) + check_pairs(staged)
+    markers, allowed, have_markers = load_privacy_markers()
+    problems += privacy_problems([(f"{p}:{n}", t) for p, n, t in added if not p.startswith("frontend/vendor/")], markers, allowed)
+    if not have_markers:
+        print("note: no privacy markers file (see scripts/hooks/pre-commit), only the generic privacy checks ran")
     with tempfile.TemporaryDirectory(prefix="seisa-precommit-") as tmp:
         git("checkout-index", "-a", f"--prefix={tmp}/")
         root = Path(tmp)
@@ -287,6 +366,8 @@ def range_check(base_ref: str) -> int:
     waiver = re.search(r"^No-version-bump:[ \t]*(\S.*)$", git("log", "--format=%B", f"{base}..HEAD"), re.M)
     problems = []
     if nv != ov:
+        notes = show_many(["HEAD:CHANGELOG.md", "HEAD:frontend/index.html"])
+        problems += release_notes_problems(nv, notes["HEAD:CHANGELOG.md"], notes["HEAD:frontend/index.html"])
         if not is_next_version(ov, nv):
             problems.append(f"VERSION STEP: {nv} after {ov}. Allowed: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0")
         if not program:
@@ -305,7 +386,18 @@ def range_check(base_ref: str) -> int:
 
 def main(argv: list[str]) -> int:
     try:
+        msg_file = Path(argv[1]).resolve() if argv[:1] == ["--commit-msg"] and len(argv) == 2 else None
         os.chdir(git("rev-parse", "--show-toplevel").strip())
+        if argv[:1] == ["--commit-msg"]:
+            if msg_file is None:
+                print("usage: pre-commit --commit-msg MESSAGE_FILE", file=sys.stderr)
+                return 2
+            problems = check_commit_message(msg_file.read_text(encoding="utf-8", errors="replace"))
+            if problems:
+                print("\n".join(problems))
+                print("Commit aborted. Fix the message; --no-verify only after the risk has been discussed (CLAUDE.md).")
+                return 1
+            return 0
         if argv[:1] == ["--range"]:
             if len(argv) != 2:
                 print("usage: pre-commit [--range BASE]", file=sys.stderr)

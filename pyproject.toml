@@ -4,8 +4,8 @@
 line-length = 140
 target-version = "py311"
 extend-exclude = [".venv", "reports"]
-# The git hook has no .py extension (git needs the exact name), so ruff would skip it without this.
-extend-include = ["scripts/hooks/pre-commit"]
+# The git hooks have no .py extension (git needs the exact name), so ruff would skip them without this.
+extend-include = ["scripts/hooks/pre-commit", "scripts/hooks/commit-msg"]
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "B", "UP", "SIM", "I", "PIE", "RET", "C4", "PERF", "RUF", "ASYNC"]
@@ -19,6 +19,8 @@ ignore = ["E501", "UP017", "PERF401", "PERF402", "SIM117"]
 "scripts/dump_facts.py" = ["E402"]
 
 [tool.pytest.ini_options]
+# `slow`: the tests that build throw-away git repositories (tests/test_pre_commit_hook.py); `pytest -m "not slow"` skips them.
+markers = ["slow: builds throw-away git repositories, about a minute in total"]
 # pythonpath makes `import backend...` work without sys.path tricks in the tests.
 pythonpath = ["."]
 testpaths = ["tests"]

@@ -6,8 +6,8 @@ an uncommitted hook is tested too), stage a change, run the hook and check the e
 rule of the hook has at least one test that fails when the rule is removed: that is the mutation test CLAUDE.md
 asks for, kept permanently.
 
-`SEISA_HOOK_UNDER_TEST=/path/to/mutated-copy` runs the same tests against another copy of the hook; it is how a
-mutated hook is shown to turn the matching test red.
+`SEISA_HOOK_UNDER_TEST=/path/to/mutated-copy` (and `SEISA_COMMITMSG_UNDER_TEST` for the commit-msg wrapper) runs the
+same tests against another copy of the hook; it is how a mutated hook is shown to turn the matching test red.
 """
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 HOOK_SRC = Path(os.environ.get("SEISA_HOOK_UNDER_TEST") or ROOT / "scripts" / "hooks" / "pre-commit")
+COMMIT_MSG_SRC = Path(os.environ.get("SEISA_COMMITMSG_UNDER_TEST") or ROOT / "scripts" / "hooks" / "commit-msg")
 GIT_ENV = {
     **os.environ,
     "GIT_CONFIG_GLOBAL": os.devnull,
@@ -32,6 +33,7 @@ GIT_ENV = {
     "GIT_AUTHOR_EMAIL": "test@example.org",
     "GIT_COMMITTER_NAME": "Test",
     "GIT_COMMITTER_EMAIL": "test@example.org",
+    "SEISA_PRIVACY_MARKERS": "/nonexistent/privacy-markers.txt",
 }
 
 
@@ -91,6 +93,20 @@ def set_version(repo: Path, new: str, files: tuple[str, ...] = tuple(_PLACES)) -
         (repo / rel).write_text(text, encoding="utf-8")
 
 
+RELEASE_DATE = "2031-01-02"
+
+
+def bump(repo: Path, new: str, *, date: str = RELEASE_DATE) -> None:
+    """A complete release: the five places, a CHANGELOG entry and the release date of the Info tab."""
+    set_version(repo, new)
+    changelog = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
+    changelog = re.sub(r"^## (\d)", f"## {new} - {date}\n\nA test entry.\n\n## \\1", changelog, count=1, flags=re.MULTILINE)
+    (repo / "CHANGELOG.md").write_text(changelog, encoding="utf-8")
+    html = (repo / "frontend" / "index.html").read_text(encoding="utf-8")
+    html = re.sub(r'(<meta name="seisa-release-date" content=")[\d-]+', rf"\g<1>{date}", html)
+    (repo / "frontend" / "index.html").write_text(html, encoding="utf-8")
+
+
 def step(version: str, kind: str) -> str:
     x, y, z = (int(n) for n in version.split("."))
     return {
@@ -127,6 +143,7 @@ def base_repo(tmp_path_factory) -> Path:
             (d / rel).parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, d / rel)
     shutil.copy2(HOOK_SRC, d / "scripts" / "hooks" / "pre-commit")
+    shutil.copy2(COMMIT_MSG_SRC, d / "scripts" / "hooks" / "commit-msg")
     git(d, "init", "-q", "-b", "main")
     commit_all(d, "base")
     return d
@@ -296,16 +313,16 @@ def test_deleting_only_one_language_of_a_document_is_rejected(repo):
 
 
 def test_a_bump_of_one_allowed_step_passes(repo):
-    set_version(repo, step(current_version(repo), "z"))
-    stage(repo, *_PLACES)
+    bump(repo, step(current_version(repo), "z"))
+    stage(repo, *_PLACES, "CHANGELOG.md")
     r = run_hook(repo)
     assert r.returncode == 0, r.stdout + r.stderr
 
 
 def test_a_wrong_version_step_is_rejected(repo):
     # one end-to-end case; the arithmetic of every other wrong step is covered by test_disallowed_version_steps
-    set_version(repo, step(current_version(repo), "skip"))
-    stage(repo, *_PLACES)
+    bump(repo, step(current_version(repo), "skip"))
+    stage(repo, *_PLACES, "CHANGELOG.md")
     r = run_hook(repo)
     assert r.returncode == 1
     assert "VERSION STEP" in r.stdout
@@ -322,10 +339,10 @@ def test_the_five_places_must_agree(repo):
 def test_a_branch_cannot_bump_twice(repo):
     git(repo, "switch", "-q", "-c", "feat-x")
     first = step(current_version(repo), "z")
-    set_version(repo, first)
+    bump(repo, first)
     commit_all(repo, "bump once")
-    set_version(repo, step(first, "z"))
-    stage(repo, *_PLACES)
+    bump(repo, step(first, "z"))
+    stage(repo, *_PLACES, "CHANGELOG.md")
     r = run_hook(repo)
     assert r.returncode == 1
     assert "VERSION STEP" in r.stdout and "(one bump per branch)" in r.stdout
@@ -340,13 +357,13 @@ def test_a_branch_cannot_bump_twice(repo):
 
 # --- `--range main` (the whole branch, used by CI) --------------------------------------------------------------
 
-def _branch_with(repo: Path, *, program: bool = False, bump: str | None = None, message: str = "work") -> None:
+def _branch_with(repo: Path, *, program: bool = False, bump_kind: str | None = None, message: str = "work") -> None:
     git(repo, "switch", "-q", "-c", "feat-y")
     if program:
         append(repo, "backend/config.py", "\n# an edit\n")
-    if bump:
-        set_version(repo, step(current_version(repo), bump))
-    if not program and not bump:
+    if bump_kind:
+        bump(repo, step(current_version(repo), bump_kind))
+    if not program and not bump_kind:
         append(repo, "docs/en/tabs.md", "\nAn extra sentence.\n")
     commit_all(repo, message)
 
@@ -370,7 +387,7 @@ def test_range_an_empty_waiver_does_not_count(repo):
 
 
 def test_range_a_program_change_with_one_bump_passes(repo):
-    _branch_with(repo, program=True, bump="z")
+    _branch_with(repo, program=True, bump_kind="z")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 0, r.stdout + r.stderr
 
@@ -382,14 +399,14 @@ def test_range_a_change_outside_the_program_needs_no_bump(repo):
 
 
 def test_range_a_bump_without_a_program_change_fails(repo):
-    _branch_with(repo, bump="z")
+    _branch_with(repo, bump_kind="z")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 1
     assert "VERSION BUMPED WITHOUT A PROGRAM CHANGE" in r.stdout
 
 
 def test_range_a_wrong_step_fails_even_with_a_program_change(repo):
-    _branch_with(repo, program=True, bump="skip")
+    _branch_with(repo, program=True, bump_kind="skip")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 1
     assert "VERSION STEP" in r.stdout
@@ -403,7 +420,269 @@ def test_range_a_real_edit_of_index_html_is_a_program_change(repo):
     assert r.returncode == 1
     assert "frontend/index.html" in r.stdout
 
-    set_version(repo, step(current_version(repo), "z"))
+    bump(repo, step(current_version(repo), "z"))
     commit_all(repo, "bump")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+# --- release notes: a new version needs its CHANGELOG entry and a matching release date -------------------------
+
+DASH = chr(0x2014)    # built here so that this file itself passes the long dash rule
+
+
+def test_a_bump_needs_its_changelog_entry(repo):
+    set_version(repo, step(current_version(repo), "z"))    # the five places only
+    stage(repo, *_PLACES)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "CHANGELOG: no '## " in r.stdout
+
+
+def test_the_release_date_must_match_the_changelog_entry(repo):
+    bump(repo, step(current_version(repo), "z"))
+    html = (repo / "frontend" / "index.html").read_text(encoding="utf-8")
+    write(repo, "frontend/index.html", re.sub(r'(seisa-release-date" content=")[\d-]+', r"\g<1>2000-01-01", html))
+    stage(repo, *_PLACES, "CHANGELOG.md")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "RELEASE DATE: CHANGELOG says" in r.stdout
+
+
+def test_range_a_bump_needs_its_changelog_entry(repo):
+    git(repo, "switch", "-q", "-c", "feat-y")
+    append(repo, "backend/config.py", "\n# an edit\n")
+    set_version(repo, step(current_version(repo), "z"))
+    commit_all(repo, "bump without notes")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 1
+    assert "CHANGELOG: no" in r.stdout
+
+
+# --- the commit message (hook `commit-msg`, which calls `pre-commit --commit-msg`) ------------------------------
+
+def _message(tmp_path: Path, text: str) -> str:
+    f = tmp_path / "COMMIT_EDITMSG"
+    f.write_text(text, encoding="utf-8")
+    return str(f)
+
+
+@pytest.mark.parametrize(("message", "expected"), [
+    ("Add a thing\n\nA body.", None),
+    (f"Add a thing {DASH} and more", "LONG DASH"),
+    ("Add a thing\n\nCo-Authored-By: Claude <noreply@example.org>", "CO-AUTHORED-BY"),
+    ("Add a thing\n\nco-authored-by: Someone <someone@example.org>", "CO-AUTHORED-BY"),
+    ("Add a thing\n\nGenerated with Claude Code", "ATTRIBUTION"),
+    (f"Add a thing\n# a git comment line with a dash {DASH}\n", None),    # '#' lines are git's own comments
+    ("Fix " + "ab" * 40, "looks like a real API key"),
+    ("Fix sk-or-v1-" + "a1" * 12, "looks like a real API key"),
+    ("Fix a path " + "/Users" + "/someone/project", "home directory path"),
+    ("Fix a path " + "/Users" + "/you/project", None),    # an obvious placeholder
+])
+def test_commit_message_rules(base_repo, tmp_path, message, expected):
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, message))
+    if expected is None:
+        assert r.returncode == 0, r.stdout + r.stderr
+    else:
+        assert r.returncode == 1
+        assert expected in r.stdout
+
+
+def test_privacy_markers_come_from_a_file_outside_the_repository(base_repo, tmp_path):
+    markers = tmp_path / "markers.txt"
+    markers.write_text("# my private names\nhost.leak.example\n!docs.host.leak.example\n", encoding="utf-8")
+    env = {"SEISA_PRIVACY_MARKERS": str(markers)}
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, "Fix a problem on HOST.LEAK.EXAMPLE"), env=env)
+    assert r.returncode == 1
+    assert "one of your own host, domain or other private names" in r.stdout
+    assert "leak.example" not in r.stdout.lower()    # the value itself is never printed
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, "Mention docs.host.leak.example"), env=env)    # an allowed string
+    assert r.returncode == 0, r.stdout + r.stderr
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, "Fix a problem on host.leak.example"))    # no markers file: nothing to match
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_commit_msg_wrapper_passes_the_verdict_on(base_repo, tmp_path):
+    def wrapper(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(base_repo / "scripts" / "hooks" / "commit-msg"), *args],
+                              cwd=base_repo, env=GIT_ENV, capture_output=True, text=True)
+
+    assert wrapper(_message(tmp_path, "Add a thing\n")).returncode == 0
+    assert wrapper(_message(tmp_path, "Add a thing\n\nCo-Authored-By: X <x@example.org>\n")).returncode == 1
+    assert wrapper().returncode != 0
+
+
+def test_privacy_scan_of_added_lines(repo, tmp_path):
+    markers = tmp_path / "markers.txt"
+    markers.write_text("host.leak.example\n", encoding="utf-8")
+    key, home = "ab" * 40, "/home" + "/someone/x"
+    for rel in ("docs/en/tabs.md", "docs/pl/tabs.md"):
+        append(repo, rel, f"\nA key {key}, a path {home}, a host host.leak.example.\n")
+    stage(repo, "docs/en/tabs.md", "docs/pl/tabs.md")
+    r = run_hook(repo, env={"SEISA_PRIVACY_MARKERS": str(markers)})
+    assert r.returncode == 1
+    assert "looks like a real API key" in r.stdout and "home directory path" in r.stdout
+    assert "private names" in r.stdout
+    assert key not in r.stdout and "leak.example" not in r.stdout
+    r = run_hook(repo)    # without the markers file only the generic checks run, and a note says so
+    assert r.returncode == 1
+    assert "private names" not in r.stdout and "no privacy markers file" in r.stdout
+
+
+# --- real git: the hooks as git calls them (partial commits, -a, --amend, rebase, merge) -------------------------
+
+@pytest.fixture
+def hooked(repo) -> Path:
+    git(repo, "config", "core.hooksPath", "scripts/hooks")
+    return repo
+
+
+def _head(repo: Path) -> str:
+    return git(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _out(r: subprocess.CompletedProcess) -> str:
+    return r.stdout + r.stderr
+
+
+def _both_languages(repo: Path, name: str = "tabs") -> list[str]:
+    for lang in ("en", "pl"):
+        append(repo, f"docs/{lang}/{name}.md", "\nAn extra sentence.\n")
+    paths = [f"docs/en/{name}.md", f"docs/pl/{name}.md"]
+    stage(repo, *paths)
+    return paths
+
+
+def test_git_runs_the_pre_commit_hook_and_a_rejected_commit_leaves_no_commit(hooked):
+    before = _head(hooked)
+    append(hooked, "backend/config.py", f"\n# one {DASH} two\n")
+    stage(hooked, "backend/config.py")
+    r = git(hooked, "commit", "-q", "-m", "Edit a comment", check=False)
+    assert r.returncode != 0
+    assert "LONG DASH" in _out(r)
+    assert _head(hooked) == before
+
+
+def test_git_runs_the_commit_msg_hook(hooked):
+    before = _head(hooked)
+    _both_languages(hooked)
+    r = git(hooked, "commit", "-q", "-m", "Add a sentence\n\nCo-Authored-By: Claude <noreply@example.org>", check=False)
+    assert r.returncode != 0
+    assert "CO-AUTHORED-BY" in _out(r)
+    assert _head(hooked) == before
+    r = git(hooked, "commit", "-q", "-m", "Add a sentence", check=False)
+    assert r.returncode == 0, _out(r)
+    assert _head(hooked) != before
+
+
+def test_a_partial_commit_judges_only_the_listed_paths(hooked):
+    append(hooked, "backend/config.py", f"\n# one {DASH} two\n")
+    stage(hooked, "backend/config.py")    # staged, but NOT part of the partial commit below
+    for lang in ("en", "pl"):
+        append(hooked, f"docs/{lang}/tabs.md", "\nAn extra sentence.\n")
+    r = git(hooked, "commit", "-q", "-m", "Add a sentence", "--", "docs/en/tabs.md", "docs/pl/tabs.md", check=False)
+    assert r.returncode == 0, _out(r)
+    assert git(hooked, "show", "--name-only", "--format=", "HEAD").stdout.split() == ["docs/en/tabs.md", "docs/pl/tabs.md"]
+    assert git(hooked, "diff", "--cached", "--name-only").stdout.split() == ["backend/config.py"]
+    r = git(hooked, "commit", "-q", "-m", "Edit a comment", "--", "backend/config.py", check=False)
+    assert r.returncode != 0
+    assert "LONG DASH" in _out(r)
+
+
+def test_commit_a_judges_the_modified_tracked_files(hooked):
+    append(hooked, "backend/config.py", f"\n# one {DASH} two\n")    # modified, not staged
+    r = git(hooked, "commit", "-q", "-a", "-m", "Edit a comment", check=False)
+    assert r.returncode != 0
+    assert "LONG DASH" in _out(r)
+
+
+def test_amend_is_judged_like_any_other_commit(hooked):
+    _both_languages(hooked)
+    git(hooked, "commit", "-q", "-m", "Add a sentence")
+    first = _head(hooked)
+    append(hooked, "backend/config.py", f"\n# one {DASH} two\n")
+    stage(hooked, "backend/config.py")
+    r = git(hooked, "commit", "-q", "--amend", "--no-edit", check=False)
+    assert r.returncode != 0
+    assert "LONG DASH" in _out(r)
+    assert _head(hooked) == first
+    git(hooked, "reset", "-q", "--hard")
+    r = git(hooked, "commit", "-q", "--amend", "-m", "A better message", check=False)    # nothing staged, a clean message
+    assert r.returncode == 0, _out(r)
+    r = git(hooked, "commit", "-q", "--amend", "-m", "A message\n\nCo-Authored-By: C <c@example.org>", check=False)
+    assert r.returncode != 0
+    assert "CO-AUTHORED-BY" in _out(r)
+
+
+def test_amending_a_bump_cannot_make_it_a_second_bump(hooked):
+    git(hooked, "switch", "-q", "-c", "feat-x")
+    first = step(current_version(hooked), "z")
+    bump(hooked, first)
+    stage(hooked, *_PLACES, "CHANGELOG.md")
+    r = git(hooked, "commit", "-q", "-m", "Bump once", check=False)
+    assert r.returncode == 0, _out(r)
+    r = git(hooked, "commit", "-q", "--amend", "-m", "Bump once, reworded", check=False)
+    assert r.returncode == 0, _out(r)
+    bump(hooked, step(first, "z"))
+    stage(hooked, *_PLACES, "CHANGELOG.md")
+    r = git(hooked, "commit", "-q", "--amend", "--no-edit", check=False)
+    assert r.returncode != 0
+    assert "VERSION STEP" in _out(r)
+
+
+def test_rebase_and_merge_work_with_the_hooks_enabled(hooked):
+    git(hooked, "switch", "-q", "-c", "feat-x")
+    _both_languages(hooked, "tabs")
+    git(hooked, "commit", "-q", "-m", "Edit the tabs page")
+    git(hooked, "switch", "-q", "main")
+    _both_languages(hooked, "configuration")
+    git(hooked, "commit", "-q", "-m", "Edit the configuration page")
+    git(hooked, "switch", "-q", "feat-x")
+    r = git(hooked, "rebase", "main", check=False)
+    assert r.returncode == 0, _out(r)
+    git(hooked, "switch", "-q", "main")
+    r = git(hooked, "merge", "--no-ff", "-m", "Merge feat-x", "feat-x", check=False)
+    assert r.returncode == 0, _out(r)
+
+
+# --- `--range` on what GitHub checks out for a pull request: a merge commit of the branch into a main that moved on ---
+
+def _pull_request_merge(repo: Path, bump_kind: str | None = None) -> None:
+    git(repo, "switch", "-q", "-c", "feat-y")
+    append(repo, "backend/config.py", "\n# an edit\n")
+    if bump_kind:
+        bump(repo, step(current_version(repo), bump_kind))
+    commit_all(repo, "The feature")
+    git(repo, "switch", "-q", "main")
+    _both_languages(repo, "configuration")
+    git(repo, "commit", "-q", "-m", "Main moves on")
+    git(repo, "update-ref", "refs/remotes/origin/main", "main")    # what `actions/checkout` with fetch-depth 0 provides
+    git(repo, "switch", "-q", "-c", "pr-merge")
+    git(repo, "merge", "--no-ff", "-q", "-m", "Merge pull request", "feat-y")
+
+
+def test_range_on_a_pull_request_merge_commit_rejects_a_program_change_without_a_bump(repo):
+    _pull_request_merge(repo)
+    r = run_hook(repo, "--range", "origin/main")
+    assert r.returncode == 1
+    assert "PROGRAM CHANGED WITHOUT A VERSION BUMP" in r.stdout and "backend/config.py" in r.stdout
+
+
+def test_range_on_a_pull_request_merge_commit_accepts_a_program_change_with_one_bump(repo):
+    _pull_request_merge(repo, bump_kind="z")
+    r = run_hook(repo, "--range", "origin/main")
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_range_judges_the_branch_not_what_main_gained_since_it_was_cut(repo):
+    git(repo, "switch", "-q", "-c", "feat-y")
+    _both_languages(repo, "tabs")
+    git(repo, "commit", "-q", "-m", "Edit the tabs page")    # the branch: documentation only
+    git(repo, "switch", "-q", "main")
+    append(repo, "backend/config.py", "\n# another release\n")
+    bump(repo, step(current_version(repo), "z"))
+    commit_all(repo, "Main gained a program change and a release")
+    git(repo, "switch", "-q", "feat-y")
+    r = run_hook(repo, "--range", "main")    # the branch is behind main: only its own changes count
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "program files changed: 0" in r.stdout

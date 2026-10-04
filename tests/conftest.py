@@ -55,6 +55,13 @@ def _polish_language():
     reset_lang(token)
 
 
+def pytest_collection_modifyitems(items):
+    """Mark the end-to-end hook tests (they use the `repo` fixture) as slow, so `pytest -m "not slow"` runs in seconds."""
+    for item in items:
+        if "repo" in getattr(item, "fixturenames", ()):
+            item.add_marker(pytest.mark.slow)
+
+
 def pytest_sessionfinish(session, exitstatus):
     shutil.rmtree(_TMP, ignore_errors=True)
     if _snapshot(_REAL_DIRS) != _BEFORE:
