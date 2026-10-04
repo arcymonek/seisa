@@ -1,4 +1,3 @@
 # Files that stay in the private repository and are left out of `git archive` snapshots (public release).
-CLAUDE.md export-ignore
 reports/ export-ignore
 .gitattributes export-ignore
