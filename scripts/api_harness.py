@@ -680,7 +680,7 @@ if OUT:
     OUT.write_text(json.dumps({"results": RESULTS}, ensure_ascii=False, indent=1, sort_keys=True))
     OUT.with_suffix(".meta.json").write_text(json.dumps(
         {"calls": sorted(set(CALLS)), "unhandled": UNHANDLED, "probes": probes, "stream_calls": STREAM_COUNT["n"]},
-        ensure_ascii=False, indent=1))
+        ensure_ascii=False, indent=1, default=lambda o: o.hex() if isinstance(o, bytes) else str(o)))  # probes hold raw bytes
 print(f"{len(RESULTS)} endpoint results, {len(UNHANDLED)} unhandled external requests, {len(failures)} failure(s)")
 for f in failures:
     print("FAIL:", f)
