@@ -107,7 +107,9 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
     providers (e.g. OVH's "ghost" mail-out) name their internal hops after bare, dotless pod/container
     identifiers instead of a subdomain - those also count as "still inside the relay" via
     is_dotless_internal_hop, but only while their own recorded IP is itself private/absent, so a genuinely
-    external hop is never mistaken for an internal one.
+    external hop is never mistaken for an internal one. The walk only happens for a known provider family or
+    through such internal pod hops: the older lines are written by the relay, and an unknown relay may be the
+    sender's own server.
     Returns (hop index, description of the walk, whether the message originated inside a shared provider)."""
     cur = start
     visited = []
@@ -115,10 +117,21 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
     while True:
         relay = registrable_domain(hops[cur]["from_host"])
         nxt = cur + 1
-        if not relay or nxt >= len(hops) or (
-            registrable_domain(hops[nxt]["by_host"]) != relay
-            and not is_dotless_internal_hop(hops[nxt]["by_host"], hops[nxt]["ip"])
-        ):
+        # The older lines were written by the relay itself, so walking into them means believing the relay. That is
+        # justified for a well-known provider, or when they only show internal pod names with private addresses; for
+        # any other host (an unknown, possibly sender-controlled server) a forged chain of "by"/"from" links must not
+        # be able to move the reported IP.
+        believed = (
+            nxt < len(hops)
+            and (
+                (
+                    registrable_domain(hops[nxt]["by_host"]) == relay
+                    and (family(relay) in PROVIDER_FAMILIES or is_dotless_internal_hop(hops[nxt]["from_host"], hops[nxt]["ip"]))
+                )
+                or is_dotless_internal_hop(hops[nxt]["by_host"], hops[nxt]["ip"])
+            )
+        )
+        if not relay or not believed:
             break
         j = nxt
         while j < len(hops) and (

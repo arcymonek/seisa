@@ -20,8 +20,12 @@ def unfold(value: str) -> str:
 def parse_ip(candidate: str | None) -> str | None:
     if not candidate:
         return None
+    candidate = candidate.strip()
+    # RFC 5321 section 4.1.3: an IPv6 address literal in a Received header is written "[IPv6:2001:db8::1]"
+    if candidate[:5].lower() == "ipv6:":
+        candidate = candidate[5:]
     try:
-        return str(ipaddress.ip_address(candidate.strip()))
+        return str(ipaddress.ip_address(candidate))
     except ValueError:
         return None
 

@@ -62,11 +62,6 @@ def test_received_ipv6_address_in_brackets():
     assert hop["ip"] == "2606:4700:4700::1111"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="FINDING: RFC 5321 section 4.1.3 writes IPv6 address literals as [IPv6:...] (Postfix does this in Received); "
-    "the parser reads the bracket content 'IPv6:2606:...' as an invalid IP and returns None",
-)
 def test_received_ipv6_literal_with_rfc5321_prefix():
     hop = parse_received_header("from mail.example.org (mail.example.org [IPv6:2606:4700:4700::1111]) by mx.example.net with ESMTPS; x")
     assert hop["ip"] == "2606:4700:4700::1111"
@@ -91,15 +86,7 @@ def test_boundary_is_the_hop_where_the_receiving_operator_recorded_an_outsider()
     assert find_boundary_index(chain) == (1, "high")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="FINDING (needs a decision, see the report): _walk_through_relays follows 'by' == previous 'from' links into "
-    "older hops. Those lines were written by the machine that connected to us, which can be the sender's own server, "
-    "so forged lines that follow the same pattern steer the reported IP to an innocent third party (here 9.9.9.9) "
-    "with confidence 'high'. The walk is deliberate (it is what makes provider relays such as Exchange Online work), "
-    "so this is a design limitation, not a typo-level bug.",
-)
-def test_forged_older_received_headers_do_not_move_the_boundary():
+def test_forged_older_received_headers_from_an_unknown_relay_do_not_move_the_boundary():
     # The recipient's server recorded 8.8.8.8 (hop 0). Everything below was written by the sender and may claim anything,
     # including that the message passed through 1.1.1.1 or through the recipient's own domain.
     src = build(
@@ -224,3 +211,35 @@ def test_bitcoin_address_in_body_is_found():
     parsed = parse_email(src)
     assert parsed["btc_addresses_found"] == [wallet]
     assert parsed["ransom_keywords_found"] is True
+
+
+def test_ipv6_literal_with_prefix_is_found_in_a_full_message():
+    src = build(["from mail.example.org (mail.example.org [IPv6:2606:4700:4700::1111]) by mx.recipient.example with ESMTPS; x"])
+    assert parse_email(src)["trusted_source_ip"] == "2606:4700:4700::1111"
+
+
+def test_walk_through_a_known_provider_still_reaches_the_client():
+    # Exchange-Online style: the recipient's server recorded the provider relay (outlook.com); the provider's own,
+    # older line recorded the client that really connected to it
+    chain = [
+        "from mail-eopbgr.outlook.com (mail-eopbgr.outlook.com [9.9.9.9]) by mx.recipient.example with ESMTPS; x",
+        "from CLIENTPC (1.1.1.1) by AM6PR.prod.outlook.com with ESMTPSA; x",
+    ]
+    assert find_boundary_index(chain) == (1, "high")
+    assert parse_email(build(chain))["trusted_source_ip"] == "1.1.1.1"
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="KNOWN RESIDUAL LIMIT: an attacker who also forges bare pod-style names with private addresses still gets "
+    "through the internal-hop rule. Closing it needs verification the program cannot do offline.",
+)
+def test_forged_pod_style_hops_can_still_steer_the_ip():
+    src = build(
+        [
+            "from evil-host.example.net (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from fakepod (fakepod [10.0.0.1]) by pod-1 with ESMTP; x",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by pod-1 with ESMTP; x",
+        ]
+    )
+    assert parse_email(src)["trusted_source_ip"] == "8.8.8.8"

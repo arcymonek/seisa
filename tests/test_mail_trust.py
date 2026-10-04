@@ -40,6 +40,9 @@ def test_unfold(value, expected):
         ("8.8.8.8", "8.8.8.8"),
         ("  8.8.8.8  ", "8.8.8.8"),
         ("2001:DB8::1", "2001:db8::1"),  # RFC 5952: canonical form is lower case
+        ("IPv6:2606:4700:4700::1111", "2606:4700:4700::1111"),  # RFC 5321 section 4.1.3 address literal
+        ("ipv6:2001:DB8::1", "2001:db8::1"),
+        ("IPv6:garbage", None),
         ("999.1.1.1", None),
         ("example.org", None),
         ("", None),
