@@ -724,6 +724,7 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
             walked_ip = received[walked_index]["ip"] if walked_index is not None else None
             if walked_index is not None and walked_index > 0 and walked_ip and not is_special_ip(walked_ip):
                 trust_index = walked_index
+                ctx.flag("warn", t("forensics.walked_warning", ip=received[0]["ip"] or "?"))
                 for r in received:
                     if r["index"] < trust_index:
                         r["role"] = t("forensics.role.internal_hop")

@@ -225,8 +225,11 @@ def test_walk_through_a_known_provider_still_reaches_the_client():
         "from mail-eopbgr.outlook.com (mail-eopbgr.outlook.com [9.9.9.9]) by mx.recipient.example with ESMTPS; x",
         "from CLIENTPC (1.1.1.1) by AM6PR.prod.outlook.com with ESMTPSA; x",
     ]
-    assert find_boundary_index(chain) == (1, "high")
-    assert parse_email(build(chain))["trusted_source_ip"] == "1.1.1.1"
+    assert find_boundary_index(chain) == (1, "medium")  # found through lines the provider wrote: never "high"
+    parsed = parse_email(build(chain))
+    assert parsed["trusted_source_ip"] == "1.1.1.1"
+    assert parsed["ip_from_relay_lines"] is True
+    assert "9.9.9.9" in parsed["ip_reasoning"]  # the user is shown what the recipient's own server recorded
 
 
 @pytest.mark.xfail(
@@ -240,6 +243,69 @@ def test_forged_pod_style_hops_can_still_steer_the_ip():
             "from evil-host.example.net (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
             "from fakepod (fakepod [10.0.0.1]) by pod-1 with ESMTP; x",
             "from mail.bank.example (mail.bank.example [1.1.1.1]) by pod-1 with ESMTP; x",
+        ]
+    )
+    assert parse_email(src)["trusted_source_ip"] == "8.8.8.8"
+
+
+# ---- an address taken from lines written by a relay is never presented as certain ----
+
+def test_direct_boundary_stays_high_and_has_no_relay_warning():
+    for name in ("newsletter.eml", "phishing.eml", "multihop.eml"):
+        parsed = parse_email(load_eml(name))
+        assert parsed["ip_confidence"] == "high", name
+        assert parsed["ip_from_relay_lines"] is False, name
+        assert "9.9.9.9" not in parsed["ip_reasoning"]
+
+
+def test_relay_walk_is_capped_at_medium_even_with_an_smtp_auth_bonus():
+    # ovh_style_relay.eml has a valid SMTP-AUTH/DKIM pair next to the boundary line, which would normally raise the
+    # confidence one step; for an address from relay-written lines that bonus must not reach "high"
+    parsed = parse_email(load_eml("ovh_style_relay.eml"))
+    assert parsed["boundary_auth_corroboration"] is not None
+    assert parsed["ip_confidence"] == "medium"
+    assert parsed["ip_from_relay_lines"] is True
+    assert "198.51.100.20" in parsed["ip_reasoning"]  # what the recipient's own server recorded (the relay)
+
+
+def test_forged_pod_style_chain_is_at_least_flagged_as_uncertain():
+    src = build(
+        [
+            "from evil-host.example.net (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from fakepod (fakepod [10.0.0.1]) by pod-1 with ESMTP; x",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by pod-1 with ESMTP; x",
+        ]
+    )
+    parsed = parse_email(src)
+    assert parsed["ip_confidence"] != "high"
+    assert parsed["ip_from_relay_lines"] is True
+    assert "8.8.8.8" in parsed["ip_reasoning"]
+
+
+def test_helo_spoofed_provider_chain_is_at_least_flagged_as_uncertain():
+    # the attacker's own server (8.8.8.8) introduces itself as an outlook.com host and forges an older provider line
+    src = build(
+        [
+            "from mail.outlook.com (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by AM6PR.prod.outlook.com with ESMTP; x",
+        ]
+    )
+    parsed = parse_email(src)
+    assert parsed["ip_confidence"] != "high"
+    assert parsed["ip_from_relay_lines"] is True
+    assert "8.8.8.8" in parsed["ip_reasoning"]
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="KNOWN RESIDUAL LIMIT: the program still picks the forged address (it only flags it as uncertain); the "
+    "relay's name in a Received line is what the connecting machine claimed (HELO) and cannot be verified offline.",
+)
+def test_helo_spoofed_provider_chain_does_not_move_the_ip():
+    src = build(
+        [
+            "from mail.outlook.com (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by AM6PR.prod.outlook.com with ESMTP; x",
         ]
     )
     assert parse_email(src)["trusted_source_ip"] == "8.8.8.8"

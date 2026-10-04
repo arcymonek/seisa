@@ -183,6 +183,7 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
 
     relay_note = ""
     origin_inside_provider = False
+    first_outside_index = boundary_index  # the hop the recipient's own server wrote for the first outside machine
     if left_trusted_domain:
         boundary_index, relay_note, origin_inside_provider = _walk_through_relays(hops, boundary_index)
 
@@ -206,6 +207,12 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     elif left_trusted_domain:
         confidence = "high"
         reasoning = t("parser.boundary", host=boundary["from_host"], domain=trusted_suffix) + relay_note
+        if relay_note:
+            # The address comes from older lines written by the relay itself, not by the recipient's server: they
+            # cannot be verified here and a sender may have forged them, so say so instead of claiming certainty.
+            confidence = "medium"
+            reasoning += " " + t("parser.relay_walk_warning", ip=hops[first_outside_index]["ip"] or "?")
+            boundary["via_relay_lines"] = True
     elif trusted_suffix is None:
         confidence = "medium"
         reasoning = t("parser.single_received")
@@ -391,6 +398,12 @@ def parse_email(source: str | Message) -> dict:
                 ip_confidence, ip_reasoning, hop_auth[i]
             )
 
+    # An SMTP-AUTH/DKIM bonus above must not lift an address taken from relay-written lines back to "high": the
+    # Authentication-Results line next to a forged Received line can be forged too.
+    via_relay_lines = bool(boundary_hop and boundary_hop.get("via_relay_lines"))
+    if via_relay_lines and ip_confidence == "high":
+        ip_confidence = "medium"
+
     # Servers without their own Authentication-Results (e.g. Exim) leave the results only in Microsoft/ARC headers.
     auth_header = (
         msg.get("Authentication-Results")
@@ -427,6 +440,7 @@ def parse_email(source: str | Message) -> dict:
         "ip_ok": ip_ok,
         "ip_reject_reason": ip_reject_reason,
         "ip_confidence": ip_confidence,
+        "ip_from_relay_lines": via_relay_lines,
         "ip_reasoning": ip_reasoning,
         "boundary_auth_corroboration": boundary_auth_corroboration,
         "received_chain": [

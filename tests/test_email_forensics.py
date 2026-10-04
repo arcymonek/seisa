@@ -212,3 +212,14 @@ def test_degenerate_sources_do_not_raise(src):
 def test_very_long_header_line_does_not_hang_or_raise():
     src = "Received: from " + "a" * 200_000 + " by mx.example.net; x\nSubject: x\n\nbody\n"
     assert parse_email(src)["ip_ok"] is False
+
+
+def test_email_tab_warns_when_the_boundary_comes_from_relay_written_lines():
+    warns = [f["text"] for f in compute_facts(load_eml("ovh_style_relay.eml"))["flags"] if f["level"] == "warn"]
+    assert any("198.51.100.20" in text for text in warns)  # the address the recipient's own server recorded
+
+
+@pytest.mark.parametrize("name", ["newsletter.eml", "multihop.eml", "unit/encodings.eml"])
+def test_email_tab_has_no_relay_warning_for_a_direct_boundary(name):
+    flags = compute_facts(load_eml(name))["flags"]
+    assert not [f for f in flags if f["level"] == "warn" and "relay" in f["text"].lower() and "Received" in f["text"]]
