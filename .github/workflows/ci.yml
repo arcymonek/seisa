@@ -1,5 +1,7 @@
 name: ci
 
+# Pull requests from forks run here with read-only rights and no secrets. Never switch to `pull_request_target`:
+# it runs with write rights and secrets, and checking out the fork's code in it would hand both to that code.
 on:
   push:
     branches: [main]
@@ -24,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0   # the version rule below compares the pull request with the merge-base on main
+          persist-credentials: false   # no step pushes; the token is not left in .git/config for the code under test
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -37,8 +40,15 @@ jobs:
       - run: python scripts/api_harness.py
       - run: python scripts/check_i18n.py --strict
       - run: python scripts/dump_facts.py > /dev/null
-      - name: Version rule for the whole branch (pull requests only)
-        if: github.event_name == 'pull_request'
+      - name: Version rule and added-line rules for the whole branch (own pull requests)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           BASE_REF: ${{ github.base_ref }}
         run: python scripts/hooks/pre-commit --range "origin/$BASE_REF"
+      # A contributor does not bump the version (CONTRIBUTING.md): the maintainer adds it after review and runs the
+      # full --range then. The added lines (long dash, privacy scan) are checked here, a fork has no hooks.
+      - name: Added-line rules for the whole branch (pull requests from forks)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: python scripts/hooks/pre-commit --range "origin/$BASE_REF" --no-version-rule

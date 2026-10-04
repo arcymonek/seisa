@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # PolyForm Noncommercial 1.0.0 license
 ├── CONTRIBUTING.md          # contribution rules (no external code changes)
 ├── SECURITY.md              # how to report a vulnerability
-├── .github/                 # ISSUE_TEMPLATE/ (bug report template), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts and, on pull requests, the version rule of the whole branch)
+├── .github/                 # ISSUE_TEMPLATE/ (bug report template), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts and, on pull requests, the version rule and the added-line rules of the whole branch; for pull requests from forks only the added-line rules, the maintainer adds the version bump)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env
@@ -94,7 +94,7 @@ seisa/
 │   ├── api_harness.py         # end-to-end test: every API endpoint with all external services mocked (also `--serve PORT`)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   ├── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
-│   └── hooks/                 # git hooks (enable with `git config core.hooksPath scripts/hooks`): `pre-commit` (forbidden files, long dash, PL/EN pairs, check_i18n on the index, privacy scan, one version step with its CHANGELOG entry; `--range BASE` checks a whole branch in CI) and `commit-msg` (message rules, calls `pre-commit --commit-msg`)
+│   └── hooks/                 # git hooks (enable with `git config core.hooksPath scripts/hooks`): `pre-commit` (forbidden files, long dash, PL/EN pairs, check_i18n on the index, privacy scan, one version step with its CHANGELOG entry; `--range BASE` checks a whole branch in CI: the version and the added lines) and `commit-msg` (message rules, calls `pre-commit --commit-msg`)
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
 ├── logs/                    # error logs, one .jsonl file per day (gitignored)
 └── docs/

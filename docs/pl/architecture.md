@@ -47,7 +47,7 @@ seisa/
 ├── LICENSE                  # licencja PolyForm Noncommercial 1.0.0
 ├── CONTRIBUTING.md          # zasady współpracy (bez zewnętrznych zmian w kodzie)
 ├── SECURITY.md              # jak zgłosić podatność
-├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts i, przy pull requestach, reguła wersji dla całej gałęzi)
+├── .github/                 # ISSUE_TEMPLATE/ (szablon zgłoszenia błędu), pull_request_template.md (What / Why / Checked) i workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts i, przy pull requestach, reguła wersji i reguły dodanych linii dla całej gałęzi; przy pull requestach z forków tylko reguły dodanych linii, podbicie wersji dodaje opiekun)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, middleware no-cache/CSP, strażnika originu i języka, kontrola Host, obsługa błędów
 │   ├── config.py             # ścieżki, limity, ustawienia z .env
@@ -94,7 +94,7 @@ seisa/
 │   ├── api_harness.py         # test end-to-end: każdy endpoint API z zamockowanymi usługami zewnętrznymi (także `--serve PORT`)
 │   ├── dump_facts.py          # zrzuca analizę deterministyczną fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   ├── check_i18n.py          # sprawdza katalogi PL/EN, zgodność README i docs, martwe linki i wersję; `--strict` szuka polskich literałów w kodzie
-│   └── hooks/                 # hooki git (włączane `git config core.hooksPath scripts/hooks`): `pre-commit` (zakazane pliki, długi myślnik, pary PL/EN, check_i18n na indeksie, skan prywatności, jeden krok wersji z wpisem w CHANGELOG; `--range BASE` sprawdza całą gałąź w CI) i `commit-msg` (reguły komunikatu, woła `pre-commit --commit-msg`)
+│   └── hooks/                 # hooki git (włączane `git config core.hooksPath scripts/hooks`): `pre-commit` (zakazane pliki, długi myślnik, pary PL/EN, check_i18n na indeksie, skan prywatności, jeden krok wersji z wpisem w CHANGELOG; `--range BASE` sprawdza całą gałąź w CI: wersję i dodane linie) i `commit-msg` (reguły komunikatu, woła `pre-commit --commit-msg`)
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
 ├── logs/                    # logi błędów, jeden plik .jsonl na dzień (gitignored)
 └── docs/

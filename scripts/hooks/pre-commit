@@ -29,7 +29,11 @@ privacy scan.
 `pre-commit --range BASE` (used by CI on pull requests, also runnable by hand) checks the whole branch instead of
 one commit: when PROGRAM files changed since the merge-base with BASE the version must have gone up by one allowed
 step, and when none did it must be unchanged. A change that really needs no bump (comments only) is declared with a
-`No-version-bump: <reason>` line in a commit message of the branch.
+`No-version-bump: <reason>` line in a commit message of the branch. The lines the branch adds get rules 2 and 6 too
+(long dash, privacy scan), because a contributor's fork runs no hooks. Commit messages are not checked here: the
+message rules are ours, a contributor's messages (and Co-Authored-By trailers) stay as they wrote them.
+`--range BASE --no-version-rule` checks only the added lines: CI uses it for pull requests from forks, where the
+maintainer adds the bump after review (see .github/workflows/ci.yml); the maintainer then runs the full `--range`.
 
 There is deliberately no switch that turns everything off. `git commit --no-verify` does, and CLAUDE.md allows it
 only after the risk has been discussed.
@@ -146,11 +150,11 @@ def is_next_version(old: str, new: str) -> bool:
     return n in {(o[0], o[1], o[2] + 1), (o[0], o[1] + 1, 0), (o[0] + 1, 0, 0)}
 
 
-def added_lines() -> list[tuple[str, int, str]]:
-    """(path, line number, text) of every line the staged change adds."""
+def added_lines(*revs: str) -> list[tuple[str, int, str]]:
+    """(path, line number, text) of every line the staged change adds; with `revs` (BASE, HEAD) the lines a branch adds."""
     out: list[tuple[str, int, str]] = []
     path, lineno, in_header = "", 0, False
-    for line in git("diff", "--cached", "-U0", "--no-color", "--no-ext-diff", "--diff-filter=ACMR").splitlines():
+    for line in git("diff", *(revs or ("--cached",)), "-U0", "--no-color", "--no-ext-diff", "--diff-filter=ACMR").splitlines():
         if line.startswith("diff --git "):
             in_header = True
         elif in_header:
@@ -222,6 +226,16 @@ def privacy_problems(entries: list[tuple[str, str]], markers: list[str], allowed
         if any(m.lower() in low for m in markers):
             problems.append(f"PRIVACY: {where} contains one of your own host, domain or other private names (privacy markers file)")
     return problems
+
+
+def added_line_problems(added: list[tuple[str, int, str]]) -> list[str]:
+    """The rules for added lines, shared by one commit and `--range`: no long dash, the privacy scan."""
+    markers, allowed, have_markers = load_privacy_markers()
+    if not have_markers:
+        print("note: no privacy markers file (see scripts/hooks/pre-commit), only the generic privacy checks ran")
+    return check_long_dash(added) + privacy_problems(
+        [(f"{p}:{n}", t) for p, n, t in added if not p.startswith("frontend/vendor/")], markers, allowed
+    )
 
 
 def check_commit_message(text: str) -> list[str]:
@@ -316,11 +330,7 @@ def pre_commit() -> int:
         return 0
     staged = [f for f in git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0") if f]
     added = added_lines()
-    problems = check_forbidden(staged) + check_long_dash(added) + check_pairs(staged)
-    markers, allowed, have_markers = load_privacy_markers()
-    problems += privacy_problems([(f"{p}:{n}", t) for p, n, t in added if not p.startswith("frontend/vendor/")], markers, allowed)
-    if not have_markers:
-        print("note: no privacy markers file (see scripts/hooks/pre-commit), only the generic privacy checks ran")
+    problems = check_forbidden(staged) + check_pairs(staged) + added_line_problems(added)
     with tempfile.TemporaryDirectory(prefix="seisa-precommit-") as tmp:
         git("checkout-index", "-a", f"--prefix={tmp}/")
         root = Path(tmp)
@@ -344,13 +354,21 @@ def _neutral_index_html(ci, text: str) -> str:
     return re.sub(r'(<meta name="seisa-release-date" content=")\d{4}-\d{2}-\d{2}', r"\1@D@", text)
 
 
-def range_check(base_ref: str) -> int:
+def range_check(base_ref: str, version_rule: bool = True) -> int:
+    base = git("merge-base", base_ref, "HEAD").strip()
+    # A contributor's fork has no hooks, so the added-line rules are checked here for the whole branch as well.
+    problems = added_line_problems(added_lines(base, "HEAD"))
+    if not version_rule:
+        if problems:
+            print("\n".join(problems))
+            return 1
+        print("ok: added lines checked, version rule skipped (--no-version-rule)")
+        return 0
     top = Path(git("rev-parse", "--show-toplevel").strip())
     ci = load_check_i18n(top)
-    base = git("merge-base", base_ref, "HEAD").strip()
     new, old = versions_at(ci, ["HEAD", base])
     if len(set(new.values())) != 1 or len(set(old.values())) != 1:
-        print(f"VERSION PLACES DISAGREE: at HEAD {new}, at the merge-base {old}")
+        print("\n".join([*problems, f"VERSION PLACES DISAGREE: at HEAD {new}, at the merge-base {old}"]))
         return 1
     nv, ov = next(iter(new.values())), next(iter(old.values()))
     changed = [f for f in git("diff", "--name-only", "--no-renames", base, "HEAD").split("\n") if f]
@@ -364,7 +382,6 @@ def range_check(base_ref: str) -> int:
                 continue
         program.append(f)
     waiver = re.search(r"^No-version-bump:[ \t]*(\S.*)$", git("log", "--format=%B", f"{base}..HEAD"), re.M)
-    problems = []
     if nv != ov:
         notes = show_many(["HEAD:CHANGELOG.md", "HEAD:frontend/index.html"])
         problems += release_notes_problems(nv, notes["HEAD:CHANGELOG.md"], notes["HEAD:frontend/index.html"])
@@ -399,10 +416,10 @@ def main(argv: list[str]) -> int:
                 return 1
             return 0
         if argv[:1] == ["--range"]:
-            if len(argv) != 2:
-                print("usage: pre-commit [--range BASE]", file=sys.stderr)
+            if len(argv) not in (2, 3) or (len(argv) == 3 and argv[2] != "--no-version-rule"):
+                print("usage: pre-commit [--range BASE [--no-version-rule]]", file=sys.stderr)
                 return 2
-            return range_check(argv[1])
+            return range_check(argv[1], version_rule=len(argv) == 2)
         return pre_commit()
     except GitError as e:
         print(f"pre-commit could not run: {e}")

@@ -462,6 +462,81 @@ def test_range_a_bump_needs_its_changelog_entry(repo):
     assert "CHANGELOG: no" in r.stdout
 
 
+# --- `--range` also judges the lines a branch adds: a contributor's fork runs no hooks -----------------------------
+
+def _branch_adding(repo: Path, line: str, message: str = "work") -> None:
+    git(repo, "switch", "-q", "-c", "feat-y")
+    for lang in ("en", "pl"):
+        append(repo, f"docs/{lang}/tabs.md", f"\n{line}\n")
+    commit_all(repo, message)
+
+
+def test_range_rejects_a_long_dash_the_branch_adds(repo):
+    _branch_adding(repo, f"one {DASH} two")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 1
+    assert "LONG DASH" in r.stdout and "docs/en/tabs.md" in r.stdout
+
+
+def test_range_runs_the_privacy_scan_on_the_lines_the_branch_adds(repo, tmp_path):
+    key, home = "ab" * 40, "/home" + "/someone/x"
+    _branch_adding(repo, f"A key {key}, a path {home}.")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 1
+    assert "looks like a real API key" in r.stdout and "home directory path" in r.stdout
+    assert key not in r.stdout    # the value itself is never printed
+    markers = tmp_path / "markers.txt"
+    markers.write_text("host.leak.example\n", encoding="utf-8")
+    git(repo, "switch", "-q", "main")
+    git(repo, "branch", "-q", "-D", "feat-y")
+    _branch_adding(repo, "A host host.leak.example.")
+    r = run_hook(repo, "--range", "main", env={"SEISA_PRIVACY_MARKERS": str(markers)})
+    assert r.returncode == 1
+    assert "private names" in r.stdout and "leak.example" not in r.stdout
+
+
+def test_range_does_not_judge_what_main_already_had(repo):
+    git(repo, "switch", "-q", "-c", "feat-y")
+    append(repo, "docs/en/tabs.md", f"\nold {DASH} text\n")
+    append(repo, "docs/pl/tabs.md", f"\nold {DASH} text\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "--no-verify", "-m", "on main before the rule")    # the repo has no hooks enabled anyway
+    git(repo, "switch", "-q", "main")
+    git(repo, "merge", "-q", "--ff-only", "feat-y")
+    git(repo, "switch", "-q", "-c", "feat-z")
+    _both_languages(repo, "configuration")
+    git(repo, "commit", "-q", "-m", "A clean change")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_range_leaves_the_commit_messages_of_a_branch_alone(repo):
+    # The message rules are the maintainer's; a contributor's messages and co-author trailers stay as written.
+    _branch_adding(repo, "A clean sentence.", message=f"Add a sentence {DASH} by hand\n\nCo-Authored-By: A <a@example.org>")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_range_without_the_version_rule_still_judges_the_added_lines(repo):
+    _branch_with(repo, program=True)    # a program change without a bump: what a contributor's pull request looks like
+    r = run_hook(repo, "--range", "main", "--no-version-rule")
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "version rule skipped" in r.stdout
+    append(repo, "backend/config.py", f"\n# one {DASH} two\n")
+    commit_all(repo, "more work")
+    r = run_hook(repo, "--range", "main", "--no-version-rule")
+    assert r.returncode == 1
+    assert "LONG DASH" in r.stdout
+    assert "VERSION BUMP" not in r.stdout
+
+
+@pytest.mark.parametrize("args", [("--range",), ("--range", "main", "--other"), ("--range", "main", "--no-version-rule", "x")])
+def test_range_rejects_a_wrong_command_line(base_repo, args):
+    r = run_hook(base_repo, *args)
+    assert r.returncode == 2
+    assert "usage" in r.stderr
+
+
 # --- the commit message (hook `commit-msg`, which calls `pre-commit --commit-msg`) ------------------------------
 
 def _message(tmp_path: Path, text: str) -> str:
