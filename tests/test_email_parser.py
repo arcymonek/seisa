@@ -14,6 +14,7 @@ from email import message_from_string
 import pytest
 
 from backend.email_parser import find_boundary_index, parse_email, parse_received_header
+from backend.i18n import t
 from tests.helpers import load_eml
 
 
@@ -282,8 +283,9 @@ def test_forged_pod_style_chain_is_at_least_flagged_as_uncertain():
     assert "8.8.8.8" in parsed["ip_reasoning"]
 
 
-def test_helo_spoofed_provider_chain_is_at_least_flagged_as_uncertain():
-    # the attacker's own server (8.8.8.8) introduces itself as an outlook.com host and forges an older provider line
+def test_helo_spoofed_provider_with_a_different_verified_name_is_not_believed():
+    # The attacker's server (8.8.8.8) introduces itself as an outlook.com host, but the receiving server looked up
+    # the real reverse-DNS name and wrote it next to the address: that verified name is what counts.
     src = build(
         [
             "from mail.outlook.com (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
@@ -291,21 +293,81 @@ def test_helo_spoofed_provider_chain_is_at_least_flagged_as_uncertain():
         ]
     )
     parsed = parse_email(src)
-    assert parsed["ip_confidence"] != "high"
-    assert parsed["ip_from_relay_lines"] is True
-    assert "8.8.8.8" in parsed["ip_reasoning"]
+    assert parsed["trusted_source_ip"] == "8.8.8.8"
+    assert parsed["ip_confidence"] == "high"
+    assert parsed["ip_from_relay_lines"] is False
+    assert parsed["received_chain"][0]["from_host"] == "evil-host.example.net"
 
 
 @pytest.mark.xfail(
     strict=True,
-    reason="KNOWN RESIDUAL LIMIT: the program still picks the forged address (it only flags it as uncertain); the "
-    "relay's name in a Received line is what the connecting machine claimed (HELO) and cannot be verified offline.",
+    reason="KNOWN RESIDUAL LIMIT: when the receiving server wrote NO reverse-DNS name, the HELO claim of a provider "
+    "cannot be checked offline; the address is then only flagged as uncertain, not corrected.",
 )
-def test_helo_spoofed_provider_chain_does_not_move_the_ip():
+def test_helo_spoofed_provider_without_a_verified_name_does_not_move_the_ip():
     src = build(
         [
-            "from mail.outlook.com (evil-host.example.net [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from mail.outlook.com ([8.8.8.8]) by mx.recipient.example with ESMTPS; x",
             "from mail.bank.example (mail.bank.example [1.1.1.1]) by AM6PR.prod.outlook.com with ESMTP; x",
         ]
     )
     assert parse_email(src)["trusted_source_ip"] == "8.8.8.8"
+
+
+def test_helo_spoofed_provider_without_a_verified_name_is_flagged_as_uncertain():
+    src = build(
+        [
+            "from mail.outlook.com ([8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+            "from mail.bank.example (mail.bank.example [1.1.1.1]) by AM6PR.prod.outlook.com with ESMTP; x",
+        ]
+    )
+    parsed = parse_email(src)
+    assert parsed["ip_confidence"] != "high"
+    assert parsed["ip_from_relay_lines"] is True
+
+
+# ---- findings from a real-mail corpus (rebuilt here as synthetic messages) ----
+
+def test_address_in_plain_parentheses_after_a_reverse_dns_name():
+    # Gmail also writes `(name. 192.0.2.1)` without square brackets
+    hop = parse_received_header("from efi.example.net (efi.example.net. 8.8.8.8) by mx.google.com with ESMTPS id 1; x")
+    assert hop["ip"] == "8.8.8.8"
+    assert hop["from_host"] == "efi.example.net"
+
+
+def test_gmail_style_chain_with_a_spoofed_google_helo_picks_the_real_connecting_address():
+    # The newest Gmail line says HELO docs.google.com, but its verified reverse-DNS name is another organisation:
+    # the connection came from 9.9.9.9, not from "inside Google". (Previously this hop was skipped and the older,
+    # unbracketed line could not be read at all, so no address was found.)
+    chain = [
+        "from docs.google.com (customer.example.fr. [9.9.9.9]) by mx.google.com with ESMTPS id a; Mon, 21 Sep 2026 05:26:06 -0700 (PDT)",
+        "from sender.example.com (sender.example.com. 8.8.8.8) by mx.google.com with ESMTPS id b; Sun, 20 Sep 2026 05:00:00 -0700 (PDT)",
+    ]
+    parsed = parse_email(build(chain))
+    assert parsed["trusted_source_ip"] == "9.9.9.9"
+    assert parsed["received_chain"][0]["is_boundary"] is True
+
+
+def test_exchange_online_internal_machines_count_as_microsoft():
+    # Microsoft's own internal hops use several domains; only the machine that connected from outside is the boundary
+    chain = [
+        "from PR3P194MB0556.EURP194.PROD.OUTLOOK.COM (2603:10a6:102:39::10) by AS8P194MB1922.EURP194.PROD.OUTLOOK.COM with HTTPS; x",
+        "from MN2PR01CA0066.prod.exchangelabs.com (2603:10b6:208:23f::35) by PR3P194MB0556.EURP194.PROD.OUTLOOK.COM (2603:10a6:102:39::10) with Microsoft SMTP Server; x",
+        "from BL6PEPF0001AB56.namprd02.prod.outlook.com (2603:10b6:208:23f:cafe::d7) by MN2PR01CA0066.outlook.office365.com (2603:10b6:208:23f::35) with Microsoft SMTP Server; x",
+        "from mail-nam.eastus.cloudapp.azure.com (8.8.8.8) by BL6PEPF0001AB56.mail.protection.outlook.com (10.167.241.8) with Microsoft SMTP Server; x",
+    ]
+    parsed = parse_email(build(chain))
+    assert parsed["trusted_source_ip"] == "8.8.8.8"
+    assert parsed["ip_confidence"] == "high"
+
+
+def test_unknown_relay_with_older_lines_is_reported_and_the_reader_is_told_why():
+    chain = [
+        "from srv01.filter.example (srv01.filter.example [8.8.8.8]) by mx.recipient.example with ESMTPS; x",
+        "from [9.9.9.9] (helo=web01.shop.example) by srv01.filter.example with ESMTPS; x",
+    ]
+    parsed = parse_email(build(chain))
+    assert parsed["trusted_source_ip"] == "8.8.8.8"  # the address recorded by the recipient's own server
+    assert parsed["ip_from_relay_lines"] is False
+    assert t("parser.relay_declined", relay="filter.example") in parsed["ip_reasoning"]  # the reader is told why
+    assert "9.9.9.9" not in parsed["ip_reasoning"]

@@ -76,7 +76,10 @@ def is_dotless_internal_hop(host: str | None, ip: str | None) -> bool:
 # Big mail ecosystems whose own internal relay hops are not the sender's address and must not be reported/relied
 # on as "the trust boundary" by themselves - grouped into families because one operator may use several domains.
 PROVIDER_FAMILIES = {
-    "microsoft": {"microsoft.com", "outlook.com", "office365.com", "office.com", "hotmail.com", "live.com", "msn.com"},
+    "microsoft": {
+        "microsoft.com", "outlook.com", "office365.com", "office.com", "hotmail.com", "live.com", "msn.com",
+        "exchangelabs.com",  # Exchange Online internal machines (e.g. MN2PR01CA0066.prod.exchangelabs.com)
+    },
     "google": {"google.com", "gmail.com", "googlemail.com"},
     "yahoo": {"yahoo.com", "yahoodns.net", "yahoo.co.jp"},
     "apple": {"icloud.com", "me.com", "apple.com"},

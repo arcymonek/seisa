@@ -84,8 +84,24 @@ def _extract_ip_candidates(text: str) -> list[str]:
             ip = parse_ip(m.group(1))
             if ip:
                 candidates.append(ip)
+            elif pattern is _PAREN_RE:
+                # "(host.example. 192.0.2.1)": a verified reverse-DNS name followed by the address, no brackets
+                candidates.extend(found for token in re.split(r"[\s\[\]]+", m.group(1)) if (found := parse_ip(token.rstrip(".,;"))))
     public = [ip for ip in candidates if not is_special_ip(ip)]
     return public or candidates
+
+
+def _rdns_host(from_raw: str) -> str | None:
+    """The reverse-DNS name the RECEIVING server wrote next to the address, e.g. `(mail.example.org. [192.0.2.1])`.
+    Unlike the first word after "from" (the HELO name, which the connecting machine chooses freely), mail servers
+    such as Postfix, Exim and Gmail print this name only after looking it up themselves, so the sender cannot
+    simply claim another one."""
+    for m in _PAREN_RE.finditer(from_raw):
+        tokens = [tok for tok in re.split(r"[\s\[\]]+", m.group(1)) if tok]
+        name = tokens[0].rstrip(".").lower() if tokens else ""
+        if len(tokens) >= 2 and "." in name and parse_ip(name) is None and any(parse_ip(tok.rstrip(".,;")) for tok in tokens[1:]):
+            return name
+    return None
 
 
 def parse_received_header(raw_header: str) -> dict:
@@ -94,12 +110,18 @@ def parse_received_header(raw_header: str) -> dict:
     from_raw = match.group("from") if match else ""
     by_host = match.group("by").rstrip(";,") if match else None
     from_host = from_raw.split(" ", 1)[0].strip("[]") if from_raw else None
+    helo_host = from_host
+    # A HELO name from another operator than the verified reverse-DNS name is a claim that does not hold up (a sender
+    # introducing itself as a big provider): the verified name is the one that counts for the trust decisions.
+    rdns = _rdns_host(from_raw)
+    if rdns and from_host and parse_ip(from_host) is None and family(registrable_domain(rdns)) != family(registrable_domain(from_host)):
+        from_host = rdns
     candidates = _extract_ip_candidates(from_raw)
     ip = candidates[0] if candidates else parse_ip(from_host)
-    return {"raw": normalized, "from_host": from_host, "by_host": by_host, "ip": ip, "is_boundary": False}
+    return {"raw": normalized, "from_host": from_host, "helo_host": helo_host, "by_host": by_host, "ip": ip, "is_boundary": False}
 
 
-def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
+def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool, str | None]:
     """The boundary hop is sometimes only a provider relay (e.g. Microsoft Exchange Online hands the mail over to
     the recipient) and the real sender connected to that provider earlier. If an older hop has the provider
     domain (the "from" of the boundary hop) as "by", we walk through the provider's internal hops to the first
@@ -110,10 +132,12 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
     external hop is never mistaken for an internal one. The walk only happens for a known provider family or
     through such internal pod hops: the older lines are written by the relay, and an unknown relay may be the
     sender's own server.
-    Returns (hop index, description of the walk, whether the message originated inside a shared provider)."""
+    Returns (hop index, description of the walk, whether the message originated inside a shared provider, the
+    relay whose older lines were deliberately NOT used, if any)."""
     cur = start
     visited = []
     origin_inside_provider = False
+    declined: str | None = None
     while True:
         relay = registrable_domain(hops[cur]["from_host"])
         nxt = cur + 1
@@ -132,6 +156,10 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
             )
         )
         if not relay or not believed:
+            if relay and nxt < len(hops) and (
+                registrable_domain(hops[nxt]["by_host"]) == relay or is_dotless_internal_hop(hops[nxt]["by_host"], hops[nxt]["ip"])
+            ):
+                declined = relay  # older lines of this relay exist, but nothing makes them trustworthy
             break
         j = nxt
         while j < len(hops) and (
@@ -150,7 +178,7 @@ def _walk_through_relays(hops: list[dict], start: int) -> tuple[int, str, bool]:
     note = ""
     if visited:
         note = " " + t("parser.relay_note", relay=visited[0], chain=" -> ".join(visited))
-    return cur, note, origin_inside_provider
+    return cur, note, origin_inside_provider, declined
 
 
 def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[dict], str, str]:
@@ -175,7 +203,7 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     for i, hop in enumerate(hops):
         if hop["from_host"] is None and hop["ip"] is None:
             continue  # hop without "from" (the recipient's own entry) - it says nothing about the sender
-        if trusted_suffix and registrable_domain(hop["from_host"]) == trusted_suffix:
+        if trusted_suffix and family(registrable_domain(hop["from_host"])) == family(trusted_suffix):
             continue
         boundary_index = i
         left_trusted_domain = True
@@ -183,9 +211,10 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
 
     relay_note = ""
     origin_inside_provider = False
+    declined_relay = None
     first_outside_index = boundary_index  # the hop the recipient's own server wrote for the first outside machine
     if left_trusted_domain:
-        boundary_index, relay_note, origin_inside_provider = _walk_through_relays(hops, boundary_index)
+        boundary_index, relay_note, origin_inside_provider, declined_relay = _walk_through_relays(hops, boundary_index)
 
     # The boundary hop may have no recognised IP (e.g. an unusual header format) - in that case we keep
     # looking towards the oldest hops, where an IP does appear.
@@ -213,6 +242,8 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
             confidence = "medium"
             reasoning += " " + t("parser.relay_walk_warning", ip=hops[first_outside_index]["ip"] or "?")
             boundary["via_relay_lines"] = True
+        if declined_relay:
+            reasoning += " " + t("parser.relay_declined", relay=declined_relay)
     elif trusted_suffix is None:
         confidence = "medium"
         reasoning = t("parser.single_received")
