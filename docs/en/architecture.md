@@ -94,7 +94,7 @@ seisa/
 │   ├── api_harness.py         # end-to-end test: every API endpoint with all external services mocked (also `--serve PORT`)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   ├── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
-│   └── hooks/pre-commit       # git hook (enable with `git config core.hooksPath scripts/hooks`): forbidden files, long dash, PL/EN pairs, check_i18n on the index, one version step; `--range BASE` checks a whole branch (CI)
+│   └── hooks/                 # git hooks (enable with `git config core.hooksPath scripts/hooks`): `pre-commit` (forbidden files, long dash, PL/EN pairs, check_i18n on the index, privacy scan, one version step with its CHANGELOG entry; `--range BASE` checks a whole branch in CI) and `commit-msg` (message rules, calls `pre-commit --commit-msg`)
 ├── data/                    # history.json, vt_usage.json, api_usage.json, report_log.json, analyses/ (gitignored)
 ├── logs/                    # error logs, one .jsonl file per day (gitignored)
 └── docs/
