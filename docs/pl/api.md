@@ -27,4 +27,5 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | `GET /api/abuseipdb/report/history` | lokalny log wysłanych zgłoszeń | nie |
 | `GET /api/history`, `GET` / `PATCH` / `DELETE /api/history/{id}`, `POST /api/history`, `DELETE /api/history` | historia (przypinanie, usuwanie, czyszczenie) | nie |
 | `GET /api/logs`, `DELETE /api/logs` | logi | nie |
+| `GET /api/themes`, `GET /api/themes.css` | skórki kolorystyczne: lista dla przełącznika w stopce (id, nazwy, baza) i wygenerowany arkusz stylów (same zmienne CSS) | nie (lokalnie) |
 | `GET /api/about`, `POST /api/about/limits/refresh` | zakładka Informacje, odświeżenie limitów | endpointy limitów (przy odświeżeniu) |

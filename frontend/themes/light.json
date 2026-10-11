@@ -1,0 +1,30 @@
+{
+  "id": "light",
+  "name": {"en": "Light Washi", "pl": "Jasny Washi"},
+  "base": "light",
+  "order": 10,
+  "colors": {
+    "bg": "#f1e9d6",
+    "bg-raised": "#e8dfc8",
+    "bg-inset": "#e1d7be",
+    "hair": "#cfc3a6",
+    "hair-soft": "#d9cfb4",
+    "text": "#2b2926",
+    "text-strong": "#1a1816",
+    "muted": "#5a554a",
+    "accent": "#1b5d82",
+    "on-accent": "#f7f1e3",
+    "fail": "#a8322a",
+    "fail-bg": "#efd2c9",
+    "pass": "#35592f",
+    "pass-bg": "#d9e3cc",
+    "warn": "#765000",
+    "warn-bg": "#f2e2b5",
+    "on-warn": "#f7f1e3",
+    "hit-bg": "#efd98a",
+    "focus": "#1a1816",
+    "tooltip-bg": "#f7f1e3",
+    "shadow": "#6b5a3c",
+    "cite-hover-bg": "#d4dfe0"
+  }
+}

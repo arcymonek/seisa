@@ -1,6 +1,8 @@
 {
   "app.subtitle": "Lokalne narzędzie do analizy IP, URL, raportów DMARC i e-maili oraz zgłoszeń do AbuseIPDB.",
   "app.lang_switch_confirm": "Zmiana języka przeładuje stronę i utraci niezapisane dane (trwającą analizę lub wklejony tekst). Kontynuować?",
+  "app.theme_system": "Systemowy",
+  "app.theme_label": "Skórka kolorystyczna",
   "tab.history": "Historia",
   "tab.logs": "Logi",
   "tab.info": "Informacje",

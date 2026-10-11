@@ -1,0 +1,30 @@
+{
+  "id": "dark",
+  "name": {"en": "Dark Sumi", "pl": "Ciemny Sumi"},
+  "base": "dark",
+  "order": 20,
+  "colors": {
+    "bg": "#1b1e22",
+    "bg-raised": "#23282d",
+    "bg-inset": "#14171a",
+    "hair": "#333a41",
+    "hair-soft": "#2a3036",
+    "text": "#e9e4d8",
+    "text-strong": "#f6f2e8",
+    "muted": "#9aa0a3",
+    "accent": "#5fb4c8",
+    "on-accent": "#101418",
+    "fail": "#e9735d",
+    "fail-bg": "#3b2420",
+    "pass": "#7bb67d",
+    "pass-bg": "#1f2e24",
+    "warn": "#e5b04a",
+    "warn-bg": "#3a3220",
+    "on-warn": "#101418",
+    "hit-bg": "#5b4a12",
+    "focus": "#f6f2e8",
+    "tooltip-bg": "#0f1215",
+    "shadow": "#000000",
+    "cite-hover-bg": "#1d2c33"
+  }
+}

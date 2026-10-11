@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.31</b></p>
+<p align="center"><b>Seisa 2.2.0</b></p>
 
 # Seisa
 
@@ -80,7 +80,7 @@ Try the whole interface on fictitious data, with no keys and no network traffic,
 
 Then open `http://127.0.0.1:8765`. With the real application and no keys:
 
-- **Works:** the [DMARC](docs/en/tabs.md#dmarc) tab completely, the deterministic analysis in the [Email](docs/en/tabs.md#email) tab, WHOIS/rDNS (RDAP and reverse DNS) in the [IP](docs/en/tabs.md#ip) tab, [History](docs/en/tabs.md#history), [Logs](docs/en/tabs.md#logs), [Info](docs/en/tabs.md#info) and the language switch.
+- **Works:** the [DMARC](docs/en/tabs.md#dmarc) tab completely, the deterministic analysis in the [Email](docs/en/tabs.md#email) tab, WHOIS/rDNS (RDAP and reverse DNS) in the [IP](docs/en/tabs.md#ip) tab, [History](docs/en/tabs.md#history), [Logs](docs/en/tabs.md#logs), [Info](docs/en/tabs.md#info), the language switch and the [colour theme](docs/en/tabs.md#colour-theme-light--dark--system) switch (light, dark, system).
 - **Switched off, per service:** every service without a key shows "no API key" and is left out of the aggregate score. Without `OPENROUTER_API_KEY` the LLM layer is off (the [AbuseIPDB](docs/en/tabs.md#abuseipdb) tab then runs in rule-based mode and never claims that an e-mail qualifies). Sending a report and the "what AbuseIPDB already knows" card need `ABUSEIPDB_API_KEY`.
 
 ## Configuration
@@ -150,6 +150,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 Recent feature highlights below; the full list - including maintenance-only releases such as documentation fixes - is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the most recent ones from the git log.
 
+- **2.2.0** - a light theme "Washi" (warm cream, no pure white) and a dark "Sumi" in traditional Japanese colours, and a `Light | Dark | System` switch in the footer; themes are separate colour-only files in `frontend/themes/`.
 - **2.1.22** - URLScan and AbuseIPDB tabs now also end with a plain-language "Explanations" card and glossary tooltips, matching IP and DMARC.
 - **2.1.21** - IP and DMARC tabs: the "Explanations" cards were rewritten in plain language for non-specialists, and jargon labels (ASN, reverse DNS, SPF/DKIM/DMARC/CAA records, the AbuseIPDB confidence score...) now carry a contextual glossary tooltip, the same mechanism already used in the Email tab.
 - **2.1.20** - Docs: README trimmed and de-duplicated against `docs/` - a table of contents, a literal `git clone` command, where local data lives and how to wipe it; the "what leaves your machine" table is now a short excerpt linking to the full one in `docs/privacy-and-security.md`, and `docs/configuration.md`'s `.env` keys table now links back to the README instead of repeating it.

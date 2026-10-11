@@ -440,6 +440,10 @@ for lang in ("pl", "en"):
 
 rec("static index", client.get("/"))
 rec("i18n catalog", client.get("/i18n/en.json"))
+_themes_resp = client.get("/api/themes")
+rec("themes list", _themes_resp)
+_themes_css = client.get("/api/themes.css")
+rec("themes css", _themes_css)
 
 # --- security probes (not part of the golden comparison) ---
 probes = {}
@@ -463,6 +467,7 @@ for _name, _hdr in {
     probes[f"guard GET {_name}"] = client.get(_XSITE_GET, headers=_hdr).status_code
 probes["guard GET dmarc geo cross-site"] = client.get("/api/dmarc/geo?ip=8.8.8.8", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard body-less POST cross-site"] = client.post("/api/about/limits/refresh", headers={"Sec-Fetch-Site": "cross-site"}).status_code
+probes["guard themes.css cross-site"] = client.get("/api/themes.css", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard static index cross-site"] = client.get("/", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard preflight foreign Origin"] = client.options("/api/history", headers={"Origin": "https://attacker.example", "Access-Control-Request-Method": "DELETE"}).status_code
 probes["CSP header on /"] = client.get("/").headers.get("content-security-policy")
@@ -483,7 +488,7 @@ EXPECTED_STATUS = {
     "report submit private ip": 400, "report preview pii": 200, "report redact": 200, "report history": 200,
     "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
     "email continue again (not truncated)": 400, "history create dmarc": 200, "history create bad": 400,
-    "history entry missing": 404, "static index": 200,
+    "history entry missing": 404, "static index": 200, "themes list": 200, "themes css": 200,
 }
 failures = []
 for r in RESULTS:
@@ -663,7 +668,13 @@ if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) ==
     failures.append(f"urlscan summary is wrong: {_summary['verdict']}, redirects={_summary['redirects']}")
 if probes["text/plain cross-site POST (CSRF without preflight)"] not in (403, 422):
     failures.append("a text/plain cross-site POST reached the handler")
-_blocked = ["guard GET Sec-Fetch-Site cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
+_themes = _themes_resp.json()
+if [th["id"] for th in _themes] != ["light", "dark"] or any("colors" in th for th in _themes):
+    failures.append(f"theme list is wrong (shipped themes light and dark, no colours in the list): {_themes}")
+if not re.fullmatch(r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+', _themes_css.text) \
+        or not _themes_css.headers.get("content-type", "").startswith("text/css"):
+    failures.append("themes.css holds something other than whitelisted colour variables")
+_blocked = ["guard GET Sec-Fetch-Site cross-site", "guard themes.css cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
             "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin"]
 _allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET no fetch metadata",
             "guard static index cross-site"]

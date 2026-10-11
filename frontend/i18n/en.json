@@ -1,6 +1,8 @@
 {
   "app.subtitle": "Local tool for analysing IPs, URLs, DMARC reports and e-mails, and for reporting to AbuseIPDB.",
   "app.lang_switch_confirm": "Changing the language reloads the page and discards unsaved work (a running analysis or pasted text). Continue?",
+  "app.theme_system": "System",
+  "app.theme_label": "Colour theme",
   "tab.history": "History",
   "tab.logs": "Logs",
   "tab.info": "Info",

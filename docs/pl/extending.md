@@ -36,6 +36,13 @@ Fork jest rozsądnym wyborem, jeśli chcesz zachować lokalne narzędzie o małe
 3. Prompty LLM są jedne i po angielsku; rozszerz tabelę etykiet i dyrektywę języka w `docs/email-analysis-guide.md` o nowy język.
 4. Przetłumacz README i `docs/en/` (do `docs/<język>/`) z zachowaniem tej samej struktury nagłówków.
 
+#### Dodanie skórki kolorystycznej
+
+1. Skopiuj `frontend/themes/light.json` (lub `dark.json`) do `frontend/themes/<id>.json` i zmień wartości. `id` musi być równe nazwie pliku (małe litery, cyfry i `-`), `base` to `light` albo `dark` (ustawia `color-scheme` przeglądarki dla pól formularzy i pasków przewijania), `order` ustawia kolejność przycisków w stopce (jasna ma 10, ciemna 20; "Systemowy" jest zawsze ostatni), `name` to napis na przycisku w każdym języku. Logo w nagłówku wynika z `base`: `logo.png` (ciemna odznaka) w ciemnej skórce, `logo-light.png` (kremowa odznaka) w jasnej.
+2. `colors` musi zawierać dokładnie klucze z `COLOR_KEYS` w `backend/themes.py`, każdy jako `#rrggbb`: niczego nie może brakować ani być więcej, żadnego innego CSS. Plik łamiący którąś regułę jest pomijany, a powód trafia do logu.
+3. Odśwież stronę: nowa skórka pojawi się jako przycisk w stopce. Pilnuj czytelności tekstu: `tests/test_themes.py` pokazuje pary, które dla dostarczanych skórek wymagają kontrastu 4,5:1 (WCAG AA); uruchom `python3 -m pytest -q tests/test_themes.py`.
+4. Nowy kolor w interfejsie to nowy klucz w `COLOR_KEYS`, w obu dostarczanych skórkach i `var(--klucz)` w `style.css`; nigdy nie wpisuj koloru wprost w arkusz stylów (pilnuje tego test).
+
 #### Dodanie zakładki
 
 1. Przycisk i `<section>` w `frontend/index.html`; panel w `frontend/js/app.js`.

@@ -27,7 +27,7 @@ Zapytania Seisy do OpenRouter przedstawiają aplikację jako Seisa. Wszystko inn
 
 - `data/` zawiera historię, liczniki, log wysłanych zgłoszeń i zapisane analizy e-maili (z surowymi wiadomościami, pliki `0600`, katalog `0700`); `logs/` zawiera błędy i ostrzeżenia. Oba są w `.gitignore`. Zobacz [Pliki danych](architecture.md#pliki-danych).
 - Klucze API zostają w `.env` (gitignored) i nigdy nie są wysyłane do frontendu; zakładka Informacje pokazuje tylko, czy klucz jest ustawiony.
-- Przeglądarka przechowuje w `localStorage` wyłącznie wygody użytkownika (język interfejsu pod kluczem `seisa.lang`, wybrany panel, które karty zostawiłeś otwarte).
+- Przeglądarka przechowuje w `localStorage` wyłącznie wygody użytkownika (język interfejsu pod kluczem `seisa.lang`, skórka kolorystyczna pod kluczem `seisa.theme`, wybrany panel, które karty zostawiłeś otwarte).
 - Nie ma telemetrii ani sprawdzania aktualizacji.
 
 ### Model zagrożeń
@@ -71,5 +71,6 @@ Jeśli zmieniasz kod, zachowaj te własności; przy każdej podano, gdzie jest z
 8. **Wskaźniki są walidowane, zanim trafią do ścieżek URL** (`is_valid_indicator` w `backend/aggregator.py`: tylko prawdziwe adresy IP i nazwy hostów), identyfikatory urlscan muszą być UUID-ami, a rozmiary żądań są ograniczone (`backend/config.py`).
 9. **Uprawnienia plików:** `data/analyses/` ma `0700`, a jego pliki `0600` (zawierają surowe e-maile).
 10. **Klucze zostają w backendzie** (`.env`); `GET /api/about` ujawnia tylko, czy klucz jest ustawiony.
+11. **Skórka to dane, nie CSS** (`backend/themes.py`): do wygenerowanego arkusza trafia wyłącznie stały zestaw kluczy z wartościami `#rrggbb`, sprawdzony id oraz `dark`/`light`, więc plik skórki (także z pull requesta) nie może dodać `url()`, `@import` ani żadnej innej reguły. Pliki niepoprawne są pomijane.
 
 Jak zweryfikować: `./.venv/bin/python scripts/api_harness.py` zawiera sondy bezpieczeństwa (obcy `Host`, żądania cross-site, nagłówek CSP, wstrzyknięcie w ścieżkę), a jego zamockowane odpowiedzi zawierają wrogi HTML; w przeglądarce (`--serve`) payloady XSS muszą zostawić `window.__xss` równe 0.

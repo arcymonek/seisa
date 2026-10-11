@@ -65,6 +65,7 @@ seisa/
 │   ├── mail_trust.py         # wspólne funkcje zaufania łańcucha Received/domen/IP/SMTP AUTH (obie zakładki)
 │   ├── citation_check.py     # lokalna kontrola cytatów LLM względem źródła
 │   ├── analyses.py           # zapis analiz e-maili w data/analyses/
+│   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb) i generuje zmienne CSS
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
@@ -77,17 +78,20 @@ seisa/
 │   ├── urlscan_report.py     # ustrukturyzowane podsumowanie + raport Markdown wyniku skanu urlscan.io
 │   ├── urlscan_input.py      # czyszczenie i walidacja skanowanego URL (refang, schemat, hosty prywatne)
 │   ├── urlscan_forms.py      # formularze skanowanej strony (z jej DOM): action, method, pola, flagi hasła/zewnętrzne
-│   ├── routers/               # endpointy /api/*: lookup, urlscan, email_analysis, abuseipdb_report, dmarc, history, logs, about
+│   ├── routers/               # endpointy /api/*: lookup, urlscan, email_analysis, abuseipdb_report, dmarc, history, logs, about, themes
 │   └── services/               # klient każdej usługi (wspólny interfejs IntelService; urlscan.py osobno - zlecenie+odpytywanie; llm_analyzer.py - OpenRouter)
 ├── frontend/
 │   ├── index.html
 │   ├── favicon.ico            # ikona: kanji 査 (16/32/48/64 px)
-│   ├── logo.png               # okrągłe logo (nagłówek strony i README)
-│   ├── css/style.css          # ciemny motyw
+│   ├── logo.png               # okrągłe logo, ciemna odznaka (nagłówek strony w ciemnych skórkach, README)
+│   ├── logo-light.png         # to samo logo jako kremowa odznaka (nagłówek strony w jasnych skórkach)
+│   ├── theme-init.js          # zwykły skrypt w <head>: stosuje zapamiętaną skórkę przed pierwszym narysowaniem strony
+│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json); tylko kolory
+│   ├── css/style.css          # układ i komponenty, bez kolorów (pochodzą ze skórki)
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej
 │   └── vendor/marked.min.js   # renderowanie Markdown, dołączone lokalnie (bez CDN)
-├── tests/                   # testy jednostkowe pytest (`python3 -m pytest -q`): pomocnicze funkcje zaufania poczty, scoring, budowanie zgłoszeń, parser e-maili i forensyka, hook git (`test_pre_commit_hook.py`); `conftest.py` kieruje data/ do katalogu tymczasowego
+├── tests/                   # testy jednostkowe pytest (`python3 -m pytest -q`): pomocnicze funkcje zaufania poczty, scoring, budowanie zgłoszeń, parser e-maili i forensyka, skórki kolorystyczne (`test_themes.py`: walidator, kontrast WCAG, brak literałów kolorów w arkuszu stylów), hook git (`test_pre_commit_hook.py`); `conftest.py` kieruje data/ do katalogu tymczasowego
 │   ├── fixtures/            # SYNTETYCZNE e-maile (.eml) do porównań; fikcyjne dane (domeny .example, zakresy adresów dokumentacyjnych; układ nagłówków `multihop.eml` naśladuje dużego dostawcę poczty), bez danych osobowych
 │   │   └── unit/            # dodatkowe przypadki syntetyczne tylko dla pytest (prompt injection, kodowania, uszkodzone nagłówki); podkatalog celowo, żeby płaski glob `*.eml` w `api_harness.py` i `dump_facts.py` ich nie widział
 │   └── private/             # opcjonalne PRAWDZIWE e-maile z oczekiwanymi wynikami dla `test_corpus.py` (gitignored, nigdy nie commitowane)
@@ -106,7 +110,7 @@ seisa/
 
 Moduły frontendu w `frontend/js/`:
 
-- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
+- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `theme.js` (przełącznik skórek w stopce: jasna, ciemna, systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
 - `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (porównanie dwóch skanów), `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (fakty deterministyczne, karty lekcji, szuflada źródła, dymki słownika na płynącej prozie - ten sam styl `.gl` co `glossary.js`, ale skanujący wyrenderowany tekst zamiast owijać znaną etykietę - porównanie i eksporty);
 - `report-builder.js` (zakładka AbuseIPDB) + `report-result.js`, `report-history.js`, `report-export.js` (widok analizy, log wysłanych zgłoszeń i eksport Markdown);

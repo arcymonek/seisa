@@ -304,6 +304,20 @@ Przełącznik `EN | PL` jest w stopce. Wybór zapamiętuje przeglądarka (`local
 
 </details>
 
+### Skórka kolorystyczna (jasna / ciemna / systemowa)
+
+W stopce, obok przełącznika języka, jest drugi przełącznik: `Jasny | Ciemny | Systemowy`. Domyślna jest skórka ciemna. "Systemowy" idzie za ustawieniem kolorów Twojego systemu operacyjnego i zmienia się razem z nim, gdy strona jest otwarta. Wybór pamięta przeglądarka (`localStorage`, klucz `seisa.theme`) i stosuje go, zanim strona się narysuje, więc nie ma mignięcia złych kolorów. Zmiana skórki nie przeładowuje strony i niczego nie gubi.
+
+<details>
+<summary>Szczegóły: jak działają skórki</summary>
+
+- Obie skórki używają tradycyjnych japońskich kolorów i nie są czarno-białe. "Jasny Washi" (和紙, ręcznie czerpany papier) to ciepły krem (torinoko) z tekstem w kolorze tuszu (sumi), indygowym akcentem (ai) i kolorami statusów nazwanymi od beni, matsuba i yamabuki, przyciemnionymi tak, żeby czerwony, zielony i bursztynowy tekst był czytelny. "Ciemny Sumi" (墨, tusz) to granatowo-czarna szarość z tekstem w kolorze białego jedwabiu (shironeri), bladoturkusowym akcentem (asagi) i jaśniejszymi kolorami statusów. Żadna nie używa czystej bieli ani czystej czerni.
+- Wszystkie kolory interfejsu pochodzą z pliku skórki w `frontend/themes/` (`dark.json`, `light.json`); `frontend/css/style.css` nie zawiera kolorów, tylko układ. Jak dodać kolejną skórkę: [Fork i rozszerzanie](extending.md#dodanie-skórki-kolorystycznej).
+- Skórka to wyłącznie kolory, nigdy CSS: backend sprawdza każdy plik i sam buduje arkusz stylów (`GET /api/themes.css`), więc skórka nie może niczego załadować z zewnątrz. Plik, który nie przejdzie kontroli, jest pomijany, a powód trafia do logu.
+- Okrągłe logo ma dwa warianty (`logo.png`, ciemna odznaka, i `logo-light.png`, kremowa); skórka z `base` ustawionym na `dark` pokazuje pierwszy, `light` drugi.
+
+</details>
+
 ## Przykład: od podejrzanego e-maila do zgłoszenia
 
 Zakładki są zaprojektowane tak, by przekazywały sobie pracę. Typowa ścieżka:

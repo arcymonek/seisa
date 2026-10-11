@@ -304,6 +304,20 @@ The `EN | PL` switch is in the footer. The choice is remembered by the browser (
 
 </details>
 
+### Colour theme (light / dark / system)
+
+The footer has a second switch next to the language one: `Light | Dark | System`. Dark is the default. "System" follows the colour preference of your operating system and changes with it while the page is open. The choice is remembered by the browser (`localStorage`, key `seisa.theme`) and applied before the page is drawn, so there is no flash of the wrong colours. Changing the theme does not reload the page and loses nothing.
+
+<details>
+<summary>Details: how the themes work</summary>
+
+- Both themes use traditional Japanese colours and are not black and white. "Light Washi" (和紙, handmade paper) is a warm cream (torinoko) with ink-coloured text (sumi), an indigo accent (ai) and status colours named after beni, matsuba and yamabuki, darkened so that red, green and amber text stays readable. "Dark Sumi" (墨, ink) is a blue-black grey with silk-white text (shironeri), a pale turquoise accent (asagi) and brighter status colours. Neither uses pure white or pure black.
+- Every colour of the interface comes from a theme file in `frontend/themes/` (`dark.json`, `light.json`); `frontend/css/style.css` contains no colours, only layout. How to add another theme: [Forking and extending](extending.md#add-a-colour-theme).
+- A theme is colours only, never CSS: the backend validates every file and builds the stylesheet itself (`GET /api/themes.css`), so a theme cannot load anything from outside. A file that fails the checks is skipped and the reason is logged.
+- The round logo has two variants (`logo.png`, a dark badge, and `logo-light.png`, a cream one); a theme with `base` set to `dark` shows the first, a `light` one the second.
+
+</details>
+
 ## Walkthrough: from a suspicious e-mail to a report
 
 The tabs are designed to hand work to each other. A typical path:

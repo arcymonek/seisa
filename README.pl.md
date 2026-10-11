@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.1.31</b></p>
+<p align="center"><b>Seisa 2.2.0</b></p>
 
 # Seisa
 
@@ -80,7 +80,7 @@ Całe UI możesz wypróbować na fikcyjnych danych, bez kluczy i bez ruchu sieci
 
 Potem otwórz `http://127.0.0.1:8765`. Prawdziwa aplikacja bez kluczy:
 
-- **Działa:** w pełni zakładka [DMARC](docs/pl/tabs.md#dmarc), analiza deterministyczna w zakładce [Email](docs/pl/tabs.md#email), WHOIS/rDNS (RDAP i odwrotny DNS) w zakładce [IP](docs/pl/tabs.md#ip), [Historia](docs/pl/tabs.md#historia), [Logi](docs/pl/tabs.md#logi), [Informacje](docs/pl/tabs.md#informacje) i przełącznik języka.
+- **Działa:** w pełni zakładka [DMARC](docs/pl/tabs.md#dmarc), analiza deterministyczna w zakładce [Email](docs/pl/tabs.md#email), WHOIS/rDNS (RDAP i odwrotny DNS) w zakładce [IP](docs/pl/tabs.md#ip), [Historia](docs/pl/tabs.md#historia), [Logi](docs/pl/tabs.md#logi), [Informacje](docs/pl/tabs.md#informacje), przełącznik języka i przełącznik [skórki kolorystycznej](docs/pl/tabs.md#skórka-kolorystyczna-jasna--ciemna--systemowa) (jasna, ciemna, systemowa).
 - **Wyłączone, osobno dla usługi:** każda usługa bez klucza pokazuje "brak klucza API" i jest wyłączona z wyniku zbiorczego. Bez `OPENROUTER_API_KEY` warstwa LLM jest wyłączona (zakładka [AbuseIPDB](docs/pl/tabs.md#abuseipdb) działa wtedy w trybie regułowym i nigdy nie twierdzi, że e-mail się kwalifikuje). Wysłanie zgłoszenia i karta "co AbuseIPDB już wie" wymagają `ABUSEIPDB_API_KEY`.
 
 ## Konfiguracja
@@ -150,6 +150,7 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
 
+- **2.2.0** - jasna skórka "Washi" (ciepły krem, bez czystej bieli) i ciemna "Sumi" w tradycyjnych japońskich kolorach, i przełącznik `Jasny | Ciemny | Systemowy` w stopce; skórki to osobne pliki tylko z kolorami w `frontend/themes/`.
 - **2.1.22** - zakładki URLScan i AbuseIPDB też kończą się teraz sekcją "Wyjaśnienia" pisaną zrozumiałym językiem i dymkami glosariusza, tak jak IP i DMARC.
 - **2.1.21** - zakładki IP i DMARC: sekcje "Wyjaśnienia" przepisane zrozumiałym językiem dla nieprofesjonalistów, a żargonowe etykiety (ASN, odwrotny DNS, rekordy SPF/DKIM/DMARC/CAA, confidence score AbuseIPDB...) mają teraz kontekstowy dymek glosariusza - ten sam mechanizm co już w zakładce Email.
 - **2.1.20** - Dokumentacja: README skrócone i odchudzone z duplikatów wobec `docs/` - spis treści, dosłowna komenda `git clone`, informacja gdzie leżą lokalne dane i jak je wyczyścić; tabela "co opuszcza komputer" to teraz krótki wyciąg z linkiem do pełnej wersji w `docs/privacy-and-security.md`, a tabela kluczy `.env` w `docs/configuration.md` linkuje teraz z powrotem do README zamiast ją powielać.

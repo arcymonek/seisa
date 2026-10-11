@@ -27,4 +27,5 @@ All routes are under `/api`, answer JSON (errors as `{"detail": "..."}`) and rea
 | `GET /api/abuseipdb/report/history` | the local log of sent reports | no |
 | `GET /api/history`, `GET` / `PATCH` / `DELETE /api/history/{id}`, `POST /api/history`, `DELETE /api/history` | history (pin, delete, clear) | no |
 | `GET /api/logs`, `DELETE /api/logs` | logs | no |
+| `GET /api/themes`, `GET /api/themes.css` | the colour themes: the list for the footer switch (id, names, base) and the generated stylesheet (CSS variables only) | no (local) |
 | `GET /api/about`, `POST /api/about/limits/refresh` | the Info tab, quota refresh | quota endpoints (on refresh) |

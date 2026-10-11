@@ -65,6 +65,7 @@ seisa/
 │   ├── mail_trust.py         # shared Received-chain/domain/IP/SMTP-AUTH trust helpers (both tabs)
 │   ├── citation_check.py     # local check of the LLM's quotes against the source
 │   ├── analyses.py           # storage of e-mail analyses in data/analyses/
+│   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only) and generates the CSS variables
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
@@ -77,17 +78,20 @@ seisa/
 │   ├── urlscan_report.py     # structured summary + Markdown report of a urlscan.io scan result
 │   ├── urlscan_input.py      # cleaning and validation of the URL to scan (refang, scheme, private hosts)
 │   ├── urlscan_forms.py      # forms of a scanned page (from its DOM): action, method, fields, password/external flags
-│   ├── routers/               # /api/* endpoints: lookup, urlscan, email_analysis, abuseipdb_report, dmarc, history, logs, about
+│   ├── routers/               # /api/* endpoints: lookup, urlscan, email_analysis, abuseipdb_report, dmarc, history, logs, about, themes
 │   └── services/               # a client for every service (common IntelService interface; urlscan.py separately - submit+poll; llm_analyzer.py - OpenRouter)
 ├── frontend/
 │   ├── index.html
 │   ├── favicon.ico            # icon: the kanji 査 (16/32/48/64 px)
-│   ├── logo.png               # round logo (page header and README)
-│   ├── css/style.css          # dark theme
+│   ├── logo.png               # round logo, dark badge (page header on dark themes, README)
+│   ├── logo-light.png         # the same logo as a cream badge (page header on light themes)
+│   ├── theme-init.js          # classic script in <head>: applies the stored theme before the first paint
+│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json); colours only
+│   ├── css/style.css          # layout and components, no colours (they come from the theme)
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
-├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics, the git hook (`test_pre_commit_hook.py`); `conftest.py` points data/ at a temporary directory
+├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics, the colour themes (`test_themes.py`: validator, WCAG contrast, no colour literals in the stylesheet), the git hook (`test_pre_commit_hook.py`); `conftest.py` points data/ at a temporary directory
 │   ├── fixtures/            # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 │   │   └── unit/            # extra synthetic cases used only by pytest (prompt injection, encodings, damaged headers); a subfolder on purpose, so the flat `*.eml` glob of `api_harness.py` and `dump_facts.py` does not see it
 │   └── private/             # optional REAL e-mails with expected results for `test_corpus.py` (gitignored, never committed)
@@ -106,7 +110,7 @@ seisa/
 
 Frontend modules in `frontend/js/`:
 
-- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
+- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `theme.js` (the footer theme switch: light, dark, system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
 - `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (comparison of two scans), `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips on free-flowing prose - the same `.gl` tooltip style as `glossary.js`, but scanning rendered text instead of wrapping a known label - comparison and exports);
 - `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);
