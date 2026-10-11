@@ -4,7 +4,7 @@
 
 ## Tabs
 
-The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round info button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards that open by themselves only when they carry a signal; most of them also offer a plain-language "Explanations" card and glossary tooltips on jargon terms (a dotted underline - hover or keyboard focus shows the definition).
+The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round settings button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards that open by themselves only when they carry a signal; most of them also offer a plain-language "Explanations" card and glossary tooltips on jargon terms (a dotted underline - hover or keyboard focus shows the definition).
 
 ### IP
 
@@ -267,15 +267,16 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 ### Info
 
-> The round info button at the far right of the tab row: a short description of Seisa and its state.
+> The round gear button at the far right of the tab row: the settings (language, colour theme) and a short description of Seisa and its state.
 
 **Shows:** the version (read from the page header) with the date of the last update, how many services have an API key set, the LLM model or "off" | **Sends out:** nothing, except quota requests on "Refresh limits".
 
 Below the summary tiles, two tiles side by side: **Author** (e-mail, GitHub, website) and **Name** (the meaning of the name, 精査, *せいさ*). Then collapsible cards in this order (a card you opened stays open when you come back to the tab):
 
-1. **Status and API limits** (collapsed): tiles: the first one holds the address and port Seisa listens on, whether the `.env` file exists (only its existence is checked, it is never read) and the versions of the system, Python and FastAPI; then one tile per integration with whether a key is set (the keys are never shown or sent to the browser) and its limits, described below. A divider and the explanatory notes close the card.
-2. **Recent changes** (collapsed): the 10 most recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
-3. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
+1. **Settings** (open): buttons for the interface language (`EN`, `PL`) and the colour theme (`Light Washi`, `Dark Sumi`, `System`). A nested card, **About the colours**, explains in plain words which traditional Japanese colour (with kanji, kana reading and romaji) plays which role in each theme: background, text, accent, error, OK and warning.
+2. **Status and API limits** (collapsed): tiles: the first one holds the address and port Seisa listens on, whether the `.env` file exists (only its existence is checked, it is never read) and the versions of the system, Python and FastAPI; then one tile per integration with whether a key is set (the keys are never shown or sent to the browser) and its limits, described below. A divider and the explanatory notes close the card.
+3. **Recent changes** (collapsed): the 10 most recent releases from the git log of the directory Seisa runs from; the card says so when it is not a git checkout. The full history is in [CHANGELOG.md](../../CHANGELOG.md).
+4. **License** (collapsed): the same summary as in [License and contributing](../../README.md#license-and-contributing).
 
 <details>
 <summary>Details: the limits in the status card</summary>
@@ -292,7 +293,7 @@ Each tile shows the usage of the limits of the *free plans* for a service that h
 
 ### Interface language (PL/EN)
 
-The `EN | PL` switch is in the footer. The choice is remembered by the browser (`localStorage`, key `seisa.lang`); without a stored choice the browser language is used (`en` or `pl`), and English in all other cases. Changing the language reloads the page (you are asked first if that would lose work in progress).
+The `EN | PL` switch is in the [Info](#info) tab (Settings). The choice is remembered by the browser (`localStorage`, key `seisa.lang`); without a stored choice the browser language is used (`en` or `pl`), and English in all other cases. Changing the language reloads the page (you are asked first if that would lose work in progress).
 
 <details>
 <summary>Details: how the languages work</summary>
@@ -306,12 +307,12 @@ The `EN | PL` switch is in the footer. The choice is remembered by the browser (
 
 ### Colour theme (light / dark / system)
 
-The footer has a second switch next to the language one: `Light | Dark | System`. Dark is the default. "System" follows the colour preference of your operating system and changes with it while the page is open. The choice is remembered by the browser (`localStorage`, key `seisa.theme`) and applied before the page is drawn, so there is no flash of the wrong colours. Changing the theme does not reload the page and loses nothing.
+The [Info](#info) tab (Settings) has a second switch below the language one: `Light | Dark | System`. Dark is the default. "System" follows the colour preference of your operating system and changes with it while the page is open. The choice is remembered by the browser (`localStorage`, key `seisa.theme`) and applied before the page is drawn, so there is no flash of the wrong colours. Changing the theme does not reload the page and loses nothing.
 
 <details>
 <summary>Details: how the themes work</summary>
 
-- Both themes use traditional Japanese colours and are not black and white. "Light Washi" (和紙, handmade paper) is a warm cream (torinoko) with ink-coloured text (sumi), an indigo accent (ai) and status colours named after beni, matsuba and yamabuki, darkened so that red, green and amber text stays readable. "Dark Sumi" (墨, ink) is a blue-black grey with silk-white text (shironeri), a pale turquoise accent (asagi) and brighter status colours. Neither uses pure white or pure black.
+- Both themes use traditional Japanese colours and are not black and white. "Light Washi" (和紙, handmade paper) is a warm cream (torinoko) with ink-coloured text (sumi), an indigo accent (ai) and status colours named after beni, matsuba and yamabuki, darkened so that red, green and amber text stays readable. "Dark Sumi" (墨, ink) is a blue-black (nureba, the sheen of a wet crow's feather) with silk-white text (shironeri), a pale turquoise accent (asagi) and brighter status colours. Neither uses pure white or pure black.
 - Every colour of the interface comes from a theme file in `frontend/themes/` (`dark.json`, `light.json`); `frontend/css/style.css` contains no colours, only layout. How to add another theme: [Forking and extending](extending.md#add-a-colour-theme).
 - A theme is colours only, never CSS: the backend validates every file and builds the stylesheet itself (`GET /api/themes.css`), so a theme cannot load anything from outside. A file that fails the checks is skipped and the reason is logged.
 - The round logo has two variants (`logo.png`, a dark badge, and `logo-light.png`, a cream one); a theme with `base` set to `dark` shows the first, a `light` one the second.

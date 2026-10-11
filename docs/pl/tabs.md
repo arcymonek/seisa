@@ -4,7 +4,7 @@
 
 ## Zakładki
 
-Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk informacji ([Informacje](#informacje)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Informacje mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
+Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk ustawień ([Informacje](#informacje)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Informacje mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
 
 ### IP
 
@@ -267,15 +267,16 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 ### Informacje
 
-> Okrągły przycisk informacji na prawym końcu rzędu zakładek: krótki opis Seisy i jej stanu.
+> Okrągły przycisk z zębatką na prawym końcu rzędu zakładek: ustawienia (język, skórka kolorystyczna) i krótki opis Seisy oraz jej stanu.
 
 **Pokazuje:** wersję (czytaną z nagłówka strony) z datą ostatniej aktualizacji, ile usług ma ustawiony klucz API, model LLM albo "wyłączony" | **Wysyła na zewnątrz:** nic, poza zapytaniami o limity po "Odśwież limity".
 
 Pod kafelkami podsumowania dwa kafelki obok siebie: **Autor** (e-mail, GitHub, strona www) i **Nazwa** (znaczenie nazwy, 精査, *せいさ*). Dalej zwijane karty w tej kolejności (karta, którą otworzysz, zostaje otwarta po powrocie do zakładki):
 
-1. **Status i limity API** (zwinięta): kafelki: pierwszy z adresem i portem, na którym nasłuchuje Seisa, informacją, czy istnieje plik `.env` (sprawdzane jest tylko jego istnienie, plik nie jest czytany), oraz wersjami systemu, Pythona i FastAPI; dalej po jednym kafelku na integrację z informacją, czy klucz jest ustawiony (same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki), i jej limitami, opisanymi niżej. Kartę zamyka linia rozdzielająca i objaśnienia.
-2. **Ostatnie zmiany** (zwinięta): 10 ostatnich wydań z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
-3. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
+1. **Ustawienia** (otwarta): przyciski języka interfejsu (`EN`, `PL`) i skórki kolorystycznej (`Jasny Washi`, `Ciemny Sumi`, `Systemowy`). Zagnieżdżona karta **O kolorach** wyjaśnia po ludzku, który tradycyjny japoński kolor (z kanji, odczytem w kanie i romaji) pełni jaką rolę w każdej skórce: tło, tekst, akcent, błąd, OK i ostrzeżenie.
+2. **Status i limity API** (zwinięta): kafelki: pierwszy z adresem i portem, na którym nasłuchuje Seisa, informacją, czy istnieje plik `.env` (sprawdzane jest tylko jego istnienie, plik nie jest czytany), oraz wersjami systemu, Pythona i FastAPI; dalej po jednym kafelku na integrację z informacją, czy klucz jest ustawiony (same klucze nigdy nie są pokazywane ani wysyłane do przeglądarki), i jej limitami, opisanymi niżej. Kartę zamyka linia rozdzielająca i objaśnienia.
+3. **Ostatnie zmiany** (zwinięta): 10 ostatnich wydań z git log katalogu, z którego działa Seisa; karta informuje o tym, gdy to nie jest checkout git. Pełna historia jest w [CHANGELOG.md](../../CHANGELOG.md).
+4. **Licencja** (zwinięta): to samo streszczenie co w sekcji [Licencja i współpraca](../../README.pl.md#licencja-i-współpraca).
 
 <details>
 <summary>Szczegóły: limity w karcie statusu</summary>
@@ -292,7 +293,7 @@ Każdy kafelek pokazuje zużycie limitów *planów darmowych* usługi z kluczem,
 
 ### Język interfejsu (PL/EN)
 
-Przełącznik `EN | PL` jest w stopce. Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`en` lub `pl`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie).
+Przełącznik `EN | PL` jest w zakładce [Informacje](#informacje) (Ustawienia). Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`en` lub `pl`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie).
 
 <details>
 <summary>Szczegóły: jak działają języki</summary>
@@ -306,12 +307,12 @@ Przełącznik `EN | PL` jest w stopce. Wybór zapamiętuje przeglądarka (`local
 
 ### Skórka kolorystyczna (jasna / ciemna / systemowa)
 
-W stopce, obok przełącznika języka, jest drugi przełącznik: `Jasny | Ciemny | Systemowy`. Domyślna jest skórka ciemna. "Systemowy" idzie za ustawieniem kolorów Twojego systemu operacyjnego i zmienia się razem z nim, gdy strona jest otwarta. Wybór pamięta przeglądarka (`localStorage`, klucz `seisa.theme`) i stosuje go, zanim strona się narysuje, więc nie ma mignięcia złych kolorów. Zmiana skórki nie przeładowuje strony i niczego nie gubi.
+W zakładce [Informacje](#informacje) (Ustawienia), pod przełącznikiem języka, jest drugi przełącznik: `Jasny | Ciemny | Systemowy`. Domyślna jest skórka ciemna. "Systemowy" idzie za ustawieniem kolorów Twojego systemu operacyjnego i zmienia się razem z nim, gdy strona jest otwarta. Wybór pamięta przeglądarka (`localStorage`, klucz `seisa.theme`) i stosuje go, zanim strona się narysuje, więc nie ma mignięcia złych kolorów. Zmiana skórki nie przeładowuje strony i niczego nie gubi.
 
 <details>
 <summary>Szczegóły: jak działają skórki</summary>
 
-- Obie skórki używają tradycyjnych japońskich kolorów i nie są czarno-białe. "Jasny Washi" (和紙, ręcznie czerpany papier) to ciepły krem (torinoko) z tekstem w kolorze tuszu (sumi), indygowym akcentem (ai) i kolorami statusów nazwanymi od beni, matsuba i yamabuki, przyciemnionymi tak, żeby czerwony, zielony i bursztynowy tekst był czytelny. "Ciemny Sumi" (墨, tusz) to granatowo-czarna szarość z tekstem w kolorze białego jedwabiu (shironeri), bladoturkusowym akcentem (asagi) i jaśniejszymi kolorami statusów. Żadna nie używa czystej bieli ani czystej czerni.
+- Obie skórki używają tradycyjnych japońskich kolorów i nie są czarno-białe. "Jasny Washi" (和紙, ręcznie czerpany papier) to ciepły krem (torinoko) z tekstem w kolorze tuszu (sumi), indygowym akcentem (ai) i kolorami statusów nazwanymi od beni, matsuba i yamabuki, przyciemnionymi tak, żeby czerwony, zielony i bursztynowy tekst był czytelny. "Ciemny Sumi" (墨, tusz) to granatowa czerń (nureba, połysk mokrego kruczego pióra) z tekstem w kolorze białego jedwabiu (shironeri), bladoturkusowym akcentem (asagi) i jaśniejszymi kolorami statusów. Żadna nie używa czystej bieli ani czystej czerni.
 - Wszystkie kolory interfejsu pochodzą z pliku skórki w `frontend/themes/` (`dark.json`, `light.json`); `frontend/css/style.css` nie zawiera kolorów, tylko układ. Jak dodać kolejną skórkę: [Fork i rozszerzanie](extending.md#dodanie-skórki-kolorystycznej).
 - Skórka to wyłącznie kolory, nigdy CSS: backend sprawdza każdy plik i sam buduje arkusz stylów (`GET /api/themes.css`), więc skórka nie może niczego załadować z zewnątrz. Plik, który nie przejdzie kontroli, jest pomijany, a powód trafia do logu.
 - Okrągłe logo ma dwa warianty (`logo.png`, ciemna odznaka, i `logo-light.png`, kremowa); skórka z `base` ustawionym na `dark` pokazuje pierwszy, `light` drugi.

@@ -4,7 +4,8 @@
 // once, so a card the user opened stays open when the tab is refreshed; only their bodies are refilled.
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
-import { t, tn, getLocale, fmtDate, fmtDateTime } from "./i18n.js";
+import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
+import { mountThemeSwitch } from "./theme.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
 const AUTHOR_EMAIL = "seisa@arkadiuszpolak.pl";
@@ -14,6 +15,13 @@ const AUTHOR_SITE = "https://arkadiuszpolak.pl";
 
 const SERVICE_NAMES = { urlscan: "URLScan", openrouter: "OpenRouter" }; // the others are titled by the IP tab (serviceTitle)
 const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
+// Which traditional colour plays which role in the two shipped themes: [role, kanji, kana, romaji] (no kanji = no name).
+const PALETTES = [
+  { title: "about.colors_washi_title", intro: "about.colors_washi_intro", rows: [["bg", "鳥の子", "とりのこ", "torinoko"], ["text", "墨", "すみ", "sumi"], ["accent", "藍", "あい", "ai"],
+    ["fail", "紅", "べに", "beni"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
+  { title: "about.colors_sumi_title", intro: "about.colors_sumi_intro", rows: [["bg", "濡羽", "ぬれば", "nureba"], ["text", "白練", "しろねり", "shironeri"], ["accent", "浅葱", "あさぎ", "asagi"],
+    ["fail", "朱", "しゅ", "shu"], ["pass", "若竹", "わかたけ", "wakatake"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
+];
 let root;
 let version = "";
 let releaseDate = "";
@@ -24,6 +32,14 @@ const tile = (label, value, sub) =>
 
 function block(title, body, { open = false, id = "", extra = "" } = {}) {
   return `<details class="fact-block"${id ? ` id="${id}"` : ""}${open ? " open" : ""}><summary>${e(title)}${extra}</summary>${body}</details>`;
+}
+
+function colourExplanation() {
+  const palette = ({ title, intro, rows }) => `<h4>${e(t(title))}</h4><p class="muted">${e(t(intro))}</p>` +
+    rows.map(([role, kanji, kana, name]) => `<div class="colour-row"><span class="kanji" lang="ja">${e(kanji || "-")}</span>
+      <span class="mono">${kanji ? `${e(kana)}<br>${e(name)}` : ""}</span>
+      <span><strong>${e(t("about.role." + role))}:</strong> ${e(t("about.col." + name))}</span></div>`).join("");
+  return `<div class="colour-pal"><p>${e(t("about.colors_intro")).replace(/\n/g, "<br>")}</p>${PALETTES.map(palette).join("")}</div>`;
 }
 
 export function initAbout(container) {
@@ -43,6 +59,10 @@ export function initAbout(container) {
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}<br>${e(t("about.name_pron"))}</span>
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>
+    ${block(t("about.settings_title"), `
+      <div class="settings-row"><span>${e(t("about.settings_lang"))}</span><span class="lang-switch" id="ab-lang-switch"></span></div>
+      <div class="settings-row"><span>${e(t("about.settings_theme"))}</span><span class="lang-switch" id="ab-theme-switch"></span></div>
+      ${block(t("about.colors_title"), colourExplanation())}`, { open: true, id: "ab-settings-card" })}
     ${block(t("about.status_limits_title"), `
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
       <div id="ab-limits-errors"></div>
@@ -51,6 +71,8 @@ export function initAbout(container) {
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
     ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">GNU GPL-3.0-or-later</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_contribute"))}</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
+  mountLangSwitch(root.querySelector("#ab-lang-switch"));
+  mountThemeSwitch(root.querySelector("#ab-theme-switch"));
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
 }
 

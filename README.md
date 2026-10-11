@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.2.0</b></p>
+<p align="center"><b>Seisa 2.3.0</b></p>
 
 # Seisa
 
@@ -150,6 +150,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 Recent feature highlights below; the full list - including maintenance-only releases such as documentation fixes - is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the most recent ones from the git log.
 
+- **2.3.0** - a new "Settings" card in the Info tab: language and colour theme buttons (moved out of the footer) and a plain-language explanation of the traditional Japanese colours used by the themes.
 - **2.2.0** - a light theme "Washi" (warm cream, no pure white) and a dark "Sumi" in traditional Japanese colours, and a `Light | Dark | System` switch in the footer; themes are separate colour-only files in `frontend/themes/`.
 - **2.1.22** - URLScan and AbuseIPDB tabs now also end with a plain-language "Explanations" card and glossary tooltips, matching IP and DMARC.
 - **2.1.21** - IP and DMARC tabs: the "Explanations" cards were rewritten in plain language for non-specialists, and jargon labels (ASN, reverse DNS, SPF/DKIM/DMARC/CAA records, the AbuseIPDB confidence score...) now carry a contextual glossary tooltip, the same mechanism already used in the Email tab.

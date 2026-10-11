@@ -1,4 +1,4 @@
-// Theme switch in the footer: one button per theme from /api/themes (sorted by the theme's "order") plus "System".
+// Theme switch (Info tab, Settings): one button per theme from /api/themes (sorted by the theme's "order") plus "System".
 // The colours come from /api/themes.css; the stored choice is applied before the first paint by /theme-init.js.
 import { getLang, t } from "./i18n.js";
 
@@ -28,7 +28,7 @@ function resolve(choice) {
 
 function apply() {
   document.documentElement.setAttribute("data-theme", resolve(mode));
-  document.querySelectorAll("#theme-switch .lang-btn").forEach((btn) => {
+  document.querySelectorAll(".theme-switch .lang-btn").forEach((btn) => {
     const on = btn.dataset.theme === mode;
     btn.classList.toggle("on", on);
     btn.setAttribute("aria-pressed", String(on));
@@ -43,19 +43,35 @@ function setMode(next) {
   apply();
 }
 
+let loading = null; // the theme list is fetched once, however many switches are mounted
+
+function loadThemes() {
+  loading ||= fetch("/api/themes")
+    .then((res) => (res.ok ? res.json() : []))
+    .catch(() => [])
+    .then((list) => {
+      themes = list;
+      if (!themes.length) return;
+      mode = readMode();
+      if (mode !== SYSTEM && !themes.some((th) => th.id === mode)) mode = resolve(DEFAULT);
+      prefersLight.addEventListener("change", () => {
+        if (mode === SYSTEM) apply();
+      });
+    });
+  return loading;
+}
+
+// Loads the theme list and applies the stored choice (the switch itself is mounted by the Info tab).
+export function initTheme() {
+  return loadThemes().then(apply);
+}
+
 export async function mountThemeSwitch(el) {
-  try {
-    const res = await fetch("/api/themes");
-    if (!res.ok) return;
-    themes = await res.json();
-  } catch {
-    return;
-  }
+  await loadThemes();
   if (!themes.length) return;
-  mode = readMode();
-  if (mode !== SYSTEM && !themes.some((th) => th.id === mode)) mode = resolve(DEFAULT);
   const label = (th) => th.name[getLang()] || th.name.en || th.id;
   const choices = [...themes.map((th) => ({ id: th.id, text: label(th) })), { id: SYSTEM, text: t("app.theme_system") }];
+  el.classList.add("theme-switch");
   el.setAttribute("role", "group");
   el.setAttribute("aria-label", t("app.theme_label"));
   el.replaceChildren(...choices.map(({ id, text }) => {
@@ -69,9 +85,6 @@ export async function mountThemeSwitch(el) {
   el.addEventListener("click", (e) => {
     const btn = e.target.closest(".lang-btn");
     if (btn) setMode(btn.dataset.theme);
-  });
-  prefersLight.addEventListener("change", () => {
-    if (mode === SYSTEM) apply();
   });
   apply();
 }

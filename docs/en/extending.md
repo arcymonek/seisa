@@ -38,9 +38,9 @@ A fork is a reasonable choice if you want to keep a local, dependency-light tool
 
 #### Add a colour theme
 
-1. Copy `frontend/themes/light.json` (or `dark.json`) to `frontend/themes/<id>.json` and change the values. `id` must equal the file name (lowercase letters, digits and `-`), `base` is `light` or `dark` (it sets the browser's `color-scheme` for form controls and scrollbars), `order` sorts the footer buttons (light is 10, dark 20; "System" is always last), `name` holds the button text per language. The header logo follows `base`: `logo.png` (dark badge) on a dark theme, `logo-light.png` (cream badge) on a light one.
+1. Copy `frontend/themes/light.json` (or `dark.json`) to `frontend/themes/<id>.json` and change the values. `id` must equal the file name (lowercase letters, digits and `-`), `base` is `light` or `dark` (it sets the browser's `color-scheme` for form controls and scrollbars), `order` sorts the theme buttons (light is 10, dark 20; "System" is always last), `name` holds the button text per language. The header logo follows `base`: `logo.png` (dark badge) on a dark theme, `logo-light.png` (cream badge) on a light one.
 2. `colors` must contain exactly the keys of `COLOR_KEYS` in `backend/themes.py`, each as `#rrggbb`: nothing missing, nothing extra, no other CSS. A file that breaks a rule is skipped and the reason goes to the log.
-3. Reload the page: the new theme appears as a footer button. Keep text readable: `tests/test_themes.py` shows the pairs that need a 4.5:1 contrast (WCAG AA) for the shipped themes; run `python3 -m pytest -q tests/test_themes.py`.
+3. Reload the page: the new theme appears as a button in Info > Settings. Keep text readable: `tests/test_themes.py` shows the pairs that need a 4.5:1 contrast (WCAG AA) for the shipped themes; run `python3 -m pytest -q tests/test_themes.py`.
 4. For a new colour in the interface, add a key to `COLOR_KEYS`, to both shipped themes and use `var(--key)` in `style.css`; never write a colour literal in the stylesheet (a test checks that).
 
 #### Add a tab

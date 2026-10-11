@@ -1,5 +1,5 @@
-import { applyStatic, mountLangSwitch } from "./i18n.js";
-import { mountThemeSwitch } from "./theme.js";
+import { applyStatic } from "./i18n.js";
+import { initTheme } from "./theme.js";
 import { initLookup, prefillLookup, repeatLookup } from "./lookup.js";
 import { initDmarc, loadDmarcData } from "./dmarc.js";
 import { initReportBuilder, prefillReport, prefillReportEmail, prefillReportEntry } from "./report-builder.js";
@@ -82,8 +82,7 @@ window.seisaApp = {
 };
 
 applyStatic();
-mountLangSwitch(document.getElementById("lang-switch"));
-mountThemeSwitch(document.getElementById("theme-switch"));
+initTheme();
 
 initLookup(panels.lookup);
 initDmarc(panels.dmarc);
