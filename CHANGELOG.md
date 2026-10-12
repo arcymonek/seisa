@@ -5,6 +5,7 @@ All notable changes to Seisa, newest first. Every change to the program itself r
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
 ## Development
+- 2026-10-12: `scripts/make_app_icon.py` (a development helper that needs Pillow, which is not a dependency of Seisa) generates `frontend/app-icon.png` from the logo; listed in the file tree of `docs/{en,pl}/architecture.md`.
 - 2026-10-12: the pre-commit hook now counts `seisa-launcher.sh` as part of the program (a change to it needs a version bump), with a test in `tests/test_pre_commit_hook.py`; `tests/test_desktop_icon.py` and harness checks for the icon endpoints (HOME and the desktop are faked, the real Applications folder and menu are never touched).
 - 2026-10-12: `tests/test_themes.py` (stripe and `info` checks, the logo mask) and a harness check that hostile theme files dropped into the themes folder (a `url()` in the stripe, an extra stripe key, a CSS rule in a colour, an unknown top-level key) never reach `/api/themes.css`; both were mutation-checked. No change to the program beyond 2.3.1.
 - 2026-10-11: `tests/test_themes.py` (theme validator, WCAG contrast of the shipped themes, no colour literals left in the stylesheet) and harness checks for `/api/themes` and `/api/themes.css`. No change to the program beyond 2.2.0.
@@ -18,6 +19,12 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: added a pytest unit-test suite (`tests/`, `requirements-dev.txt`, run with `python3 -m pytest -q`) covering the mail trust helpers, scoring, the AbuseIPDB report checks, the e-mail parser and forensics, plus a gitignored `tests/private/` for an optional local corpus of real e-mails. No change to the program.
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
+
+## 2.4.1 - 2026-10-12
+- **Icon look:** the desktop icon is now a rounded square in the style of other application icons (the dark colour of the logo's badge with the kanji in its blue, without the ring), from the new `frontend/app-icon.png` (1024 px, with the margin macOS icons have). The macOS app also gets the 1024 px size for Retina displays. The round `logo.png` stays in the page header and the README.
+- **Shut down confirmation:** the question is now Seisa's own dialog titled "Seisa <version>" (not the browser's `127.0.0.1:54321` box) with a "Do not ask again" checkbox; Esc and "Cancel" (which has the focus) keep Seisa running. The choice is kept in the browser (`localStorage`, key `seisa.shutdownAsk`) and can be switched back with the "Ask before shutting down" checkbox next to the button in Info > Settings. It never skips the question while an analysis is running or text is typed.
+- **Footer:** the "Shut down Seisa" link is no longer underlined. The "Seisa has been stopped" page now centres its title.
+- **Settings row:** "Application icon", "Add icon", "Remove icon" and the status are now in one row; the explanation stays below it.
 
 ## 2.4.0 - 2026-10-12
 - **Application icon:** the Info tab, Settings card, has a new row "Application icon" with a status and the buttons "Add icon" and "Remove icon". On macOS the button makes `~/Applications/Seisa.app` (a tiny app with the Seisa logo), on Linux with a desktop an entry in the application menu (`~/.local/share/applications/seisa.desktop`). Clicking the icon opens Seisa in the browser and starts the server first when it is not running (new `seisa-launcher.sh`, which does not touch `seisa.sh`). Nothing is added automatically and Seisa never pins itself to the Dock or the panel; the card tells how to do it by hand.

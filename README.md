@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.4.0</b></p>
+<p align="center"><b>Seisa 2.4.1</b></p>
 
 # Seisa
 
@@ -152,6 +152,7 @@ The full documentation is in [`docs/en/`](docs/en/index.md) (Polish: [`docs/pl/`
 
 Recent feature highlights below; the full list - including maintenance-only releases such as documentation fixes - is in [CHANGELOG.md](CHANGELOG.md), and the Info tab lists the most recent ones from the git log.
 
+- **2.4.1** - the desktop icon now looks like other application icons: a rounded square with the kanji in the logo's blue, without the ring; the icon controls in Info > Settings sit in one row.
 - **2.4.0** - an optional desktop icon: "Add icon" in Info > Settings makes a macOS app or a Linux menu entry that starts Seisa (when it is not running) and opens it in the browser; "Remove icon" undoes it. Nothing is added automatically. A "Shut down Seisa" button (Info > Settings and the footer) stops the server and closes the page.
 - **2.3.1** - a third colour theme, "Red-and-white Kōhaku" (the red and white of the Polish and Japanese flags, a warm white page and a two-tone bar under the header), a separate colour for information banners so that they cannot be mistaken for errors, and the logo of the light themes now sits directly on the page background.
 - **2.3.0** - a new "Settings" card in the Info tab: language and colour theme buttons (moved out of the footer) and a plain-language explanation of the traditional Japanese colours used by the themes.

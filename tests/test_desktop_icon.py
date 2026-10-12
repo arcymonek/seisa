@@ -56,7 +56,7 @@ def test_linux_install_writes_a_valid_entry_and_reports_installed(linux):
     assert "Terminal=false" in lines
     assert "X-Seisa-Managed=true" in lines
     assert f"X-Seisa-Project={di.BASE_DIR}" in lines
-    assert f"Icon={di.LOGO}" in lines
+    assert f"Icon={di.ICON}" in lines
     exec_line = next(line for line in lines if line.startswith("Exec="))
     assert exec_line == f'Exec=/bin/bash "{di.LAUNCHER}"'
     assert result["status"] == "installed" and result["platform"] == "linux"

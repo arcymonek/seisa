@@ -37,6 +37,6 @@
 
 **Does Seisa run on Windows?** Not natively; it works through WSL as Linux.
 
-**How do I stop Seisa?** Click "Shut down Seisa" in the footer or in Info > Settings: it stops the server and closes the page (a tab you opened by hand may stay open with a notice; close it yourself). Started from a terminal, Ctrl+C there also works. If Seisa was started by the desktop icon and the page is already closed, run `kill $(lsof -ti :54321)`. Seisa never stops by itself: it has no idle timeout.
+**How do I stop Seisa?** Click "Shut down Seisa" in the footer or in Info > Settings: it stops the server and closes the page (a tab you opened by hand may stay open with a notice; close it yourself). Started from a terminal, Ctrl+C there also works. If Seisa was started by the desktop icon and the page is already closed, run `kill $(lsof -ti :54321 -sTCP:LISTEN)` (only the process that listens on the port; plain `lsof -i :54321` also lists connections to other machines that happen to use that port number, for example an SSH client). Seisa never stops by itself: it has no idle timeout.
 
 **Where are my data and how do I reset Seisa?** In `data/` and `logs/` (see [Data files](architecture.md#data-files)); stop Seisa and delete their contents.

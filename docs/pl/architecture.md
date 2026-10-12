@@ -85,6 +85,7 @@ seisa/
 ├── frontend/
 │   ├── index.html
 │   ├── favicon.ico            # ikona: kanji 査 (16/32/48/64 px)
+│   ├── app-icon.png           # ikona ikony na pulpicie: zaokrąglony kwadrat, kanji w niebieskim kolorze logo, bez obwódki (robi ją `scripts/make_app_icon.py`)
 │   ├── logo.png               # okrągłe logo, ciemna odznaka (nagłówek strony w ciemnych skórkach, README)
 │   ├── logo-mask.png          # sam kształt logo (pierścień i kanji, reszta przezroczysta); jasne skórki malują go kolorem akcentu
 │   ├── theme-init.js          # zwykły skrypt w <head>: stosuje zapamiętaną skórkę przed pierwszym narysowaniem strony
@@ -99,6 +100,7 @@ seisa/
 │   └── private/             # opcjonalne PRAWDZIWE e-maile z oczekiwanymi wynikami dla `test_corpus.py` (gitignored, nigdy nie commitowane)
 ├── scripts/
 │   ├── api_harness.py         # test end-to-end: każdy endpoint API z zamockowanymi usługami zewnętrznymi (także `--serve PORT`)
+│   ├── make_app_icon.py       # narzędzie deweloperskie: robi `frontend/app-icon.png` z logo (wymaga Pillow, który nie jest zależnością Seisy)
 │   ├── dump_facts.py          # zrzuca analizę deterministyczną fixtures do JSON (porównanie dwóch wersji kodu bajt w bajt)
 │   ├── check_i18n.py          # sprawdza katalogi PL/EN, zgodność README i docs, martwe linki i wersję; `--strict` szuka polskich literałów w kodzie
 │   └── hooks/                 # hooki git (włączane `git config core.hooksPath scripts/hooks`): `pre-commit` (zakazane pliki, długi myślnik, pary PL/EN, check_i18n na indeksie, skan prywatności, jeden krok wersji z wpisem w CHANGELOG; `--range BASE` sprawdza całą gałąź w CI: wersję i dodane linie) i `commit-msg` (reguły komunikatu, woła `pre-commit --commit-msg`)
@@ -112,7 +114,7 @@ seisa/
 
 Moduły frontendu w `frontend/js/`:
 
-- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `shutdown.js` (przycisk "Zamknij Seisę" w stopce i w zakładce Informacje: potwierdzenie, żądanie zatrzymania, zamknięcie karty albo komunikat o zatrzymaniu), `theme.js` (przełącznik skórek w zakładce Informacje: po jednym przycisku na skórkę, plus systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
+- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `shutdown.js` (przycisk "Zamknij Seisę" w stopce i w zakładce Informacje: okienko potwierdzenia z wyborem "nie pytaj ponownie", żądanie zatrzymania, zamknięcie karty albo komunikat o zatrzymaniu), `theme.js` (przełącznik skórek w zakładce Informacje: po jednym przycisku na skórkę, plus systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
 - `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (porównanie dwóch skanów), `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (fakty deterministyczne, karty lekcji, szuflada źródła, dymki słownika na płynącej prozie - ten sam styl `.gl` co `glossary.js`, ale skanujący wyrenderowany tekst zamiast owijać znaną etykietę - porównanie i eksporty);
 - `report-builder.js` (zakładka AbuseIPDB) + `report-result.js`, `report-history.js`, `report-export.js` (widok analizy, log wysłanych zgłoszeń i eksport Markdown);
@@ -138,8 +140,8 @@ Całe `data/` i `logs/` jest w `.gitignore` (katalogi zachowuje `.gitkeep`). Aby
 
 Opcjonalna wygoda, tworzona tylko po kliknięciu "Dodaj ikonę" w Informacje > Ustawienia (nic nie dzieje się automatycznie). Cała logika jest w `backend/desktop_icon.py` (`status()`, `install()`, `remove()`); trzy endpointy `/api/about/icon` i `python -m backend.desktop_icon status|install|remove` tylko ją wywołują, więc przycisk i terminal nie mogą się rozjechać.
 
-- **macOS:** `~/Applications/Seisa.app`, budowana w katalogu tymczasowym obok i przenoszona na miejsce. Jej jedyne zadanie to `exec /bin/bash seisa-launcher.sh`; `.icns` powstaje z `frontend/logo.png` narzędziami systemu `sips` i `iconutil`.
-- **Linux:** `~/.local/share/applications/seisa.desktop` (format Desktop Entry; `Exec` uruchamia `/bin/bash seisa-launcher.sh`, `Icon` wskazuje `frontend/logo.png` na miejscu), potem `update-desktop-database`, jeśli istnieje.
+- **macOS:** `~/Applications/Seisa.app`, budowana w katalogu tymczasowym obok i przenoszona na miejsce. Jej jedyne zadanie to `exec /bin/bash seisa-launcher.sh`; `.icns` powstaje z `frontend/app-icon.png` narzędziami systemu `sips` i `iconutil`.
+- **Linux:** `~/.local/share/applications/seisa.desktop` (format Desktop Entry; `Exec` uruchamia `/bin/bash seisa-launcher.sh`, `Icon` wskazuje `frontend/app-icon.png` na miejscu), potem `update-desktop-database`, jeśli istnieje.
 - **Własność:** plik jest nasz tylko wtedy, gdy ma znacznik (`SeisaManaged` w `Info.plist`, `X-Seisa-Managed=true` w pliku `.desktop`) razem ze ścieżką projektu, dla którego powstał. Obcy plik ani dowiązanie symboliczne nigdy nie jest zastępowane ani usuwane; ścieżka różna od obecnego katalogu to status "stale".
 - **Launcher:** `seisa-launcher.sh` pyta `http://127.0.0.1:54321/api/about`; jeśli Seisa odpowiada, tylko otwiera przeglądarkę, w przeciwnym razie uruchamia `seisa.sh` w tle (log w `logs/launcher.log`), a `seisa.sh` otwiera przeglądarkę. Jest wywoływany jawnie przez `/bin/bash`, bo ZIP pobrany z GitHuba nie zachowuje bitu wykonywalności.
 - **Zatrzymywanie:** `POST /api/about/shutdown` odpowiada, potem krótkotrwały wątek (daemon, a nie zadanie w tle: uvicorn czeka na takie zadania przy zamykaniu) wysyła do procesu SIGTERM, żeby uvicorn zatrzymał się łagodnie, a po 3 sekundach kończy go mimo wszystko, gdyby otwarty strumień analizy go przetrzymywał. Wszystkie pliki danych są zapisywane atomowo, więc przerwany zapis nie zostawi połowy pliku. Frontend próbuje potem `window.close()`, a gdy się nie uda, zastępuje stronę komunikatem.

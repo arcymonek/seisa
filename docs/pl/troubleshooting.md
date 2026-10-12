@@ -37,6 +37,6 @@
 
 **Czy Seisa działa na Windows?** Nie natywnie; działa przez WSL jako Linux.
 
-**Jak zatrzymać Seisę?** Kliknij "Zamknij Seisę" w stopce albo w Informacje > Ustawienia: zatrzymuje serwer i zamyka stronę (karta otwarta ręcznie może zostać z komunikatem; zamknij ją sam). Uruchomioną z terminala zatrzyma też Ctrl+C w nim. Jeśli Seisa została uruchomiona z ikony, a strona jest już zamknięta, wpisz `kill $(lsof -ti :54321)`. Seisa nigdy nie wyłącza się sama: nie ma limitu bezczynności.
+**Jak zatrzymać Seisę?** Kliknij "Zamknij Seisę" w stopce albo w Informacje > Ustawienia: zatrzymuje serwer i zamyka stronę (karta otwarta ręcznie może zostać z komunikatem; zamknij ją sam). Uruchomioną z terminala zatrzyma też Ctrl+C w nim. Jeśli Seisa została uruchomiona z ikony, a strona jest już zamknięta, wpisz `kill $(lsof -ti :54321 -sTCP:LISTEN)` (tylko proces, który nasłuchuje na porcie; samo `lsof -i :54321` pokazuje też połączenia do innych maszyn, które używają tego samego numeru portu, np. klienta SSH). Seisa nigdy nie wyłącza się sama: nie ma limitu bezczynności.
 
 **Gdzie są moje dane i jak zresetować Seisę?** W `data/` i `logs/` (zobacz [Pliki danych](architecture.md#pliki-danych)); zatrzymaj Seisę i usuń ich zawartość.

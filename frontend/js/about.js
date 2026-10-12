@@ -5,7 +5,7 @@
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
-import { mountShutdown } from "./shutdown.js";
+import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
@@ -65,12 +65,14 @@ export function initAbout(container) {
     ${block(t("about.settings_title"), `
       <div class="settings-row"><span>${e(t("about.settings_lang"))}</span><span class="lang-switch" id="ab-lang-switch"></span></div>
       <div class="settings-row"><span>${e(t("about.settings_theme"))}</span><span class="lang-switch" id="ab-theme-switch"></span></div>
-      <div class="settings-row"><span>${e(t("about.settings_icon"))}</span><span id="ab-icon-state"></span></div>
-      <div class="settings-row action-row"><button class="secondary" id="ab-icon-add" type="button" disabled>${e(t("about.icon_add"))}</button>
-        <button class="secondary" id="ab-icon-remove" type="button" disabled>${e(t("about.icon_remove"))}</button><span class="action-info" id="ab-icon-info"></span></div>
+      <div class="settings-row"><span>${e(t("about.settings_icon"))}</span>
+        <button class="secondary" id="ab-icon-add" type="button" disabled>${e(t("about.icon_add"))}</button>
+        <button class="secondary" id="ab-icon-remove" type="button" disabled>${e(t("about.icon_remove"))}</button>
+        <span id="ab-icon-state"></span><span class="action-info" id="ab-icon-info"></span></div>
       <div class="muted settings-row" id="ab-icon-hint"></div>
-      <div class="settings-row"><span>${e(t("about.settings_shutdown"))}</span><button class="secondary" id="ab-shutdown" type="button">${e(t("app.shutdown_button"))}</button></div>
-      <div class="muted settings-row">${e(t("about.shutdown_hint"))}</div>
+      <div class="settings-row"><span>${e(t("about.settings_shutdown"))}</span><button class="secondary" id="ab-shutdown" type="button">${e(t("app.shutdown_button"))}</button>
+        <label><input type="checkbox" id="ab-shutdown-ask"> ${e(t("about.shutdown_ask"))}</label></div>
+      <div class="muted settings-row">${e(t("about.shutdown_hint")).replace(/\n/g, "<br>")}</div>
       ${block(t("about.colors_title"), colourExplanation())}`, { open: true, id: "ab-settings-card" })}
     ${block(t("about.status_limits_title"), `
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
@@ -84,6 +86,7 @@ export function initAbout(container) {
   mountThemeSwitch(root.querySelector("#ab-theme-switch"));
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
   mountShutdown(root.querySelector("#ab-shutdown"));
+  mountShutdownAsk(root.querySelector("#ab-shutdown-ask"));
   root.querySelector("#ab-icon-add").addEventListener("click", () => changeIcon(api.aboutIconInstall, "about.icon_added"));
   root.querySelector("#ab-icon-remove").addEventListener("click", () => changeIcon(api.aboutIconRemove, "about.icon_removed"));
 }

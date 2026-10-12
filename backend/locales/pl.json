@@ -296,7 +296,7 @@
   "icon.unsupported_os": "ikona aplikacji działa tylko na macOS i Linuksie",
   "icon.no_display": "nie znaleziono sesji graficznej (brak DISPLAY / WAYLAND_DISPLAY), więc nie ma menu, do którego można dodać ikonę",
   "icon.no_tools": "brakuje narzędzi macOS sips i iconutil, więc nie da się zrobić ikony",
-  "icon.files_missing": "w katalogu Seisy brakuje seisa-launcher.sh lub frontend/logo.png",
+  "icon.files_missing": "w katalogu Seisy brakuje seisa-launcher.sh lub frontend/app-icon.png",
   "icon.bad_path": "ścieżka katalogu Seisy zawiera znak sterujący, nie da się dla niej zrobić ikony",
   "icon.foreign": "{path} już istnieje i nie został utworzony przez Seisę, więc go nie ruszono",
   "icon.build_failed": "zrobienie ikony się nie udało ({tool} zwrócił błąd)"

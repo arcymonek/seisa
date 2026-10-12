@@ -27,7 +27,7 @@ Seisa's requests to OpenRouter identify the application as Seisa. Everything els
 
 - `data/` holds the history, the counters, the log of sent reports and the saved e-mail analyses (with the raw messages, files `0600`, the directory `0700`); `logs/` holds errors and warnings. Both are gitignored. See [Data files](architecture.md#data-files).
 - API keys stay in `.env` (gitignored) and are never sent to the frontend; the Info tab shows only whether a key is set.
-- The browser stores only per-viewer conveniences in `localStorage` (the interface language under `seisa.lang`, the colour theme under `seisa.theme`, the chosen pane, which cards you left open).
+- The browser stores only per-viewer conveniences in `localStorage` (the interface language under `seisa.lang`, the colour theme under `seisa.theme`, whether to ask before shutting down under `seisa.shutdownAsk`, the chosen pane, which cards you left open).
 - The one thing Seisa writes outside its own folder is the optional desktop icon (Info > Settings): `~/Applications/Seisa.app` on macOS or `~/.local/share/applications/seisa.desktop` on Linux, only on your click on "Add icon", at fixed places with no input from the browser, and removable with "Remove icon". It never replaces or removes a file it did not make, the requests are covered by the same origin guard as the rest of the API, and nothing is sent over the network.
 - There is no telemetry and no update check.
 

@@ -85,6 +85,7 @@ seisa/
 ├── frontend/
 │   ├── index.html
 │   ├── favicon.ico            # icon: the kanji 査 (16/32/48/64 px)
+│   ├── app-icon.png           # the icon of the desktop icon: a rounded square, kanji in the logo's blue, no ring (made by `scripts/make_app_icon.py`)
 │   ├── logo.png               # round logo, dark badge (page header on dark themes, README)
 │   ├── logo-mask.png          # the logo shape only (ring and kanji, transparent elsewhere); light themes paint it in their accent colour
 │   ├── theme-init.js          # classic script in <head>: applies the stored theme before the first paint
@@ -99,6 +100,7 @@ seisa/
 │   └── private/             # optional REAL e-mails with expected results for `test_corpus.py` (gitignored, never committed)
 ├── scripts/
 │   ├── api_harness.py         # end-to-end test: every API endpoint with all external services mocked (also `--serve PORT`)
+│   ├── make_app_icon.py       # development helper: makes `frontend/app-icon.png` from the logo (needs Pillow, which is not a dependency of Seisa)
 │   ├── dump_facts.py          # dumps the deterministic analysis of the fixtures to JSON (compares two code versions byte for byte)
 │   ├── check_i18n.py          # checks the PL/EN catalogs, README and docs parity, dead links and the version; `--strict` looks for Polish literals in code
 │   └── hooks/                 # git hooks (enable with `git config core.hooksPath scripts/hooks`): `pre-commit` (forbidden files, long dash, PL/EN pairs, check_i18n on the index, privacy scan, one version step with its CHANGELOG entry; `--range BASE` checks a whole branch in CI: the version and the added lines) and `commit-msg` (message rules, calls `pre-commit --commit-msg`)
@@ -112,7 +114,7 @@ seisa/
 
 Frontend modules in `frontend/js/`:
 
-- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `shutdown.js` (the "Shut down Seisa" button of the footer and the Info tab: confirmation, the stop request, closing the tab or the "stopped" notice), `theme.js` (the theme switch of the Info tab: one button per theme, plus system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
+- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `shutdown.js` (the "Shut down Seisa" button of the footer and the Info tab: the confirmation dialog with its "do not ask again" choice, the stop request, closing the tab or the "stopped" notice), `theme.js` (the theme switch of the Info tab: one button per theme, plus system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
 - `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (comparison of two scans), `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips on free-flowing prose - the same `.gl` tooltip style as `glossary.js`, but scanning rendered text instead of wrapping a known label - comparison and exports);
 - `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);
@@ -138,8 +140,8 @@ All of `data/` and `logs/` is gitignored (the directories are kept by `.gitkeep`
 
 An optional convenience, made only when you click "Add icon" in Info > Settings (nothing is automatic). `backend/desktop_icon.py` holds the whole logic (`status()`, `install()`, `remove()`); the three `/api/about/icon` endpoints and `python -m backend.desktop_icon status|install|remove` only call it, so the button and the terminal cannot drift apart.
 
-- **macOS:** `~/Applications/Seisa.app`, built in a temporary folder next to it and moved into place. Its only job is `exec /bin/bash seisa-launcher.sh`; the `.icns` is made from `frontend/logo.png` with the system tools `sips` and `iconutil`.
-- **Linux:** `~/.local/share/applications/seisa.desktop` (the Desktop Entry format; `Exec` runs `/bin/bash seisa-launcher.sh`, `Icon` points at `frontend/logo.png` in place), then `update-desktop-database` when it exists.
+- **macOS:** `~/Applications/Seisa.app`, built in a temporary folder next to it and moved into place. Its only job is `exec /bin/bash seisa-launcher.sh`; the `.icns` is made from `frontend/app-icon.png` with the system tools `sips` and `iconutil`.
+- **Linux:** `~/.local/share/applications/seisa.desktop` (the Desktop Entry format; `Exec` runs `/bin/bash seisa-launcher.sh`, `Icon` points at `frontend/app-icon.png` in place), then `update-desktop-database` when it exists.
 - **Ownership:** a file is ours only if it carries a marker (`SeisaManaged` in the `Info.plist`, `X-Seisa-Managed=true` in the `.desktop` file) together with the project path it was made for. A foreign file or a symbolic link is never replaced or removed; the path differing from the current folder is the "stale" status.
 - **Launcher:** `seisa-launcher.sh` asks `http://127.0.0.1:54321/api/about`; if Seisa answers it only opens the browser, otherwise it starts `seisa.sh` in the background (log in `logs/launcher.log`), and `seisa.sh` opens the browser. It is run with `/bin/bash` explicitly because a ZIP download from GitHub does not keep the executable bit.
 - **Stopping:** `POST /api/about/shutdown` answers, then a short-lived daemon thread (not a background task: uvicorn waits for those when it shuts down) sends SIGTERM to the process so that uvicorn stops gracefully, and after 3 seconds ends it anyway in case an open analysis stream would keep it waiting. All data files are written atomically, so an interrupted write cannot leave half a file. The frontend then tries `window.close()` and otherwise replaces the page with a notice.

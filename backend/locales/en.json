@@ -296,7 +296,7 @@
   "icon.unsupported_os": "an application icon is supported on macOS and Linux only",
   "icon.no_display": "no graphical session found (DISPLAY / WAYLAND_DISPLAY is not set), so there is no menu to put an icon in",
   "icon.no_tools": "the macOS tools sips and iconutil are missing, so the icon cannot be made",
-  "icon.files_missing": "seisa-launcher.sh or frontend/logo.png is missing from the Seisa folder",
+  "icon.files_missing": "seisa-launcher.sh or frontend/app-icon.png is missing from the Seisa folder",
   "icon.bad_path": "the Seisa folder path contains a control character, an icon cannot be made for it",
   "icon.foreign": "{path} already exists and was not made by Seisa, so it was left untouched",
   "icon.build_failed": "making the icon failed ({tool} returned an error)"

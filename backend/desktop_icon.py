@@ -2,8 +2,8 @@
 
 One module for both entry points, so the button and the terminal command can never drift apart.
 
-- macOS: ~/Applications/Seisa.app (a tiny bundle whose only job is to run seisa-launcher.sh, with the logo as icon).
-- Linux: ~/.local/share/applications/seisa.desktop (an entry for the application menu; the logo is used in place).
+- macOS: ~/Applications/Seisa.app (a tiny bundle whose only job is to run seisa-launcher.sh, with the Seisa icon).
+- Linux: ~/.local/share/applications/seisa.desktop (an entry for the application menu; the icon is used in place).
 - Everything else, or a Linux without a graphical session: reported as "unsupported", nothing is written.
 
 Nothing here is automatic and nothing comes from the client: the targets are fixed paths in the user's home, a file
@@ -29,16 +29,16 @@ from backend.config import BASE_DIR, FRONTEND_DIR
 from backend.i18n import t
 
 LAUNCHER = BASE_DIR / "seisa-launcher.sh"
-LOGO = FRONTEND_DIR / "logo.png"
+ICON = FRONTEND_DIR / "app-icon.png"  # a rounded square, made by scripts/make_app_icon.py
 
 APP_NAME = "Seisa.app"
 DESKTOP_NAME = "seisa.desktop"
 MAC_BUNDLE_ID = "local.seisa.launcher"
 TOOL_TIMEOUT = 20  # seconds for sips / iconutil / update-desktop-database
-ICONSET = {  # file name in the .iconset -> pixel size (the logo is 512 px, so no @2x of the largest size)
+ICONSET = {  # file name in the .iconset -> pixel size (the source is 1024 px)
     "icon_16x16.png": 16, "icon_16x16@2x.png": 32, "icon_32x32.png": 32, "icon_32x32@2x.png": 64,
     "icon_128x128.png": 128, "icon_128x128@2x.png": 256, "icon_256x256.png": 256, "icon_256x256@2x.png": 512,
-    "icon_512x512.png": 512,
+    "icon_512x512.png": 512, "icon_512x512@2x.png": 1024,
 }
 
 
@@ -89,7 +89,7 @@ def _platform_problem() -> tuple[str, str | None]:
             problem = "icon.no_display"
     else:
         return "other", "icon.unsupported_os"
-    if problem is None and not (LAUNCHER.is_file() and LOGO.is_file()):
+    if problem is None and not (LAUNCHER.is_file() and ICON.is_file()):
         problem = "icon.files_missing"
     return kind, problem
 
@@ -176,7 +176,7 @@ def _build_icns(target: Path) -> None:
         iconset = Path(tmp) / "Seisa.iconset"
         iconset.mkdir()
         for name, size in ICONSET.items():
-            _run("sips", "-z", str(size), str(size), str(LOGO), "--out", str(iconset / name))
+            _run("sips", "-z", str(size), str(size), str(ICON), "--out", str(iconset / name))
         _run("iconutil", "-c", "icns", str(iconset), "-o", str(target))
 
 
@@ -229,7 +229,7 @@ def _install_linux() -> None:
         f"Comment={t('icon.comment', lang='en')}",
         f"Comment[pl]={t('icon.comment', lang='pl')}",
         f"Exec=/bin/bash {_desktop_quote(str(LAUNCHER))}",
-        f"Icon={LOGO}",
+        f"Icon={ICON}",
         "Terminal=false",
         "Categories=Network;Security;",
         "StartupNotify=false",
