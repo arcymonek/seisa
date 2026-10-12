@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.3.1</b></p>
+<p align="center"><b>Seisa 2.4.0</b></p>
 
 # Seisa
 
@@ -34,7 +34,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 | [AbuseIPDB](docs/pl/tabs.md#abuseipdb) | Przygotowuje i wysyła zgłoszenie nadużycia: IP źródłowe, kwalifikowalność, kategorie, komentarz po angielsku, twarde sprawdzenia | `ABUSEIPDB_API_KEY` (OpenRouter opcjonalnie) | IP oraz, po "Wyślij", zgłoszenie, do AbuseIPDB |
 | [Historia](docs/pl/tabs.md#historia) | Wszystko, co Seisa pamięta, z ponownym otwieraniem, porównywaniem i przypinaniem | niczego | nic |
 | [Logi](docs/pl/tabs.md#logi) | Błędy i ostrzeżenia każdej usługi | niczego | nic |
-| [Informacje](docs/pl/tabs.md#informacje) | Wersja, status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
+| [Informacje](docs/pl/tabs.md#informacje) | Wersja, ustawienia (język, kolory, ikona uruchamiająca Seisę), status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
 
 Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał; sekcja "Wyjaśnienia" pisana zrozumiałym językiem i kontekstowe dymki (glosariusz - najedź myszą albo zaznacz klawiaturą podkreślony na kropki termin) tłumaczą żargon także dla osób bez technicznego przygotowania.
 
@@ -69,6 +69,8 @@ Bez skryptu:
 ```
 
 Aby użyć innego portu, uruchom `uvicorn` samodzielnie z `--port`. Możesz dodać do skryptu alias powłoki (np. `alias seisa='~/ścieżka/do/seisa/seisa.sh'`). Po edycji `.env` uruchom Seisę ponownie; klucze są czytane przy starcie.
+
+Aby uruchamiać Seisę kliknięciem zamiast terminalem, otwórz zakładkę Informacje, Ustawienia i kliknij "Dodaj ikonę": na macOS powstaje mała aplikacja w `~/Applications` (przeciągnij ją na Dock), a na Linuksie z pulpitem wpis w menu aplikacji (przypnij go stamtąd). Ikona uruchamia serwer, gdy nie działa, i otwiera przeglądarkę. Nic nie jest dodawane automatycznie, a "Usuń ikonę" to cofa; patrz [Informacje](docs/pl/tabs.md#informacje). Aby zatrzymać Seisę bez terminala, użyj "Zamknij Seisę" w tej samej karcie albo w stopce: zatrzymuje serwer i zamyka stronę (albo prosi o zamknięcie karty, bo przeglądarka pozwala stronie zamknąć tylko karty, które sama otworzyła).
 
 ### Pierwsze kroki bez kluczy
 
@@ -128,7 +130,7 @@ Zapytania Seisy do OpenRouter przedstawiają aplikację jako Seisa. Wszystko inn
 
 ### Co zostaje na Twoim komputerze
 
-Wszystko, co nie jest wysyłane, zostaje w dwóch gitignorowanych katalogach w katalogu projektu: `data/` (historia, zapisane analizy e-maili z surowymi wiadomościami, log zgłoszeń AbuseIPDB, liczniki zużycia) i `logs/` (błędy i ostrzeżenia) - pliki `0600`, katalog `data/analyses/` `0700`. Nie ma uwierzytelniania, więc traktuj te katalogi jak surowe e-maile, które mogą zawierać: żeby wyczyścić wszystko, usuń `data/` i `logs/`, albo użyj "Wyczyść" w zakładkach Historia i Logi do bardziej wybiórczego czyszczenia. Pełna lista i uzasadnienie: [Co zostaje lokalnie](docs/pl/privacy-and-security.md#co-zostaje-lokalnie).
+Wszystko, co nie jest wysyłane, zostaje w dwóch gitignorowanych katalogach w katalogu projektu: `data/` (historia, zapisane analizy e-maili z surowymi wiadomościami, log zgłoszeń AbuseIPDB, liczniki zużycia) i `logs/` (błędy i ostrzeżenia) - pliki `0600`, katalog `data/analyses/` `0700`. Nie ma uwierzytelniania, więc traktuj te katalogi jak surowe e-maile, które mogą zawierać: żeby wyczyścić wszystko, usuń `data/` i `logs/`, albo użyj "Wyczyść" w zakładkach Historia i Logi do bardziej wybiórczego czyszczenia. Jedyna rzecz, jaką Seisa może zapisać poza katalogiem projektu, to opcjonalna ikona na pulpicie, i to tylko po kliknięciu "Dodaj ikonę" (stałe miejsca w Twoim katalogu domowym, do usunięcia przyciskiem "Usuń ikonę"). Pełna lista i uzasadnienie: [Co zostaje lokalnie](docs/pl/privacy-and-security.md#co-zostaje-lokalnie).
 
 ### Model zagrożeń
 
@@ -150,6 +152,7 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
 
+- **2.4.0** - opcjonalna ikona na pulpicie: "Dodaj ikonę" w Informacje > Ustawienia tworzy aplikację na macOS albo wpis w menu na Linuksie, który uruchamia Seisę (gdy nie działa) i otwiera ją w przeglądarce; "Usuń ikonę" to cofa. Nic nie jest dodawane automatycznie. Przycisk "Zamknij Seisę" (Informacje > Ustawienia i stopka) zatrzymuje serwer i zamyka stronę.
 - **2.3.1** - trzecia skórka, "Biało-czerwona Kōhaku" (czerwień i biel flag Polski i Japonii, ciepła biała strona i dwukolorowy pasek pod nagłówkiem), osobny kolor banerów informacyjnych, żeby nie dało się ich pomylić z błędami, oraz logo jasnych skórek leżące teraz wprost na tle strony.
 - **2.3.0** - nowa karta "Ustawienia" w zakładce Informacje: przyciski języka i skórki (przeniesione ze stopki) oraz zrozumiałe wyjaśnienie tradycyjnych japońskich kolorów użytych w skórkach.
 - **2.2.0** - jasna skórka "Washi" (ciepły krem, bez czystej bieli) i ciemna "Sumi" w tradycyjnych japońskich kolorach, i przełącznik `Jasny | Ciemny | Systemowy` w stopce; skórki to osobne pliki tylko z kolorami w `frontend/themes/`.

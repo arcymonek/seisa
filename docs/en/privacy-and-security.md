@@ -28,6 +28,7 @@ Seisa's requests to OpenRouter identify the application as Seisa. Everything els
 - `data/` holds the history, the counters, the log of sent reports and the saved e-mail analyses (with the raw messages, files `0600`, the directory `0700`); `logs/` holds errors and warnings. Both are gitignored. See [Data files](architecture.md#data-files).
 - API keys stay in `.env` (gitignored) and are never sent to the frontend; the Info tab shows only whether a key is set.
 - The browser stores only per-viewer conveniences in `localStorage` (the interface language under `seisa.lang`, the colour theme under `seisa.theme`, the chosen pane, which cards you left open).
+- The one thing Seisa writes outside its own folder is the optional desktop icon (Info > Settings): `~/Applications/Seisa.app` on macOS or `~/.local/share/applications/seisa.desktop` on Linux, only on your click on "Add icon", at fixed places with no input from the browser, and removable with "Remove icon". It never replaces or removes a file it did not make, the requests are covered by the same origin guard as the rest of the API, and nothing is sent over the network.
 - There is no telemetry and no update check.
 
 ### Threat model
@@ -35,7 +36,7 @@ Seisa's requests to OpenRouter identify the application as Seisa. Everything els
 **Seisa defends against:**
 
 - untrusted content (e-mails, DMARC XML, urlscan pages, comments in third-party API answers) running code in the interface or making the tool fetch something: an HTML allow-list, a Content-Security-Policy, non-clickable "defanged" links, and nothing from a message is ever opened or downloaded;
-- another web page talking to your local API through your browser (a loopback-only `Host` header blocks DNS rebinding; the origin guard refuses `/api/` requests that the browser marks as cross-site; scripts only from Seisa's own origin);
+- another web page talking to your local API through your browser, including to the endpoints that write the desktop icon or stop the server (a loopback-only `Host` header blocks DNS rebinding; the origin guard refuses `/api/` requests that the browser marks as cross-site; scripts only from Seisa's own origin);
 - leaking data by accident: the LLM is called only after an explicit click, the AbuseIPDB comment gets a personal-data scan with masking, and the hard checks are re-computed in the backend.
 
 **Seisa does not defend against:**

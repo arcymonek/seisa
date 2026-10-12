@@ -60,12 +60,16 @@ header .subtitle { max-width: none; }
 .panel { display: none; }
 .panel.active { display: block; }
 
+footer .footer-link { background: none; border: 0; padding: 0; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; }
+footer .footer-link:hover { color: var(--accent); }
+.stopped { margin-top: 20vh; text-align: center; }
 footer .lang-switch { display: inline-flex; gap: 4px; vertical-align: middle; }
 footer .lang-btn { background: none; border: 1px solid var(--hair); color: var(--muted); font: inherit; font-size: 12px; padding: 1px 7px; border-radius: 4px; cursor: pointer; }
 footer .lang-btn.on { color: var(--text); border-color: var(--text); cursor: default; }
 .settings-row, .colour-pal { font-size: 14.5px; }
 .settings-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 12px 14px 0; }
 .settings-row > span:first-child { min-width: 150px; color: var(--muted); }
+.settings-row .action-info { margin-top: 0; }
 .settings-row .lang-switch { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .settings-row .lang-btn { background: none; border: 1px solid var(--hair); color: var(--text); font: inherit; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
 .settings-row .lang-btn:hover { border-color: var(--accent); color: var(--accent); }

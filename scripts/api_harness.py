@@ -247,6 +247,11 @@ whois.whois = lambda domain: {"registrar": "Example Registrar", "creation_date":
 
 TMP = Path(tempfile.mkdtemp(prefix="seisa-harness-"))
 atexit.register(shutil.rmtree, TMP, ignore_errors=True)
+# The desktop icon writes into the home directory: point it at a temporary one and fake a Linux desktop, so that the
+# harness never touches the real Applications folder / menu and its result does not depend on the machine running it.
+os.environ["HOME"] = str(TMP / "home")
+os.environ["DISPLAY"] = ":0"
+os.environ.pop("WAYLAND_DISPLAY", None)
 import backend.config as cfg  # noqa: E402
 
 cfg.DATA_DIR = TMP / "data"
@@ -283,8 +288,12 @@ vt_rate_limiter._minute_limiter.max_calls = 10_000
 
 # the Info tab reads the release list from `git log`; the harness serves a fixed one (with an XSS probe) instead
 try:
+    from backend import desktop_icon as _di_mod
     from backend.routers import about as _about_router  # absent in checkouts older than 2.0.51 (`--root`)
 
+    _di_mod._system = lambda: "Linux"
+    _SERVER_STOPS: list[int] = []
+    _about_router._schedule_stop = lambda: _SERVER_STOPS.append(1)  # the real one would end the harness process
     _about_router._recent_changes = lambda: [{"version": "9.9.9", "summary": "mock <img src=x onerror=window.__xss=1>"}]
 except ImportError:
     pass
@@ -431,6 +440,11 @@ for lang in ("pl", "en"):
     rec(p + "lookup greynoise limit late", client.post("/api/lookup", json={"indicator": "185.220.101.77"}, headers=H))
     rec(p + "limits refresh", client.post("/api/about/limits/refresh", headers=H))
     rec(p + "about after refresh", client.get("/api/about", headers=H))
+    rec(p + "icon status", client.get("/api/about/icon", headers=H))
+    rec(p + "icon install", client.post("/api/about/icon", headers=H))
+    rec(p + "icon status after install", client.get("/api/about/icon", headers=H))
+    rec(p + "icon remove", client.delete("/api/about/icon", headers=H))
+    rec(p + "icon status after remove", client.get("/api/about/icon", headers=H))
     rec(p + "logs clear", client.delete("/api/logs", headers=H))
     rec(p + "logs after clear", client.get("/api/logs?range=all", headers=H))
     if aid:
@@ -467,6 +481,19 @@ for _name, _hdr in {
     probes[f"guard GET {_name}"] = client.get(_XSITE_GET, headers=_hdr).status_code
 probes["guard GET dmarc geo cross-site"] = client.get("/api/dmarc/geo?ip=8.8.8.8", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard body-less POST cross-site"] = client.post("/api/about/limits/refresh", headers={"Sec-Fetch-Site": "cross-site"}).status_code
+_XS = {"Sec-Fetch-Site": "cross-site"}
+_icon_entry = TMP / "home" / ".local" / "share" / "applications" / "seisa.desktop"
+probes["guard icon POST cross-site"] = client.post("/api/about/icon", headers=_XS).status_code
+probes["icon entry after cross-site POST"] = _icon_entry.exists()
+client.post("/api/about/icon")
+probes["guard icon DELETE cross-site"] = client.delete("/api/about/icon", headers=_XS).status_code
+probes["icon entry after cross-site DELETE"] = _icon_entry.exists()
+client.delete("/api/about/icon")
+probes["icon entry after the real remove"] = _icon_entry.exists()
+probes["guard shutdown POST cross-site"] = client.post("/api/about/shutdown", headers=_XS).status_code
+probes["shutdown calls after cross-site"] = len(_SERVER_STOPS)
+probes["shutdown POST same-origin"] = client.post("/api/about/shutdown").status_code
+probes["shutdown calls after same-origin"] = len(_SERVER_STOPS)
 probes["guard themes.css cross-site"] = client.get("/api/themes.css", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard static index cross-site"] = client.get("/", headers={"Sec-Fetch-Site": "cross-site"}).status_code
 probes["guard preflight foreign Origin"] = client.options("/api/history", headers={"Origin": "https://attacker.example", "Access-Control-Request-Method": "DELETE"}).status_code
@@ -702,12 +729,20 @@ finally:
 if [th["id"] for th in _hostile_list] != ["okcopy"] or "attacker" in _hostile_css or "body{" in _hostile_css or "extra" in _hostile_css:
     failures.append(f"a hostile theme file got through the theme validator: {[th['id'] for th in _hostile_list]}")
 _blocked = ["guard GET Sec-Fetch-Site cross-site", "guard themes.css cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
-            "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin"]
+            "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin",
+            "guard icon POST cross-site", "guard icon DELETE cross-site", "guard shutdown POST cross-site"]
 _allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET no fetch metadata",
             "guard static index cross-site"]
 for _k in _blocked:
     if probes[_k] != 403:
         failures.append(f"the origin guard let through: {_k} -> {probes[_k]}")
+if probes["icon entry after cross-site POST"] or not probes["icon entry after cross-site DELETE"] or probes["icon entry after the real remove"]:
+    failures.append(f"the desktop icon was changed by a cross-site request, or a same-origin one did not work: {[probes[k] for k in probes if k.startswith('icon entry')]}")
+if (probes["shutdown calls after cross-site"], probes["shutdown POST same-origin"], probes["shutdown calls after same-origin"]) != (0, 200, 1):
+    failures.append(f"the shutdown endpoint: a cross-site request must not stop the server, a same-origin one must (once): {[probes[k] for k in probes if k.startswith('shutdown')]}")
+_icon_states = [_result(f"[en] {n}")["body"]["status"] for n in ("icon status", "icon install", "icon status after install", "icon remove", "icon status after remove")]
+if _icon_states != ["absent", "installed", "installed", "absent", "absent"]:
+    failures.append(f"the desktop icon endpoints report {_icon_states}")
 for _k in _allowed:
     if probes[_k] != 200:
         failures.append(f"the origin guard blocked a legitimate request: {_k} -> {probes[_k]}")

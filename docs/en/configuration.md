@@ -20,3 +20,7 @@ The full `.env` keys table (every variable, whether it is required, where to get
 | Logs shown | newest 500 entries | |
 
 The free-plan quotas of every keyed service (used / limit / reset) are in the [Info](tabs.md#info) tab, in the "API limits" card.
+
+### Desktop icon (optional)
+
+The "Add icon" button (Info > Settings) needs a graphical session: macOS with its own tools `sips` and `iconutil` (both ship with the system), or a Linux desktop (`DISPLAY` or `WAYLAND_DISPLAY` set in the environment Seisa runs in) and `curl` for the launcher. The icon starts Seisa on port 54321 only. The output of a server started by the icon goes to `logs/launcher.log`. See [Info](tabs.md#info).

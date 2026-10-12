@@ -21,6 +21,14 @@
 
 **Przeglądarka się nie otworzyła (Linux bez pulpitu).** Skrypt startowy tylko wypisuje adres; otwórz go ręcznie.
 
+**Ikona na pulpicie nic nie robi albo pokazuje tylko okno z komunikatem.** Skrypt startowy ikony potrzebuje `.venv/` tak samo jak `seisa.sh` (komunikat to mówi); patrz następny wpis. Jeśli serwer wystartował, jego wyjście jest w `logs/launcher.log`. Jeśli port 54321 zajmuje inny program, ikona nie uruchomi Seisy: uruchom ją sam na innym porcie.
+
+**Ikona jest opisana jako "zrobiona dla innego katalogu Seisy".** Po dodaniu ikony przeniesiono lub przemianowano katalog projektu. Kliknij ponownie "Dodaj ikonę" (naprawia ikonę) w Informacje > Ustawienia.
+
+**"Dodaj ikonę" jest wyszarzone albo pisze "niedostępna tutaj".** Windows i Linux bez sesji graficznej nie są obsługiwane; na macOS muszą być narzędzia systemu `sips` i `iconutil`. Jeśli komunikat mówi, że plik o tej samej nazwie już istnieje, to Seisa go nie zrobiła i go nie rusza: zmień jego nazwę lub usuń go sam, potem spróbuj ponownie.
+
+**Ikona jest dodana na Linuksie, ale Seisy nie ma w menu.** Niektóre pulpity odświeżają menu dopiero po wylogowaniu i zalogowaniu; poszukaj wtedy "Seisa" w kategorii Sieć lub Bezpieczeństwo. Przypnij ją z menu (nazwa opcji zależy od pulpitu).
+
 **`seisa.sh` mówi, że brakuje `.venv/`.** Najpierw wykonaj kroki z [Instalacja i uruchomienie](../../README.pl.md#instalacja-i-uruchomienie).
 
 **Zapisane analizy i logi zniknęły po aktualizacji z wydania przed 2.0.27.** Katalogi zmieniły nazwy; zobacz [Pliki danych](architecture.md#pliki-danych).
@@ -28,5 +36,7 @@
 **Dlaczego WHOIS/rDNS nie ma przycisku "otwórz stronę usługi"?** To bezpośrednie zapytanie protokołem, bez jednego zewnętrznego serwisu do zlinkowania.
 
 **Czy Seisa działa na Windows?** Nie natywnie; działa przez WSL jako Linux.
+
+**Jak zatrzymać Seisę?** Kliknij "Zamknij Seisę" w stopce albo w Informacje > Ustawienia: zatrzymuje serwer i zamyka stronę (karta otwarta ręcznie może zostać z komunikatem; zamknij ją sam). Uruchomioną z terminala zatrzyma też Ctrl+C w nim. Jeśli Seisa została uruchomiona z ikony, a strona jest już zamknięta, wpisz `kill $(lsof -ti :54321)`. Seisa nigdy nie wyłącza się sama: nie ma limitu bezczynności.
 
 **Gdzie są moje dane i jak zresetować Seisę?** W `data/` i `logs/` (zobacz [Pliki danych](architecture.md#pliki-danych)); zatrzymaj Seisę i usuń ich zawartość.

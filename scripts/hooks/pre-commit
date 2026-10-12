@@ -65,6 +65,7 @@ PROGRAM_FILES = {
     "requirements.txt",
     "requirements.lock",
     "seisa.sh",
+    "seisa-launcher.sh",
     "docs/abuseipdb-reporting-policy.md",
     "docs/email-analysis-guide.md",
 }

@@ -96,9 +96,12 @@ export function registerDirtyCheck(fn) {
   dirtyChecks.push(fn);
 }
 
+// True when something would be lost if the page went away now (see registerDirtyCheck).
+export const hasUnsavedWork = () => dirtyChecks.some((fn) => fn());
+
 export function setLang(next) {
   if (!SUPPORTED.includes(next) || next === getLang()) return;
-  if (dirtyChecks.some((fn) => fn()) && !confirm(t("app.lang_switch_confirm"))) return;
+  if (hasUnsavedWork() && !confirm(t("app.lang_switch_confirm"))) return;
   try {
     localStorage.setItem(STORAGE_KEY, next);
   } catch { /* storage blocked: the switch only lasts until reload */ }

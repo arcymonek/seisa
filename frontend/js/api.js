@@ -44,6 +44,10 @@ export const api = {
 
   logs: (range) => request(`/logs?range=${encodeURIComponent(range)}`),
   about: () => request("/about"),
+  aboutShutdown: () => request("/about/shutdown", { method: "POST" }),
+  aboutIcon: () => request("/about/icon"),
+  aboutIconInstall: () => request("/about/icon", { method: "POST" }),
+  aboutIconRemove: () => request("/about/icon", { method: "DELETE" }),
   aboutLimitsRefresh: () => request("/about/limits/refresh", { method: "POST" }),
   logsClear: () => request("/logs", { method: "DELETE" }),
 

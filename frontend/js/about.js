@@ -5,6 +5,7 @@
 import { api } from "./api.js";
 import { serviceTitle } from "./lookup-result.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
+import { mountShutdown } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
@@ -64,6 +65,12 @@ export function initAbout(container) {
     ${block(t("about.settings_title"), `
       <div class="settings-row"><span>${e(t("about.settings_lang"))}</span><span class="lang-switch" id="ab-lang-switch"></span></div>
       <div class="settings-row"><span>${e(t("about.settings_theme"))}</span><span class="lang-switch" id="ab-theme-switch"></span></div>
+      <div class="settings-row"><span>${e(t("about.settings_icon"))}</span><span id="ab-icon-state"></span></div>
+      <div class="settings-row action-row"><button class="secondary" id="ab-icon-add" type="button" disabled>${e(t("about.icon_add"))}</button>
+        <button class="secondary" id="ab-icon-remove" type="button" disabled>${e(t("about.icon_remove"))}</button><span class="action-info" id="ab-icon-info"></span></div>
+      <div class="muted settings-row" id="ab-icon-hint"></div>
+      <div class="settings-row"><span>${e(t("about.settings_shutdown"))}</span><button class="secondary" id="ab-shutdown" type="button">${e(t("app.shutdown_button"))}</button></div>
+      <div class="muted settings-row">${e(t("about.shutdown_hint"))}</div>
       ${block(t("about.colors_title"), colourExplanation())}`, { open: true, id: "ab-settings-card" })}
     ${block(t("about.status_limits_title"), `
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
@@ -76,6 +83,49 @@ export function initAbout(container) {
   mountLangSwitch(root.querySelector("#ab-lang-switch"));
   mountThemeSwitch(root.querySelector("#ab-theme-switch"));
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
+  mountShutdown(root.querySelector("#ab-shutdown"));
+  root.querySelector("#ab-icon-add").addEventListener("click", () => changeIcon(api.aboutIconInstall, "about.icon_added"));
+  root.querySelector("#ab-icon-remove").addEventListener("click", () => changeIcon(api.aboutIconRemove, "about.icon_removed"));
+}
+
+// ---- desktop icon (macOS app / Linux menu entry; made only on a click, see backend/desktop_icon.py) ----
+
+const ICON_STATE = { absent: "about.icon_state_absent", installed: "about.icon_state_installed", stale: "about.icon_state_stale", foreign: "about.icon_state_foreign", unsupported: "about.icon_state_unsupported" };
+const ICON_HINT = { macos: "about.icon_hint_macos", linux: "about.icon_hint_linux" };
+
+function renderIcon(icon) {
+  const reason = icon.reason ? ` - ${icon.reason}` : "";
+  const place = icon.path && icon.status !== "unsupported" ? ` <span class="mono">${e(icon.path)}</span>` : "";
+  root.querySelector("#ab-icon-state").innerHTML = `${e(t(ICON_STATE[icon.status]))}${place}${e(reason)}`;
+  root.querySelector("#ab-icon-add").disabled = !["absent", "stale"].includes(icon.status);
+  root.querySelector("#ab-icon-remove").disabled = !["installed", "stale"].includes(icon.status);
+  const hint = ICON_HINT[icon.platform] ? e(t(ICON_HINT[icon.platform])).replace(/\n/g, "<br>") : "";
+  root.querySelector("#ab-icon-hint").innerHTML = hint;
+}
+
+async function refreshIcon() {
+  try {
+    renderIcon(await api.aboutIcon());
+  } catch {
+    // the rest of the tab still works without the icon status
+  }
+}
+
+async function changeIcon(call, doneKey) {
+  const add = root.querySelector("#ab-icon-add");
+  const remove = root.querySelector("#ab-icon-remove");
+  const info = root.querySelector("#ab-icon-info");
+  add.disabled = remove.disabled = true;
+  info.className = "action-info";
+  info.textContent = t("about.icon_working");
+  try {
+    renderIcon(await call());
+    info.textContent = t(doneKey);
+  } catch (err) {
+    info.className = "action-info bad";
+    info.textContent = t("common.error", { message: err.message });
+    await refreshIcon();
+  }
 }
 
 // ---- environment ----
@@ -186,6 +236,7 @@ export async function refreshAbout() {
   } catch {
     return; // the static part of the tab is still useful without the live status
   }
+  refreshIcon();
   const keyed = info.services.filter((s) => s.configured !== null);
   const set = keyed.filter((s) => s.configured).length;
   root.querySelector("#ab-tiles").innerHTML = `<div class="kpi-row">

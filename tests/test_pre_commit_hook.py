@@ -389,6 +389,15 @@ def test_range_an_empty_waiver_does_not_count(repo):
     assert run_hook(repo, "--range", "main").returncode == 1
 
 
+def test_range_a_change_to_the_launcher_script_counts_as_a_program_change(repo):
+    git(repo, "switch", "-q", "-c", "feat-y")
+    (repo / "seisa-launcher.sh").write_text("#!/bin/bash\n", encoding="utf-8")
+    commit_all(repo, "work")
+    r = run_hook(repo, "--range", "main")
+    assert r.returncode == 1
+    assert "PROGRAM CHANGED WITHOUT A VERSION BUMP" in r.stdout and "seisa-launcher.sh" in r.stdout
+
+
 def test_range_a_program_change_with_one_bump_passes(repo):
     _branch_with(repo, program=True, bump_kind="z")
     r = run_hook(repo, "--range", "main")

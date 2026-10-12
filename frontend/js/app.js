@@ -1,4 +1,5 @@
 import { applyStatic } from "./i18n.js";
+import { mountShutdown } from "./shutdown.js";
 import { initTheme } from "./theme.js";
 import { initLookup, prefillLookup, repeatLookup } from "./lookup.js";
 import { initDmarc, loadDmarcData } from "./dmarc.js";
@@ -83,6 +84,7 @@ window.seisaApp = {
 
 applyStatic();
 initTheme();
+mountShutdown(document.getElementById("footer-shutdown"));
 
 initLookup(panels.lookup);
 initDmarc(panels.dmarc);

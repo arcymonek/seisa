@@ -291,5 +291,13 @@
   "identity.popularity_top": "top {n}",
   "identity.note_nxdomain": "Domena nie istnieje w DNS (NXDOMAIN) - jest niezarejestrowana, wygasła lub wyłączona.",
   "identity.note_wildcard": "Strefa odpowiada dla dowolnej subdomeny (wildcard DNS) - losowa nazwa też się rozwiązuje; typowe dla domen zaparkowanych i zestawów phishingowych.",
-  "identity.note_ns_missing": "Strefa jest delegowana do serwerów nazw, które nie istnieją w DNS: {hosts}. Strefa nie rozwiązuje się w pełni, a kto zarejestruje taką nazwę, może przejąć strefę (wiszący NS)."
+  "identity.note_ns_missing": "Strefa jest delegowana do serwerów nazw, które nie istnieją w DNS: {hosts}. Strefa nie rozwiązuje się w pełni, a kto zarejestruje taką nazwę, może przejąć strefę (wiszący NS).",
+  "icon.comment": "Lokalne narzędzie do sprawdzania adresów IP, URL-i, raportów DMARC i e-maili",
+  "icon.unsupported_os": "ikona aplikacji działa tylko na macOS i Linuksie",
+  "icon.no_display": "nie znaleziono sesji graficznej (brak DISPLAY / WAYLAND_DISPLAY), więc nie ma menu, do którego można dodać ikonę",
+  "icon.no_tools": "brakuje narzędzi macOS sips i iconutil, więc nie da się zrobić ikony",
+  "icon.files_missing": "w katalogu Seisy brakuje seisa-launcher.sh lub frontend/logo.png",
+  "icon.bad_path": "ścieżka katalogu Seisy zawiera znak sterujący, nie da się dla niej zrobić ikony",
+  "icon.foreign": "{path} już istnieje i nie został utworzony przez Seisę, więc go nie ruszono",
+  "icon.build_failed": "zrobienie ikony się nie udało ({tool} zwrócił błąd)"
 }

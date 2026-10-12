@@ -40,6 +40,7 @@ In words: the browser talks to routers (`backend/routers/`); a lookup goes throu
 seisa/
 ├── .env                    # API keys (gitignored, see .env.example)
 ├── seisa.sh                 # start script (starts the server and opens the browser)
+├── seisa-launcher.sh        # start point of the desktop icon: only opens the browser when Seisa runs, otherwise starts seisa.sh in the background (run as `bash seisa-launcher.sh`)
 ├── README.md / README.pl.md  # the short README in English (the main one) and in Polish
 ├── CHANGELOG.md             # every release, newest first
 ├── pyproject.toml           # ruff and pytest configuration (tool settings only, not a package)
@@ -66,6 +67,7 @@ seisa/
 │   ├── citation_check.py     # local check of the LLM's quotes against the source
 │   ├── analyses.py           # storage of e-mail analyses in data/analyses/
 │   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only; plus an optional two-colour header stripe) and generates the CSS variables
+│   ├── desktop_icon.py       # the desktop icon (macOS app / Linux menu entry): status, install, remove; shared by the Info tab and `python -m backend.desktop_icon`
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
@@ -110,7 +112,7 @@ seisa/
 
 Frontend modules in `frontend/js/`:
 
-- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `theme.js` (the theme switch of the Info tab: one button per theme, plus system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
+- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `shutdown.js` (the "Shut down Seisa" button of the footer and the Info tab: confirmation, the stop request, closing the tab or the "stopped" notice), `theme.js` (the theme switch of the Info tab: one button per theme, plus system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
 - `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (comparison of two scans), `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips on free-flowing prose - the same `.gl` tooltip style as `glossary.js`, but scanning rendered text instead of wrapping a known label - comparison and exports);
 - `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);
@@ -128,5 +130,17 @@ Frontend modules in `frontend/js/`:
 | `data/report_log.json` | the log of every AbuseIPDB report attempt | an audit trail, not deleted by "Clear history" |
 | `data/analyses/` | saved e-mail analyses with the raw messages | files `0600`, directory `0700` |
 | `logs/*.jsonl` | WARNING and above, one file per day | |
+| `logs/launcher.log` | output of a server started by the desktop icon | `0600`; only exists after the icon started Seisa |
 
 All of `data/` and `logs/` is gitignored (the directories are kept by `.gitkeep`). To reset Seisa, stop it and delete their contents. Releases before 2.0.27 used `data/analizy/` and `logi/`; Seisa does not migrate them, so rename them by hand before the first start of a newer release (`mv data/analizy data/analyses`, and move the `*.jsonl` files from `logi/` to `logs/`).
+
+## The desktop icon
+
+An optional convenience, made only when you click "Add icon" in Info > Settings (nothing is automatic). `backend/desktop_icon.py` holds the whole logic (`status()`, `install()`, `remove()`); the three `/api/about/icon` endpoints and `python -m backend.desktop_icon status|install|remove` only call it, so the button and the terminal cannot drift apart.
+
+- **macOS:** `~/Applications/Seisa.app`, built in a temporary folder next to it and moved into place. Its only job is `exec /bin/bash seisa-launcher.sh`; the `.icns` is made from `frontend/logo.png` with the system tools `sips` and `iconutil`.
+- **Linux:** `~/.local/share/applications/seisa.desktop` (the Desktop Entry format; `Exec` runs `/bin/bash seisa-launcher.sh`, `Icon` points at `frontend/logo.png` in place), then `update-desktop-database` when it exists.
+- **Ownership:** a file is ours only if it carries a marker (`SeisaManaged` in the `Info.plist`, `X-Seisa-Managed=true` in the `.desktop` file) together with the project path it was made for. A foreign file or a symbolic link is never replaced or removed; the path differing from the current folder is the "stale" status.
+- **Launcher:** `seisa-launcher.sh` asks `http://127.0.0.1:54321/api/about`; if Seisa answers it only opens the browser, otherwise it starts `seisa.sh` in the background (log in `logs/launcher.log`), and `seisa.sh` opens the browser. It is run with `/bin/bash` explicitly because a ZIP download from GitHub does not keep the executable bit.
+- **Stopping:** `POST /api/about/shutdown` answers, then a short-lived daemon thread (not a background task: uvicorn waits for those when it shuts down) sends SIGTERM to the process so that uvicorn stops gracefully, and after 3 seconds ends it anyway in case an open analysis stream would keep it waiting. All data files are written atomically, so an interrupted write cannot leave half a file. The frontend then tries `window.close()` and otherwise replaces the page with a notice.
+- **Pinning to the Dock or panel is not done by Seisa:** the systems offer no clean way to do it from a program, and a tool should not rearrange your desktop on its own.

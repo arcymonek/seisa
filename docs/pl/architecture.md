@@ -40,6 +40,7 @@ Słowami: przeglądarka rozmawia z routerami (`backend/routers/`); sprawdzenie I
 seisa/
 ├── .env                    # klucze API (gitignored, patrz .env.example)
 ├── seisa.sh                 # skrypt startowy (uruchamia serwer i otwiera przeglądarkę)
+├── seisa-launcher.sh        # punkt startu ikony na pulpicie: gdy Seisa działa, tylko otwiera przeglądarkę, w przeciwnym razie uruchamia seisa.sh w tle (wywoływany jako `bash seisa-launcher.sh`)
 ├── README.md / README.pl.md  # krótkie README po angielsku (główne) i po polsku
 ├── CHANGELOG.md             # każde wydanie, od najnowszego
 ├── pyproject.toml           # konfiguracja ruff i pytest (tylko ustawienia narzędzi, to nie pakiet)
@@ -66,6 +67,7 @@ seisa/
 │   ├── citation_check.py     # lokalna kontrola cytatów LLM względem źródła
 │   ├── analyses.py           # zapis analiz e-maili w data/analyses/
 │   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb; plus opcjonalny dwukolorowy pasek pod nagłówkiem) i generuje zmienne CSS
+│   ├── desktop_icon.py       # ikona na pulpicie (aplikacja macOS / wpis w menu Linuksa): status, instalacja, usunięcie; wspólny dla zakładki Informacje i `python -m backend.desktop_icon`
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
@@ -110,7 +112,7 @@ seisa/
 
 Moduły frontendu w `frontend/js/`:
 
-- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `theme.js` (przełącznik skórek w zakładce Informacje: po jednym przycisku na skórkę, plus systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
+- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `shutdown.js` (przycisk "Zamknij Seisę" w stopce i w zakładce Informacje: potwierdzenie, żądanie zatrzymania, zamknięcie karty albo komunikat o zatrzymaniu), `theme.js` (przełącznik skórek w zakładce Informacje: po jednym przycisku na skórkę, plus systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
 - `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (porównanie dwóch skanów), `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (fakty deterministyczne, karty lekcji, szuflada źródła, dymki słownika na płynącej prozie - ten sam styl `.gl` co `glossary.js`, ale skanujący wyrenderowany tekst zamiast owijać znaną etykietę - porównanie i eksporty);
 - `report-builder.js` (zakładka AbuseIPDB) + `report-result.js`, `report-history.js`, `report-export.js` (widok analizy, log wysłanych zgłoszeń i eksport Markdown);
@@ -128,5 +130,17 @@ Moduły frontendu w `frontend/js/`:
 | `data/report_log.json` | log każdej próby zgłoszenia do AbuseIPDB | ślad audytowy, nie jest usuwany przez "Wyczyść historię" |
 | `data/analyses/` | zapisane analizy e-maili z surowymi wiadomościami | pliki `0600`, katalog `0700` |
 | `logs/*.jsonl` | WARNING i wyżej, jeden plik na dzień | |
+| `logs/launcher.log` | wyjście serwera uruchomionego z ikony na pulpicie | `0600`; istnieje dopiero po uruchomieniu Seisy z ikony |
 
 Całe `data/` i `logs/` jest w `.gitignore` (katalogi zachowuje `.gitkeep`). Aby zresetować Seisę, zatrzymaj ją i usuń zawartość tych katalogów. Wydania przed 2.0.27 używały `data/analizy/` i `logi/`; Seisa ich nie migruje, więc zmień nazwy ręcznie przed pierwszym startem nowszego wydania (`mv data/analizy data/analyses` oraz przeniesienie plików `*.jsonl` z `logi/` do `logs/`).
+
+## Ikona na pulpicie
+
+Opcjonalna wygoda, tworzona tylko po kliknięciu "Dodaj ikonę" w Informacje > Ustawienia (nic nie dzieje się automatycznie). Cała logika jest w `backend/desktop_icon.py` (`status()`, `install()`, `remove()`); trzy endpointy `/api/about/icon` i `python -m backend.desktop_icon status|install|remove` tylko ją wywołują, więc przycisk i terminal nie mogą się rozjechać.
+
+- **macOS:** `~/Applications/Seisa.app`, budowana w katalogu tymczasowym obok i przenoszona na miejsce. Jej jedyne zadanie to `exec /bin/bash seisa-launcher.sh`; `.icns` powstaje z `frontend/logo.png` narzędziami systemu `sips` i `iconutil`.
+- **Linux:** `~/.local/share/applications/seisa.desktop` (format Desktop Entry; `Exec` uruchamia `/bin/bash seisa-launcher.sh`, `Icon` wskazuje `frontend/logo.png` na miejscu), potem `update-desktop-database`, jeśli istnieje.
+- **Własność:** plik jest nasz tylko wtedy, gdy ma znacznik (`SeisaManaged` w `Info.plist`, `X-Seisa-Managed=true` w pliku `.desktop`) razem ze ścieżką projektu, dla którego powstał. Obcy plik ani dowiązanie symboliczne nigdy nie jest zastępowane ani usuwane; ścieżka różna od obecnego katalogu to status "stale".
+- **Launcher:** `seisa-launcher.sh` pyta `http://127.0.0.1:54321/api/about`; jeśli Seisa odpowiada, tylko otwiera przeglądarkę, w przeciwnym razie uruchamia `seisa.sh` w tle (log w `logs/launcher.log`), a `seisa.sh` otwiera przeglądarkę. Jest wywoływany jawnie przez `/bin/bash`, bo ZIP pobrany z GitHuba nie zachowuje bitu wykonywalności.
+- **Zatrzymywanie:** `POST /api/about/shutdown` odpowiada, potem krótkotrwały wątek (daemon, a nie zadanie w tle: uvicorn czeka na takie zadania przy zamykaniu) wysyła do procesu SIGTERM, żeby uvicorn zatrzymał się łagodnie, a po 3 sekundach kończy go mimo wszystko, gdyby otwarty strumień analizy go przetrzymywał. Wszystkie pliki danych są zapisywane atomowo, więc przerwany zapis nie zostawi połowy pliku. Frontend próbuje potem `window.close()`, a gdy się nie uda, zastępuje stronę komunikatem.
+- **Przypinanie do Docka lub panelu nie należy do Seisy:** systemy nie dają czystego sposobu, żeby zrobić to z programu, a narzędzie nie powinno samo przestawiać Twojego pulpitu.

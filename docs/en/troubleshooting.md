@@ -21,6 +21,14 @@
 
 **The browser did not open (Linux without a desktop).** The start script then only prints the address; open it by hand.
 
+**The desktop icon does nothing, or only shows a dialog.** The launcher needs `.venv/` like `seisa.sh` does (the dialog says so); see the next entry. If a server did start, its output is in `logs/launcher.log`. If port 54321 is taken by another program, the icon cannot start Seisa: start it yourself on another port.
+
+**The icon is listed as "made for another Seisa folder".** You moved or renamed the project folder after adding the icon. Click "Add icon" again (it repairs the icon) in Info > Settings.
+
+**"Add icon" is greyed out or says "not available here".** Windows and a Linux without a graphical session are not supported; on macOS the system tools `sips` and `iconutil` must be present. If the message says a file with the same name already exists, Seisa did not make it and leaves it alone: rename or delete it yourself, then try again.
+
+**The icon is added on Linux but Seisa is not in the menu.** Some desktops refresh their menu only after logging out and in; then look for "Seisa" under Network or Security. Pin it from the menu (the wording depends on the desktop).
+
 **`seisa.sh` says `.venv/` is missing.** Run the install steps in [Install and run](../../README.md#install-and-run) first.
 
 **Saved analyses and logs vanished after an upgrade from a release before 2.0.27.** The directories were renamed; see [Data files](architecture.md#data-files).
@@ -28,5 +36,7 @@
 **Why is there no "open the service website" button for WHOIS/rDNS?** It is a direct protocol query without a single external service to link to.
 
 **Does Seisa run on Windows?** Not natively; it works through WSL as Linux.
+
+**How do I stop Seisa?** Click "Shut down Seisa" in the footer or in Info > Settings: it stops the server and closes the page (a tab you opened by hand may stay open with a notice; close it yourself). Started from a terminal, Ctrl+C there also works. If Seisa was started by the desktop icon and the page is already closed, run `kill $(lsof -ti :54321)`. Seisa never stops by itself: it has no idle timeout.
 
 **Where are my data and how do I reset Seisa?** In `data/` and `logs/` (see [Data files](architecture.md#data-files)); stop Seisa and delete their contents.

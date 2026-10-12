@@ -29,3 +29,5 @@ All routes are under `/api`, answer JSON (errors as `{"detail": "..."}`) and rea
 | `GET /api/logs`, `DELETE /api/logs` | logs | no |
 | `GET /api/themes`, `GET /api/themes.css` | the colour themes: the list for the theme switch (id, names, base) and the generated stylesheet (CSS variables only) | no (local) |
 | `GET /api/about`, `POST /api/about/limits/refresh` | the Info tab, quota refresh | quota endpoints (on refresh) |
+| `GET /api/about/icon`, `POST /api/about/icon`, `DELETE /api/about/icon` | the desktop icon: status (`absent`, `installed`, `stale`, `foreign`, `unsupported`, with the platform, a shortened path and a reason), make it, remove it. No request body; the targets are fixed places in the home directory. 409 when a file Seisa did not make is in the way, 400 when the system cannot have an icon | no (local files) |
+| `POST /api/about/shutdown` | stops the server (answers first, then ends the process; no body, no parameters). The "Shut down Seisa" button of the Info tab and the footer | no |
