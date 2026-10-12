@@ -7,7 +7,7 @@ Thank you for wanting to help. Seisa is free software ([GPL-3.0-or-later](LICENS
 ## Sending a change
 
 1. **For anything bigger than a small fix, open an issue first.** Seisa is deliberately a small local tool (one process on `127.0.0.1`, no login, no database, see [Design decisions and non-goals](docs/en/architecture.md#design-decisions-and-non-goals)); a short discussion saves you from writing something that does not fit. I may decline an idea: that is not a judgement of its quality.
-2. Fork the repository, create a branch and make the change. How the code is organised and how to add a service, a language or a tab: [Forking and extending](docs/en/extending.md).
+2. Fork the repository, create a branch and make the change. How the code is organised and how to add a service, a language or a tab: [Forking and extending](docs/en/extending.md). If you work with an AI coding assistant, point it at [AGENTS.md](AGENTS.md).
 3. **Run the checks locally** (tests, the API harness, the i18n check, `ruff`): the list with the exact commands is in [Workflow, tests and conventions](docs/en/extending.md#workflow-tests-and-conventions). CI runs them again on Linux for every pull request.
 4. Open a pull request and fill in the template (what, why, what you checked and what you did not).
 
@@ -60,7 +60,7 @@ Dziękuję, że chcesz pomóc. Seisa to wolne oprogramowanie ([GPL-3.0-or-later]
 ### Przesyłanie zmiany
 
 1. **Przy czymkolwiek większym niż drobna poprawka najpierw otwórz zgłoszenie (issue).** Seisa jest celowo małym narzędziem lokalnym (jeden proces na `127.0.0.1`, bez logowania i bez bazy danych, zobacz [Założenia projektowe i świadome ograniczenia](docs/pl/architecture.md#założenia-projektowe-i-świadome-ograniczenia)); krótka rozmowa oszczędzi Ci pisania czegoś, co się nie zmieści. Mogę odrzucić pomysł: to nie jest ocena jego jakości.
-2. Zrób fork repozytorium, utwórz gałąź i wprowadź zmianę. Jak jest zbudowany kod i jak dodać usługę, język albo zakładkę: [Fork i rozszerzanie](docs/pl/extending.md).
+2. Zrób fork repozytorium, utwórz gałąź i wprowadź zmianę. Jak jest zbudowany kod i jak dodać usługę, język albo zakładkę: [Fork i rozszerzanie](docs/pl/extending.md). Jeśli pracujesz z asystentem AI do kodu, wskaż mu [AGENTS.md](AGENTS.md).
 3. **Uruchom kontrole lokalnie** (testy, harness API, kontrola i18n, `ruff`): lista z dokładnymi komendami jest w [Workflow, testy i konwencje](docs/pl/extending.md#workflow-testy-i-konwencje). CI powtarza je na Linuksie przy każdym pull requeście.
 4. Otwórz pull request i wypełnij szablon (co, dlaczego, co sprawdzono, a czego nie).
 

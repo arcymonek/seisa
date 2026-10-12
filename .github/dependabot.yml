@@ -1,0 +1,9 @@
+# Keeps the pinned GitHub Actions in .github/workflows/ up to date. Python dependencies are updated by hand on purpose:
+# a change to requirements.txt / requirements.lock is a change to the program and needs a version bump (see docs/en/extending.md, Versioning).
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2

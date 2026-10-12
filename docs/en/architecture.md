@@ -48,8 +48,9 @@ seisa/
 ├── LICENSE                  # GNU General Public License v3 (the project is GPL-3.0-or-later)
 ├── CONTRIBUTING.md          # how to report a bug and send a change (pull requests are welcome)
 ├── CODE_OF_CONDUCT.md       # rules of conduct (Contributor Covenant 2.1)
-├── SECURITY.md              # how to report a vulnerability
-├── .github/                 # ISSUE_TEMPLATE/ (bug report and feature idea templates, a link to SECURITY.md), pull_request_template.md (What / Why / Checked) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts and, on pull requests, the version rule and the added-line rules of the whole branch; for pull requests from forks only the added-line rules, the maintainer adds the version bump)
+├── SECURITY.md              # how to report a vulnerability (English and Polish)
+├── AGENTS.md                # rules for AI coding agents (English only): safeguards, commands, conventions
+├── .github/                 # ISSUE_TEMPLATE/ (bug report and feature idea templates, a link to SECURITY.md), pull_request_template.md (What / Why / Checked) CODEOWNERS, dependabot.yml (weekly updates of the pinned GitHub Actions) and workflows/ci.yml (CI: ruff, pytest, harness, check_i18n, dump_facts and, on pull requests, the version rule and the added-line rules of the whole branch; for pull requests from forks only the added-line rules, the maintainer adds the version bump)
 ├── backend/
 │   ├── main.py               # FastAPI, routing, no-cache/CSP, origin guard and language middleware, Host check, error handling
 │   ├── config.py             # paths, limits, settings from .env

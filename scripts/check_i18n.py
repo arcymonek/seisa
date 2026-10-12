@@ -179,7 +179,7 @@ def check_readme_parity() -> None:
 MD_LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 MD_SRC = re.compile(r"""\bsrc=["']([^"']+)["']""")
 DOC_DIRS = (ROOT / "docs" / "en", ROOT / "docs" / "pl")
-LINKED_MD = ("README.md", "README.pl.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md")
+LINKED_MD = ("README.md", "README.pl.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md", "CODE_OF_CONDUCT.md", "AGENTS.md")
 
 
 def md_lines(p: Path) -> list[tuple[int, str]]:
