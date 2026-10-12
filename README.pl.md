@@ -5,7 +5,7 @@
 
 [English](README.md) | **Polski**
 
-[![Licencja: GPL-3.0-or-later](https://img.shields.io/badge/licencja-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
+[![CI](https://github.com/arcymonek/seisa/actions/workflows/ci.yml/badge.svg)](https://github.com/arcymonek/seisa/actions/workflows/ci.yml) [![Licencja: GPL-3.0-or-later](https://img.shields.io/badge/licencja-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Działa lokalnie na 127.0.0.1](https://img.shields.io/badge/dzia%C5%82a-lokalnie%20na%20127.0.0.1-green) ![Bez telemetrii](https://img.shields.io/badge/telemetria-brak-green)
 
 [Szybki start](#szybki-start) · [Konfiguracja](#konfiguracja) · [Prywatność i przepływ danych](#prywatność-i-przepływ-danych) · [Dokumentacja](#dokumentacja) · [Historia zmian](#historia-zmian) · [Licencja i współpraca](#licencja-i-współpraca)
 
@@ -51,7 +51,7 @@ Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od poc
 Pobierz kod i w katalogu projektu:
 
 ```bash
-git clone https://github.arcymonek.eu/arcy/seisa.git
+git clone https://github.com/arcymonek/seisa.git
 cd seisa
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
@@ -88,7 +88,6 @@ Potem otwórz `http://127.0.0.1:8765`. Prawdziwa aplikacja bez kluczy:
 ## Konfiguracja
 
 ### Klucze API (.env)
-
 
 Skopiuj `.env.example` do `.env`, uzupełnij klucze, które masz, i ustaw plikowi dostęp tylko dla siebie (`chmod 600 .env`). `.env` jest w `.gitignore`, a klucze nigdy nie trafiają do przeglądarki.
 
@@ -155,14 +154,6 @@ Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto
 - **2.4.1** - ikona na pulpicie wygląda jak inne ikony aplikacji: zaokrąglony kwadrat z kanji w niebieskim kolorze logo, bez obwódki; przyciski ikony w Informacje > Ustawienia są w jednym wierszu.
 - **2.4.0** - opcjonalna ikona na pulpicie: "Dodaj ikonę" w Informacje > Ustawienia tworzy aplikację na macOS albo wpis w menu na Linuksie, który uruchamia Seisę (gdy nie działa) i otwiera ją w przeglądarce; "Usuń ikonę" to cofa. Nic nie jest dodawane automatycznie. Przycisk "Zamknij Seisę" (Informacje > Ustawienia i stopka) zatrzymuje serwer i zamyka stronę.
 - **2.3.1** - trzecia skórka, "Biało-czerwona Kōhaku" (czerwień i biel flag Polski i Japonii, ciepła biała strona i dwukolorowy pasek pod nagłówkiem), osobny kolor banerów informacyjnych, żeby nie dało się ich pomylić z błędami, oraz logo jasnych skórek leżące teraz wprost na tle strony.
-- **2.3.0** - nowa karta "Ustawienia" w zakładce Informacje: przyciski języka i skórki (przeniesione ze stopki) oraz zrozumiałe wyjaśnienie tradycyjnych japońskich kolorów użytych w skórkach.
-- **2.2.0** - jasna skórka "Washi" (ciepły krem, bez czystej bieli) i ciemna "Sumi" w tradycyjnych japońskich kolorach, i przełącznik `Jasny | Ciemny | Systemowy` w stopce; skórki to osobne pliki tylko z kolorami w `frontend/themes/`.
-- **2.1.22** - zakładki URLScan i AbuseIPDB też kończą się teraz sekcją "Wyjaśnienia" pisaną zrozumiałym językiem i dymkami glosariusza, tak jak IP i DMARC.
-- **2.1.21** - zakładki IP i DMARC: sekcje "Wyjaśnienia" przepisane zrozumiałym językiem dla nieprofesjonalistów, a żargonowe etykiety (ASN, odwrotny DNS, rekordy SPF/DKIM/DMARC/CAA, confidence score AbuseIPDB...) mają teraz kontekstowy dymek glosariusza - ten sam mechanizm co już w zakładce Email.
-- **2.1.20** - Dokumentacja: README skrócone i odchudzone z duplikatów wobec `docs/` - spis treści, dosłowna komenda `git clone`, informacja gdzie leżą lokalne dane i jak je wyczyścić; tabela "co opuszcza komputer" to teraz krótki wyciąg z linkiem do pełnej wersji w `docs/privacy-and-security.md`, a tabela kluczy `.env` w `docs/configuration.md` linkuje teraz z powrotem do README zamiast ją powielać.
-- **2.1.17** - zakładka AbuseIPDB: każdy hop w karcie adresu ma teraz oznaczenie prywatny/publiczny i własną plakietkę potwierdzenia SMTP AUTH/DKIM, nie tylko hop graniczny; `is_reportable_ip` korzysta teraz ze wspólnej klasyfikacji prywatnych/specjalnych adresów IP zamiast trzeciej, osobnej kopii tej logiki.
-- **2.1.16** - zakładka Email: fakt "IP nadawcy" i diagram trasy przechodzą teraz przez wewnętrzne hopy zewnętrznego przekaźnika (ten sam mechanizm co w zakładce AbuseIPDB), co naprawia błędny adres nadawcy dla łańcuchów obejmujących więcej niż jednego operatora poczty.
-- **2.1.15** - zakładka Email: wykrywanie granicy zaufania rozpoznaje teraz wewnętrzne hopy przekaźnika nazwane gołymi identyfikatorami bez kropki, zamiast błędnie liczyć je jako innego operatora; każdy adres IP w łańcuchu ma oznaczenie prywatny/publiczny i notatkę o potwierdzeniu SMTP AUTH/DKIM. Logika domen/IP/zaufania łańcucha, współdzielona przez zakładki Email i AbuseIPDB, została skonsolidowana w `backend/mail_trust.py`.
 
 ## Licencja i współpraca
 

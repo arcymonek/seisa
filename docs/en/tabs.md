@@ -267,7 +267,7 @@ The algorithm goes from the newest `Received` header downwards and looks for the
 
 ### Info
 
-> The round gear button at the far right of the tab row: the settings (language, colour theme, application icon) and a short description of Seisa and its state.
+> The round settings button (an icon of three sliders) at the far right of the tab row: the settings (language, colour theme, application icon) and a short description of Seisa and its state.
 
 **Shows:** the version (read from the page header) with the date of the last update, how many services have an API key set, the LLM model or "off" | **Sends out:** nothing, except quota requests on "Refresh limits".
 

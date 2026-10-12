@@ -267,7 +267,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 
 ### Informacje
 
-> Okrągły przycisk z zębatką na prawym końcu rzędu zakładek: ustawienia (język, skórka kolorystyczna, ikona aplikacji) i krótki opis Seisy oraz jej stanu.
+> Okrągły przycisk ustawień (ikona trzech suwaków) na prawym końcu rzędu zakładek: ustawienia (język, skórka kolorystyczna, ikona aplikacji) i krótki opis Seisy oraz jej stanu.
 
 **Pokazuje:** wersję (czytaną z nagłówka strony) z datą ostatniej aktualizacji, ile usług ma ustawiony klucz API, model LLM albo "wyłączony" | **Wysyła na zewnątrz:** nic, poza zapytaniami o limity po "Odśwież limity".
 

@@ -5,7 +5,7 @@
 
 **English** | [Polski](README.pl.md)
 
-[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
+[![CI](https://github.com/arcymonek/seisa/actions/workflows/ci.yml/badge.svg)](https://github.com/arcymonek/seisa/actions/workflows/ci.yml) [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE) ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue) ![Runs locally on 127.0.0.1](https://img.shields.io/badge/runs-locally%20on%20127.0.0.1-green) ![No telemetry](https://img.shields.io/badge/telemetry-none-green)
 
 [Quick start](#quick-start) · [Configuration](#configuration) · [Privacy and data flow](#privacy-and-data-flow) · [Documentation](#documentation) · [Changelog](#changelog) · [License and contributing](#license-and-contributing)
 
@@ -51,7 +51,7 @@ Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the 
 Get the code and, in the project directory:
 
 ```bash
-git clone https://github.arcymonek.eu/arcy/seisa.git
+git clone https://github.com/arcymonek/seisa.git
 cd seisa
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
@@ -88,7 +88,6 @@ Then open `http://127.0.0.1:8765`. With the real application and no keys:
 ## Configuration
 
 ### API keys (.env)
-
 
 Copy `.env.example` to `.env`, fill in the keys you have and make the file readable only for you (`chmod 600 .env`). `.env` is gitignored and the keys never reach the browser.
 
@@ -155,14 +154,6 @@ Recent feature highlights below; the full list - including maintenance-only rele
 - **2.4.1** - the desktop icon now looks like other application icons: a rounded square with the kanji in the logo's blue, without the ring; the icon controls in Info > Settings sit in one row.
 - **2.4.0** - an optional desktop icon: "Add icon" in Info > Settings makes a macOS app or a Linux menu entry that starts Seisa (when it is not running) and opens it in the browser; "Remove icon" undoes it. Nothing is added automatically. A "Shut down Seisa" button (Info > Settings and the footer) stops the server and closes the page.
 - **2.3.1** - a third colour theme, "Red-and-white Kōhaku" (the red and white of the Polish and Japanese flags, a warm white page and a two-tone bar under the header), a separate colour for information banners so that they cannot be mistaken for errors, and the logo of the light themes now sits directly on the page background.
-- **2.3.0** - a new "Settings" card in the Info tab: language and colour theme buttons (moved out of the footer) and a plain-language explanation of the traditional Japanese colours used by the themes.
-- **2.2.0** - a light theme "Washi" (warm cream, no pure white) and a dark "Sumi" in traditional Japanese colours, and a `Light | Dark | System` switch in the footer; themes are separate colour-only files in `frontend/themes/`.
-- **2.1.22** - URLScan and AbuseIPDB tabs now also end with a plain-language "Explanations" card and glossary tooltips, matching IP and DMARC.
-- **2.1.21** - IP and DMARC tabs: the "Explanations" cards were rewritten in plain language for non-specialists, and jargon labels (ASN, reverse DNS, SPF/DKIM/DMARC/CAA records, the AbuseIPDB confidence score...) now carry a contextual glossary tooltip, the same mechanism already used in the Email tab.
-- **2.1.20** - Docs: README trimmed and de-duplicated against `docs/` - a table of contents, a literal `git clone` command, where local data lives and how to wipe it; the "what leaves your machine" table is now a short excerpt linking to the full one in `docs/privacy-and-security.md`, and `docs/configuration.md`'s `.env` keys table now links back to the README instead of repeating it.
-- **2.1.17** - AbuseIPDB tab: every hop in the address card now shows a private/public label and its own SMTP-AUTH/DKIM corroboration badge, not just the boundary hop; `is_reportable_ip` shares its private/special-IP check with the rest of the tool instead of a third, separate copy of it.
-- **2.1.16** - Email tab: the "sender IP" fact and the route diagram now walk through an external relay's own internal hops (the same mechanism as the AbuseIPDB tab), fixing a wrong sender IP for chains that span more than one mail operator.
-- **2.1.15** - Email tab: trust-boundary detection now recognises internal relay hops named with bare, dotless identifiers instead of miscounting them as a different operator; every hop's IP is marked private or public and gets an SMTP-AUTH/DKIM corroboration note. Domain/IP/relay-trust logic shared by the Email and AbuseIPDB tabs is consolidated into `backend/mail_trust.py`.
 
 ## License and contributing
 
