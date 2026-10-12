@@ -1,0 +1,32 @@
+{
+  "id": "kohaku",
+  "name": {"en": "Red-and-white Kōhaku", "pl": "Biało-czerwona Kōhaku"},
+  "base": "light",
+  "order": 30,
+  "stripe": {"top": "#e9e6e3", "bottom": "#c8102e"},
+  "colors": {
+    "bg": "#fbf8f6",
+    "bg-raised": "#ffffff",
+    "bg-inset": "#f4eeeb",
+    "hair": "#e0d6d2",
+    "hair-soft": "#ebe4e0",
+    "text": "#2a2125",
+    "text-strong": "#1a1417",
+    "muted": "#6b5f63",
+    "accent": "#c8102e",
+    "on-accent": "#ffffff",
+    "info": "#4a3f44",
+    "fail": "#8e1b1f",
+    "fail-bg": "#f6dcdc",
+    "pass": "#2f5f2a",
+    "pass-bg": "#e0ecd9",
+    "warn": "#765000",
+    "warn-bg": "#f6e8c0",
+    "on-warn": "#ffffff",
+    "hit-bg": "#f3dc8a",
+    "focus": "#1a1417",
+    "tooltip-bg": "#ffffff",
+    "shadow": "#5a3a40",
+    "cite-hover-bg": "#f9e3e8"
+  }
+}

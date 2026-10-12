@@ -71,6 +71,6 @@ If you change the code, keep these true; each names where it lives.
 8. **Indicators are validated before they reach URL paths** (`is_valid_indicator` in `backend/aggregator.py`: only real IP addresses and host names), urlscan ids must be UUIDs, and request sizes are bounded (`backend/config.py`).
 9. **File permissions:** `data/analyses/` is `0700` and its files `0600` (they hold raw e-mails).
 10. **Keys stay in the backend** (`.env`); `GET /api/about` exposes only whether a key is set.
-11. **A theme is data, not CSS** (`backend/themes.py`): only a fixed set of keys with `#rrggbb` values, a checked id and `dark`/`light` reach the generated stylesheet, so a theme file (also one from a pull request) cannot add `url()`, `@import` or any other rule. Invalid files are skipped.
+11. **A theme is data, not CSS** (`backend/themes.py`): only a fixed set of keys with `#rrggbb` values (the optional header stripe included: exactly `top` and `bottom`), a checked id and `dark`/`light` reach the generated stylesheet, so a theme file (also one from a pull request) cannot add `url()`, `@import` or any other rule. Invalid files are skipped.
 
 To verify: `./.venv/bin/python scripts/api_harness.py` includes security probes (a foreign `Host`, cross-site requests, the CSP header, path injection) and its mocked answers contain hostile HTML; in the browser (`--serve`), XSS payloads must leave `window.__xss` at 0.

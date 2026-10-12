@@ -14,6 +14,7 @@
     "muted": "#9aa0a3",
     "accent": "#5fb4c8",
     "on-accent": "#101418",
+    "info": "#5fb4c8",
     "fail": "#e9735d",
     "fail-bg": "#3b2420",
     "pass": "#7bb67d",

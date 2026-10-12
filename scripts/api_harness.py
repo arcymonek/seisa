@@ -669,11 +669,38 @@ if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) ==
 if probes["text/plain cross-site POST (CSRF without preflight)"] not in (403, 422):
     failures.append("a text/plain cross-site POST reached the handler")
 _themes = _themes_resp.json()
-if [th["id"] for th in _themes] != ["light", "dark"] or any("colors" in th for th in _themes):
-    failures.append(f"theme list is wrong (shipped themes light and dark, no colours in the list): {_themes}")
+if [th["id"] for th in _themes] != ["light", "dark", "kohaku"] or any("colors" in th for th in _themes):
+    failures.append(f"theme list is wrong (shipped themes light, dark and kohaku, no colours in the list): {_themes}")
 if not re.fullmatch(r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+', _themes_css.text) \
         or not _themes_css.headers.get("content-type", "").startswith("text/css"):
     failures.append("themes.css holds something other than whitelisted colour variables")
+if '--stripe-top:#e9e6e3;--stripe-bottom:#c8102e;' not in _themes_css.text or _themes_css.text.count('--stripe-') != 2:
+    failures.append("themes.css must carry the header stripe of the kohaku theme only")
+# hostile themes dropped into the folder must never reach the stylesheet: the validator whitelists every piece of them
+import backend.themes as _themes_mod  # noqa: E402
+
+_theme_dir = Path(tempfile.mkdtemp(prefix="seisa-themes-"))
+_theme_base = {"name": {"en": "X", "pl": "X"}, "base": "light", "order": 40,
+               "colors": dict.fromkeys(_themes_mod.COLOR_KEYS, "#123456"), "stripe": {"top": "#abcdef", "bottom": "#123456"}}
+_theme_cases = {
+    "okcopy": {},  # control: valid, so the folder switch itself works
+    "badstripe": {"stripe": {"top": "url(https://attacker.example/x)", "bottom": "#123456"}},
+    "badstripekey": {"stripe": {"top": "#abcdef", "bottom": "#123456", "extra": "#000000"}},
+    "badinfo": {"colors": {**_theme_base["colors"], "info": "#123456;}body{display:none"}},
+    "badtop": {"x-rule": "body{display:none}"},
+}
+for _tid, _over in _theme_cases.items():
+    (_theme_dir / f"{_tid}.json").write_text(json.dumps({**_theme_base, "id": _tid, **_over}), encoding="utf-8")
+_real_theme_dir = _themes_mod.THEMES_DIR
+_themes_mod.THEMES_DIR = _theme_dir
+try:
+    _hostile_list = client.get("/api/themes").json()
+    _hostile_css = client.get("/api/themes.css").text
+finally:
+    _themes_mod.THEMES_DIR = _real_theme_dir
+    shutil.rmtree(_theme_dir, ignore_errors=True)
+if [th["id"] for th in _hostile_list] != ["okcopy"] or "attacker" in _hostile_css or "body{" in _hostile_css or "extra" in _hostile_css:
+    failures.append(f"a hostile theme file got through the theme validator: {[th['id'] for th in _hostile_list]}")
 _blocked = ["guard GET Sec-Fetch-Site cross-site", "guard themes.css cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
             "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin"]
 _allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET no fetch metadata",

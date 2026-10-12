@@ -65,7 +65,7 @@ seisa/
 │   ├── mail_trust.py         # wspólne funkcje zaufania łańcucha Received/domen/IP/SMTP AUTH (obie zakładki)
 │   ├── citation_check.py     # lokalna kontrola cytatów LLM względem źródła
 │   ├── analyses.py           # zapis analiz e-maili w data/analyses/
-│   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb) i generuje zmienne CSS
+│   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb; plus opcjonalny dwukolorowy pasek pod nagłówkiem) i generuje zmienne CSS
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
 │   ├── verdict.py            # kanoniczny protokół werdyktu (kody EN, mapowanie starych tokenów PL)
@@ -84,9 +84,9 @@ seisa/
 │   ├── index.html
 │   ├── favicon.ico            # ikona: kanji 査 (16/32/48/64 px)
 │   ├── logo.png               # okrągłe logo, ciemna odznaka (nagłówek strony w ciemnych skórkach, README)
-│   ├── logo-light.png         # to samo logo jako kremowa odznaka (nagłówek strony w jasnych skórkach)
+│   ├── logo-mask.png          # sam kształt logo (pierścień i kanji, reszta przezroczysta); jasne skórki malują go kolorem akcentu
 │   ├── theme-init.js          # zwykły skrypt w <head>: stosuje zapamiętaną skórkę przed pierwszym narysowaniem strony
-│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json); tylko kolory
+│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json, kohaku.json); tylko kolory (i opcjonalny dwukolorowy pasek pod nagłówkiem)
 │   ├── css/style.css          # układ i komponenty, bez kolorów (pochodzą ze skórki)
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej
@@ -110,7 +110,7 @@ seisa/
 
 Moduły frontendu w `frontend/js/`:
 
-- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `theme.js` (przełącznik skórek w zakładce Informacje: jasna, ciemna, systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
+- `app.js` (zakładki i przekazania `window.seisaApp`), `i18n.js`, `api.js`, `theme.js` (przełącznik skórek w zakładce Informacje: po jednym przycisku na skórkę, plus systemowa), `util.js` (wspólne pomocnicze), `markdown-render.js` (allow-lista HTML), `glossary.js` (jednozdaniowy dymek glosariusza na krótkiej, stałej etykiecie - podpisie kafelka, terminie `<dt>`, nagłówku tabeli - współdzielony przez zakładki IP, DMARC, URLScan i AbuseIPDB);
 - `lookup.js` + `lookup-result.js` (zakładka IP i widok raportu), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (porównanie dwóch skanów), `dmarc.js` + `archive.js` (rozpakowywanie `.gz` i `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (fakty deterministyczne, karty lekcji, szuflada źródła, dymki słownika na płynącej prozie - ten sam styl `.gl` co `glossary.js`, ale skanujący wyrenderowany tekst zamiast owijać znaną etykietę - porównanie i eksporty);
 - `report-builder.js` (zakładka AbuseIPDB) + `report-result.js`, `report-history.js`, `report-export.js` (widok analizy, log wysłanych zgłoszeń i eksport Markdown);

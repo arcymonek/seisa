@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import struct
 
 import pytest
 
@@ -47,13 +48,13 @@ TEXT_PAIRS = (
 KNOWN_BELOW_AA: dict[str, set[tuple[str, str]]] = {}
 
 
-def test_shipped_themes_are_light_and_dark():
-    assert set(SHIPPED) == {"light", "dark"}
-    assert SHIPPED["light"]["base"] == "light" and SHIPPED["dark"]["base"] == "dark"
-    assert [th["id"] for th in load_themes()] == ["light", "dark"]  # footer order: light, dark
+def test_shipped_themes_are_light_dark_and_kohaku():
+    assert set(SHIPPED) == {"light", "dark", "kohaku"}
+    assert SHIPPED["light"]["base"] == "light" and SHIPPED["dark"]["base"] == "dark" and SHIPPED["kohaku"]["base"] == "light"
+    assert [th["id"] for th in load_themes()] == ["light", "dark", "kohaku"]  # button order: light, dark, kohaku (System is added last)
 
 
-@pytest.mark.parametrize("theme_id", ["light", "dark"])
+@pytest.mark.parametrize("theme_id", ["light", "dark", "kohaku"])
 def test_shipped_theme_contrast(theme_id):
     colors = SHIPPED[theme_id]["colors"]
     for fg, bg in TEXT_PAIRS:
@@ -67,6 +68,45 @@ def test_shipped_theme_contrast(theme_id):
 def test_light_theme_is_not_pure_white_or_black():
     colors = SHIPPED["light"]["colors"]
     assert "#ffffff" not in colors.values() and "#000000" not in colors.values()
+
+
+def test_kohaku_has_a_red_and_white_stripe_and_the_others_have_none():
+    assert SHIPPED["kohaku"]["stripe"] == {"top": "#e9e6e3", "bottom": SHIPPED["kohaku"]["colors"]["accent"]}
+    assert "stripe" not in SHIPPED["light"] and "stripe" not in SHIPPED["dark"]
+
+
+def test_status_red_is_darker_than_the_accent_red_in_kohaku():
+    # both are red there; the error colour must stay visibly different from the accent (links, buttons, active tab)
+    colors = SHIPPED["kohaku"]["colors"]
+    assert _lum(colors["fail"]) < _lum(colors["accent"]) * 0.6, (colors["fail"], colors["accent"])
+
+
+@pytest.mark.parametrize("theme_id", ["light", "dark", "kohaku"])
+def test_info_banner_colour_is_not_the_error_colour(theme_id):
+    colors = SHIPPED[theme_id]["colors"]
+    assert colors["info"] != colors["fail"]
+    css = (FRONTEND_DIR / "css" / "style.css").read_text(encoding="utf-8")
+    assert re.search(r"\.banner\.info\s*\{\s*border-color:\s*var\(--info\)", css)  # not var(--accent): that is red in kohaku
+
+
+def test_info_colour_is_not_the_accent_where_the_accent_is_red():
+    colors = SHIPPED["kohaku"]["colors"]
+    assert colors["info"] not in (colors["accent"], colors["fail"])
+    # the other two themes keep their blue accent for information, so their look did not change
+    assert SHIPPED["light"]["colors"]["info"] == SHIPPED["light"]["colors"]["accent"]
+    assert SHIPPED["dark"]["colors"]["info"] == SHIPPED["dark"]["colors"]["accent"]
+
+
+def test_logo_of_light_themes_is_a_mask_painted_in_the_accent_colour():
+    css = (FRONTEND_DIR / "css" / "style.css").read_text(encoding="utf-8")
+    block = re.search(r'h1 \.logo-img\[data-logo="light"\]\s*\{(.*?)\}', css, re.S).group(1)
+    assert "background-color: var(--accent)" in block and "/logo-mask.png" in block
+    mask = (FRONTEND_DIR / "logo-mask.png").read_bytes()
+    assert mask[:8] == b"\x89PNG\r\n\x1a\n"
+    width, height, depth, ctype = struct.unpack(">IIBB", mask[16:26])
+    assert (width, height, depth, ctype) == (512, 512, 8, 4)  # grey + alpha: only the alpha channel shapes the logo
+    html = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+    assert 'data-logo="light"' in html and "logo-light.png" not in html
 
 
 def test_no_colour_literals_left_in_the_stylesheet():
@@ -114,6 +154,14 @@ def test_missing_language_falls_back_to_the_other_one():
     lambda d: d["colors"].update(bg="#12345678"),
     lambda d: d["colors"].update(bg=123456),
     lambda d: d.update(colors=[]),
+    lambda d: d.update(stripe="#ff0000"),                                          # must be an object
+    lambda d: d.update(stripe={"top": "#ffffff"}),                                 # bottom missing
+    lambda d: d.update(stripe={"top": "#ffffff", "bottom": "#ff0000", "mid": "#000000"}),
+    lambda d: d.update(stripe={"top": "#fff", "bottom": "#ff0000"}),
+    lambda d: d.update(stripe={"top": "red", "bottom": "#ff0000"}),
+    lambda d: d.update(stripe={"top": "url(https://attacker.example/x)", "bottom": "#ff0000"}),
+    lambda d: d.update(stripe={"top": "#ffffff;}body{display:none", "bottom": "#ff0000"}),
+    lambda d: d.update(stripe={"top": 16777215, "bottom": "#ff0000"}),
 ])
 def test_invalid_theme_is_rejected(mutate):
     data = good_theme()
@@ -133,6 +181,18 @@ def test_rendered_css_only_holds_whitelisted_pieces():
     pattern = r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+'
     assert re.fullmatch(pattern, css)
     assert css.count("--") == len(COLOR_KEYS) + 2  # + the two logo switches
+
+
+def test_stripe_is_optional_lowercased_and_rendered_as_two_variables():
+    plain = render_css([validate_theme(good_theme(), "demo")])
+    assert "stripe" not in plain and "stripe" not in validate_theme(good_theme(), "demo")
+    out = validate_theme(good_theme(stripe={"top": "#ABCDEF", "bottom": "#123456"}), "demo")
+    assert out["stripe"] == {"top": "#abcdef", "bottom": "#123456"}
+    css = render_css([out])
+    assert "--stripe-top:#abcdef;--stripe-bottom:#123456;" in css
+    assert css.count("--") == len(COLOR_KEYS) + 2 + 2  # colours + two logo switches + two stripe colours
+    pattern = r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+'
+    assert re.fullmatch(pattern, css)  # still only whitelisted hex variables, so the strict pattern needs no change
 
 
 def test_public_list_has_no_colours():

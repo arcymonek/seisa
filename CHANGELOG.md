@@ -5,6 +5,7 @@ All notable changes to Seisa, newest first. Every change to the program itself r
 Version 2.0.0 is the first release under the name Seisa. The 1.x releases came before the rename and are summarised at the bottom.
 
 ## Development
+- 2026-10-12: `tests/test_themes.py` (stripe and `info` checks, the logo mask) and a harness check that hostile theme files dropped into the themes folder (a `url()` in the stripe, an extra stripe key, a CSS rule in a colour, an unknown top-level key) never reach `/api/themes.css`; both were mutation-checked. No change to the program beyond 2.3.1.
 - 2026-10-11: `tests/test_themes.py` (theme validator, WCAG contrast of the shipped themes, no colour literals left in the stylesheet) and harness checks for `/api/themes` and `/api/themes.css`. No change to the program beyond 2.2.0.
 - 2026-10-11: CI moved off Node 20 and off the moving `ubuntu-latest` label (GitHub switches it to Ubuntu 26.04 from 2026-10-19): `actions/checkout` and `actions/setup-python` are now v7 (Node 24) pinned to full commit SHAs, the runner is pinned to `ubuntu-24.04`, and the job has a 15-minute time limit. No change to the program.
 - 2026-10-04: CI ready for pull requests from forks: `pre-commit --range` now also checks the lines a branch adds (long dash, privacy scan), with `--no-version-rule` for fork pull requests (the maintainer adds the version bump), and `actions/checkout` no longer keeps the token. No change to the program.
@@ -16,6 +17,12 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: added a pytest unit-test suite (`tests/`, `requirements-dev.txt`, run with `python3 -m pytest -q`) covering the mail trust helpers, scoring, the AbuseIPDB report checks, the e-mail parser and forensics, plus a gitignored `tests/private/` for an optional local corpus of real e-mails. No change to the program.
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
+
+## 2.3.1 - 2026-10-12
+- **New theme "Red-and-white Kōhaku"** (`frontend/themes/kohaku.json`; a button in Info > Settings after "Dark Sumi", "System" stays last): a light theme in the red and white of the Polish and Japanese flags, a sign of friendship between the two countries. Warm white page, crimson accent, a darker crimson for errors and a two-tone bar (light grey over red) under the page header. The "About the colours" card has a third entry (紅白: shironeri, sumi, beni, enji, matsuba, yamabuki).
+- **Header stripe:** a theme may define an optional `stripe` (two `#rrggbb` colours, validated like the others) that is painted as a bar under the page header. The other two themes have none and look as before.
+- **New colour key `info`:** the border of information banners has its own colour instead of the accent. Washi and Sumi keep their blue accent for it (no visible change); Kōhaku uses graphite, because an information banner and an error banner would otherwise both be red. Every theme file must now carry this key.
+- **Logo of the light themes:** it is now only the shape (`logo-mask.png`) painted in the accent colour of the theme, with no badge of its own, so it always sits directly on the page background. In Washi the old cream badge was slightly darker than the page. `logo-light.png` is no longer used.
 
 ## 2.3.0 - 2026-10-11
 - **Settings in the Info tab:** a new "Settings" card above "Status and API limits" with buttons for the interface language and the colour theme. The language and theme switches moved out of the footer, which now only shows the version and the author. The Info tab button is now a sliders icon instead of an "i".

@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.3.0</b></p>
+<p align="center"><b>Seisa 2.3.1</b></p>
 
 # Seisa
 
@@ -150,6 +150,7 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
 
+- **2.3.1** - trzecia skórka, "Biało-czerwona Kōhaku" (czerwień i biel flag Polski i Japonii, ciepła biała strona i dwukolorowy pasek pod nagłówkiem), osobny kolor banerów informacyjnych, żeby nie dało się ich pomylić z błędami, oraz logo jasnych skórek leżące teraz wprost na tle strony.
 - **2.3.0** - nowa karta "Ustawienia" w zakładce Informacje: przyciski języka i skórki (przeniesione ze stopki) oraz zrozumiałe wyjaśnienie tradycyjnych japońskich kolorów użytych w skórkach.
 - **2.2.0** - jasna skórka "Washi" (ciepły krem, bez czystej bieli) i ciemna "Sumi" w tradycyjnych japońskich kolorach, i przełącznik `Jasny | Ciemny | Systemowy` w stopce; skórki to osobne pliki tylko z kolorami w `frontend/themes/`.
 - **2.1.22** - zakładki URLScan i AbuseIPDB też kończą się teraz sekcją "Wyjaśnienia" pisaną zrozumiałym językiem i dymkami glosariusza, tak jak IP i DMARC.

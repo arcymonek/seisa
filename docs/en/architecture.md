@@ -65,7 +65,7 @@ seisa/
 │   ├── mail_trust.py         # shared Received-chain/domain/IP/SMTP-AUTH trust helpers (both tabs)
 │   ├── citation_check.py     # local check of the LLM's quotes against the source
 │   ├── analyses.py           # storage of e-mail analyses in data/analyses/
-│   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only) and generates the CSS variables
+│   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only; plus an optional two-colour header stripe) and generates the CSS variables
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
 │   ├── verdict.py            # canonical verdict protocol (EN codes, mapping of the old PL tokens)
@@ -84,9 +84,9 @@ seisa/
 │   ├── index.html
 │   ├── favicon.ico            # icon: the kanji 査 (16/32/48/64 px)
 │   ├── logo.png               # round logo, dark badge (page header on dark themes, README)
-│   ├── logo-light.png         # the same logo as a cream badge (page header on light themes)
+│   ├── logo-mask.png          # the logo shape only (ring and kanji, transparent elsewhere); light themes paint it in their accent colour
 │   ├── theme-init.js          # classic script in <head>: applies the stored theme before the first paint
-│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json); colours only
+│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json, kohaku.json); colours only (and an optional two-colour header stripe)
 │   ├── css/style.css          # layout and components, no colours (they come from the theme)
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
@@ -110,7 +110,7 @@ seisa/
 
 Frontend modules in `frontend/js/`:
 
-- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `theme.js` (the theme switch of the Info tab: light, dark, system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
+- `app.js` (tabs and the `window.seisaApp` hand-offs), `i18n.js`, `api.js`, `theme.js` (the theme switch of the Info tab: one button per theme, plus system), `util.js` (shared helpers), `markdown-render.js` (the HTML allow-list), `glossary.js` (a one-sentence glossary tooltip on a short, constant label - a tile caption, a `<dt>` term, a table header - shared by the IP, DMARC, URLScan and AbuseIPDB tabs);
 - `lookup.js` + `lookup-result.js` (the IP tab and its report view), `urlscan.js` + `urlscan-result.js` + `urlscan-compare.js` (comparison of two scans), `dmarc.js` + `archive.js` (unpacking `.gz` and `.zip`);
 - `email.js` + `email-facts.js`, `email-lesson.js`, `email-source.js`, `email-glossary.js`, `email-compare.js`, `email-export.js` (the deterministic facts, the lesson cards, the source drawer, glossary tooltips on free-flowing prose - the same `.gl` tooltip style as `glossary.js`, but scanning rendered text instead of wrapping a known label - comparison and exports);
 - `report-builder.js` (the AbuseIPDB tab) + `report-result.js`, `report-history.js`, `report-export.js` (the analysis view, the log of sent reports and the Markdown export);

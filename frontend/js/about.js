@@ -15,12 +15,14 @@ const AUTHOR_SITE = "https://arkadiuszpolak.pl";
 
 const SERVICE_NAMES = { urlscan: "URLScan", openrouter: "OpenRouter" }; // the others are titled by the IP tab (serviceTitle)
 const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
-// Which traditional colour plays which role in the two shipped themes: [role, kanji, kana, romaji] (no kanji = no name).
+// Which traditional colour plays which role in the shipped themes: [role, kanji, kana, romaji] (no kanji = no name).
 const PALETTES = [
   { title: "about.colors_washi_title", intro: "about.colors_washi_intro", rows: [["bg", "鳥の子", "とりのこ", "torinoko"], ["text", "墨", "すみ", "sumi"], ["accent", "藍", "あい", "ai"],
     ["fail", "紅", "べに", "beni"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
   { title: "about.colors_sumi_title", intro: "about.colors_sumi_intro", rows: [["bg", "濡羽", "ぬれば", "nureba"], ["text", "白練", "しろねり", "shironeri"], ["accent", "浅葱", "あさぎ", "asagi"],
     ["fail", "朱", "しゅ", "shu"], ["pass", "若竹", "わかたけ", "wakatake"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
+  { title: "about.colors_kohaku_title", intro: "about.colors_kohaku_intro", rows: [["bg", "白練", "しろねり", "shironeri"], ["text", "墨", "すみ", "sumi"], ["accent", "紅", "べに", "beni"],
+    ["fail", "臙脂", "えんじ", "enji"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
 ];
 let root;
 let version = "";

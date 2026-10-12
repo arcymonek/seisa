@@ -71,6 +71,6 @@ Jeśli zmieniasz kod, zachowaj te własności; przy każdej podano, gdzie jest z
 8. **Wskaźniki są walidowane, zanim trafią do ścieżek URL** (`is_valid_indicator` w `backend/aggregator.py`: tylko prawdziwe adresy IP i nazwy hostów), identyfikatory urlscan muszą być UUID-ami, a rozmiary żądań są ograniczone (`backend/config.py`).
 9. **Uprawnienia plików:** `data/analyses/` ma `0700`, a jego pliki `0600` (zawierają surowe e-maile).
 10. **Klucze zostają w backendzie** (`.env`); `GET /api/about` ujawnia tylko, czy klucz jest ustawiony.
-11. **Skórka to dane, nie CSS** (`backend/themes.py`): do wygenerowanego arkusza trafia wyłącznie stały zestaw kluczy z wartościami `#rrggbb`, sprawdzony id oraz `dark`/`light`, więc plik skórki (także z pull requesta) nie może dodać `url()`, `@import` ani żadnej innej reguły. Pliki niepoprawne są pomijane.
+11. **Skórka to dane, nie CSS** (`backend/themes.py`): do wygenerowanego arkusza trafia wyłącznie stały zestaw kluczy z wartościami `#rrggbb` (w tym opcjonalny pasek pod nagłówkiem: dokładnie `top` i `bottom`), sprawdzony id oraz `dark`/`light`, więc plik skórki (także z pull requesta) nie może dodać `url()`, `@import` ani żadnej innej reguły. Pliki niepoprawne są pomijane.
 
 Jak zweryfikować: `./.venv/bin/python scripts/api_harness.py` zawiera sondy bezpieczeństwa (obcy `Host`, żądania cross-site, nagłówek CSP, wstrzyknięcie w ścieżkę), a jego zamockowane odpowiedzi zawierają wrogi HTML; w przeglądarce (`--serve`) payloady XSS muszą zostawić `window.__xss` równe 0.
