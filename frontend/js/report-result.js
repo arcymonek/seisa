@@ -22,15 +22,15 @@ export function verdictBannerHtml({ facts, llm, local, verdict }) {
   if (!facts.age_ok) reasons.push(facts.age_days === null ? t("rb.no_reliable_date") : t("rb.age_reason", { days: facts.age_days }));
   let html;
   if (verdict === "no" && (reasons.length || llmOk)) {
-    html = `<div class="banner bad"><strong>${e(t("rb.not_qualifying").toUpperCase())}</strong>`;
+    html = `<div class="banner good"><strong>${e(t("rb.not_qualifying").toUpperCase())}</strong>`;
     if (reasons.length) html += `<div>${e(reasons.join("; "))}</div>`;
     if (llmOk && llm.reasoning) html += `<div>${e(llm.reasoning)}</div>`;
     if (llmOk && llm.alternatives) html += `<div><strong>${e(t("rb.alternatives"))}</strong> ${e(llm.alternatives)}</div>`;
     html += "</div>";
   } else if (verdict === "no") {
-    html = `<div class="banner bad"><strong>${e(t("rb.self_sent_title"))}</strong><div>${e(t("rb.self_sent_body", { address: local.address }))}</div></div>`;
+    html = `<div class="banner good"><strong>${e(t("rb.self_sent_title"))}</strong><div>${e(t("rb.self_sent_body", { address: local.address }))}</div></div>`;
   } else if (verdict === "yes") {
-    html = `<div class="banner good"><strong>${e(t("rb.qualifying").toUpperCase())}</strong>${llm.reasoning ? `<div>${e(llm.reasoning)}</div>` : ""}</div>`;
+    html = `<div class="banner bad"><strong>${e(t("rb.qualifying").toUpperCase())}</strong>${llm.reasoning ? `<div>${e(llm.reasoning)}</div>` : ""}</div>`;
   } else {
     html = `<div class="banner info"><strong>${e(t("rb.hard_only_title"))}</strong><div>${e(t("rb.hard_only_body"))}</div></div>`;
   }

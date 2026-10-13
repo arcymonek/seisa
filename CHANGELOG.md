@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.5 - 2026-10-13
+- **AbuseIPDB tab:** the verdict banner colours are swapped: an e-mail that does not qualify for a report now gets a green frame, one that qualifies a red frame (the address is a source of abuse). The "Explanations" section moved to the very bottom of the tab, below "Your reports". In "Your reports" a new "Check" button next to "Use as draft" opens the public AbuseIPDB page of that address in a new browser tab.
+
 ## 2.4.4 - 2026-10-13
 - **URLScan tab:** a "Clear" button after "Scan again" brings the tab back to its starting position (empty address field, no report; the scan options stay). "Copy Markdown" is now "Copy .md". The verdict card no longer starts with a description line. In Polish, "Kontaktowane adresy IP" and "Kontaktowane domeny" are now "Adresy IP, z którymi łączyła się strona" and "Domeny, z którymi łączyła się strona" (card, comparison and Markdown export).
 - **IP tab:** Enter in the field starts the check, like the "Check" button.

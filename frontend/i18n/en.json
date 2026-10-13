@@ -1111,6 +1111,7 @@
   "rb.hist_failed": "failed",
   "rb.hist_result": "Result",
   "rb.hist_reuse": "Use as draft",
+  "rb.hist_check": "Check",
   "rb.hist_empty": "No reports yet.",
   "rb.md.title": "AbuseIPDB report: {ip}",
   "rb.md.ip": "IP address",

@@ -1149,6 +1149,7 @@
   "rb.hist_failed": "błąd",
   "rb.hist_result": "Wynik",
   "rb.hist_reuse": "Użyj jako szkic",
+  "rb.hist_check": "Sprawdź",
   "rb.hist_empty": "Brak zgłoszeń.",
   "rb.md.title": "Zgłoszenie AbuseIPDB: {ip}",
   "rb.md.ip": "Adres IP",

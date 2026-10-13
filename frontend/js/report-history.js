@@ -14,6 +14,9 @@ export function initReportHistory(container, reuse) {
   slot.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-reuse]");
     if (btn) onReuse(entries[Number(btn.dataset.reuse)]);
+    const check = ev.target.closest("[data-check]");
+    // opens the public AbuseIPDB page of this address in a new tab (the user's browser contacts AbuseIPDB, not Seisa)
+    if (check) window.open(`https://www.abuseipdb.com/check/${encodeURIComponent(entries[Number(check.dataset.check)].ip)}`, "_blank", "noopener,noreferrer");
   });
   refreshReportHistory();
 }
@@ -50,7 +53,7 @@ function render(data) {
       const state = x.success
         ? `<span class="ok">${e(t("rb.hist_ok"))}${x.abuse_confidence_score != null ? ` (${x.abuse_confidence_score}%)` : ""}</span>`
         : `<span class="bad" title="${e(x.error || "")}">${e(t("rb.hist_failed"))}</span>`;
-      return `<tr><td class="muted">${e(fmtDateTime(x.submitted_at))}</td><td class="mono">${e(x.ip)}</td><td>${e((x.categories || []).join(", "))}</td><td>${state}</td><td><button type="button" class="secondary mini inline" data-reuse="${i}">${e(t("rb.hist_reuse"))}</button></td></tr>`;
+      return `<tr><td class="muted">${e(fmtDateTime(x.submitted_at))}</td><td class="mono">${e(x.ip)}</td><td>${e((x.categories || []).join(", "))}</td><td>${state}</td><td><button type="button" class="secondary mini inline" data-reuse="${i}">${e(t("rb.hist_reuse"))}</button> <button type="button" class="secondary mini inline" data-check="${i}">${e(t("rb.hist_check"))}</button></td></tr>`;
     })
     .join("");
   const table = entries.length

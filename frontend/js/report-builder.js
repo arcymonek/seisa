@@ -96,7 +96,6 @@ export function initReportBuilder(container) {
         <pre class="raw-json" id="rb-payload-pre"></pre>
       </details>
       <div id="rb-checks-slot"></div>
-      ${legendHtml()}
 
       <div class="action-row">
         <button class="primary" id="rb-submit" disabled>${e(t("rb.submit"))}</button>
@@ -107,6 +106,7 @@ export function initReportBuilder(container) {
       <div id="rb-submit-result"></div>
     </div>
     <div id="rb-history"></div>
+    ${legendHtml()}
   `;
 
   $("#rb-analyze").addEventListener("click", () => analyze(true));
