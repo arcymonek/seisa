@@ -3,7 +3,7 @@
   "app.shutdown_button": "Zamknij Seisę",
   "app.shutdown_cancel": "Anuluj",
   "app.shutdown_dont_ask": "Nie pytaj ponownie",
-  "app.shutdown_confirm": "Zamknąć Seisę? Serwer zostanie zatrzymany, a ta strona zamknięta (albo dostaniesz prośbę o zamknięcie karty). Uruchomisz ją ponownie ikoną lub ./seisa.sh.",
+  "app.shutdown_confirm": "Zamknąć Seisę?\nSerwer zostanie zatrzymany, a ta strona zamknięta lub zobaczysz prośbę o ręczne zamknięcie karty. Uruchomisz ją ponownie ikoną lub ./seisa.sh.",
   "app.shutdown_unsaved": "Trwająca analiza lub wpisany tekst zostaną utracone.",
   "app.shutdown_done_title": "Seisa została zatrzymana",
   "app.shutdown_done_text": "Możesz zamknąć tę kartę. Aby uruchomić Seisę ponownie, użyj jej ikony lub ./seisa.sh.",

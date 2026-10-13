@@ -67,7 +67,16 @@ footer .footer-link:hover { color: var(--accent); }
 .seisa-dialog { background: var(--bg-raised); color: var(--text); border: 1px solid var(--hair); border-radius: 10px; padding: 20px 24px; max-width: min(460px, calc(100vw - 32px)); }
 .seisa-dialog::backdrop { background: color-mix(in srgb, var(--bg-inset) 70%, transparent); }
 .seisa-dialog h2 { margin: 0 0 12px; font-size: 16px; }
-.seisa-dialog p { margin: 0 0 12px; }
+/* [Fact] / [Interpretation] / [To verify] labels of the LLM analysis (markdown-render.js); the icon repeats the meaning of the colour */
+.status-tag { display: inline-block; padding: 0 8px; margin: 0 2px; border: 1px solid currentColor; border-radius: 999px; font-size: 0.72em; font-weight: 700; line-height: 1.6; letter-spacing: 0.02em; text-transform: uppercase; vertical-align: 0.1em; white-space: nowrap; }
+.status-tag::before { margin-right: 4px; }
+.status-tag.fact { color: var(--pass); background: var(--pass-bg); }
+.status-tag.fact::before { content: "✓"; }
+.status-tag.interp { color: var(--warn); background: var(--warn-bg); }
+.status-tag.interp::before { content: "◐"; }
+.status-tag.verify { color: var(--fail); background: var(--fail-bg); }
+.status-tag.verify::before { content: "?"; }
+.seisa-dialog p { margin: 0 0 12px; white-space: pre-line; }
 .seisa-dialog .dialog-check { display: block; margin: 14px 0; color: var(--muted); font-size: 14px; cursor: pointer; }
 .seisa-dialog .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .seisa-dialog button { margin: 0; }

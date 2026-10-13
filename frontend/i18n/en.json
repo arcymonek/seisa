@@ -3,7 +3,7 @@
   "app.shutdown_button": "Shut down Seisa",
   "app.shutdown_cancel": "Cancel",
   "app.shutdown_dont_ask": "Do not ask again",
-  "app.shutdown_confirm": "Shut down Seisa? The server stops and this page closes (or asks you to close the tab). Start it again with the icon or ./seisa.sh.",
+  "app.shutdown_confirm": "Shut down Seisa?\nThe server stops and this page closes, or you will see a request to close the tab manually. Start it again with the icon or ./seisa.sh.",
   "app.shutdown_unsaved": "A running analysis or typed text will be lost.",
   "app.shutdown_done_title": "Seisa has been stopped",
   "app.shutdown_done_text": "You can close this tab. To start Seisa again, use its icon or ./seisa.sh.",

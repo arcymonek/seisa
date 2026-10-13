@@ -3,7 +3,7 @@ import { mountShutdown } from "./shutdown.js";
 import { initTheme } from "./theme.js";
 import { initLookup, prefillLookup, repeatLookup } from "./lookup.js";
 import { initDmarc, loadDmarcData } from "./dmarc.js";
-import { initReportBuilder, prefillReport, prefillReportEmail, prefillReportEntry } from "./report-builder.js";
+import { initReportBuilder, prefillReport, prefillReportEntry } from "./report-builder.js";
 import { initEmail, openSavedAnalysis } from "./email.js";
 import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
@@ -67,10 +67,6 @@ window.seisaApp = {
   goToEmailAnalysis: (id) => {
     switchTab("email");
     openSavedAnalysis(id);
-  },
-  goToReportWithEmail: (rawEmail) => {
-    switchTab("report");
-    prefillReportEmail(rawEmail);
   },
   goToReportEntry: (id) => {
     switchTab("report");

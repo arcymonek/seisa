@@ -149,12 +149,6 @@ export function initReportBuilder(container) {
   renderChecks();
 }
 
-export function prefillReportEmail(rawEmail) {
-  if (!root) return;
-  $("#rb-email").value = rawEmail;
-  $("#rb-email").scrollTop = 0;
-}
-
 // An address handed over from the IP or DMARC tab: only the form, without an e-mail analysis.
 export async function prefillReport(ip) {
   if (!root) return;

@@ -64,11 +64,14 @@ export function initEmail(container) {
       <button class="secondary" id="em-cancel" style="display:none">${e(t("em.cancel"))}</button>
       <button class="secondary" id="em-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
-      <span class="action-info">
-        <span id="em-status"></span>
-        <span id="em-timer"></span>
-        <span id="em-usage"></span>
-      </span>
+      <button type="button" class="secondary" id="em-save-md" data-act="save-md" hidden>${e(t("common.save_md"))}</button>
+      <button type="button" class="secondary" id="em-copy-md" data-act="copy-md" hidden>${e(t("common.copy_markdown"))}</button>
+      <button type="button" class="secondary" id="em-save-html" data-act="save-html" hidden>${e(t("em.save_html"))}</button>
+    </div>
+    <div class="action-info">
+      <span id="em-status"></span>
+      <span id="em-timer"></span>
+      <span id="em-usage"></span>
     </div>
     <div id="em-dup"></div>
     <div id="em-alert"></div>
@@ -164,7 +167,6 @@ function onClick(ev) {
   if (!act) return undefined;
   switch (act.dataset.act) {
     case "continue": return continueAnalysis();
-    case "report": return window.seisaApp.goToReportWithEmail(S.raw);
     case "save-md": return downloadMarkdown(exportFilename(S, "md"), buildExport(S));
     case "copy-md": return navigator.clipboard.writeText(buildExport(S));
     case "save-html": return saveHtml();
@@ -285,6 +287,7 @@ function clearOutput() {
   overviewShown.advice = null;
   $("#em-result").hidden = true;
   $("#em-banner").innerHTML = "";
+  for (const id of ["em-save-md", "em-copy-md", "em-save-html"]) $("#" + id).hidden = true;
   $("#em-kpis").innerHTML = "";
   $("#em-pane-facts").innerHTML = "";
   $("#em-sec-route").innerHTML = "";
@@ -331,6 +334,7 @@ const actionBtn = (act, label, cls = "secondary") => `<button type="button" clas
 
 function renderBanner() {
   const box = $("#em-banner");
+  for (const id of ["em-save-md", "em-copy-md", "em-save-html"]) $("#" + id).hidden = !(S.facts && S.phase === "done");
   if (!S.facts) {
     box.innerHTML = "";
     return;
@@ -342,6 +346,7 @@ function renderBanner() {
     tone = S.verdict === "legit" ? "good" : S.verdict === "inconclusive" ? "warn" : "bad";
     head = `<div class="em-verdict-head"><span class="badge ${VERDICT_LEVEL[S.verdict] || "high"}">${e(verdictLabel(S.verdict).toUpperCase())}</span>` +
       `<span class="muted">${e(t("em.confidence", { value: t("confidence." + S.confidence) }))}</span></div>`;
+    // the verdict can arrive while the model is still writing the rest: keep the progress line until the end
   } else if (S.phase === "nokey") {
     tone = "warn";
     head = `<div>${e(t("em.no_key"))}</div>`;
@@ -349,10 +354,12 @@ function renderBanner() {
     tone = "warn";
     head = `<div>${e(S.error || "")}</div>`;
   } else if (S.phase === "writing") {
-    head = `<div class="muted">${e(t("em.model_writing"))}</div>`;
+    head = "";
   } else {
     head = `<div class="muted">${e(t("em.banner.facts_ready"))}</div>`;
   }
+
+  if (S.phase === "writing") head += `<div class="muted">${e(t("em.model_writing"))}</div>`;
 
   const meta = [];
   const cc = S.citations;
@@ -365,10 +372,6 @@ function renderBanner() {
 
   const actions = [];
   if (S.truncated && S.id && done) actions.push(actionBtn("continue", t("em.continue"), "action"));
-  if (done && S.verdict !== "legit") actions.push(actionBtn("report", t("lookup.report_abuseipdb"), "action")); // no verdict = show it, just in case
-  if (done) {
-    actions.push(actionBtn("save-md", t("common.save_md")), actionBtn("copy-md", t("common.copy_markdown")), actionBtn("save-html", t("em.save_html")));
-  }
   box.innerHTML = `<div class="banner ${tone}" id="em-verdict-banner">${head}
     <div class="em-flat" id="em-summary"><div></div></div>
     ${S.truncated && done ? `<div class="warnc">${e(t("em.truncated_banner"))}</div>` : ""}
