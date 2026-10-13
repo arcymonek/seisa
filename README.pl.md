@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.4.1</b></p>
+<p align="center"><b>Seisa 2.4.2</b></p>
 
 # Seisa
 
@@ -116,7 +116,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 
 ### Co opuszcza Twój komputer
 
-Najczęstsze akcje, w skrócie - pełna tabela każdej akcji, w tym rzadszych (opcjonalny geolookup w DMARC, "Odśwież limity" w zakładce Informacje, przycisk Cisco Talos), jest w [Co opuszcza Twój komputer](docs/pl/privacy-and-security.md#co-opuszcza-twój-komputer).
+Najczęstsze akcje, w skrócie - pełna tabela każdej akcji, w tym rzadszych (opcjonalny geolookup w DMARC, "Odśwież limity" w zakładce Informacje), jest w [Co opuszcza Twój komputer](docs/pl/privacy-and-security.md#co-opuszcza-twój-komputer).
 
 | Akcja | Co jest wysyłane | Dokąd | Kiedy |
 |---|---|---|---|

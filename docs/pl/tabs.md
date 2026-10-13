@@ -20,7 +20,6 @@ Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email
 | [AbuseIPDB](https://www.abuseipdb.com) | confidence score, liczba zgłoszeń, autor najnowszego zgłoszenia, ISP |
 | [GreyNoise](https://www.greynoise.io) | pełny IP Lookup (`/v3/ip`) - aktor, tagi, VPN/Tor, metadane sieciowe; spada na darmowy endpoint community, jeśli klucz nie ma dostępu do pełnego API; "brak informacji w usłudze" liczone jako wkład 0.0, nie jako "unknown" |
 | WHOIS / rDNS | dla IP: odwrotny DNS (PTR) + pełny RDAP (RFC 9083, następca WHOIS) - zakres sieci, właściciel, kontakt abuse/techniczny, daty rejestracji; dla domeny: WHOIS (rejestrator, daty, serwery nazw, status) + rekordy DNS (A, AAAA, NS, MX, CAA, SPF, DMARC, wildcard, nieistniejące serwery nazw) - bez klucza API |
-| Cisco Talos | brak oficjalnego API - tylko przycisk do ręcznego sprawdzenia |
 
 Co dostajesz:
 
@@ -29,8 +28,9 @@ Co dostajesz:
 - **Karta tożsamości adresu** (dla domeny: **tożsamość domeny**), która scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł (dla domeny: rejestrator, daty, wiek, serwery nazw sprawdzone między WHOIS a DNS, adresy IP, serwery poczty, SPF, DMARC, CAA, kategoria, popularność) i pokazuje, ile źródeł się zgadza. Jest zwinięta z zieloną informacją "źródła są zgodne", a gdy źródła się rozchodzą, rozwija się sama.
 - **Jedna zwijana karta na źródło** (przyciski "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Źródła" otwierają lub zwijają je naraz), otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25, czyli Średnie lub Wysokie); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
 - **Wklejone dane są porządkowane:** URL (`https://Example.com:8080/a?b`), zdefangowany wskaźnik (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` czy nazwa wielkimi literami są sprowadzane do samego hosta lub adresu IP. Adresy prywatne, pętli zwrotnej i zarezerwowane są odrzucane z wyjaśnieniem, zamiast trafiać do usług.
-- **Porównanie z poprzednim skanem:** gdy ten sam wskaźnik jest w Historii, linia pod banerem pokazuje poprzedni wynik, różnicę, źródła, których ryzyko zmieniło się o 10 lub więcej, i słupek na każdy wcześniejszy skan (Historia trzyma 25 niezapiętych wpisów, więc trend jest co najwyżej tak długi).
+- **Porównanie z poprzednim skanem:** gdy ten sam wskaźnik jest w Historii, linia pod tytułem raportu pokazuje poprzedni wynik, różnicę, źródła, których ryzyko zmieniło się o 10 lub więcej, i słupek na każdy wcześniejszy skan (Historia trzyma 25 niezapiętych wpisów, więc trend jest co najwyżej tak długi).
 - **Źródła bez wyniku** (błąd, brak klucza, limit dzienny, nie dotyczy) mają jedną zwiniętą belkę zamiast karty każde; przy błędzie rozwija się sama. "Wyniki składowe" to zwijana karta, domyślnie rozwinięta. Gdy GreyNoise odpowiada wyczerpanym limitem wyszukiwań (HTTP 429), karta mówi o tym zwykłym językiem, z datą odnowienia, jeśli GreyNoise ją podaje; wynik jest wtedy liczony bez tego źródła.
+- **"Wyczyść"** obok "Sprawdź" czyści pole, usuwa raport i linię z czasem oraz włącza z powrotem wszystkie źródła - zakładka wygląda jak tuż po uruchomieniu.
 - **Raport domeny** ma przycisk "Skanuj w URLScan", który wypełnia zakładkę URLScan adresem `https://<domena>/`.
 - **Wiadomości w czasie:** wykres słupkowy (wiadomości na dzień, udział niezgodnych na czerwono), gdy raporty obejmują co najmniej dwa dni.
 - **Porównanie z poprzednim importem** tej samej domeny (z [Historii](#historia)): nowe źródła, źródła, których już nie ma, źródła, które pogorszyły wynik, oraz zgodność z DMARC przed i teraz.

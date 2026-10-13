@@ -94,7 +94,6 @@ class LookupResult(BaseModel):
     queried_at: str = Field(default_factory=utcnow_iso)
     risk_score: RiskScore
     services: dict[str, ServiceResult] = Field(default_factory=dict)
-    talos_url: str
     markdown: str
     identity: Identity | None = None
     comparison: Comparison | None = None  # set by the router from the History; never stored in it

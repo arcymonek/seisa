@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.4.1</b></p>
+<p align="center"><b>Seisa 2.4.2</b></p>
 
 # Seisa
 
@@ -116,7 +116,7 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 
 ### What leaves your machine
 
-The most common actions, condensed - the full table of every action, including the rarer ones (DMARC's optional geo lookup, the Info tab's "Refresh limits", the Cisco Talos button), is in [What leaves your machine](docs/en/privacy-and-security.md#what-leaves-your-machine).
+The most common actions, condensed - the full table of every action, including the rarer ones (DMARC's optional geo lookup, the Info tab's "Refresh limits"), is in [What leaves your machine](docs/en/privacy-and-security.md#what-leaves-your-machine).
 
 | Action | What is sent | To | When |
 |---|---|---|---|

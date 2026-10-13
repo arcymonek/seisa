@@ -19,7 +19,6 @@ Seisa listens only on `127.0.0.1` and has no login. Nothing leaves the machine e
 | AbuseIPDB: address check | the IP | AbuseIPDB (`/check`) | when an IP is entered and a key exists |
 | AbuseIPDB: "Send" | the IP, categories, timestamp, comment | AbuseIPDB (`/report`) - **public** | only on a deliberate click |
 | Info: "Refresh limits" | your keys' quota requests | VirusTotal, urlscan.io, OpenRouter | only on the click; none of these calls uses quota |
-| Cisco Talos | nothing from Seisa; the button only helps you open Talos yourself | - | you click it |
 
 Seisa's requests to OpenRouter identify the application as Seisa. Everything else in the interface (History, Logs, comparisons, exports, the citation check, the duplicate check) is local.
 

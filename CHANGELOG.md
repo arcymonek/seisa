@@ -22,6 +22,10 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.2 - 2026-10-13
+- **IP tab:** a "Clear" button next to "Check" empties the field, the report and the timing line and switches all sources back on. The note about the previous scan sits right under the report title. In every source card the "Open <service>" button is under the data list, the line about the identity data at the top of the card is gone, and the card titles no longer start with a dash.
+- **Talos:** the "Open in Talos" button is removed, together with the unused `talos_url` field of the lookup result (older History entries still carry it; nothing reads it, so they open as before).
+
 ## 2.4.1 - 2026-10-12
 - **Icon look:** the desktop icon is now a rounded square in the style of other application icons (the dark colour of the logo's badge with the kanji in its blue, without the ring), from the new `frontend/app-icon.png` (1024 px, with the margin macOS icons have). The macOS app also gets the 1024 px size for Retina displays. The round `logo.png` stays in the page header and the README.
 - **Shut down confirmation:** the question is now Seisa's own dialog titled "Seisa <version>" (not the browser's `127.0.0.1:54321` box) with a "Do not ask again" checkbox; Esc and "Cancel" (which has the focus) keep Seisa running. The choice is kept in the browser (`localStorage`, key `seisa.shutdownAsk`) and can be switched back with the "Ask before shutting down" checkbox next to the button in Info > Settings. It never skips the question while an analysis is running or text is typed.

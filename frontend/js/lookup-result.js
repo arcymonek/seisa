@@ -410,13 +410,12 @@ function sourceCard(id, res, comp, identity) {
       .map(([def, html]) => [t("lookup.f." + def.id), html]);
     const idRows = identityRowsOf(id, identity);
     const all = [...idRows, ...rows];
-    if (idRows.length) body += `<div class="muted">${e(t("lookup.identity_pointer"))}</div>`;
     body += all.length ? kvHtml(all) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`;
   }
   const open = info.url ? `<button type="button" class="secondary mini" data-url="${e(info.url)}">${e(t("md.open_service", { name: info.title }))}</button>` : "";
   return `<details class="fact-block src" data-service="${e(id)}"${signal ? " open" : ""}>
-    <summary>${e(info.title)}${badge}${problem}${fact && res.status === "ok" ? ` <span class="muted">- ${e(fact)}</span>` : ""}</summary>
-    <div class="src-body">${info.desc ? `<div class="muted">${e(t(info.desc))}</div>` : ""}${open}${body}${rawHtml(res)}</div>
+    <summary>${e(info.title)}${badge}${problem}${fact && res.status === "ok" ? ` <span class="muted">${e(fact)}</span>` : ""}</summary>
+    <div class="src-body">${info.desc ? `<div class="muted">${e(t(info.desc))}</div>` : ""}${body}${open}${rawHtml(res)}</div>
   </details>`;
 }
 
@@ -486,8 +485,9 @@ export function renderLookupResult(result, actions = null) {
   const sections = ["summary", ...(components ? ["components"] : []), ...(identity ? ["identity"] : [])];
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
+    ${comparisonHtml(result)}
     <div data-actions></div>
-    ${bannerHtml(result)}${comparisonHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
+    ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
   const slot = wrap.querySelector("[data-actions]");
   if (actions) slot.replaceWith(actions);
   else slot.remove();

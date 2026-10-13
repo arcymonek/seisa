@@ -4,7 +4,6 @@ import asyncio
 import contextlib
 import ipaddress
 import re
-from urllib.parse import quote
 
 from backend.identity import build_domain_identity, build_identity
 from backend.markdown_report import build_markdown
@@ -120,7 +119,6 @@ async def run_lookup(
     await asyncio.gather(*(run_one(n) for n in selected if n in SERVICE_REGISTRY))
 
     risk_score = compute_risk_score(results, indicator_type, indicator)
-    talos_url = f"https://talosintelligence.com/reputation_center/lookup?search={quote(indicator)}"
     identity = build_identity(results) if indicator_type == "ip" else build_domain_identity(results)
     markdown = build_markdown(indicator, risk_score, results, identity, indicator_type)
 
@@ -129,7 +127,6 @@ async def run_lookup(
         indicator_type=indicator_type,
         risk_score=risk_score,
         services=results,
-        talos_url=talos_url,
         markdown=markdown,
         identity=identity,
     )

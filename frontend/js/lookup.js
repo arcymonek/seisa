@@ -14,6 +14,8 @@ const timer = createTimer(
 );
 const startTimer = () => timer.start();
 const stopTimer = () => timer.stop();
+// Bumped by every check and by "Clear": an answer that arrives after "Clear" belongs to an older run and is dropped.
+let runId = 0;
 
 export function initLookup(container) {
   root = container;
@@ -27,6 +29,7 @@ export function initLookup(container) {
 
     <div class="action-row">
       <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button>
+      <button class="secondary" id="lk-clear">${escapeHtml(t("lookup.clear"))}</button>
       <span class="action-info" id="lk-info"></span>
     </div>
     <div class="muted" id="lk-status"></div>
@@ -51,6 +54,20 @@ export function initLookup(container) {
   });
 
   root.querySelector("#lk-submit").addEventListener("click", onSubmit);
+  root.querySelector("#lk-clear").addEventListener("click", onClear);
+}
+
+// Back to the start state: empty field, no report, no status or timing, all sources switched on again.
+function onClear() {
+  runId++;
+  timer.stop();
+  root.querySelector("#lk-indicator").value = "";
+  root.querySelector("#lk-info").textContent = "";
+  root.querySelector("#lk-status").textContent = "";
+  root.querySelector("#lk-results").innerHTML = "";
+  ALL_SERVICES.forEach((s) => enabledServices.add(s));
+  root.querySelectorAll(".chip").forEach((chip) => chip.classList.add("on"));
+  root.querySelector("#lk-indicator").focus();
 }
 
 export function prefillLookup(indicator) {
@@ -72,6 +89,7 @@ async function onSubmit() {
   resultsEl.innerHTML = "";
   statusEl.textContent = "";
   startTimer();
+  const myRun = ++runId;
 
   const indicator = root.querySelector("#lk-indicator").value.trim();
   if (!indicator) {
@@ -80,10 +98,12 @@ async function onSubmit() {
   }
   try {
     const result = await api.lookup({ indicator, type: "auto", services });
+    if (myRun !== runId) return;
     stopTimer();
     resultsEl.innerHTML = "";
     resultsEl.appendChild(renderResult(result));
   } catch (err) {
+    if (myRun !== runId) return;
     stopTimer();
     statusEl.textContent = t("common.error", { message: err.message });
   }
@@ -119,13 +139,6 @@ function renderResult(result) {
     scanBtn.onclick = () => window.seisaApp.scanUrl(`https://${result.indicator}/`);
     actions.appendChild(scanBtn);
   }
-
-  const talosBtn = document.createElement("button");
-  talosBtn.type = "button";
-  talosBtn.className = "secondary";
-  talosBtn.textContent = t("lookup.open_talos");
-  talosBtn.onclick = () => window.open(result.talos_url, "_blank", "noopener");
-  actions.appendChild(talosBtn);
 
   return renderLookupResult(result, actions);
 }
