@@ -464,6 +464,7 @@
   "dmarc.duplicate_skipped": "{file} - the same report as {first}, skipped",
   "dmarc.restored": "Restored from history",
   "dmarc.h_providers": "By provider",
+  "dmarc.col_trend": "Daily trend",
   "dmarc.col_reports": "Reports",
   "dmarc.col_failed": "Failed DMARC",
   "dmarc.hint_none_ready": "{domain}: p=none only monitors, and every source in these reports passes - the policy can likely be tightened to quarantine, then reject.",

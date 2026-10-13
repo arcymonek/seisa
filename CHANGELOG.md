@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.3 - 2026-10-13
+- **DMARC tab:** the "Files: loaded N, skipped N, errors N" line sits above the row with "Clear", "Save .md" and "Copy Markdown". "Messages over time" is merged into "By provider": one section with the total per-day bar chart on top and the provider table below, which has a new "Daily trend" column (a small bar chart of that provider's days, the failing share in red).
+
 ## 2.4.2 - 2026-10-13
 - **IP tab:** a "Clear" button next to "Check" empties the field, the report and the timing line and switches all sources back on. The note about the previous scan sits right under the report title. In every source card the "Open <service>" button is under the data list, the line about the identity data at the top of the card is gone, and the card titles no longer start with a dash.
 - **Talos:** the "Open in Talos" button is removed, together with the unused `talos_url` field of the lookup result (older History entries still carry it; nothing reads it, so they open as before).

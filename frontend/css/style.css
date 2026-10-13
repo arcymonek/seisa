@@ -511,3 +511,7 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .tl-bar { width: 70%; min-height: 2px; background: var(--pass); display: flex; flex-direction: column-reverse; }
 .tl-fail { display: block; background: var(--fail); }
 .tl-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.tl-title { margin: 8px 0 0; font-size: 13px; }
+.spark { display: flex; gap: 2px; align-items: flex-end; height: 28px; }
+.spark-col { flex: 0 0 6px; height: 100%; display: flex; align-items: flex-end; }
+.spark-bar { display: flex; flex-direction: column-reverse; width: 100%; min-height: 2px; background: var(--pass); }

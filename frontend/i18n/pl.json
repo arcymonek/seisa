@@ -482,6 +482,7 @@
   "dmarc.duplicate_skipped": "{file} - ten sam raport co {first}, pominięto",
   "dmarc.restored": "Przywrócono z historii",
   "dmarc.h_providers": "Według dostawcy",
+  "dmarc.col_trend": "Trend dzienny",
   "dmarc.col_reports": "Raporty",
   "dmarc.col_failed": "Niezgodne z DMARC",
   "dmarc.hint_none_ready": "{domain}: p=none tylko monitoruje, a każde źródło w tych raportach przechodzi - politykę można prawdopodobnie zaostrzyć do quarantine, a potem reject.",

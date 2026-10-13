@@ -41,13 +41,13 @@ export function initDmarc(container) {
       <p class="muted dz-hint">${e(t("dmarc.drop_multiple"))}</p>
       <input type="file" id="dm-file-input" accept=".xml,.gz,.zip" multiple style="display:none">
     </div>
+    <details class="fact-block" id="dm-files" style="display:none"><summary id="dm-files-summary"></summary><div class="muted" id="dm-file-list"></div></details>
     <div class="action-row" id="dm-actions" style="display:none">
       <button class="secondary" id="dm-clear">${e(t("dmarc.btn_clear"))}</button>
       <button class="secondary" id="dm-save">${e(t("common.save_md"))}</button>
       <button class="secondary" id="dm-copy">${e(t("common.copy_markdown"))}</button>
       <span class="action-info" id="dm-info"></span>
     </div>
-    <details class="fact-block" id="dm-files" style="display:none"><summary id="dm-files-summary"></summary><div class="muted" id="dm-file-list"></div></details>
     <div id="dm-results"></div>
   `;
 
@@ -433,34 +433,69 @@ function kpiHtml() {
 function providerStats() {
   const by = new Map();
   reportMeta.forEach((m) => {
-    if (!by.has(m.org)) by.set(m.org, { org: m.org, reports: 0, messages: 0, failed: 0 });
+    if (!by.has(m.org)) by.set(m.org, { org: m.org, reports: 0, messages: 0, failed: 0, days: new Map() });
     by.get(m.org).reports++;
   });
   allRecords.forEach((r) => {
-    const g = by.get(reportMeta[r.reportIdx].org);
+    const meta = reportMeta[r.reportIdx];
+    const g = by.get(meta.org);
     g.messages += r.count;
     if (!isPass(r)) g.failed += r.count;
+    const day = dayKey(meta.begin);
+    if (day) {
+      if (!g.days.has(day)) g.days.set(day, { messages: 0, failed: 0 });
+      const d = g.days.get(day);
+      d.messages += r.count;
+      if (!isPass(r)) d.failed += r.count;
+    }
   });
   return Array.from(by.values()).sort((a, b) => b.messages - a.messages);
 }
 
-function providersHtml() {
-  if (reportMeta.length < 2) return "";
-  const rows = providerStats()
-    .map((g) => `<tr><td>${e(g.org)}</td><td>${g.reports}</td><td>${g.messages}</td><td>${e(fmtPct(g.messages - g.failed, g.messages))}</td><td class="${g.failed ? "bad" : ""}">${g.failed}</td></tr>`)
+// Mini bar chart of one provider over the shared list of days (empty slot = no report that day).
+function sparklineHtml(g, dayList) {
+  const max = Math.max(...Array.from(g.days.values(), (d) => d.messages)) || 1;
+  const cols = dayList
+    .map((day) => {
+      const d = g.days.get(day);
+      if (!d) return `<span class="spark-col"></span>`;
+      const tip = t("dmarc.timeline_tip", { day, messages: d.messages, pass: fmtPct(d.messages - d.failed, d.messages) });
+      const fail = d.messages ? (d.failed / d.messages) * 100 : 0;
+      return `<span class="spark-col" title="${e(tip)}"><span class="spark-bar" style="height:${(d.messages / max) * 100}%"><span class="tl-fail" style="height:${fail}%"></span></span></span>`;
+    })
     .join("");
-  return `<details class="fact-block"><summary>${e(t("dmarc.h_providers"))}</summary><div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+  return `<div class="spark">${cols}</div>`;
+}
+
+// One section: the total per-day chart, then a table with one row per provider and a mini chart of its own days.
+function providersHtml() {
+  const days = dailyStats();
+  const showTable = reportMeta.length >= 2;
+  if (!showTable && days.length < 2) return "";
+  const dayList = days.map((d) => d.day);
+  const rows = showTable
+    ? providerStats()
+        .map((g) => `<tr><td>${e(g.org)}</td><td>${g.reports}</td><td>${g.messages}</td><td>${e(fmtPct(g.messages - g.failed, g.messages))}</td><td class="${g.failed ? "bad" : ""}">${g.failed}</td><td>${dayList.length > 1 ? sparklineHtml(g, dayList) : ""}</td></tr>`)
+        .join("")
+    : "";
+  const table = showTable
+    ? `<div class="table-wrap"><table class="fact-table"><thead><tr><th>${e(t("dmarc.f_provider"))}</th><th>${e(t("dmarc.col_reports"))}</th><th>${e(t("dmarc.col_messages"))}</th><th>${e(t("dmarc.kpi_pass"))}</th><th>${e(t("dmarc.col_failed"))}</th><th>${e(t("dmarc.col_trend"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    : "";
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_providers"))}</summary>${timelineHtml(days)}${table}</details>`;
 }
 
 // ---- rendering: mail volume per day ----
 
 // Reports are per day (usually 24 h), so the day of the report start is the bucket of all its records.
+function dayKey(begin) {
+  return begin && !Number.isNaN(begin.getTime()) ? begin.toISOString().slice(0, 10) : "";
+}
+
 function dailyStats() {
   const by = new Map();
   allRecords.forEach((r) => {
-    const begin = reportMeta[r.reportIdx].begin;
-    if (!begin || Number.isNaN(begin.getTime())) return;
-    const day = begin.toISOString().slice(0, 10);
+    const day = dayKey(reportMeta[r.reportIdx].begin);
+    if (!day) return;
     if (!by.has(day)) by.set(day, { day, messages: 0, failed: 0 });
     const d = by.get(day);
     d.messages += r.count;
@@ -469,8 +504,7 @@ function dailyStats() {
   return Array.from(by.values()).sort((a, b) => a.day.localeCompare(b.day));
 }
 
-function timelineHtml() {
-  const days = dailyStats();
+function timelineHtml(days) {
   if (days.length < 2) return "";
   const max = Math.max(...days.map((d) => d.messages)) || 1;
   const cols = days
@@ -480,7 +514,7 @@ function timelineHtml() {
       return `<div class="tl-col" title="${e(tip)}"><div class="tl-area"><div class="tl-bar" style="height:${(d.messages / max) * 100}%"><span class="tl-fail" style="height:${fail}%"></span></div></div><span class="tl-label">${e(d.day.slice(5))}</span></div>`;
     })
     .join("");
-  return `<details class="fact-block"><summary>${e(t("dmarc.h_timeline"))}</summary><div class="tl">${cols}</div><div class="muted">${e(t("dmarc.timeline_legend", { max }))}</div></details>`;
+  return `<h4 class="tl-title">${e(t("dmarc.h_timeline"))}</h4><div class="tl">${cols}</div><div class="muted">${e(t("dmarc.timeline_legend", { max }))}</div>`;
 }
 
 // ---- comparison with the previous import of the same domain ----
@@ -819,7 +853,6 @@ function render() {
     `<div id="dm-sources"></div>` +
     reportsHtml() +
     providersHtml() +
-    timelineHtml() +
     `<div id="dm-compare"></div>` +
     legendHtml();
   renderSources();

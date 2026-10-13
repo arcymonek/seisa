@@ -32,7 +32,7 @@ What you get:
 - **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each; it opens by itself on an error. "Component scores" is a collapsible card, open by default. When GreyNoise answers with its search limit (HTTP 429) the card says so in plain words, with the reset date when GreyNoise names one; the score is then computed without it.
 - **"Clear"** next to "Check" empties the field, drops the report and the timing line and switches all sources back on - the tab is as after start-up.
 - **A domain report** has a "Scan in URLScan" button that fills the URLScan tab with `https://<domain>/`.
-- **Mail volume per day:** a bar chart (messages per day, the failing share in red) when the reports span at least two days.
+- **By provider:** one section: a bar chart of messages over time on top (messages per day, the failing share in red, when the reports span at least two days), then a table of providers with a "Daily trend" column (a small bar chart of that provider's days).
 - **Comparison with the previous import** of the same domain (from [History](#history)): new sources, sources that are gone, sources that got worse and the DMARC pass rate before and now.
 - **Export:** "Save .md" (the browser's native save dialog) or copy; the Markdown contains the whole report including the identity table.
 - **Plain-language help:** a collapsible "Explanations" card (score, source risk vs. signal, identity agreement, confidence score, GreyNoise/RIOT, comparison...) written for non-specialists first, technical detail after; jargon labels (ASN, RDAP fields, the domain's own SPF/DKIM/DMARC/CAA records) carry a glossary tooltip.
