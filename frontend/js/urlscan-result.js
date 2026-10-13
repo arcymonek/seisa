@@ -143,7 +143,7 @@ function verdictCard(summary) {
     key: "verdict",
     open: signal,
     badge: ` <span class="badge sm ${v.level === "unknown" ? "single" : v.level}">${e(levelLabel(v.level))}</span>`,
-    body: `<div class="muted">${e(t("usr.d_verdict"))}</div>${rows.length ? kvHtml(rows) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`}`,
+    body: `${rows.length ? kvHtml(rows) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`}`,
   });
 }
 

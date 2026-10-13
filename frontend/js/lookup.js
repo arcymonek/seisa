@@ -55,6 +55,12 @@ export function initLookup(container) {
 
   root.querySelector("#lk-submit").addEventListener("click", onSubmit);
   root.querySelector("#lk-clear").addEventListener("click", onClear);
+  root.querySelector("#lk-indicator").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.isComposing) {
+      e.preventDefault();
+      onSubmit();
+    }
+  });
 }
 
 // Back to the start state: empty field, no report, no status or timing, all sources switched on again.

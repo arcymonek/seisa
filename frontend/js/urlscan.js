@@ -268,6 +268,17 @@ function clearOutput() {
   batchItems = [];
 }
 
+// Back to the starting position: empty address field, no result, no running scan (the scan options are kept).
+function resetTab() {
+  endScan();
+  clearOutput();
+  const field = root.querySelector("#us-url");
+  field.value = "";
+  growUrlField();
+  updateHint();
+  field.focus();
+}
+
 function startScan() {
   stopTimers();
   clearOutput();
@@ -555,18 +566,19 @@ function existingList(data) {
 
 // ---- report ----
 
-// Two groups: `pre` (Scan again, Save .md, Copy Markdown) go after Scan, `post` (Compare, Open in urlscan.io) after History.
+// Two groups: `pre` (Scan again, Clear, Save .md, Copy .md) go after Scan, `post` (Compare, Open in urlscan.io) after History.
 function actionButtons(summary, markdown) {
   const pre = [
     button(t("urlscan.scan_again"), "secondary", () => {
       prefillUrlscan(summary.submitted_url);
       onSubmit();
     }),
+    button(t("urlscan.clear"), "secondary", resetTab),
   ];
   if (markdown) {
     const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;
     pre.push(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
-    pre.push(button(t("common.copy_markdown"), "secondary", () => navigator.clipboard.writeText(markdown)));
+    pre.push(button(t("urlscan.copy_md"), "secondary", () => navigator.clipboard.writeText(markdown)));
   }
   const compareBtn = button(t("urlscan.compare"), "secondary", () => compareWithPrevious(summary, compareBtn));
   compareBtn.title = t("urlscan.compare_tip");
