@@ -22,6 +22,10 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.7 - 2026-10-13
+- **History:** keeps the newest 100 unpinned entries instead of 25 (pinned ones still never fall out).
+- **Logs:** log files older than 30 days are deleted automatically, when Seisa starts and when the first entry of a new day is written. The service filter chips, the "most entries from" tile and the entry tags use readable names (Seisa, OpenRouter, GreyNoise, OTX, Cloudflare, VirusTotal, AbuseIPDB, RDNS, WHOIS); the raw names stay in the data and in the search.
+
 ## 2.4.6 - 2026-10-13
 - **Email tab:** the "Model is writing the analysis..." line now stays under the verdict until the whole analysis has finished (it used to disappear as soon as the verdict arrived). "Save .md", "Copy Markdown" and "Save .html" moved into the row of the main buttons (shown when the analysis is done), and the time, tokens and cost line is now under that row. The "Report to AbuseIPDB" button is gone from this tab (the unused hand-over code was removed too). The status tags of the analysis (`[Fakt]`, `[Interpretacja]`, `[Do sprawdzenia]` and the English `[Fact]`, `[Interpretation]`, `[To verify]`) are shown as small labels: green with a tick, yellow with a half circle, red with a question mark. The exports and the stored text are unchanged.
 - **Shut-down dialog:** new wording ("Shut down Seisa?" on its own line, "or you will see a request to close the tab manually").

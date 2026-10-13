@@ -5,7 +5,7 @@
 ## Założenia projektowe i świadome ograniczenia
 
 - **Lokalnie, jeden użytkownik, bez logowania.** Powierzchnia ataku pozostaje mała, bo nic nie jest wystawione; ceną jest to, że nigdy nie wolno wystawiać portu.
-- **Bez bazy danych.** Cała trwałość to proste pliki JSON w `data/` z atomowym zapisem. Łatwo je czytać, archiwizować i usuwać; ceną jest brak współbieżności i ograniczona historia (25 nieprzypiętych wpisów).
+- **Bez bazy danych.** Cała trwałość to proste pliki JSON w `data/` z atomowym zapisem. Łatwo je czytać, archiwizować i usuwać; ceną jest brak współbieżności i ograniczona historia (100 nieprzypiętych wpisów).
 - **Bez frameworka frontendowego i bez etapu budowania.** Zwykłe moduły ES; edytujesz plik i odświeżasz stronę (serwer wysyła nagłówki no-cache).
 - **Najpierw deterministycznie, potem LLM.** Fakty, twarde sprawdzenia i wyniki liczy Python; LLM wyjaśnia i pisze szkic, a nie może odblokować zgłoszenia, które kod zablokował.
 - **Każdy tekst widoczny dla użytkownika przechodzi przez katalogi** (PL i EN razem).
@@ -127,7 +127,7 @@ Moduły frontendu w `frontend/js/`:
 
 | Ścieżka | Zawiera | Uwagi |
 |---|---|---|
-| `data/history.json` | historię (sprawdzenia IP, skany URL z miniaturami, importy DMARC, przypięcia) | 25 nieprzypiętych wpisów; zapis atomowy |
+| `data/history.json` | historię (sprawdzenia IP, skany URL z miniaturami, importy DMARC, przypięcia) | 100 nieprzypiętych wpisów; zapis atomowy |
 | `data/vt_usage.json` | dzienny licznik VirusTotal | zeruje się o 00:00 UTC |
 | `data/api_usage.json` | liczniki i ostatnie znane limity (zakładka Informacje) | |
 | `data/report_log.json` | log każdej próby zgłoszenia do AbuseIPDB | ślad audytowy, nie jest usuwany przez "Wyczyść historię" |

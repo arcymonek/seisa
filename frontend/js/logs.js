@@ -20,6 +20,22 @@ const LEVELS = ["all", "ERROR", "WARNING"];
 const LEVEL_KEY = { all: "logs.level_all", ERROR: "logs.level_error", WARNING: "logs.level_warning" };
 const LEVEL_BADGE = { ERROR: "high", WARNING: "medium" };
 
+// Display names of the log services (the raw logger names stay in the data and in the search).
+const SERVICE_LABEL = {
+  app: "Seisa",
+  open_router: "OpenRouter",
+  greynoise: "GreyNoise",
+  otx: "OTX",
+  cloudflare_radar: "Cloudflare",
+  virustotal: "VirusTotal",
+  abuseipdb: "AbuseIPDB",
+  urlscan: "urlscan",
+  dns_records: "DNS",
+  whois_rdns: "RDNS",
+  "whois.whois": "WHOIS",
+};
+const serviceLabel = (name) => SERVICE_LABEL[name] || name;
+
 const entryKey = (e) => `${e.time}|${e.service}`;
 
 export function initLogs(container) {
@@ -115,7 +131,7 @@ function render() {
     tiles.innerHTML = `<div class="kpi-row">
       ${tile(t("logs.kpi_errors"), errors, "", errors ? "bad" : "")}
       ${tile(t("logs.kpi_warnings"), warnings, "", warnings ? "warn" : "")}
-      ${tile(t("logs.kpi_top"), topName, tn("logs.kpi_top_sub", topCount))}
+      ${tile(t("logs.kpi_top"), serviceLabel(topName), tn("logs.kpi_top_sub", topCount))}
       ${tile(t("logs.kpi_last"), fmtRelative(entries[0].time), fmtDateTime(entries[0].time))}
     </div>`;
   }
@@ -128,7 +144,7 @@ function render() {
   const svcEl = root.querySelector("#lg-services");
   svcEl.innerHTML = services.length > 1
     ? [["all", entries.length], ...services]
-        .map(([name, n]) => `<span class="chip${name === service ? " on" : ""}" role="button" tabindex="0" data-service="${escapeHtml(name)}">${escapeHtml(name === "all" ? t("logs.all_services") : name)} ${n}</span>`)
+        .map(([name, n]) => `<span class="chip${name === service ? " on" : ""}" role="button" tabindex="0" data-service="${escapeHtml(name)}">${escapeHtml(name === "all" ? t("logs.all_services") : serviceLabel(name))} ${n}</span>`)
         .join("")
     : "";
   const bind = (el, attr, set) =>
@@ -157,7 +173,7 @@ function renderList() {
     (e) =>
       (level === "all" || e.level === level) &&
       (service === "all" || e.service === service) &&
-      (!query || `${e.service} ${e.message}`.toLowerCase().includes(query))
+      (!query || `${e.service} ${serviceLabel(e.service)} ${e.message}`.toLowerCase().includes(query))
   );
   root.querySelector("#lg-info").textContent = entries.length ? t("logs.shown", { shown: shown.length, total: entries.length }) : "";
   if (!entries.length) {
@@ -177,7 +193,7 @@ function renderList() {
         <summary>
           <span class="muted mono">${escapeHtml(fmtDateTime(e.time))}</span>
           <span class="badge sm ${LEVEL_BADGE[e.level] || "single"}">${escapeHtml(e.level)}</span>
-          <span class="tag">${escapeHtml(e.service)}</span>
+          <span class="tag">${escapeHtml(serviceLabel(e.service))}</span>
           <span class="log-line">${escapeHtml(firstLine)}</span>
         </summary>
         <div class="log-body">

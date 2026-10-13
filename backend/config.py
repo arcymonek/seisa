@@ -16,7 +16,8 @@ API_USAGE_FILE = DATA_DIR / "api_usage.json"
 ABUSEIPDB_POLICY_FILE = DOCS_DIR / "abuseipdb-reporting-policy.md"
 EMAIL_GUIDE_FILE = DOCS_DIR / "email-analysis-guide.md"
 
-HISTORY_MAX_ENTRIES = 25
+HISTORY_MAX_ENTRIES = 100
+LOG_RETENTION_DAYS = 30  # daily log files older than this are deleted (today counts as day 1)
 
 # Request size limits (a local tool, but nothing should be able to make it parse or store unbounded input).
 MAX_SOURCE_CHARS = 3_000_000  # e-mail source

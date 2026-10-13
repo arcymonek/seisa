@@ -5,7 +5,7 @@
 ## Design decisions and non-goals
 
 - **Local, single user, no login.** The attack surface stays small because nothing is exposed; the price is that you must never expose the port.
-- **No database.** All persistence is plain JSON files in `data/` with atomic writes. They are easy to read, back up and delete; the price is no concurrency and a capped history (25 unpinned entries).
+- **No database.** All persistence is plain JSON files in `data/` with atomic writes. They are easy to read, back up and delete; the price is no concurrency and a capped history (100 unpinned entries).
 - **No frontend framework and no build step.** Plain ES modules; you edit a file and refresh (the server sends no-cache headers).
 - **Deterministic first, LLM second.** Facts, hard checks and scores are computed in Python; the LLM explains and drafts and cannot unblock a report the code has blocked.
 - **Every user-visible string goes through the catalogs** (PL and EN together).
@@ -127,7 +127,7 @@ Frontend modules in `frontend/js/`:
 
 | Path | Holds | Notes |
 |---|---|---|
-| `data/history.json` | the history (IP lookups, URL scans with thumbnails, DMARC imports, pins) | 25 unpinned entries; atomic writes |
+| `data/history.json` | the history (IP lookups, URL scans with thumbnails, DMARC imports, pins) | 100 unpinned entries; atomic writes |
 | `data/vt_usage.json` | the VirusTotal daily counter | resets at 00:00 UTC |
 | `data/api_usage.json` | counters and last known limits (Info tab) | |
 | `data/report_log.json` | the log of every AbuseIPDB report attempt | an audit trail, not deleted by "Clear history" |

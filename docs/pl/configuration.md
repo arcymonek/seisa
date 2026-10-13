@@ -16,8 +16,8 @@ Pełna tabela kluczy `.env` (każda zmienna, czy jest wymagana, gdzie ją zdoby�
 | Źródło e-maila | 3 mln znaków | |
 | Odpowiedź LLM | 64000 tokenów | sufit liczony razem z ukrytym rozumowaniem modelu (ok. 45% wyjścia); płacisz tylko za to, co wygenerowano |
 | Zgłoszenie do AbuseIPDB | jedno na IP na 15 minut, komentarz do 1024 znaków, do 30 kategorii | reguła 15 minut jest egzekwowana (HTTP 409), zanim zostanie zużyte zapytanie |
-| Historia | 25 nieprzypiętych wpisów | przypięte nigdy nie wypadają |
-| Widoczne logi | 500 najnowszych wpisów | |
+| Historia | 100 nieprzypiętych wpisów | przypięte nigdy nie wypadają |
+| Widoczne logi | 500 najnowszych wpisów | pliki logów starsze niż 30 dni są usuwane automatycznie |
 
 Limity planów darmowych każdej usługi z kluczem (zużyto / limit / reset) są w zakładce [Informacje](tabs.md#informacje), w karcie "Limity API".
 

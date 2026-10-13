@@ -16,8 +16,8 @@ The full `.env` keys table (every variable, whether it is required, where to get
 | E-mail source | 3 million characters | |
 | LLM answer | 64000 tokens | a ceiling that includes the model's hidden reasoning (about 45% of the output); you pay only for what is generated |
 | AbuseIPDB report | one per IP per 15 minutes, comment up to 1024 characters, up to 30 categories | the 15-minute rule is enforced (HTTP 409) before a call is spent |
-| History | 25 unpinned entries | pinned entries never fall out |
-| Logs shown | newest 500 entries | |
+| History | 100 unpinned entries | pinned entries never fall out |
+| Logs shown | newest 500 entries | log files older than 30 days are deleted automatically |
 
 The free-plan quotas of every keyed service (used / limit / reset) are in the [Info](tabs.md#info) tab, in the "API limits" card.
 
