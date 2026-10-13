@@ -86,11 +86,12 @@ export function initEmail(container) {
             ${PANES.map((p) => `<button type="button" class="em-tab" role="tab" data-pane="${p}">${e(t("em.tab." + p))}</button>`).join("")}
           </div>
           <div class="em-pane" id="em-pane-overview" role="tabpanel">
-            <section data-toc="${e(t("em.route.title"))}" id="em-sec-route"></section>
-            <section data-toc="${e(t("em.f.flags_short"))}" id="em-sec-flags"></section>
-            <section data-toc="${e(t("em.checklist.title"))}" id="em-sec-checklist" hidden><h3></h3><div class="em-flat"><div></div></div></section>
-            <section data-toc="${e(t("em.advice.title"))}" id="em-sec-advice" hidden><h3></h3><div class="em-flat"><div></div></div></section>
-            <section data-toc="${e(t("em.cite.title"))}" id="em-sec-citations" hidden></section>
+            <div class="em-facts-tools">${toggleAllHtml(".em-ocard")}</div>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.route.title"))}" id="em-sec-route" open></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.f.flags_short"))}" id="em-sec-flags" open></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.checklist.title"))}" id="em-sec-checklist" open hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.advice.title"))}" id="em-sec-advice" open hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.cite.title"))}" id="em-sec-citations" open hidden></details>
           </div>
           <div class="em-pane" id="em-pane-facts" role="tabpanel"></div>
           <div class="em-pane" id="em-pane-lesson" role="tabpanel"></div>
@@ -153,7 +154,8 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 
 function onClick(ev) {
-  if (handleToggleAll($("#em-pane-facts"), ev.target.closest("[data-toggle-all]"))) return undefined;
+  const toggle = ev.target.closest("[data-toggle-all]");
+  if (toggle && handleToggleAll(toggle.closest(".em-pane"), toggle)) return undefined;
   const scan = ev.target.closest("[data-scan-url]");
   if (scan) return window.seisaApp.scanUrl(scan.dataset.scanUrl);
   const ip = ev.target.closest("[data-lookup-ip]");
@@ -174,6 +176,7 @@ function onClick(ev) {
     case "goto-citations": {
       setPane("overview");
       const sec = $("#em-sec-citations");
+      sec.open = true;
       sec.scrollIntoView({ behavior: "smooth", block: "start" });
       return undefined;
     }
@@ -297,6 +300,9 @@ function clearOutput() {
   ["checklist", "advice"].forEach((k) => {
     $(`#em-sec-${k}`).hidden = true;
   });
+  document.querySelectorAll(".em-ocard").forEach((d) => {
+    d.open = true; // a new analysis starts with every Overview card open
+  });
   $("#em-alert").innerHTML = "";
   $("#em-dup").innerHTML = "";
   lesson.reset();
@@ -309,12 +315,14 @@ function showAlert(message) {
   $("#em-alert").innerHTML = `<div class="banner warn">${e(message)}</div>`;
 }
 
+const ocardSummary = (title) => `<summary><span>${e(title)}</span></summary>`;
+
 function showFacts(f) {
   S.subject = f.overview.subject || "";
   $("#em-result").hidden = false;
   $("#em-kpis").innerHTML = kpiHtml(f);
-  $("#em-sec-route").innerHTML = `<h3>${e(t("em.route.title"))}</h3>${routeHtml(f) || `<div class="muted">${e(t("common.none"))}</div>`}`;
-  $("#em-sec-flags").innerHTML = `<h3>${e(t("em.f.flags", { n: f.flags.length }))}</h3>${flagsHtml(f)}`;
+  $("#em-sec-route").innerHTML = `${ocardSummary(t("em.route.title"))}${routeHtml(f) || `<div class="muted">${e(t("common.none"))}</div>`}`;
+  $("#em-sec-flags").innerHTML = `${ocardSummary(t("em.f.flags", { n: f.flags.length }))}${flagsHtml(f)}`;
   $("#em-pane-facts").innerHTML = `<div class="em-facts-tools">${toggleAllHtml(".em-fcard")}</div>${factCardsHtml(f)}`;
   viewer.setSource(S.raw);
   lesson.sourceChanged();
@@ -565,7 +573,7 @@ function updateOverviewSections(parts, final) {
     const sig = s.title + "\n" + s.md;
     if (overviewShown[key] === sig) return;
     overviewShown[key] = sig;
-    sec.querySelector("h3").textContent = s.title;
+    sec.querySelector("summary span").textContent = s.title;
     lesson.renderInto(sec.querySelector(".em-flat > div"), s.md, { glossaryOwner: key, overview: true });
   });
 }
@@ -603,10 +611,10 @@ function showCitations() {
   }
   sec.hidden = false;
   if (!cc.issues.length) {
-    sec.innerHTML = `<h3>${e(t("em.cite.title"))}</h3><div class="muted">${e(t("em.citations_ok", { n: cc.checked }))}</div>`;
+    sec.innerHTML = `${ocardSummary(t("em.cite.title"))}<div class="muted">${e(t("em.citations_ok", { n: cc.checked }))}</div>`;
   } else {
     const items = cc.issues.map((i) => `<li>${e(citationKind(i.kind))}: <code>${e(i.text)}</code> - ${e(i.note)}</li>`).join("");
-    sec.innerHTML = `<h3>${e(t("em.cite.title"))}</h3><div class="banner warn"><strong>${e(t("em.citations_bad", { bad: cc.issues.length, n: cc.checked }))}</strong>
+    sec.innerHTML = `${ocardSummary(t("em.cite.title"))}<div class="banner warn"><strong>${e(t("em.citations_bad", { bad: cc.issues.length, n: cc.checked }))}</strong>
       ${e(t("em.citations_hint"))}<ul>${items}</ul></div>`;
   }
   scheduleToc();

@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.8 - 2026-10-13
+- **Email tab, Overview pane:** "Message route", "Automatic warnings", the checklist, the assessment and "what to do" part, and the citation check are now collapsible cards like the ones in Facts (open at the start, and open again for every new analysis), with "Expand all" / "Collapse all" above the first card. A click in the table of contents or on the citation warning in the banner opens the card it points to.
+
 ## 2.4.7 - 2026-10-13
 - **History:** keeps the newest 100 unpinned entries instead of 25 (pinned ones still never fall out).
 - **Logs:** log files older than 30 days are deleted automatically, when Seisa starts and when the first entry of a new day is written. The service filter chips, the "most entries from" tile and the entry tags use readable names (Seisa, OpenRouter, GreyNoise, OTX, Cloudflare, VirusTotal, AbuseIPDB, RDNS, WHOIS); the raw names stay in the data and in the search.
