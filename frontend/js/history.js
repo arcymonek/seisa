@@ -46,7 +46,7 @@ export function initHistory(container) {
       <div class="chip-row" id="hi-range">${Object.keys(RANGE_KEY).map((r) => `<span class="chip${r === range ? " on" : ""}" role="button" tabindex="0" data-range="${r}">${escapeHtml(t(RANGE_KEY[r]))}</span>`).join("")}</div>
       <div class="chip-row" id="hi-risks">${RISKS.map((r) => `<span class="chip${r === riskFilter ? " on" : ""}" role="button" tabindex="0" data-risk="${r}">${escapeHtml(t(RISK_KEY[r]))}</span>`).join("")}</div>
     </div>
-    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}">${toggleAllHtml("details.day-group")}<span id="hi-compare-bar"></span></div>
+    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}"><span id="hi-compare-bar"></span>${toggleAllHtml("details.day-group")}</div>
     <div id="hi-compare"></div>
     <div id="hi-list"></div>`;
 
