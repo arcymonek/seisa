@@ -2,14 +2,13 @@
 // card with the checks before sending. Pure renderers: they take data and return HTML (everything from the e-mail goes
 // through escapeHtml); the state and the events live in report-builder.js.
 import { t, tn } from "./i18n.js";
-import { kvHtml, tileHtml } from "./lookup-result.js";
+import { kpiTile, legendHtml as legendCard, textBanner } from "./ui.js";
 import { escapeHtml as e } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
 const AGE_LIMIT_DAYS = 60; // AbuseIPDB reporting policy (the backend enforces it as well)
 const STATUS_CLASS = { pass: "auto-pass", fail: "auto-fail", none: "auto-none", unknown: "auto-pending" };
 
-const withTone = (html, tone) => (tone ? html.replace('class="kpi"', `class="kpi ${tone}"`) : html);
 
 // ---- verdict banner ----
 
@@ -34,7 +33,7 @@ export function verdictBannerHtml({ facts, llm, local, verdict }) {
   } else {
     html = `<div class="banner info"><strong>${e(t("rb.hard_only_title"))}</strong><div>${e(t("rb.hard_only_body"))}</div></div>`;
   }
-  if (llm && llm.error) html += `<div class="banner warn">${e(t("rb.llm_failed", { error: llm.error }))}</div>`;
+  if (llm && llm.error) html += textBanner("warn", t("rb.llm_failed", { error: llm.error }));
   return html;
 }
 
@@ -46,10 +45,10 @@ export function tilesHtml(facts) {
   const ageTone = !facts.age_ok ? "bad" : facts.age_days > AGE_LIMIT_DAYS * 0.75 ? "warn" : "good";
   const auth = [facts.spf, facts.dkim, facts.dmarc].map((v) => v || "-").join(" / ");
   const tiles = [
-    tileHtml(t("rb.kpi_ip"), facts.trusted_source_ip || "-", facts.trusted_source_ip ? t("rb.confidence", { value: facts.ip_confidence || "?" }) : facts.ip_reject_reason || ""),
-    withTone(tileHtml(t("rb.kpi_age"), facts.age_days == null ? "?" : t("rb.days", { n: facts.age_days }), t("rb.kpi_age_sub", { limit: AGE_LIMIT_DAYS })), ageTone),
-    withTone(tileHtml(t("rb.kpi_auth"), auth, "SPF / DKIM / DMARC"), facts.spoofing_suspected ? "bad" : ""),
-    withTone(tileHtml(t("rb.kpi_att"), atts.length, doubles ? t("rb.kpi_att_sub", { n: doubles }) : ""), doubles ? "warn" : ""),
+    kpiTile(t("rb.kpi_ip"), facts.trusted_source_ip || "-", { sub: facts.trusted_source_ip ? t("rb.confidence", { value: facts.ip_confidence || "?" }) : facts.ip_reject_reason || "" }),
+    kpiTile(t("rb.kpi_age"), facts.age_days == null ? "?" : t("rb.days", { n: facts.age_days }), { sub: t("rb.kpi_age_sub", { limit: AGE_LIMIT_DAYS }), tone: ageTone }),
+    kpiTile(t("rb.kpi_auth"), auth, { sub: "SPF / DKIM / DMARC", tone: facts.spoofing_suspected ? "bad" : "" }),
+    kpiTile(t("rb.kpi_att"), atts.length, { sub: doubles ? t("rb.kpi_att_sub", { n: doubles }) : "", tone: doubles ? "warn" : "" }),
   ];
   // the AbuseIPDB tile is filled in later, when /ip-info answers
   return `<div class="kpi-row" id="rb-tiles">${tiles.join("")}<span id="rb-kpi-abuse" style="display:contents"></span></div>`;
@@ -59,7 +58,7 @@ export function abuseTileHtml(info) {
   if (!info || info.status !== "ok") return "";
   const tone = info.is_whitelisted ? "warn" : "";
   const sub = info.total_reports ? t("rb.kpi_abuse_sub", { reports: info.total_reports, users: info.num_distinct_users }) : t("rb.ip_info_none");
-  return withTone(tileHtml(t("rb.kpi_abuse"), `${info.abuse_confidence_score ?? 0}%`, sub, null, "rb.gl.confidence"), tone);
+  return kpiTile(t("rb.kpi_abuse"), `${info.abuse_confidence_score ?? 0}%`, { sub, glKey: "rb.gl.confidence", tone });
 }
 
 // ---- the address chain, with the option to pick another address ----
@@ -136,10 +135,7 @@ function item(key, status, note) {
 
 const LEGEND = ["groups", "boundary_hop", "smtp_auth", "double_extension", "cooldown", "pii", "confidence", "qualifies"];
 
-export function legendHtml() {
-  const rows = LEGEND.map((id) => [t("rb.legend_term." + id), e(t("rb.legend." + id))]);
-  return `<details class="fact-block legend"><summary>${e(t("rb.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
-}
+export const legendHtml = () => legendCard(t("rb.h_legend"), LEGEND.map((id) => [t("rb.legend_term." + id), t("rb.legend." + id)]));
 
 // model: {required: [[key, status, note]], blocking: [...], info: [...], failing: n}
 export function checksCardHtml(model, wasOpen) {
@@ -154,7 +150,7 @@ export function checksCardHtml(model, wasOpen) {
         ? { cls: "warn", text: tn("rb.checks_unknown", unknown) }
         : { cls: "good", text: t("rb.checks_ok") };
   const group = (title, rows) => (rows.length ? `<h4>${e(title)}</h4>${rows.map((r) => item(...r)).join("")}` : "");
-  const blocked = model.llmBlocked ? `<div class="banner warn">${e(t("rb.llm_blocked"))}</div>` : "";
+  const blocked = model.llmBlocked ? textBanner("warn", t("rb.llm_blocked")) : "";
   return `<details class="fact-block" id="rb-checks"${wasOpen || model.failing ? " open" : ""}>
     <summary>${e(t("rb.checks_title"))} <span class="em-state ${state.cls}">${e(state.text)}</span></summary>
     ${group(t("rb.group_required"), model.required)}

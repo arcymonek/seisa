@@ -14,6 +14,7 @@ import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
 import { createLesson } from "./email-lesson.js";
 import { createSourceViewer } from "./email-source.js";
+import { errorBanner, textBanner } from "./ui.js";
 
 let root;
 let lesson;
@@ -317,7 +318,7 @@ function clearOutput() {
 }
 
 function showAlert(message) {
-  $("#em-alert").innerHTML = `<div class="banner warn">${e(message)}</div>`;
+  $("#em-alert").innerHTML = textBanner("warn", message);
 }
 
 const ocardSummary = (title) => `<summary><span>${e(title)}</span></summary>`;
@@ -680,7 +681,7 @@ async function refreshSaved() {
   try {
     items = await api.emailAnalyses();
   } catch (err) {
-    list.innerHTML = `<div class="banner warn">${e(t("common.error", { message: err.message }))}</div>`;
+    list.innerHTML = errorBanner(err);
     return;
   }
   $("#em-saved-summary").textContent = t("em.saved_count", { n: items.length });
@@ -740,7 +741,7 @@ async function showComparison() {
       box.innerHTML = "";
     };
   } catch (err) {
-    box.innerHTML = `<div class="banner warn">${e(t("common.error", { message: err.message }))}</div>`;
+    box.innerHTML = errorBanner(err);
   }
 }
 

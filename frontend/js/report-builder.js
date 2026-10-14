@@ -11,6 +11,7 @@ import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, legendHtml, tile
 import { reportMarkdown } from "./report-export.js";
 import { findReport, initReportHistory, refreshReportHistory } from "./report-history.js";
 import { bindEmlInput, copyText, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
+import { errorBanner } from "./ui.js";
 
 const SOLO_WEAK = [20, 22]; // categories that only make sense next to a more specific one (policy: "often combined")
 const VPN_CATEGORY = 13;
@@ -190,7 +191,7 @@ async function showForm() {
   try {
     categoriesMap = await api.categories();
   } catch (err) {
-    $("#rb-error").innerHTML = `<div class="banner warn">${e(t("common.error", { message: err.message }))}</div>`;
+    $("#rb-error").innerHTML = errorBanner(err);
     return;
   }
   renderCategoryChips([]);
@@ -279,7 +280,7 @@ async function analyze(useLlm) {
   } catch (err) {
     if (seq !== analysisSeq) return;
     timer.stop();
-    $("#rb-error").innerHTML = `<div class="banner warn">${e(t("rb.analysis_error", { message: err.message }))}</div>`;
+    $("#rb-error").innerHTML = errorBanner(err, { key: "rb.analysis_error" });
     return;
   }
   if (seq !== analysisSeq) return; // cleared or restarted meanwhile
@@ -459,7 +460,7 @@ async function maskPii() {
     updateCharCount();
     scheduleChecks();
   } catch (err) {
-    $("#rb-submit-result").innerHTML = `<div class="banner warn">${e(t("common.error", { message: err.message }))}</div>`;
+    $("#rb-submit-result").innerHTML = errorBanner(err);
   }
 }
 
@@ -543,7 +544,7 @@ async function submit() {
     S.sentAt = new Date().toISOString();
     resultEl.innerHTML = sentBannerHtml(res, fields.ip);
   } catch (err) {
-    resultEl.innerHTML = `<div class="banner warn">${e(t("rb.send_error", { message: err.message }))}</div>`;
+    resultEl.innerHTML = errorBanner(err, { key: "rb.send_error" });
   }
   try {
     await runChecks();

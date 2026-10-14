@@ -10,6 +10,7 @@ import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
 import { copyText, downloadMarkdown, escapeHtml as e } from "./util.js";
 import { glossAbbr } from "./glossary.js";
+import { kpiTile, legendHtml, textBanner } from "./ui.js";
 
 const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
 const SOURCE_LIMIT = 50; // rows shown before the "show all" button
@@ -390,12 +391,12 @@ function bannersHtml() {
     const head = tn("dmarc.banner_bad", high.length, { messages: tn("dmarc.messages", sumBy(high, "count")) });
     html += `<div class="banner bad"><strong>${e(head)}</strong>${ipsHtml}<div>${e(actions)}</div><div>${e(t("dmarc.banner_bad_hint"))}</div></div>`;
   } else if (medium.length) {
-    html += `<div class="banner warn">${e(tn("dmarc.banner_warn", medium.length))}</div>`;
+    html += textBanner("warn", tn("dmarc.banner_warn", medium.length));
   } else if (sources.length) {
-    html += `<div class="banner good">${e(t("dmarc.banner_good"))}</div>`;
+    html += textBanner("good", t("dmarc.banner_good"));
   }
   reportMeta.filter((m) => m.errors.length).forEach((m) => {
-    html += `<div class="banner warn">${e(t("dmarc.banner_errors", { org: m.org, errors: m.errors.join("; ") }))}</div>`;
+    html += textBanner("warn", t("dmarc.banner_errors", { org: m.org, errors: m.errors.join("; ") }));
   });
   return html;
 }
@@ -430,12 +431,11 @@ function kpiHtml() {
   const bar = dispTotal
     ? `<div class="disp-bar">${["reject", "quarantine", "none"].map((k) => (disp[k] ? `<span class="${k}" style="width:${(disp[k] / dispTotal) * 100}%"></span>` : "")).join("")}</div>`
     : "";
-  const tile = (label, value) => `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}</span></div>`;
   return `<div class="kpi-row">
-    ${tile(t("dmarc.kpi_messages"), totalMsgs)}
-    ${tile(t("dmarc.kpi_ips"), sources.length)}
-    ${tile(t("dmarc.kpi_suspicious"), suspicious)}
-    ${tile(t("dmarc.kpi_pass"), fmtPct(passed, totalMsgs))}
+    ${kpiTile(t("dmarc.kpi_messages"), totalMsgs)}
+    ${kpiTile(t("dmarc.kpi_ips"), sources.length)}
+    ${kpiTile(t("dmarc.kpi_suspicious"), suspicious)}
+    ${kpiTile(t("dmarc.kpi_pass"), fmtPct(passed, totalMsgs))}
     <div class="kpi wide"><span class="kpi-label">${e(t("dmarc.kpi_decisions"))}</span><div>${bar}<div class="muted">reject ${disp.reject} · quarantine ${disp.quarantine} · none ${disp.none}</div></div></div>
   </div>`;
 }
@@ -656,18 +656,18 @@ function reportHtml(m, open) {
   return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary><dl class="kv">${kv.join("")}</dl></details>`;
 }
 
-function legendHtml() {
-  return `<details class="fact-block"><summary>${e(t("dmarc.h_legend"))}</summary><dl class="kv legend">
-    <dt>SPF</dt><dd>${e(t("dmarc.legend_spf"))}</dd>
-    <dt>DKIM</dt><dd>${e(t("dmarc.legend_dkim"))}</dd>
-    <dt>${e(t("dmarc.legend_policy_term"))}</dt><dd>${e(t("dmarc.legend_policy"))}</dd>
-    <dt>${e(t("dmarc.legend_table_term"))}</dt><dd>${e(t("dmarc.legend_table"))}</dd>
-    <dt>${e(t("dmarc.legend_risk_term"))}</dt><dd>${e(t("dmarc.legend_risk"))}</dd>
-    <dt>${e(t("dmarc.legend_tiles_term"))}</dt><dd>${e(t("dmarc.legend_tiles"))}</dd>
-    <dt>${e(t("dmarc.legend_geo_term"))}</dt><dd>${e(t("dmarc.legend_geo"))}</dd>
-    <dt>${e(t("dmarc.legend_fix_term"))}</dt><dd>${e(t("dmarc.legend_fix"))}</dd>
-    <dt>${e(t("dmarc.legend_compare_term"))}</dt><dd>${e(t("dmarc.legend_compare"))}</dd>
-  </dl></details>`;
+function legendCard() {
+  return legendHtml(t("dmarc.h_legend"), [
+    ["SPF", t("dmarc.legend_spf")],
+    ["DKIM", t("dmarc.legend_dkim")],
+    [t("dmarc.legend_policy_term"), t("dmarc.legend_policy")],
+    [t("dmarc.legend_table_term"), t("dmarc.legend_table")],
+    [t("dmarc.legend_risk_term"), t("dmarc.legend_risk")],
+    [t("dmarc.legend_tiles_term"), t("dmarc.legend_tiles")],
+    [t("dmarc.legend_geo_term"), t("dmarc.legend_geo")],
+    [t("dmarc.legend_fix_term"), t("dmarc.legend_fix")],
+    [t("dmarc.legend_compare_term"), t("dmarc.legend_compare")],
+  ]);
 }
 
 // ---- rendering: sources ----
@@ -865,7 +865,7 @@ function render() {
     reportsHtml() +
     providersHtml() +
     `<div id="dm-compare"></div>` +
-    legendHtml();
+    legendCard();
   renderSources();
 
   const srcEl = resultsEl.querySelector("#dm-sources");

@@ -4,6 +4,7 @@
 import { t, tn } from "./i18n.js";
 import { defangUrl } from "./markdown-render.js";
 import { escapeHtml as e } from "./util.js";
+import { kpiTile, mono, textBanner } from "./ui.js";
 
 const AUTH_BAD = ["fail", "softfail", "permerror", "temperror"];
 const AUTH_WEAK = ["none", "neutral", "policy"];
@@ -19,7 +20,6 @@ function table(headers, rows, cls = "") {
     .join("")}</tbody></table></div>`;
 }
 
-const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : '<span class="muted">-</span>');
 const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : '<span class="muted">-</span>');
 const resultClass = (r) => (r === "pass" ? "ok" : AUTH_BAD.includes(r) ? "bad" : "warnc");
 
@@ -140,32 +140,26 @@ function htmlSignals(f) {
 // summary tiles
 // ---------------------------------------------------------------------------
 
-function tile(tone, label, valueHtml, subHtml, extra = "") {
-  return `<div class="kpi ${tone}"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${valueHtml}${extra}</span>${subHtml ? `<span class="muted">${subHtml}</span>` : ""}</div>`;
-}
-
 const chip = (label, value) =>
   `<span class="em-res ${value ? resultClass(value) : "muted"}" title="${e(value || "-")}">${e(label)} ${value ? (value === "pass" ? "✓" : AUTH_BAD.includes(value) ? "✗" : "~") : "-"}</span>`;
 
 export function kpiHtml(f) {
   const tiles = [];
   const warns = f.flags.filter((x) => x.level === "warn").length;
-  tiles.push(tile(warns >= 3 ? "bad" : warns ? "warn" : "good", t("em.kpi.flags"), e(warns), e(t("em.kpi.flags_sub", { info: f.flags.length - warns }))));
+  tiles.push(kpiTile(t("em.kpi.flags"), warns, { tone: warns >= 3 ? "bad" : warns ? "warn" : "good", sub: t("em.kpi.flags_sub", { info: f.flags.length - warns }) }));
 
   const a = authSummary(f);
   const authSub = !a.any ? t("em.kpi.auth_none") : a.verified ? t("em.kpi.auth_by", { server: a.server || "?" }) : t("em.kpi.auth_unverified");
-  tiles.push(tile(authState(a), t("em.kpi.auth"), `<span class="em-res-row">${chip("SPF", a.spf)}${chip("DKIM", a.dkim)}${chip("DMARC", a.dmarc)}</span>`, e(authSub)));
+  tiles.push(kpiTile(t("em.kpi.auth"), null, { tone: authState(a), valueHtml: `<span class="em-res-row">${chip("SPF", a.spf)}${chip("DKIM", a.dkim)}${chip("DMARC", a.dmarc)}</span>`, sub: authSub }));
 
   const bad = misaligned(f);
   if (f.identity.length) {
-    tiles.push(tile(bad.length ? "bad" : "good", t("em.kpi.identity"), e(bad.length ? tn("em.kpi.misaligned", bad.length) : t("em.kpi.identity_ok")),
-      e(bad.length ? bad.map((r) => r.field).slice(0, 3).join(", ") : t("em.kpi.identity_ok_sub"))));
+    tiles.push(kpiTile(t("em.kpi.identity"), bad.length ? tn("em.kpi.misaligned", bad.length) : t("em.kpi.identity_ok"), { tone: bad.length ? "bad" : "good", sub: bad.length ? bad.map((r) => r.field).slice(0, 3).join(", ") : t("em.kpi.identity_ok_sub") }));
   }
 
   const hop = senderHop(f);
   if (hop && hop.ip) {
-    tiles.push(tile("neutral", t("em.kpi.sender_ip"), `<span class="mono">${e(hop.ip)}</span>`,
-      e([hop.ptr || hop.from_host || "", t("em.kpi.boundary", { idx: hop.index })].filter(Boolean).join(" · ")), ipBtn(hop.ip)));
+    tiles.push(kpiTile(t("em.kpi.sender_ip"), null, { tone: "neutral", valueHtml: `<span class="mono">${e(hop.ip)}</span>${ipBtn(hop.ip)}`, sub: [hop.ptr || hop.from_host || "", t("em.kpi.boundary", { idx: hop.index })].filter(Boolean).join(" · ") }));
   }
 
   if (f.html || f.attachments.length) {
@@ -173,7 +167,7 @@ export function kpiHtml(f) {
     const sig = htmlSignals(f);
     const value = h ? tn("em.kpi.links", h.links.length) : tn("em.kpi.attachments", f.attachments.length);
     const sub = t("em.kpi.content_sub", { attachments: f.attachments.length, hidden: h ? h.hidden.length : 0, forms: h ? h.forms : 0 });
-    tiles.push(tile(sig.bad ? "bad" : sig.warn ? "warn" : "good", t("em.kpi.content"), e(value), e(sub)));
+    tiles.push(kpiTile(t("em.kpi.content"), value, { tone: sig.bad ? "bad" : sig.warn ? "warn" : "good", sub }));
   }
 
   const ms = f.filters && f.filters.microsoft;
@@ -184,12 +178,12 @@ export function kpiHtml(f) {
     const folder = md.DEST === "J" || md.RF === "JunkEmail" ? t("em.kpi.junk") : ms.folder || null;
     const value = folder || (maxScl !== null ? `SCL ${maxScl}` : "-");
     const sub = [folder && maxScl !== null ? `SCL ${maxScl}` : "", ms.forefront && ms.forefront.CAT ? `CAT ${ms.forefront.CAT}` : ""].filter(Boolean).join(" · ");
-    tiles.push(tile(junkOrSpam(ms) ? "bad" : maxScl !== null && maxScl <= 1 ? "good" : "neutral", t("em.kpi.filter"), e(value), e(sub)));
+    tiles.push(kpiTile(t("em.kpi.filter"), value, { tone: junkOrSpam(ms) ? "bad" : maxScl !== null && maxScl <= 1 ? "good" : "neutral", sub }));
   }
 
   const d = totalDelay(f);
   if (d.n >= 2) {
-    tiles.push(tile(d.negative ? "warn" : "neutral", t("em.kpi.time"), e(fmtDuration(Math.abs(d.total))), e(d.negative ? t("em.kpi.time_anomaly") : t("em.kpi.time_sub", { n: d.n }))));
+    tiles.push(kpiTile(t("em.kpi.time"), fmtDuration(Math.abs(d.total)), { tone: d.negative ? "warn" : "neutral", sub: d.negative ? t("em.kpi.time_anomaly") : t("em.kpi.time_sub", { n: d.n }) }));
   }
   return `<div class="kpi-row em-kpis">${tiles.join("")}</div>`;
 }
@@ -256,7 +250,7 @@ export function factCardsHtml(f) {
   cards.push(card("received", t("em.f.received", { n: f.received.length }), hopFlags ? "warn" : "neutral",
     f.received.length ? t("em.f.received_note", { idx: trustIndex(f) }) : "",
     `<div class="muted">${e(t("em.f.received_help"))}</div>` +
-    (f.trust_note ? `<div class="banner info">${e(f.trust_note)}</div>` : "") +
+    (f.trust_note ? textBanner("info", f.trust_note) : "") +
     table(["#", "from (HELO) / PTR", "IP", "by", `with / TLS / ${t("em.f.time_utc")}`, t("em.f.role_notes")],
       f.received.map((r) => [
         r.index, mono(r.from_host) + (r.ptr && r.ptr !== r.from_host ? `<div>${mono(r.ptr)} <span class="muted">PTR</span></div>` : ""),

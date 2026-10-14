@@ -1,13 +1,12 @@
 // URLScan tab: side-by-side comparison of two scans of the same address - what changed between them (risk level, server,
 // certificate, redirects, contacted domains ...). Only the summaries are compared; nothing is scanned again.
 import { fmtDateTime, t } from "./i18n.js";
-import { escapeHtml as e } from "./util.js";
+import { escapeHtml as e, isSet } from "./util.js";
 
 const DOMAIN_LIST_LIMIT = 15;
 const dash = '<span class="muted">-</span>';
 
 const list = (items) => (items && items.length ? items.join(", ") : "");
-const isSet = (v) => v != null && v !== "";
 
 // [label, value] pairs as plain strings ("" = nothing); everything is escaped when drawn.
 function facts(s) {

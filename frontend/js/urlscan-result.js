@@ -3,10 +3,10 @@
 // thumbnail are kept). Everything that came from the scanned page goes through escapeHtml, and addresses found on it are
 // shown as plain, non-clickable text (the Markdown export and the copy button keep them defanged).
 import { t, tn, fmtDateTime } from "./i18n.js";
-import { chips, countryName, kvHtml, numberedJson, tileHtml, toggleMoreChips } from "./lookup-result.js";
+import { chips, countryName, numberedJson, toggleMoreChips } from "./lookup-result.js";
+import { kpiTile, kvHtml, legendHtml } from "./ui.js";
 import { defangUrl } from "./markdown-render.js";
-import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
-import { glossAbbr } from "./glossary.js";
+import { copyText, escapeHtml as e, handleToggleAll, isSet, toggleAllHtml } from "./util.js";
 
 const LEVEL_TONE = { high: "bad", medium: "warn", low: "good", unknown: "info" };
 const NEW_CERT_DAYS = 7;
@@ -15,7 +15,6 @@ const SHOT_RETRIES = 3;
 const SHOT_RETRY_MS = 4000;
 const mono = (value) => `<span class="mono">${e(value)}</span>`;
 const monoUrl = (url) => mono(url);
-const isSet = (v) => v != null && v !== "";
 
 function fmtBytes(n) {
   if (!Number.isFinite(n)) return "";
@@ -59,19 +58,19 @@ function hostOf(url) {
 function tilesHtml(summary) {
   const { page, verdict: v, stats, tls, redirects } = summary;
   const tiles = [];
-  if (v.score != null) tiles.push(tileHtml(t("usr.kpi_score"), v.score, v.categories.join(", ")));
-  if (isSet(page.status)) tiles.push(tileHtml(t("usr.kpi_status"), page.status, [page.mime_type, page.server].filter(Boolean).join(" - ")));
-  if (page.country) tiles.push(tileHtml(t("usr.kpi_country"), page.country, countryName(page.country, false)));
-  if (page.asn) tiles.push(tileHtml("ASN", page.asn, page.asn_name || "", null, "lookup.gl.asn"));
-  if (isSet(stats.requests)) tiles.push(tileHtml(t("usr.kpi_requests"), stats.requests, t("usr.kpi_requests_sub", { domains: stats.domains, ips: stats.ips })));
+  if (v.score != null) tiles.push(kpiTile(t("usr.kpi_score"), v.score, { sub: v.categories.join(", ") }));
+  if (isSet(page.status)) tiles.push(kpiTile(t("usr.kpi_status"), page.status, { sub: [page.mime_type, page.server].filter(Boolean).join(" - ") }));
+  if (page.country) tiles.push(kpiTile(t("usr.kpi_country"), page.country, { sub: countryName(page.country, false) }));
+  if (page.asn) tiles.push(kpiTile("ASN", page.asn, { sub: page.asn_name || "", glKey: "lookup.gl.asn" }));
+  if (isSet(stats.requests)) tiles.push(kpiTile(t("usr.kpi_requests"), stats.requests, { sub: t("usr.kpi_requests_sub", { domains: stats.domains, ips: stats.ips }) }));
   if (tls && isSet(tls.age_days)) {
     const fresh = tls.age_days < NEW_CERT_DAYS ? `<span class="badge sm conflict" title="${e(t("usr.cert_new_title"))}">${e(t("usr.cert_new"))}</span>` : "";
-    tiles.push(tileHtml(t("usr.kpi_cert"), t("usr.days", { n: tls.age_days }), tls.issuer || "", fresh));
+    tiles.push(kpiTile(t("usr.kpi_cert"), t("usr.days", { n: tls.age_days }), { sub: tls.issuer || "", mark: fresh }));
   } else if (!tls) {
-    tiles.push(tileHtml(t("usr.kpi_cert"), t("usr.no_tls"), ""));
+    tiles.push(kpiTile(t("usr.kpi_cert"), t("usr.no_tls")));
   }
   const hops = Math.max(redirects.length - 1, 0);
-  tiles.push(tileHtml(t("usr.kpi_redirects"), hops || t("usr.none"), hops ? page.domain || hostOf(page.final_url) : ""));
+  tiles.push(kpiTile(t("usr.kpi_redirects"), hops || t("usr.none"), { sub: hops ? page.domain || hostOf(page.final_url) : "" }));
   return `<div class="kpi-row">${tiles.join("")}</div>`;
 }
 
@@ -218,10 +217,6 @@ function rawCard(raw) {
 
 const LEGEND = ["score", "verdict", "engines_community", "categories_brands", "flagged", "cert", "umbrella", "apex", "forms", "visibility"];
 
-function legendHtml() {
-  const rows = LEGEND.map((id) => [t("usr.legend_term." + id), e(t("usr.legend." + id))]);
-  return `<details class="fact-block legend"><summary>${e(t("usr.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
-}
 
 // ---- entry point ----
 
@@ -233,7 +228,7 @@ export function renderUrlscanResult(summary, opts = {}) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(summary.submitted_url)}</code>
       <button type="button" class="secondary mini" data-copy title="${e(t("usr.copy_title"))}">${e(t("common.copy"))}</button></h2>
     ${bannerHtml(summary)}${tilesHtml(summary)}${shotHtml(opts)}${identityHtml(summary)}
-    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}${legendHtml()}`;
+    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}${legendHtml(t("usr.h_legend"), LEGEND.map((id) => [t("usr.legend_term." + id), t("usr.legend." + id)]))}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button, img");

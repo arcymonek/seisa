@@ -4,6 +4,7 @@
 import { api } from "./api.js";
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { armedConfirm, copyText, escapeHtml, fmtRelative } from "./util.js";
+import { errorBanner, kpiTile, textBanner } from "./ui.js";
 
 const MAX_ENTRIES = 500; // the backend limit; a full page means older entries may be cut off
 
@@ -94,7 +95,7 @@ async function load() {
   try {
     entries = await api.logs(range);
   } catch (err) {
-    root.querySelector("#lg-banner").innerHTML = `<div class="banner bad">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
+    root.querySelector("#lg-banner").innerHTML = errorBanner(err, { tone: "bad" });
     return;
   }
   render();
@@ -110,10 +111,6 @@ function servicesByCount() {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-function tile(label, value, sub, cls = "") {
-  return `<div class="kpi ${cls}"><span class="kpi-label">${escapeHtml(label)}</span><span class="kpi-value">${escapeHtml(value)}</span>${sub ? `<span class="muted">${escapeHtml(sub)}</span>` : ""}</div>`;
-}
-
 function render() {
   const banner = root.querySelector("#lg-banner");
   const tiles = root.querySelector("#lg-tiles");
@@ -121,18 +118,18 @@ function render() {
   if (service !== "all" && !services.some(([name]) => name === service)) service = "all";
 
   if (!entries.length) {
-    banner.innerHTML = `<div class="banner good">${escapeHtml(t("logs.empty"))}</div>`;
+    banner.innerHTML = textBanner("good", t("logs.empty"));
     tiles.innerHTML = "";
   } else {
-    banner.innerHTML = entries.length >= MAX_ENTRIES ? `<div class="banner info">${escapeHtml(t("logs.truncated", { n: MAX_ENTRIES }))}</div>` : "";
+    banner.innerHTML = entries.length >= MAX_ENTRIES ? textBanner("info", t("logs.truncated", { n: MAX_ENTRIES })) : "";
     const errors = count((e) => e.level === "ERROR");
     const warnings = count((e) => e.level === "WARNING");
     const [topName, topCount] = services[0];
     tiles.innerHTML = `<div class="kpi-row">
-      ${tile(t("logs.kpi_errors"), errors, "", errors ? "bad" : "")}
-      ${tile(t("logs.kpi_warnings"), warnings, "", warnings ? "warn" : "")}
-      ${tile(t("logs.kpi_top"), serviceLabel(topName), tn("logs.kpi_top_sub", topCount))}
-      ${tile(t("logs.kpi_last"), fmtRelative(entries[0].time), fmtDateTime(entries[0].time))}
+      ${kpiTile(t("logs.kpi_errors"), errors, { tone: errors ? "bad" : "" })}
+      ${kpiTile(t("logs.kpi_warnings"), warnings, { tone: warnings ? "warn" : "" })}
+      ${kpiTile(t("logs.kpi_top"), serviceLabel(topName), { sub: tn("logs.kpi_top_sub", topCount) })}
+      ${kpiTile(t("logs.kpi_last"), fmtRelative(entries[0].time), { sub: fmtDateTime(entries[0].time) })}
     </div>`;
   }
 

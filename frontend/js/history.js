@@ -4,8 +4,9 @@
 import { api } from "./api.js";
 import { renderLookupResult } from "./lookup-result.js";
 import { compareLookups } from "./history-compare.js";
-import { t, tn, fmtDateTime, getLang, getLocale } from "./i18n.js";
+import { t, fmtDateTime, getLang, getLocale } from "./i18n.js";
 import { armedConfirm, downloadText, escapeHtml, fmtRelative, makeButton } from "./util.js";
+import { errorBanner, kpiTile, textBanner } from "./ui.js";
 
 let root;
 let entries = [];
@@ -88,7 +89,7 @@ async function load() {
   try {
     entries = (await api.history()).map(plainUrlLabel);
   } catch (err) {
-    root.querySelector("#hi-list").innerHTML = `<div class="banner bad">${escapeHtml(t("common.error", { message: err.message }))}</div>`;
+    root.querySelector("#hi-list").innerHTML = errorBanner(err, { tone: "bad" });
     return;
   }
   const ids = new Set(entries.map((e) => e.id));
@@ -100,10 +101,6 @@ async function load() {
 
 // ---- tiles (type filters) ----
 
-function tile(label, value, sub, { key, cls = "", on = false }) {
-  return `<button type="button" class="kpi click ${cls}${on ? " on" : ""}" data-filter="${escapeHtml(key)}"><span class="kpi-label">${escapeHtml(label)}</span><span class="kpi-value">${escapeHtml(value)}</span>${sub ? `<span class="muted">${escapeHtml(sub)}</span>` : ""}</button>`;
-}
-
 function renderTiles() {
   const tiles = root.querySelector("#hi-tiles");
   if (!entries.length) {
@@ -113,11 +110,11 @@ function renderTiles() {
   const counts = {};
   entries.forEach((e) => (counts[e.type] = (counts[e.type] || 0) + 1));
   const high = entries.filter((e) => riskOf(e) === "high").length;
-  const html = [tile(t("history.tile_all"), entries.length, "", { key: "all", on: typeFilter === "all" })];
+  const html = [kpiTile(t("history.tile_all"), entries.length, { filter: "all", on: typeFilter === "all" })];
   Object.keys(TYPE_LABEL).forEach((type) => {
-    if (counts[type]) html.push(tile(TYPE_LABEL[type], counts[type], "", { key: type, on: typeFilter === type }));
+    if (counts[type]) html.push(kpiTile(TYPE_LABEL[type], counts[type], { filter: type, on: typeFilter === type }));
   });
-  if (high) html.push(tile(t("history.tile_high"), high, "", { key: "high", cls: "bad", on: riskFilter === "high" }));
+  if (high) html.push(kpiTile(t("history.tile_high"), high, { filter: "high", tone: "bad", on: riskFilter === "high" }));
   tiles.innerHTML = `<div class="kpi-row">${html.join("")}</div>`;
   tiles.querySelectorAll(".kpi").forEach((btn) =>
     btn.addEventListener("click", () => {
@@ -205,7 +202,7 @@ function renderList() {
   root.querySelector("#hi-info").textContent = entries.length ? t("history.shown", { shown: shown.length, total: entries.length }) : "";
   renderCompareBar();
   if (!entries.length) {
-    listEl.innerHTML = `<div class="banner info">${escapeHtml(t("history.empty"))}</div>`;
+    listEl.innerHTML = textBanner("info", t("history.empty"));
     return;
   }
   if (!shown.length) {

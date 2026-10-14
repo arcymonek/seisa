@@ -3,7 +3,7 @@
 // responses are not kept); everything that came from a third party goes through escapeHtml.
 import { t, tn, fmtDateTime, getLocale } from "./i18n.js";
 import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
-import { glossAbbr } from "./glossary.js";
+import { kpiTile, kvHtml, legendHtml } from "./ui.js";
 
 // Identity field keys that carry enough jargon to deserve a one-sentence glossary tooltip next to their label.
 const GLOSS_FIELD = {
@@ -184,10 +184,6 @@ function renderValue(def, v) {
   }
 }
 
-export function kvHtml(rows) {
-  return `<dl class="kv">${rows.map(([label, html, glKey]) => `<dt>${glKey ? glossAbbr(label, glKey) : e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
-}
-
 // ---- verdict banner + tiles ----
 
 function bannerHtml(result) {
@@ -220,10 +216,6 @@ function comparisonHtml(result) {
     ${points.length > 2 ? `<span class="spark" title="${e(t("lookup.compare_trend", { n: points.length }))}">${bars}</span>` : ""}</div>`;
 }
 
-export function tileHtml(label, value, sub, mark, glKey) {
-  return `<div class="kpi"><span class="kpi-label">${glKey ? glossAbbr(label, glKey) : e(label)}</span><span class="kpi-value">${e(value)}${mark ? ` ${mark}` : ""}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
-}
-
 function agreementMark(field) {
   return field && (field.status === "majority" || field.status === "conflict")
     ? `<span class="badge sm ${field.status}" title="${e(t("lookup.agreement_title." + field.status))}">${e(agreementText(field))}</span>`
@@ -238,25 +230,25 @@ function tilesHtml(result) {
   const ab = svc("abuseipdb");
   if (ab && ab.abuse_confidence_score != null)
     tiles.push(
-      tileHtml(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 }), null, "lookup.gl.confidence")
+      kpiTile(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, { sub: t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 }), glKey: "lookup.gl.confidence" })
     );
   const vt = svc("virustotal");
   if (vt && vt.total_engines)
-    tiles.push(tileHtml(t("lookup.kpi_detections"), `${(vt.malicious || 0) + (vt.suspicious || 0)}/${vt.total_engines}`, t("lookup.kpi_detections_sub", { malicious: vt.malicious || 0, suspicious: vt.suspicious || 0 })));
+    tiles.push(kpiTile(t("lookup.kpi_detections"), `${(vt.malicious || 0) + (vt.suspicious || 0)}/${vt.total_engines}`, { sub: t("lookup.kpi_detections_sub", { malicious: vt.malicious || 0, suspicious: vt.suspicious || 0 }) }));
   const gn = svc("greynoise");
-  if (gn) tiles.push(tileHtml("GreyNoise", gn.classification || (gn.has_data === false ? t("lookup.no_data") : "-"), gn.actor && String(gn.actor).toLowerCase() !== "unknown" ? gn.actor : ""));
+  if (gn) tiles.push(kpiTile("GreyNoise", gn.classification || (gn.has_data === false ? t("lookup.no_data") : "-"), { sub: gn.actor && String(gn.actor).toLowerCase() !== "unknown" ? gn.actor : "" }));
   const otx = svc("otx");
-  if (otx) tiles.push(tileHtml(t("lookup.kpi_pulses"), otx.pulse_count ?? 0, t("lookup.kpi_pulses_sub", { recent: otx.recent_pulse_count ?? 0 })));
+  if (otx) tiles.push(kpiTile(t("lookup.kpi_pulses"), otx.pulse_count ?? 0, { sub: t("lookup.kpi_pulses_sub", { recent: otx.recent_pulse_count ?? 0 }) }));
 
   const country = idf("country_location");
-  if (country) tiles.push(tileHtml(t("lookup.kpi_country"), country.value, countryName(country.value, false), agreementMark(country)));
+  if (country) tiles.push(kpiTile(t("lookup.kpi_country"), country.value, { sub: countryName(country.value, false), mark: agreementMark(country) }));
   const asn = idf("asn");
   if (asn) {
     const org = idf("organization");
-    tiles.push(tileHtml("ASN", asn.value, org ? org.value : "", agreementMark(asn), "lookup.gl.asn"));
+    tiles.push(kpiTile("ASN", asn.value, { sub: org ? org.value : "", mark: agreementMark(asn), glKey: "lookup.gl.asn" }));
   }
   const usage = idf("usage_type");
-  if (usage) tiles.push(tileHtml(t("lookup.kpi_type"), usage.value, idf("tor") ? t("lookup.tor_node") : ""));
+  if (usage) tiles.push(kpiTile(t("lookup.kpi_type"), usage.value, { sub: idf("tor") ? t("lookup.tor_node") : "" }));
   if (result.indicator_type === "domain") tiles.push(...domainTiles(result, idf, svc));
   return tiles.length ? `<div class="kpi-row">${tiles.join("")}</div>` : "";
 }
@@ -270,27 +262,27 @@ function daysUntil(date) {
 function domainTiles(result, idf, svc) {
   const tiles = [];
   const age = idf("domain_age");
-  if (age) tiles.push(tileHtml(t("lookup.kpi_age"), tn("lookup.n_days", Number(age.value)), (idf("domain_created") || {}).value || ""));
+  if (age) tiles.push(kpiTile(t("lookup.kpi_age"), tn("lookup.n_days", Number(age.value)), { sub: (idf("domain_created") || {}).value || "" }));
   const registrar = idf("registrar");
-  if (registrar) tiles.push(tileHtml(t("lookup.kpi_registrar"), registrar.value));
+  if (registrar) tiles.push(kpiTile(t("lookup.kpi_registrar"), registrar.value));
   const expires = idf("domain_expires");
   const left = expires ? daysUntil(expires.value) : null;
-  if (left !== null) tiles.push(tileHtml(t("lookup.kpi_expires"), left < 0 ? t("lookup.expired") : tn("lookup.n_days", left), expires.value, left >= 0 && left < 30 ? `<span class="badge sm majority">${e(t("lookup.soon"))}</span>` : ""));
+  if (left !== null) tiles.push(kpiTile(t("lookup.kpi_expires"), left < 0 ? t("lookup.expired") : tn("lookup.n_days", left), { sub: expires.value, mark: left >= 0 && left < 30 ? `<span class="badge sm majority">${e(t("lookup.soon"))}</span>` : "" }));
   const cf = svc("cloudflare_radar");
   const popularity = idf("popularity");
-  if (popularity) tiles.push(tileHtml(t("lookup.kpi_popularity"), popularity.value, cf && cf.rank == null ? t("lookup.kpi_popularity_sub") : ""));
-  else if (cf) tiles.push(tileHtml(t("lookup.kpi_popularity"), t("lookup.no_data")));
+  if (popularity) tiles.push(kpiTile(t("lookup.kpi_popularity"), popularity.value, { sub: cf && cf.rank == null ? t("lookup.kpi_popularity_sub") : "" }));
+  else if (cf) tiles.push(kpiTile(t("lookup.kpi_popularity"), t("lookup.no_data")));
   const category = idf("category");
-  if (category) tiles.push(tileHtml(t("lookup.kpi_category"), category.value.split(", ")[0], category.value.includes(", ") ? category.value.split(", ").slice(1).join(", ") : "", agreementMark(category)));
+  if (category) tiles.push(kpiTile(t("lookup.kpi_category"), category.value.split(", ")[0], { sub: category.value.includes(", ") ? category.value.split(", ").slice(1).join(", ") : "", mark: agreementMark(category) }));
   const ns = idf("nameservers");
   if (ns) {
     const hosts = ns.value.split(", ");
-    tiles.push(tileHtml(t("lookup.kpi_nameservers"), hosts.length, hosts[0], agreementMark(ns)));
+    tiles.push(kpiTile(t("lookup.kpi_nameservers"), hosts.length, { sub: hosts[0], mark: agreementMark(ns) }));
   }
   const addr = idf("addresses");
   if (addr) {
     const ips = addr.value.split(", ");
-    tiles.push(tileHtml(t("lookup.kpi_addresses"), ips.length, ips[0]));
+    tiles.push(kpiTile(t("lookup.kpi_addresses"), ips.length, { sub: ips[0] }));
   }
   return tiles;
 }
@@ -468,10 +460,6 @@ function navHtml(result, sections) {
 // Glossary at the bottom, like in the DMARC tab: terms are data, texts live in the catalog (lookup.legend.<id>).
 const LEGEND = ["score", "risk", "signal", "identity", "priority", "country", "confidence", "greynoise", "riot", "pulses", "whitelisted", "domain", "heuristics", "comparison"];
 
-function legendHtml() {
-  const rows = LEGEND.map((id) => [t("lookup.legend_term." + id), e(t("lookup.legend." + id, { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP }))]);
-  return `<details class="fact-block legend"><summary>${e(t("lookup.h_legend"))}</summary>${kvHtml(rows).replace('class="kv"', 'class="kv legend"')}</details>`;
-}
 
 // ---- entry point ----
 
@@ -484,7 +472,7 @@ export function renderLookupResult(result) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
     ${comparisonHtml(result)}
-    ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
+    ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml(t("lookup.h_legend"), LEGEND.map((id) => [t("lookup.legend_term." + id), t("lookup.legend." + id, { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP })]))}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button");

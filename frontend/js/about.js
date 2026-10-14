@@ -8,6 +8,7 @@ import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.
 import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
 import { escapeHtml as e, fmtRelative, withBusy } from "./util.js";
+import { errorBanner, kpiTile, textBanner } from "./ui.js";
 
 const AUTHOR_EMAIL = "contact@seisa.eu";
 const REPO_URL = "https://github.com/arcymonek/seisa";
@@ -34,8 +35,6 @@ let version = "";
 let releaseDate = "";
 let services = []; // integrations (id, whether a key is set) for the combined status and limits table
 
-const tile = (label, value, sub) =>
-  `<div class="kpi"><span class="kpi-label">${e(label)}</span><span class="kpi-value">${e(value)}</span>${sub ? `<span class="muted">${e(sub)}</span>` : ""}</div>`;
 
 function block(title, body, { open = false, id = "", extra = "" } = {}) {
   return `<details class="fact-block"${id ? ` id="${id}"` : ""}${open ? " open" : ""}><summary>${e(title)}${extra}</summary>${body}</details>`;
@@ -57,7 +56,7 @@ export function initAbout(container) {
   releaseDate = dateEl ? t("about.kpi_version_sub", { date: fmtDate(`${dateEl.content}T00:00`) }) : "";
   root.innerHTML = `
     <div class="subtitle">${e(t("about.description"))}</div>
-    <div id="ab-tiles"><div class="kpi-row">${tile(t("about.kpi_version"), version, releaseDate)}</div></div>
+    <div id="ab-tiles"><div class="kpi-row">${kpiTile(t("about.kpi_version"), version, { sub: releaseDate })}</div></div>
     <div class="kpi-row">
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
         <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
@@ -223,11 +222,11 @@ async function refreshLimits() {
       const res = await api.aboutLimitsRefresh();
       renderLimits(res.limits);
       errorsEl.innerHTML = Object.entries(res.errors)
-        .map(([service, error]) => `<div class="banner bad">${e(t("about.limits_error", { service: serviceName(service), error }))}</div>`)
+        .map(([service, error]) => textBanner("bad", t("about.limits_error", { service: serviceName(service), error })))
         .join("");
     } catch (err) {
       info.textContent = "";
-      errorsEl.innerHTML = `<div class="banner bad">${e(t("common.error", { message: err.message }))}</div>`;
+      errorsEl.innerHTML = errorBanner(err, { tone: "bad" });
     }
   });
 }
@@ -246,9 +245,9 @@ export async function refreshAbout() {
   const keyed = info.services.filter((s) => s.configured !== null);
   const set = keyed.filter((s) => s.configured).length;
   root.querySelector("#ab-tiles").innerHTML = `<div class="kpi-row">
-    ${tile(t("about.kpi_version"), version, releaseDate)}
-    ${tile(t("about.kpi_keys"), `${set}/${keyed.length}`, t("about.kpi_keys_sub"))}
-    ${tile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), info.llm.configured ? "OpenRouter" : t("about.llm_off_sub"))}
+    ${kpiTile(t("about.kpi_version"), version, { sub: releaseDate })}
+    ${kpiTile(t("about.kpi_keys"), `${set}/${keyed.length}`, { sub: t("about.kpi_keys_sub") })}
+    ${kpiTile(t("about.kpi_llm"), info.llm.configured ? info.llm.model : t("about.llm_off"), { sub: info.llm.configured ? "OpenRouter" : t("about.llm_off_sub") })}
   </div>`;
 
   const llm = { id: "openrouter", configured: info.llm.configured, llm: true };

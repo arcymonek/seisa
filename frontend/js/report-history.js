@@ -1,7 +1,7 @@
 // AbuseIPDB tab: the card with the reports sent so far (the local report log) and the daily limit the API reported.
 import { api } from "./api.js";
 import { fmtDateTime, t } from "./i18n.js";
-import { tileHtml } from "./lookup-result.js";
+import { kpiTile } from "./ui.js";
 import { escapeHtml as e } from "./util.js";
 
 let slot = null;
@@ -42,8 +42,8 @@ export async function refreshReportHistory() {
 }
 
 function limitTile(rate) {
-  if (!rate || rate.remaining == null) return tileHtml(t("rb.kpi_limit"), "?", t("rb.kpi_limit_unknown"));
-  return tileHtml(t("rb.kpi_limit"), rate.remaining, rate.limit ? t("rb.kpi_limit_of", { limit: rate.limit }) : "");
+  if (!rate || rate.remaining == null) return kpiTile(t("rb.kpi_limit"), "?", { sub: t("rb.kpi_limit_unknown") });
+  return kpiTile(t("rb.kpi_limit"), rate.remaining, { sub: rate.limit ? t("rb.kpi_limit_of", { limit: rate.limit }) : "" });
 }
 
 function render(data) {
@@ -60,7 +60,7 @@ function render(data) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("history.col_date"))}</th><th>IP</th><th>${e(t("rb.categories"))}</th><th>${e(t("rb.hist_result"))}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
     : `<div class="muted">${e(t("rb.hist_empty"))}</div>`;
   return `<details class="fact-block"><summary>${e(t("rb.hist_title"))} <span class="em-state">${e(t("rb.hist_today", { n: data.sent_today }))}</span></summary>
-    <div class="kpi-row">${tileHtml(t("rb.kpi_today"), data.sent_today, t("rb.kpi_today_sub"))}${limitTile(data.rate_limit)}${tileHtml(t("rb.kpi_total"), ok, t("rb.kpi_total_sub"))}</div>
+    <div class="kpi-row">${kpiTile(t("rb.kpi_today"), data.sent_today, { sub: t("rb.kpi_today_sub") })}${limitTile(data.rate_limit)}${kpiTile(t("rb.kpi_total"), ok, { sub: t("rb.kpi_total_sub") })}</div>
     ${table}
   </details>`;
 }

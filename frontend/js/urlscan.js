@@ -5,6 +5,7 @@ import { countryName } from "./lookup-result.js";
 import { compareScans } from "./urlscan-compare.js";
 import { renderUrlscanResult } from "./urlscan-result.js";
 import { copyText, downloadMarkdown, elapsedSeconds, escapeHtml, makeButton, withBusy } from "./util.js";
+import { errorBanner, textBanner } from "./ui.js";
 
 const FIRST_POLL_DELAY_MS = 12000;
 const POLL_INTERVAL_MS = 5000;
@@ -234,7 +235,7 @@ function updateHint() {
   const country = options.country ? countryName(options.country.toUpperCase()) : t("urlscan.country_auto");
   hint.textContent = `${t("urlscan.hint." + options.visibility)} ${t("urlscan.hint_options", { ua, country })}`;
   const found = options.visibility === "public" ? sensitiveParams(root.querySelector("#us-url").value) : [];
-  root.querySelector("#us-warn").innerHTML = found.length ? `<div class="banner warn">${escapeHtml(t("urlscan.warn_sensitive", { list: found.join(", ") }))}</div>` : "";
+  root.querySelector("#us-warn").innerHTML = found.length ? textBanner("warn", t("urlscan.warn_sensitive", { list: found.join(", ") })) : "";
 }
 
 function setBusy(busy) {
@@ -355,7 +356,7 @@ function submitOptions() {
 }
 
 function showError(message) {
-  root.querySelector("#us-error").innerHTML = `<div class="banner warn">${escapeHtml(message)}</div>`;
+  root.querySelector("#us-error").innerHTML = textBanner("warn", message);
 }
 
 // The three stages of a scan: submitted, scanning, report; `active` is the index of the stage in progress.
@@ -607,18 +608,18 @@ async function compareWithPrevious(summary, btn) {
         .filter((r) => r.uuid !== summary.uuid && r.time && (!summary.scanned_at || r.time < summary.scanned_at))
         .sort((a, b) => Number(b.exact) - Number(a.exact) || (a.time < b.time ? 1 : -1))[0];
       if (!older) {
-        box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.cmp.none"))}</div>`;
+        box.innerHTML = textBanner("info", t("urlscan.cmp.none"));
         return;
       }
       const full = await api.urlscanResult(older.uuid);
       if (full.status === "pending") {
-        box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.full_pending"))}</div>`;
+        box.innerHTML = textBanner("info", t("urlscan.full_pending"));
         return;
       }
       box.innerHTML = compareScans(full.summary, summary, older.exact);
       box.scrollIntoView({ behavior: "smooth", block: "nearest" });
     } catch (err) {
-      box.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.cmp.error", { message: err.message }))}</div>`;
+      box.innerHTML = errorBanner(err, { key: "urlscan.cmp.error" });
     }
   });
 }

@@ -3,6 +3,9 @@ import { t, fmtSeconds, fmtDateTime, getLocale } from "./i18n.js";
 
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
+// A value that is present (0 and false count, null, undefined and "" do not).
+export const isSet = (v) => v != null && v !== "";
+
 // Every value that ends up in innerHTML and did not come from our own markup goes through this.
 export function escapeHtml(str) {
   return String(str ?? "").replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);

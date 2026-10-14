@@ -4,6 +4,7 @@ import { t, fmtDateTime } from "./i18n.js";
 import { authSummary, senderHop } from "./email-facts.js";
 import { verdictLabel } from "./email-export.js";
 import { escapeHtml as e } from "./util.js";
+import { mono, textBanner } from "./ui.js";
 
 const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
@@ -30,7 +31,6 @@ function signals(rec) {
 }
 
 const common = (a, b) => a.filter((x) => b.includes(x));
-const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : '<span class="muted">-</span>');
 const list = (arr) => (arr.length ? arr.map((x) => `<span class="mono">${e(x)}</span>`).join(", ") : '<span class="muted">-</span>');
 
 export function compareHtml(recA, recB) {
@@ -48,7 +48,7 @@ export function compareHtml(recA, recB) {
   ].filter(([, v]) => v.length);
   const summary = shared.length
     ? `<div class="banner warn"><strong>${e(t("em.cmp.similar"))}</strong><ul>${shared.map(([k, v]) => `<li>${e(k)}: ${list(v)}</li>`).join("")}</ul></div>`
-    : `<div class="banner info">${e(t("em.cmp.nothing_shared"))}</div>`;
+    : textBanner("info", t("em.cmp.nothing_shared"));
   return `${summary}<div class="table-wrap"><table class="fact-table em-cmp"><thead><tr><th></th><th>A</th><th>B</th></tr></thead><tbody>
     ${scalar(t("em.cmp.date"), "date", (v) => e(fmtDateTime(v)))}
     ${scalar(t("em.f.subject_decoded"), "subject")}
