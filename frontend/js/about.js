@@ -7,7 +7,7 @@ import { serviceTitle } from "./lookup-result.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
 import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
-import { escapeHtml as e, fmtRelative } from "./util.js";
+import { escapeHtml as e, fmtRelative, withBusy } from "./util.js";
 
 const AUTHOR_EMAIL = "contact@seisa.eu";
 const REPO_URL = "https://github.com/arcymonek/seisa";
@@ -216,21 +216,20 @@ async function refreshLimits() {
   const btn = root.querySelector("#ab-limits-refresh");
   const info = root.querySelector("#ab-limits-info");
   const errorsEl = root.querySelector("#ab-limits-errors");
-  btn.disabled = true;
   info.textContent = t("about.limits_asking");
   errorsEl.innerHTML = "";
-  try {
-    const res = await api.aboutLimitsRefresh();
-    renderLimits(res.limits);
-    errorsEl.innerHTML = Object.entries(res.errors)
-      .map(([service, error]) => `<div class="banner bad">${e(t("about.limits_error", { service: serviceName(service), error }))}</div>`)
-      .join("");
-  } catch (err) {
-    info.textContent = "";
-    errorsEl.innerHTML = `<div class="banner bad">${e(t("common.error", { message: err.message }))}</div>`;
-  } finally {
-    btn.disabled = false;
-  }
+  await withBusy(btn, async () => {
+    try {
+      const res = await api.aboutLimitsRefresh();
+      renderLimits(res.limits);
+      errorsEl.innerHTML = Object.entries(res.errors)
+        .map(([service, error]) => `<div class="banner bad">${e(t("about.limits_error", { service: serviceName(service), error }))}</div>`)
+        .join("");
+    } catch (err) {
+      info.textContent = "";
+      errorsEl.innerHTML = `<div class="banner bad">${e(t("common.error", { message: err.message }))}</div>`;
+    }
+  });
 }
 
 // ---- live part (status, tiles, limits, releases) ----

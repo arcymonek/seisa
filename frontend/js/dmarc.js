@@ -8,7 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
-import { downloadMarkdown, escapeHtml as e } from "./util.js";
+import { copyText, downloadMarkdown, escapeHtml as e } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
 const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
@@ -79,7 +79,7 @@ export function initDmarc(container) {
     watch: [root.querySelector("#dm-files"), root.querySelector("#dm-results")],
   });
   root.querySelector("#dm-save").addEventListener("click", saveMarkdown);
-  root.querySelector("#dm-copy").addEventListener("click", () => navigator.clipboard.writeText(buildMarkdown()));
+  root.querySelector("#dm-copy").addEventListener("click", (ev) => copyText(buildMarkdown(), ev.currentTarget));
 }
 
 function resetState() {

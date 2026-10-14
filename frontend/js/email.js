@@ -8,7 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, handleToggleAll, readEmlFile, toggleAllHtml } from "./util.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, handleToggleAll, readEmlFile, toggleAllHtml } from "./util.js";
 import { buildExport, buildHtmlExport, citationKind, downloadHtml, exportFilename, langName, parseStream, VERDICT_LEVEL, verdictLabel } from "./email-export.js";
 import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
@@ -126,21 +126,8 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
     inputs: [$("#em-source")],
     watch: [$("#em-result"), $("#em-status"), $("#em-alert")],
   });
-  $("#em-file-btn").addEventListener("click", () => $("#em-file").click());
-  $("#em-file").addEventListener("change", (ev) => {
-    const file = ev.target.files[0];
-    if (file) loadFile(file);
-    ev.target.value = "";
-  });
   const textarea = $("#em-source");
-  textarea.addEventListener("dragover", (ev) => ev.preventDefault());
-  textarea.addEventListener("drop", (ev) => {
-    const file = ev.dataTransfer && ev.dataTransfer.files[0];
-    if (file) {
-      ev.preventDefault();
-      loadFile(file);
-    }
-  });
+  bindEmlInput({ textarea, fileBtn: $("#em-file-btn"), fileInput: $("#em-file"), onFile: loadFile });
   $("#em-src-toggle").addEventListener("click", () => setSourceCollapsed(!$("#em-src-wrap").hidden));
   $("#em-src-view").addEventListener("click", () => viewer.open());
   root.addEventListener("click", onClick);
@@ -178,7 +165,7 @@ function onClick(ev) {
   switch (act.dataset.act) {
     case "continue": return continueAnalysis();
     case "save-md": return downloadMarkdown(exportFilename(S, "md"), buildExport(S));
-    case "copy-md": return navigator.clipboard.writeText(buildExport(S));
+    case "copy-md": return copyText(buildExport(S), act);
     case "save-html": return saveHtml();
     case "view-source": return viewer.open();
     case "goto-citations": {

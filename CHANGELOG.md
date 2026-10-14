@@ -22,6 +22,11 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.13 - 2026-10-14
+- **Copy buttons now answer:** every Copy button (reports, Markdown exports, the AbuseIPDB comment, copied addresses and quotes, log entries, code headings) shows "Copied" or, when the browser refuses, "Copy failed" for a moment. Before, only the Logs tab did, and a refused copy ended in a silent error elsewhere. One `copyText` helper in `frontend/js/util.js` replaces ten separate calls.
+- **One label:** the URLScan button "Copy .md" is now "Copy Markdown" like in the IP, DMARC and Email tabs (Polish: "Kopiuj Markdown").
+- **Less repeated button code, no change in behaviour:** `makeButton` (IP, URLScan, History and the Markdown heading), `withBusy` (the buttons that disable themselves during a request: Info limits, URLScan compare and full result) and `bindEmlInput` (the "Load .eml file" button, file input and drop onto the box, shared by Email and AbuseIPDB).
+
 ## 2.4.12 - 2026-10-14
 - **"Clear" buttons in all tabs:** the button is hidden at start-up and appears only once its tab has something to clear (text in the field or a result; in DMARC, once files have been read, also when none of them could be used). One shared rule now drives all five tabs (`frontend/js/clear-button.js`), instead of five different mechanisms. In URLScan "Clear" is now a fixed button right after "Scan" (it used to be created together with the report), so a typed address can be cleared before any scan. In DMARC the row of buttons is no longer hidden as a whole, only Save and Copy are.
 

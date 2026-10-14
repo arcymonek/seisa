@@ -5,7 +5,7 @@ import { api } from "./api.js";
 import { renderLookupResult } from "./lookup-result.js";
 import { compareLookups } from "./history-compare.js";
 import { t, tn, fmtDateTime, getLang, getLocale } from "./i18n.js";
-import { armedConfirm, downloadText, escapeHtml, fmtRelative } from "./util.js";
+import { armedConfirm, downloadText, escapeHtml, fmtRelative, makeButton } from "./util.js";
 
 let root;
 let entries = [];
@@ -276,11 +276,7 @@ async function openEntry(entry, card) {
     return;
   }
   detail.appendChild(renderLookupResult(full.data));
-  const btn = document.createElement("button");
-  btn.className = "secondary";
-  btn.textContent = t("history.open_in_lookup");
-  btn.onclick = () => window.seisaApp.goToLookup(full.data.indicator);
-  detail.appendChild(btn);
+  detail.appendChild(makeButton(t("history.open_in_lookup"), () => window.seisaApp.goToLookup(full.data.indicator)));
   detail.hidden = false;
 }
 

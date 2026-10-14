@@ -3,7 +3,7 @@
 // filter the fetched entries in the browser, so the tiles and chip counts always describe the whole range.
 import { api } from "./api.js";
 import { t, tn, fmtDateTime } from "./i18n.js";
-import { escapeHtml, fmtRelative, armedConfirm } from "./util.js";
+import { armedConfirm, copyText, escapeHtml, fmtRelative } from "./util.js";
 
 const MAX_ENTRIES = 500; // the backend limit; a full page means older entries may be cut off
 
@@ -205,13 +205,6 @@ function renderList() {
     .join("");
   listEl.querySelectorAll("details.log-entry").forEach((d) => {
     d.addEventListener("toggle", () => (d.open ? openKeys.add(d.dataset.key) : openKeys.delete(d.dataset.key)));
-    d.querySelector(".log-copy").addEventListener("click", async (ev) => {
-      const btn = ev.currentTarget;
-      try {
-        await navigator.clipboard.writeText(d.querySelector("pre").textContent);
-        btn.textContent = t("logs.copied");
-        setTimeout(() => (btn.textContent = t("common.copy")), 1500);
-      } catch { /* clipboard blocked: nothing to do */ }
-    });
+    d.querySelector(".log-copy").addEventListener("click", (ev) => copyText(d.querySelector("pre").textContent, ev.currentTarget));
   });
 }

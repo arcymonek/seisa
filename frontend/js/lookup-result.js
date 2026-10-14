@@ -2,7 +2,7 @@
 // collapsible card per source. All data comes from the LookupResult of the backend (also from History, where the raw API
 // responses are not kept); everything that came from a third party goes through escapeHtml.
 import { t, tn, fmtDateTime, getLocale } from "./i18n.js";
-import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
+import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
 // Identity field keys that carry enough jargon to deserve a one-sentence glossary tooltip next to their label.
@@ -490,7 +490,7 @@ export function renderLookupResult(result) {
     const target = ev.target.closest("button");
     if (!target || !wrap.contains(target)) return;
     if (handleToggleAll(wrap, target)) return;
-    if (target.dataset.copy !== undefined) navigator.clipboard.writeText(result.indicator);
+    if (target.dataset.copy !== undefined) copyText(result.indicator, target);
     else if (target.dataset.checkIp) window.seisaApp.repeatLookup(target.dataset.checkIp);
     else if (target.dataset.jump || target.dataset.jumpService) {
       const card = target.dataset.jumpService ? wrap.querySelector(`details.src[data-service="${target.dataset.jumpService}"]`) : null;

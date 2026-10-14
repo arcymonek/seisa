@@ -2,7 +2,7 @@ import { api } from "./api.js";
 import { renderLookupResult, serviceTitle } from "./lookup-result.js";
 import { bindClear } from "./clear-button.js";
 import { t } from "./i18n.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
+import { copyText, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml, makeButton } from "./util.js";
 
 const ALL_SERVICES = ["whois_rdns", "cloudflare_radar", "otx", "abuseipdb", "virustotal", "greynoise"];
 
@@ -129,32 +129,13 @@ async function onSubmit() {
 function renderResult(result) {
   // The report buttons go into the action line next to Check and Clear, not under the title.
   const actions = root.querySelector("#lk-actions");
-  const saveBtn = document.createElement("button");
-  saveBtn.className = "secondary";
-  saveBtn.textContent = t("common.save_md");
-  saveBtn.onclick = () => saveMarkdown(result);
-  actions.appendChild(saveBtn);
-
-  const copyBtn = document.createElement("button");
-  copyBtn.className = "secondary";
-  copyBtn.textContent = t("common.copy_markdown");
-  copyBtn.onclick = () => navigator.clipboard.writeText(result.markdown);
-  actions.appendChild(copyBtn);
-
+  actions.appendChild(makeButton(t("common.save_md"), () => saveMarkdown(result)));
+  actions.appendChild(makeButton(t("common.copy_markdown"), (ev) => copyText(result.markdown, ev.currentTarget)));
   if (result.indicator_type === "ip") {
-    const reportBtn = document.createElement("button");
-    reportBtn.className = "secondary";
-    reportBtn.textContent = t("lookup.report_abuseipdb");
-    reportBtn.onclick = () => window.seisaApp.goToReport(result.indicator);
-    actions.appendChild(reportBtn);
+    actions.appendChild(makeButton(t("lookup.report_abuseipdb"), () => window.seisaApp.goToReport(result.indicator)));
   }
-
   if (result.indicator_type === "domain") {
-    const scanBtn = document.createElement("button");
-    scanBtn.className = "secondary";
-    scanBtn.textContent = t("lookup.scan_urlscan");
-    scanBtn.onclick = () => window.seisaApp.scanUrl(`https://${result.indicator}/`);
-    actions.appendChild(scanBtn);
+    actions.appendChild(makeButton(t("lookup.scan_urlscan"), () => window.seisaApp.scanUrl(`https://${result.indicator}/`)));
   }
 
   return renderLookupResult(result);

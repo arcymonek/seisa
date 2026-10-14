@@ -27,6 +27,66 @@ export function fileLoadedText(file) {
   return t("common.file_loaded", { name: file.name, size });
 }
 
+// Copies `text` to the clipboard. With a `btn` the button says "Copied" (or "Copy failed" when the browser refuses) for a
+// moment, so the click is never silent. Returns whether the copy worked.
+export async function copyText(text, btn) {
+  let ok = true;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    ok = false;
+  }
+  if (btn) {
+    if (btn.dataset.label === undefined) btn.dataset.label = btn.textContent;
+    clearTimeout(Number(btn.dataset.labelTimer));
+    btn.textContent = t(ok ? "common.copied" : "common.copy_failed");
+    btn.dataset.labelTimer = String(setTimeout(() => {
+      btn.textContent = btn.dataset.label;
+      delete btn.dataset.label;
+    }, 1500));
+  }
+  return ok;
+}
+
+// A <button type="button"> built in code; `onClick` receives the click event.
+export function makeButton(text, onClick, cls = "secondary") {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = cls;
+  btn.textContent = text;
+  btn.onclick = onClick;
+  return btn;
+}
+
+// Runs `fn` with `btn` disabled, so a slow action cannot be started twice; the button is enabled again whatever happens.
+export async function withBusy(btn, fn) {
+  btn.disabled = true;
+  try {
+    return await fn();
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// The "Load .eml file" button, its hidden file input and dropping a file onto the text box (Email and AbuseIPDB tabs):
+// the chosen or dropped file goes to `onFile(file)`.
+export function bindEmlInput({ textarea, fileBtn, fileInput, onFile }) {
+  fileBtn.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", (ev) => {
+    const file = ev.target.files[0];
+    if (file) onFile(file);
+    ev.target.value = "";
+  });
+  textarea.addEventListener("dragover", (ev) => ev.preventDefault());
+  textarea.addEventListener("drop", (ev) => {
+    const file = ev.dataTransfer && ev.dataTransfer.files[0];
+    if (file) {
+      ev.preventDefault();
+      onFile(file);
+    }
+  });
+}
+
 // Elapsed-time counter shown next to an action button. `getEl` returns the element (the tab root is set after
 // import), `runningText(ms)` is shown every 100 ms, `doneText(ms)` (default: the same text) after stop().
 export function createTimer(getEl, runningText, doneText = runningText) {

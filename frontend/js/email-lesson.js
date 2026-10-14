@@ -3,6 +3,7 @@
 // technical terms get glossary tooltips and the whole text can be searched. The Markdown is always rendered through
 // renderMarkdownSafe (raw HTML and links of the e-mail are neutralised); everything added here uses DOM APIs.
 import { t } from "./i18n.js";
+import { copyText } from "./util.js";
 import { applyGlossary, releaseTerms } from "./email-glossary.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
 
@@ -325,7 +326,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
       if (act === "hit-next") stepHit(1);
       else if (act === "hit-prev") stepHit(-1);
       else if (act === "expand" || act === "collapse") cards.forEach((c) => setOpen(c.det, act === "expand"));
-      else if (act === "quote-copy") navigator.clipboard.writeText(btn.dataset.copyText || "");
+      else if (act === "quote-copy") copyText(btn.dataset.copyText || "", btn);
     }
   });
 

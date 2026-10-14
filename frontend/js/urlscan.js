@@ -4,7 +4,7 @@ import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";
 import { countryName } from "./lookup-result.js";
 import { compareScans } from "./urlscan-compare.js";
 import { renderUrlscanResult } from "./urlscan-result.js";
-import { downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
+import { copyText, downloadMarkdown, elapsedSeconds, escapeHtml, makeButton, withBusy } from "./util.js";
 
 const FIRST_POLL_DELAY_MS = 12000;
 const POLL_INTERVAL_MS = 5000;
@@ -193,18 +193,18 @@ export function showSavedScan(data) {
   clearOutput();
   prefillUrlscan(data.summary.submitted_url);
   const report = renderUrlscanResult(data.summary, { thumbnail: data.thumbnail });
-  const fullBtn = button(t("urlscan.load_full"), "secondary", async () => {
-    fullBtn.disabled = true;
-    try {
-      const full = await api.urlscanResult(data.summary.uuid);
-      if (full.status === "pending") return showError(t("urlscan.full_pending"));
-      showReport(full, { save: false });
-    } catch (err) {
-      showError(t("urlscan.result_error", { message: err.message }));
-    } finally {
-      fullBtn.disabled = false;
-    }
-  });
+  const fullBtn = makeButton(t("urlscan.load_full"), () =>
+    withBusy(fullBtn, async () => {
+      try {
+        const full = await api.urlscanResult(data.summary.uuid);
+        if (full.status === "pending") return showError(t("urlscan.full_pending"));
+        showReport(full, { save: false });
+      } catch (err) {
+        showError(t("urlscan.result_error", { message: err.message }));
+      }
+      return undefined;
+    }),
+  );
   const { pre, post } = actionButtons(data.summary);
   setActions([...pre, fullBtn], post);
   root.querySelector("#us-result").appendChild(report);
@@ -235,15 +235,6 @@ function updateHint() {
   hint.textContent = `${t("urlscan.hint." + options.visibility)} ${t("urlscan.hint_options", { ua, country })}`;
   const found = options.visibility === "public" ? sensitiveParams(root.querySelector("#us-url").value) : [];
   root.querySelector("#us-warn").innerHTML = found.length ? `<div class="banner warn">${escapeHtml(t("urlscan.warn_sensitive", { list: found.join(", ") }))}</div>` : "";
-}
-
-function button(text, cls, onClick) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = cls;
-  btn.textContent = text;
-  btn.onclick = onClick;
-  return btn;
 }
 
 function setBusy(busy) {
@@ -297,7 +288,7 @@ function startScan() {
   clearOutput();
   scanning = true;
   setBusy(true);
-  cancelBtn = button(t("urlscan.cancel"), "secondary", cancelScan);
+  cancelBtn = makeButton(t("urlscan.cancel"), cancelScan);
   return run;
 }
 
@@ -376,7 +367,7 @@ function renderSteps(active) {
 
 function renderStatus(resultPageUrl, message) {
   root.querySelector("#us-status").innerHTML = '<span id="us-status-text"></span>';
-  setActions([], [button(t("urlscan.open"), "secondary", () => window.open(resultPageUrl, "_blank", "noopener"))]);
+  setActions([], [makeButton(t("urlscan.open"), () => window.open(resultPageUrl, "_blank", "noopener"))]);
   updateStatusText(message);
 }
 
@@ -565,19 +556,18 @@ function existingList(data) {
     if (!btn) return;
     const uuid = btn.closest(".saved-row").dataset.uuid;
     if (btn.hasAttribute("data-ext")) return window.open(`https://urlscan.io/result/${uuid}/`, "_blank", "noopener");
-    btn.disabled = true;
-    try {
-      const full = await api.urlscanResult(uuid);
-      if (full.status === "pending") showError(t("urlscan.full_pending"));
-      else {
-        root.querySelector("#us-error").innerHTML = "";
-        showReport(full, { save: false });
+    await withBusy(btn, async () => {
+      try {
+        const full = await api.urlscanResult(uuid);
+        if (full.status === "pending") showError(t("urlscan.full_pending"));
+        else {
+          root.querySelector("#us-error").innerHTML = "";
+          showReport(full, { save: false });
+        }
+      } catch (err) {
+        showError(t("urlscan.result_error", { message: err.message }));
       }
-    } catch (err) {
-      showError(t("urlscan.result_error", { message: err.message }));
-    } finally {
-      btn.disabled = false;
-    }
+    });
   });
   return wrap;
 }
@@ -587,19 +577,19 @@ function existingList(data) {
 // Two groups: `pre` (Scan again, Save .md, Copy .md) go after Scan, `post` (Compare, Open in urlscan.io) after History.
 function actionButtons(summary, markdown) {
   const pre = [
-    button(t("urlscan.scan_again"), "secondary", () => {
+    makeButton(t("urlscan.scan_again"), () => {
       prefillUrlscan(summary.submitted_url);
       onSubmit();
     }),
   ];
   if (markdown) {
     const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;
-    pre.push(button(t("common.save_md"), "secondary", () => downloadMarkdown(name, markdown, { native: true })));
-    pre.push(button(t("urlscan.copy_md"), "secondary", () => navigator.clipboard.writeText(markdown)));
+    pre.push(makeButton(t("common.save_md"), () => downloadMarkdown(name, markdown, { native: true })));
+    pre.push(makeButton(t("common.copy_markdown"), (ev) => copyText(markdown, ev.currentTarget)));
   }
-  const compareBtn = button(t("urlscan.compare"), "secondary", () => compareWithPrevious(summary, compareBtn));
+  const compareBtn = makeButton(t("urlscan.compare"), () => compareWithPrevious(summary, compareBtn));
   compareBtn.title = t("urlscan.compare_tip");
-  return { pre, post: [compareBtn, button(t("urlscan.open"), "secondary", () => window.open(summary.result_url, "_blank", "noopener"))] };
+  return { pre, post: [compareBtn, makeButton(t("urlscan.open"), () => window.open(summary.result_url, "_blank", "noopener"))] };
 }
 
 // Finds the newest earlier scan of the same domain (the very same URL first), fetches it and shows what changed.
@@ -610,28 +600,27 @@ async function compareWithPrevious(summary, btn) {
   resultEl.querySelectorAll(".us-compare-box").forEach((el) => el.remove());
   box.className = "us-compare-box";
   resultEl.appendChild(box);
-  btn.disabled = true;
-  try {
-    const found = await api.urlscanSearch(summary.submitted_url);
-    const older = found.results
-      .filter((r) => r.uuid !== summary.uuid && r.time && (!summary.scanned_at || r.time < summary.scanned_at))
-      .sort((a, b) => Number(b.exact) - Number(a.exact) || (a.time < b.time ? 1 : -1))[0];
-    if (!older) {
-      box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.cmp.none"))}</div>`;
-      return;
+  await withBusy(btn, async () => {
+    try {
+      const found = await api.urlscanSearch(summary.submitted_url);
+      const older = found.results
+        .filter((r) => r.uuid !== summary.uuid && r.time && (!summary.scanned_at || r.time < summary.scanned_at))
+        .sort((a, b) => Number(b.exact) - Number(a.exact) || (a.time < b.time ? 1 : -1))[0];
+      if (!older) {
+        box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.cmp.none"))}</div>`;
+        return;
+      }
+      const full = await api.urlscanResult(older.uuid);
+      if (full.status === "pending") {
+        box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.full_pending"))}</div>`;
+        return;
+      }
+      box.innerHTML = compareScans(full.summary, summary, older.exact);
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (err) {
+      box.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.cmp.error", { message: err.message }))}</div>`;
     }
-    const full = await api.urlscanResult(older.uuid);
-    if (full.status === "pending") {
-      box.innerHTML = `<div class="banner info">${escapeHtml(t("urlscan.full_pending"))}</div>`;
-      return;
-    }
-    box.innerHTML = compareScans(full.summary, summary, older.exact);
-    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  } catch (err) {
-    box.innerHTML = `<div class="banner warn">${escapeHtml(t("urlscan.cmp.error", { message: err.message }))}</div>`;
-  } finally {
-    btn.disabled = false;
-  }
+  });
 }
 
 function showReport(data, { save }) {

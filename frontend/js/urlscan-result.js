@@ -5,7 +5,7 @@
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { chips, countryName, kvHtml, numberedJson, tileHtml, toggleMoreChips } from "./lookup-result.js";
 import { defangUrl } from "./markdown-render.js";
-import { escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
+import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
 const LEVEL_TONE = { high: "bad", medium: "warn", low: "good", unknown: "info" };
@@ -240,7 +240,7 @@ export function renderUrlscanResult(summary, opts = {}) {
     if (!target || !wrap.contains(target)) return;
     if (handleToggleAll(wrap, target)) return;
     if (target.tagName === "IMG") target.closest(".us-shot").classList.toggle("expanded");
-    else if (target.dataset.copy !== undefined) navigator.clipboard.writeText(defangUrl(summary.submitted_url));
+    else if (target.dataset.copy !== undefined) copyText(defangUrl(summary.submitted_url), target);
     else if (target.dataset.ip) window.seisaApp.goToLookup(target.dataset.ip);
     else if (target.dataset.domain) window.seisaApp.goToLookup(target.dataset.domain);
     else toggleMoreChips(target);

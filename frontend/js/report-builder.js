@@ -10,7 +10,7 @@ import { t, fmtDateTime, registerDirtyCheck } from "./i18n.js";
 import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, legendHtml, tilesHtml, verdictBannerHtml } from "./report-result.js";
 import { reportMarkdown } from "./report-export.js";
 import { findReport, initReportHistory, refreshReportHistory } from "./report-history.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
+import { bindEmlInput, copyText, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
 
 const SOLO_WEAK = [20, 22]; // categories that only make sense next to a more specific one (policy: "often combined")
 const VPN_CATEGORY = 13;
@@ -115,21 +115,7 @@ export function initReportBuilder(container) {
 
   $("#rb-analyze").addEventListener("click", () => analyze(true));
   $("#rb-analyze-no-llm").addEventListener("click", () => analyze(false));
-  $("#rb-file-btn").addEventListener("click", () => $("#rb-file").click());
-  $("#rb-file").addEventListener("change", (ev) => {
-    const file = ev.target.files[0];
-    if (file) loadFile(file);
-    ev.target.value = "";
-  });
-  const emailArea = $("#rb-email");
-  emailArea.addEventListener("dragover", (ev) => ev.preventDefault());
-  emailArea.addEventListener("drop", (ev) => {
-    const file = ev.dataTransfer && ev.dataTransfer.files[0];
-    if (file) {
-      ev.preventDefault();
-      loadFile(file);
-    }
-  });
+  bindEmlInput({ textarea: $("#rb-email"), fileBtn: $("#rb-file-btn"), fileInput: $("#rb-file"), onFile: loadFile });
   bindClear($("#rb-clear"), {
     hasContent: () =>
       !!$("#rb-email").value.trim() || !$("#rb-form").hidden || !!$("#rb-status").textContent || !!$("#rb-result").children.length || !!$("#rb-error").children.length,
@@ -137,7 +123,7 @@ export function initReportBuilder(container) {
     inputs: [$("#rb-email")],
     watch: [$("#rb-form"), $("#rb-status"), $("#rb-result"), $("#rb-error")],
   });
-  $("#rb-copy").addEventListener("click", () => navigator.clipboard.writeText($("#rb-comment").value));
+  $("#rb-copy").addEventListener("click", (ev) => copyText($("#rb-comment").value, ev.currentTarget));
   $("#rb-export").addEventListener("click", exportMarkdown);
   $("#rb-submit").addEventListener("click", submit);
   $("#rb-comment").addEventListener("input", () => {

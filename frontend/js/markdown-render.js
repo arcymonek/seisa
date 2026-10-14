@@ -1,4 +1,5 @@
 import { t } from "./i18n.js";
+import { copyText, makeButton } from "./util.js";
 
 // Server-built reports (URLScan) embed untrusted text from third-party APIs (page titles, link texts, headers), so the HTML produced by marked is never inserted as is. It is parsed by an inert
 // DOMParser and passed through an allow-list: only the tags and attributes the reports really use survive, links only
@@ -146,11 +147,7 @@ function enhanceReportHeading(container) {
   const h1 = container.querySelector("h1");
   const code = h1 && h1.querySelector("code");
   if (!code) return;
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "secondary";
+  const btn = makeButton(t("common.copy"), () => copyText(code.textContent, btn));
   btn.style.cssText = "margin-left:10px;padding:2px 10px;font-size:13px;vertical-align:middle;";
-  btn.textContent = t("common.copy");
-  btn.onclick = () => navigator.clipboard.writeText(code.textContent);
   code.insertAdjacentElement("afterend", btn);
 }
