@@ -95,7 +95,7 @@ seisa/
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
 │   └── vendor/marked.min.js   # Markdown rendering, bundled locally (no CDN)
-├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics, the colour themes (`test_themes.py`: validator, WCAG contrast, no colour literals in the stylesheet), the git hook (`test_pre_commit_hook.py`); `conftest.py` points data/ at a temporary directory
+├── tests/                   # pytest unit tests (`python3 -m pytest -q`): mail trust helpers, scoring, report builder, e-mail parser and forensics, the colour themes (`test_themes.py`: validator, WCAG contrast, no colour literals in the stylesheet), the git hook (`test_pre_commit_hook.py`), the urlscan.io client including its error paths (`test_urlscan_service.py`), the values the frontend repeats from the backend - risk thresholds, the report age limit, the service names (`test_frontend_mirrors.py`); `conftest.py` points data/ at a temporary directory
 │   ├── fixtures/            # SYNTHETIC e-mails (.eml) for comparisons; fictitious data (.example domains, documentation address ranges; the header layout of `multihop.eml` imitates a large mail provider), no personal data
 │   │   └── unit/            # extra synthetic cases used only by pytest (prompt injection, encodings, damaged headers); a subfolder on purpose, so the flat `*.eml` glob of `api_harness.py` and `dump_facts.py` does not see it
 │   └── private/             # optional REAL e-mails with expected results for `test_corpus.py` (gitignored, never committed)

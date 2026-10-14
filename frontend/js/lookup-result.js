@@ -29,7 +29,7 @@ const SERVICES = {
   greynoise: { desc: "md.service.greynoise", url: "https://www.greynoise.io" },
 };
 const SERVICE_ORDER = Object.keys(SERVICES);
-// Same thresholds as backend/scoring.py (MEDIUM_FROM, HIGH_FROM).
+// Same thresholds as backend/scoring.py (MEDIUM_FROM, HIGH_FROM); tests/test_frontend_mirrors.py keeps them equal.
 const MEDIUM_FROM = 25;
 const HIGH_FROM = 60;
 const riskLevel = (risk) => (risk >= HIGH_FROM ? "high" : risk >= MEDIUM_FROM ? "medium" : "low");

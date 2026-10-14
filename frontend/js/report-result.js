@@ -6,7 +6,7 @@ import { kpiTile, legendHtml as legendCard, textBanner } from "./ui.js";
 import { escapeHtml as e } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
-const AGE_LIMIT_DAYS = 60; // AbuseIPDB reporting policy (the backend enforces it as well)
+const AGE_LIMIT_DAYS = 60; // AbuseIPDB reporting policy (the backend enforces it as well; tests/test_frontend_mirrors.py keeps both equal)
 const STATUS_CLASS = { pass: "auto-pass", fail: "auto-fail", none: "auto-none", unknown: "auto-pending" };
 
 
