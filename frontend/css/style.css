@@ -148,9 +148,6 @@ input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus); outline-
 .badge.medium { background: var(--warn-bg); color: var(--warn); }
 .badge.low { background: var(--pass-bg); color: var(--pass); }
 
-.score-line { margin: 18px 0 12px; }
-.score-line .badge { font-size: 20px; padding: 5px 14px; }
-
 table { width: 100%; border-collapse: collapse; font-size: 15px; margin: 10px 0; }
 th { text-align: left; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--hair); }
@@ -176,14 +173,7 @@ td { padding: 8px; border-bottom: 1px solid var(--hair-soft); vertical-align: to
 .checklist-item.auto-fail::before { content: "✗"; color: var(--fail); font-weight: 700; }
 .checklist-item.auto-none::before { content: "-"; color: var(--muted); font-weight: 700; }
 
-.ip-confidence { font-size: 12.5px; }
-.ip-confidence-high { color: var(--pass); }
-.ip-confidence-medium { color: var(--warn); }
-.ip-confidence-low { color: var(--fail); }
-
 .fact-block h4 { margin: 14px 0 4px; font-family: var(--mono); font-size: 12.5px; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-.hop-chain { margin: 10px 0; }
-.hop-chain summary { cursor: pointer; color: var(--accent); }
 .hop-row {
   font-family: var(--mono); font-size: 12.5px; color: var(--muted);
   padding: 5px 8px; border-left: 2px solid var(--hair); margin-top: 4px;
@@ -219,7 +209,6 @@ a:hover { color: var(--accent); }
 
 /* --- zakładka Email --- */
 [hidden] { display: none !important; }
-.section-sep { border-bottom: 1px solid var(--hair); margin: 24px 0 20px; }
 .fact-flag { display: flex; gap: 8px; padding: 3px 0; font-size: 15px; }
 .fact-flag::before { flex: none; width: 1.2em; }
 .fact-flag.warn::before { content: "⚠"; color: var(--warn); }

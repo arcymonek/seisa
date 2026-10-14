@@ -21,7 +21,7 @@ const panels = {
   about: document.getElementById("panel-about"),
 };
 
-export function switchTab(name) {
+function switchTab(name) {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.tab === name);
   });

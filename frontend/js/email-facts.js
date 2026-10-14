@@ -23,7 +23,7 @@ const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : '<span class="mut
 const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : '<span class="muted">-</span>');
 const resultClass = (r) => (r === "pass" ? "ok" : AUTH_BAD.includes(r) ? "bad" : "warnc");
 
-export const isPrivateIp = (ip) =>
+const isPrivateIp = (ip) =>
   /^(10\.|127\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.)/.test(ip) || /^(::1$|fe80:|f[cd][0-9a-f]{2}:)/i.test(ip);
 
 // Puts the address into the URLScan tab (nothing is opened or scanned until the user clicks Scan there); the address
@@ -45,7 +45,7 @@ const srcBtn = (text) =>
     ? ` <button type="button" class="secondary mini inline" data-src-text="${e(text)}" title="${e(t("em.src.show_title"))}">${e(t("em.src.show_short"))}</button>`
     : "";
 
-export function fmtDelta(s) {
+function fmtDelta(s) {
   if (s === null || s === undefined) return "";
   const sign = s < 0 ? "-" : "+";
   return sign + fmtDuration(Math.abs(s));
@@ -86,7 +86,7 @@ function filterRows(fl) {
 // Index of the trusted Received entry - computed backend-side in _received_hops (single-operator chains: the
 // oldest entry; otherwise the topmost one, or a deeper hop when the code walked through a same-relay internal
 // chain to find it), so the KPI tile and the route diagram always agree on the same hop.
-export const trustIndex = (f) => f.trust_index ?? 0;
+const trustIndex = (f) => f.trust_index ?? 0;
 
 // SPF / DKIM / DMARC as written by the recipient's server (Authentication-Results with a matching authserv-id).
 export function authSummary(f) {

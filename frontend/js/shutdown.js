@@ -8,7 +8,7 @@ import { t, hasUnsavedWork } from "./i18n.js";
 const ASK_KEY = "seisa.shutdownAsk"; // "off" once the user ticked "do not ask again"
 const ASK_EVENT = "seisa:shutdown-ask";
 
-export function askBeforeShutdown() {
+function askBeforeShutdown() {
   try {
     return localStorage.getItem(ASK_KEY) !== "off";
   } catch {
@@ -66,7 +66,7 @@ function showStopped() {
   document.body.replaceChildren(box);
 }
 
-export async function shutdownSeisa() {
+async function shutdownSeisa() {
   const unsaved = hasUnsavedWork();
   if ((unsaved || askBeforeShutdown()) && !(await confirmShutdown(unsaved))) return;
   try {

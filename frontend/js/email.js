@@ -42,7 +42,6 @@ function startTimer() {
   timer.start();
 }
 
-const stopTimer = () => timer.stop();
 const $ = (sel) => root.querySelector(sel);
 
 export function initEmail(container) {
@@ -530,7 +529,7 @@ async function runAnalysis(raw, { useLlm = true } = {}) {
       statusEl.textContent = t("em.error", { message: err.message });
     }
   } finally {
-    stopTimer();
+    timer.stop();
     setBusy(false);
     abortController = null;
   }
@@ -665,7 +664,7 @@ async function continueAnalysis() {
       renderBanner();
     }
   } finally {
-    stopTimer();
+    timer.stop();
     setBusy(false);
     abortController = null;
   }

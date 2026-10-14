@@ -25,7 +25,7 @@ export function parseStream(text) {
 
 // Kinds of citation findings (protocol constants of the saved analyses). Analyses saved before 2.0.27 carry the old
 // Polish codes; they are still read (no file migration).
-export const CITATION_KIND = {
+const CITATION_KIND = {
   ip: "em.kind.ip", missing_header: "em.kind.missing_header", header_quote: "em.kind.header_quote",
   number: "em.kind.number", identifier: "em.kind.identifier",
   brak_naglowka: "em.kind.missing_header", cytat_naglowka: "em.kind.header_quote", // i18n-ok

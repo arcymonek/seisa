@@ -1,7 +1,7 @@
 // UI internationalisation: catalogs in /i18n/<lang>.json, plain text only (never HTML).
 // Rule for call sites: wrap the result in escapeHtml() when it goes into innerHTML.
 
-export const SUPPORTED = ["en", "pl"]; // also the order of the footer switch
+const SUPPORTED = ["en", "pl"]; // also the order of the footer switch
 const STORAGE_KEY = "seisa.lang";
 const PSEUDO = "qa"; // dev only (?lang=qa): every t() returns [[key]], so untranslated text stands out
 const LOCALES = { pl: "pl-PL", en: "en-GB" };
@@ -99,7 +99,7 @@ export function registerDirtyCheck(fn) {
 // True when something would be lost if the page went away now (see registerDirtyCheck).
 export const hasUnsavedWork = () => dirtyChecks.some((fn) => fn());
 
-export function setLang(next) {
+function setLang(next) {
   if (!SUPPORTED.includes(next) || next === getLang()) return;
   if (hasUnsavedWork() && !confirm(t("app.lang_switch_confirm"))) return;
   try {

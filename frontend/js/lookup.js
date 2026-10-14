@@ -13,8 +13,6 @@ const timer = createTimer(
   elapsedSeconds("lookup.checking"),
   elapsedSeconds("lookup.checked"),
 );
-const startTimer = () => timer.start();
-const stopTimer = () => timer.stop();
 // Bumped by every check and by "Clear": an answer that arrives after "Clear" belongs to an older run and is dropped.
 let runId = 0;
 
@@ -112,16 +110,16 @@ async function onSubmit() {
 
   const indicator = root.querySelector("#lk-indicator").value.trim();
   if (!indicator) return; // nothing to check: no timer either
-  startTimer();
+  timer.start();
   try {
     const result = await api.lookup({ indicator, type: "auto", services });
     if (myRun !== runId) return;
-    stopTimer();
+    timer.stop();
     resultsEl.innerHTML = "";
     resultsEl.appendChild(renderResult(result));
   } catch (err) {
     if (myRun !== runId) return;
-    stopTimer();
+    timer.stop();
     statusEl.textContent = t("common.error", { message: err.message });
   }
 }

@@ -9,13 +9,13 @@ import { renderMarkdownSafe } from "./markdown-render.js";
 
 // The structure of the answer is fixed by docs/email-analysis-guide.md: after the title and summary come six parts and
 // the control questions. Sections are recognised by their position (the headings are translated), never by their text.
-export const ROLES = ["model", "lines", "checklist", "compare", "traps", "advice", "questions"];
+const ROLES = ["model", "lines", "checklist", "compare", "traps", "advice", "questions"];
 const OPEN_BY_DEFAULT = new Set(); // every card starts collapsed; a card the reader opened or closed is remembered
 const STORAGE_KEY = "seisa.em.cards";
 const MIN_INLINE = 7;
 
 // Splits the analysis at its level-2 headings (fenced code is skipped, so a quoted "## x" does not split anything).
-export function splitSections(md) {
+function splitSections(md) {
   let fence = false;
   let cur = null;
   const head = [];

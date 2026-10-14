@@ -8,7 +8,7 @@ import { escapeHtml as e } from "./util.js";
 const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
 // Comparable signals of one analysis record.
-export function signals(rec) {
+function signals(rec) {
   const f = rec.facts;
   const hop = senderHop(f);
   const a = authSummary(f);
