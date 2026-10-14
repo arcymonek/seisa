@@ -22,6 +22,13 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.9 - 2026-10-14
+- **Info tab:** the Polish tab is called "Info" (as the English one already was; links in the README and `docs/pl` follow). The author card shows `contact@seisa.eu` and `seisa.eu`. "About colours" starts with the three themes and ends with the note about the traditional colours. The API-limits hint reads "Assumed limits of the free plans". The licence card is shortened, and LICENSE, CONTRIBUTING.md and the Seisa GitHub repository are links.
+- **URLScan:** the History button with an empty URL field now shows a yellow reminder next to it (it used to do nothing); the Scan button stays silent on purpose.
+- **IP tab:** "Save .md", "Copy Markdown" and "Report to AbuseIPDB" (or "Scan in URLScan" for a domain) sit in the same line as Check and Clear; Check with an empty field no longer shows "Checked: 0.0 s".
+- **AbuseIPDB tab:** one more line of space between the buttons and "Your reports".
+- Removed the now unused `actions` parameter of the report renderer and its CSS rule.
+
 ## 2.4.8 - 2026-10-13
 - **Email tab, Overview pane:** "Message route", "Automatic warnings", the checklist, the assessment and "what to do" part, and the citation check are now collapsible cards like the ones in Facts (open at the start, and open again for every new analysis), with "Expand all" / "Collapse all" above the first card. A click in the table of contents or on the citation warning in the banner opens the card it points to.
 

@@ -210,6 +210,7 @@ a:hover { color: var(--accent); }
 
 .excluded-sources { font-size: 12px; color: var(--muted); margin: 2px 0 16px; }
 
+#rb-history { margin-top: 20px; }
 .action-row { display: flex; flex-wrap: wrap; align-items: center; }
 .action-info { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 10px; font-size: 13px; color: var(--muted); }
 .action-info button { margin-top: 0; margin-right: 0; }
@@ -448,7 +449,6 @@ button.mini.inline, .src-body button.mini.inline { display: inline-block; margin
 .result-nav button.tag:hover { color: var(--text); border-color: var(--accent); }
 .result-nav button.tag.hot { color: var(--warn); border-color: var(--warn); }
 .lookup-result [data-sec], .lookup-result details.src { scroll-margin-top: 90px; }
-.lookup-result > .action-row { margin-top: 0; }
 details.legend { margin-top: 24px; }
 
 /* --- zakładka Email: pytania, porównanie --- */

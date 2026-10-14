@@ -4,7 +4,7 @@
 
 ## Zakładki
 
-Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk ustawień ([Informacje](#informacje)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Informacje mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
+Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk ustawień ([Info](#info)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Info mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
 
 ### IP
 
@@ -60,7 +60,7 @@ Co dostajesz:
 - **Kafelki podsumowania:** wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu (ze znacznikiem "nowy" poniżej 7 dni), przekierowania.
 - **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena z przyciskiem **Sprawdź domenę**, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
 - **Zwijane karty szczegółów** (z przyciskami "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Szczegóły"): werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, adresy IP, z którymi łączyła się strona (każdy z przyciskiem **Sprawdź IP**), domeny, z którymi łączyła się strona i linki.
-- **Wcześniejsze skany** tej samej domeny (przycisk **Historia**), żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
+- **Wcześniejsze skany** tej samej domeny (przycisk **Historia**; przy pustym polu URL obok przycisku pojawia się żółte przypomnienie, żeby wpisać adres), żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
 - **Jedna linia akcji:** Skanuj, po raporcie Skanuj ponownie, Wyczyść (powrót do pozycji startowej), Zapisz .md i Kopiuj .md, potem Historia (wcześniejsze skany domeny), Porównaj (z poprzednim skanem) i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
 - **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
 - **Kilka adresów naraz:** wklej do 5 adresów oddzielonych spacją, przecinkiem lub nową linią; są zgłaszane po kolei (z przerwą, żeby nie przekroczyć limitu zapytań) i pokazane na liście z poziomem ryzyka każdego, "Otwórz raport" i linkiem do urlscan.io. Każdy zakończony skan trafia do Historii (bez miniatury).
@@ -265,7 +265,7 @@ Algorytm idzie od najnowszego nagłówka `Received` w dół i szuka pierwszego h
 - **"Wyczyść logi"** (dwa kliknięcia, drugie potwierdza) usuwa wszystkie pliki logów. Pliki logów starsze niż 30 dni są usuwane automatycznie (przy starcie Seisy i przy pierwszym wpisie nowego dnia). Widać maksymalnie 500 najnowszych wpisów (baner informuje, gdy starsze zostały obcięte).
 - Wszystkie błędy API OpenRouter (zakładki Email i AbuseIPDB: limity, brak środków, błędy dostawcy, timeouty) trafiają do jednej usługi `open_router`; pozostałe błędy aplikacji do `app`.
 
-### Informacje
+### Info
 
 > Okrągły przycisk ustawień (ikona trzech suwaków) na prawym końcu rzędu zakładek: ustawienia (język, skórka kolorystyczna, ikona aplikacji) i krótki opis Seisy oraz jej stanu.
 
@@ -293,7 +293,7 @@ Każdy kafelek pokazuje zużycie limitów *planów darmowych* usługi z kluczem,
 
 ### Język interfejsu (PL/EN)
 
-Przełącznik `EN | PL` jest w zakładce [Informacje](#informacje) (Ustawienia). Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`en` lub `pl`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie).
+Przełącznik `EN | PL` jest w zakładce [Info](#info) (Ustawienia). Wybór zapamiętuje przeglądarka (`localStorage`, klucz `seisa.lang`); bez zapisanego wyboru użyty zostanie język przeglądarki (`en` lub `pl`), a w pozostałych przypadkach angielski. Zmiana języka przeładowuje stronę (przed utratą trwającej pracy pojawia się pytanie).
 
 <details>
 <summary>Szczegóły: jak działają języki</summary>
@@ -307,7 +307,7 @@ Przełącznik `EN | PL` jest w zakładce [Informacje](#informacje) (Ustawienia).
 
 ### Skórka kolorystyczna (jasna / ciemna / systemowa)
 
-W zakładce [Informacje](#informacje) (Ustawienia), pod przełącznikiem języka, jest drugi przełącznik: `Jasny Washi | Ciemny Sumi | Biało-czerwona Kōhaku | Systemowy`. Domyślna jest skórka ciemna. "Systemowy" idzie za ustawieniem kolorów Twojego systemu operacyjnego i zmienia się razem z nim, gdy strona jest otwarta. Wybór pamięta przeglądarka (`localStorage`, klucz `seisa.theme`) i stosuje go, zanim strona się narysuje, więc nie ma mignięcia złych kolorów. Zmiana skórki nie przeładowuje strony i niczego nie gubi.
+W zakładce [Info](#info) (Ustawienia), pod przełącznikiem języka, jest drugi przełącznik: `Jasny Washi | Ciemny Sumi | Biało-czerwona Kōhaku | Systemowy`. Domyślna jest skórka ciemna. "Systemowy" idzie za ustawieniem kolorów Twojego systemu operacyjnego i zmienia się razem z nim, gdy strona jest otwarta. Wybór pamięta przeglądarka (`localStorage`, klucz `seisa.theme`) i stosuje go, zanim strona się narysuje, więc nie ma mignięcia złych kolorów. Zmiana skórki nie przeładowuje strony i niczego nie gubi.
 
 <details>
 <summary>Szczegóły: jak działają skórki</summary>

@@ -88,6 +88,7 @@ export function initUrlscan(container) {
   urlInput.addEventListener("input", () => {
     growUrlField();
     updateHint();
+    root.querySelector("#us-empty-hint")?.remove();
   });
   root.querySelector("#us-visibility").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-vis]");
@@ -501,8 +502,13 @@ function renderBatch() {
 
 async function onExisting() {
   const urls = parseUrls(root.querySelector("#us-url").value);
-  if (!urls.length) return;
   const urlInput = root.querySelector("#us-url");
+  if (!urls.length) {
+    // Said next to the button (in the warning colour) instead of silently doing nothing; Scan stays silent on purpose.
+    root.querySelector("#us-status").innerHTML = `<span class="warnc" id="us-empty-hint">${escapeHtml(t("urlscan.existing_need_url"))}</span>`;
+    urlInput.focus();
+    return;
+  }
   endScan();
   clearOutput();
   if (urls.length > 1) return showError(t("urlscan.batch_single_only"));

@@ -18,16 +18,16 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 | AbuseIPDB: "Analizuj" | cały kod źródłowy e-maila | OpenRouter | tylko po tym kliknięciu |
 | AbuseIPDB: sprawdzenie adresu | IP | AbuseIPDB (`/check`) | gdy wpisano IP i istnieje klucz |
 | AbuseIPDB: "Wyślij" | IP, kategorie, timestamp, komentarz | AbuseIPDB (`/report`) - **publicznie** | tylko po świadomym kliknięciu |
-| Informacje: "Odśwież limity" | zapytania o limity z Twoimi kluczami | VirusTotal, urlscan.io, OpenRouter | tylko po kliknięciu; żadne z tych zapytań nie zużywa limitu |
+| Info: "Odśwież limity" | zapytania o limity z Twoimi kluczami | VirusTotal, urlscan.io, OpenRouter | tylko po kliknięciu; żadne z tych zapytań nie zużywa limitu |
 
 Zapytania Seisy do OpenRouter przedstawiają aplikację jako Seisa. Wszystko inne w interfejsie (Historia, Logi, porównania, eksporty, kontrola cytatów, wykrywanie duplikatów) jest lokalne.
 
 ### Co zostaje lokalnie
 
 - `data/` zawiera historię, liczniki, log wysłanych zgłoszeń i zapisane analizy e-maili (z surowymi wiadomościami, pliki `0600`, katalog `0700`); `logs/` zawiera błędy i ostrzeżenia (pliki starsze niż 30 dni są usuwane automatycznie). Oba są w `.gitignore`. Zobacz [Pliki danych](architecture.md#pliki-danych).
-- Klucze API zostają w `.env` (gitignored) i nigdy nie są wysyłane do frontendu; zakładka Informacje pokazuje tylko, czy klucz jest ustawiony.
+- Klucze API zostają w `.env` (gitignored) i nigdy nie są wysyłane do frontendu; zakładka Info pokazuje tylko, czy klucz jest ustawiony.
 - Przeglądarka przechowuje w `localStorage` wyłącznie wygody użytkownika (język interfejsu pod kluczem `seisa.lang`, skórka kolorystyczna pod kluczem `seisa.theme`, to, czy pytać przed zamknięciem, pod kluczem `seisa.shutdownAsk`, wybrany panel, które karty zostawiłeś otwarte).
-- Jedyna rzecz, jaką Seisa zapisuje poza własnym katalogiem, to opcjonalna ikona na pulpicie (Informacje > Ustawienia): `~/Applications/Seisa.app` na macOS albo `~/.local/share/applications/seisa.desktop` na Linuksie, tylko po Twoim kliknięciu "Dodaj ikonę", w stałych miejscach i bez żadnych danych z przeglądarki, do usunięcia przyciskiem "Usuń ikonę". Nigdy nie zastępuje ani nie usuwa pliku, którego nie zrobiła, żądania chroni ten sam strażnik pochodzenia co resztę API, a nic nie jest wysyłane przez sieć.
+- Jedyna rzecz, jaką Seisa zapisuje poza własnym katalogiem, to opcjonalna ikona na pulpicie (Info > Ustawienia): `~/Applications/Seisa.app` na macOS albo `~/.local/share/applications/seisa.desktop` na Linuksie, tylko po Twoim kliknięciu "Dodaj ikonę", w stałych miejscach i bez żadnych danych z przeglądarki, do usunięcia przyciskiem "Usuń ikonę". Nigdy nie zastępuje ani nie usuwa pliku, którego nie zrobiła, żądania chroni ten sam strażnik pochodzenia co resztę API, a nic nie jest wysyłane przez sieć.
 - Nie ma telemetrii ani sprawdzania aktualizacji.
 
 ### Model zagrożeń
@@ -53,7 +53,7 @@ Pieniądze kosztują tylko wywołania OpenRouter (za token, zależnie od modelu;
 |---|---|
 | Email: "Analizuj", "Dokończ analizę" | Email: analiza deterministyczna, wykrywanie duplikatów, kontrola cytatów, porównanie, wszystkie eksporty |
 | AbuseIPDB: "Analizuj" | AbuseIPDB: twarde sprawdzenia, skan danych osobowych, "Wyślij" (zapytanie do AbuseIPDB, bez LLM) |
-| | IP, URLScan, DMARC, Historia, Logi, Informacje |
+| | IP, URLScan, DMARC, Historia, Logi, Info |
 
 Przed płatną analizą e-maila Seisa sprawdza, czy ta sama wiadomość była już analizowana, i proponuje otwarcie zapisanej analizy.
 

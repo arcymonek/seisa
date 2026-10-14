@@ -28,6 +28,6 @@ Wszystkie trasy są pod `/api`, odpowiadają JSON-em (błędy jako `{"detail": "
 | `GET /api/history`, `GET` / `PATCH` / `DELETE /api/history/{id}`, `POST /api/history`, `DELETE /api/history` | historia (przypinanie, usuwanie, czyszczenie) | nie |
 | `GET /api/logs`, `DELETE /api/logs` | logi | nie |
 | `GET /api/themes`, `GET /api/themes.css` | skórki kolorystyczne: lista dla przełącznika skórek (id, nazwy, baza) i wygenerowany arkusz stylów (same zmienne CSS) | nie (lokalnie) |
-| `GET /api/about`, `POST /api/about/limits/refresh` | zakładka Informacje, odświeżenie limitów | endpointy limitów (przy odświeżeniu) |
+| `GET /api/about`, `POST /api/about/limits/refresh` | zakładka Info, odświeżenie limitów | endpointy limitów (przy odświeżeniu) |
 | `GET /api/about/icon`, `POST /api/about/icon`, `DELETE /api/about/icon` | ikona na pulpicie: status (`absent`, `installed`, `stale`, `foreign`, `unsupported`, z platformą, skróconą ścieżką i powodem), utworzenie, usunięcie. Bez ciała żądania; cele to stałe miejsca w katalogu domowym. 409, gdy na drodze stoi plik, którego Seisa nie zrobiła, 400, gdy system nie obsługuje ikony | nie (pliki lokalne) |
-| `POST /api/about/shutdown` | zatrzymuje serwer (najpierw odpowiada, potem kończy proces; bez ciała i parametrów). Przycisk "Zamknij Seisę" w zakładce Informacje i w stopce | nie |
+| `POST /api/about/shutdown` | zatrzymuje serwer (najpierw odpowiada, potem kończy proces; bez ciała i parametrów). Przycisk "Zamknij Seisę" w zakładce Info i w stopce | nie |

@@ -4,7 +4,7 @@
 
 ## Rozwiązywanie problemów i FAQ
 
-**Usługa pokazuje "brak klucza API".** Klucza brakuje albo jest źle wpisany w `.env`. Po edycji uruchom Seisę ponownie. Zakładka Informacje pokazuje, które klucze są ustawione (nigdy ich wartości).
+**Usługa pokazuje "brak klucza API".** Klucza brakuje albo jest źle wpisany w `.env`. Po edycji uruchom Seisę ponownie. Zakładka Info pokazuje, które klucze są ustawione (nigdy ich wartości).
 
 **Cloudflare Radar odpowiada 401.** Klucz to prawdopodobnie stary Global API Key. Utwórz zakresowany API Token z uprawnieniem odczytu Radar.
 
@@ -23,7 +23,7 @@
 
 **Ikona na pulpicie nic nie robi albo pokazuje tylko okno z komunikatem.** Skrypt startowy ikony potrzebuje `.venv/` tak samo jak `seisa.sh` (komunikat to mówi); patrz następny wpis. Jeśli serwer wystartował, jego wyjście jest w `logs/launcher.log`. Jeśli port 54321 zajmuje inny program, ikona nie uruchomi Seisy: uruchom ją sam na innym porcie.
 
-**Ikona jest opisana jako "zrobiona dla innego katalogu Seisy".** Po dodaniu ikony przeniesiono lub przemianowano katalog projektu. Kliknij ponownie "Dodaj ikonę" (naprawia ikonę) w Informacje > Ustawienia.
+**Ikona jest opisana jako "zrobiona dla innego katalogu Seisy".** Po dodaniu ikony przeniesiono lub przemianowano katalog projektu. Kliknij ponownie "Dodaj ikonę" (naprawia ikonę) w Info > Ustawienia.
 
 **"Dodaj ikonę" jest wyszarzone albo pisze "niedostępna tutaj".** Windows i Linux bez sesji graficznej nie są obsługiwane; na macOS muszą być narzędzia systemu `sips` i `iconutil`. Jeśli komunikat mówi, że plik o tej samej nazwie już istnieje, to Seisa go nie zrobiła i go nie rusza: zmień jego nazwę lub usuń go sam, potem spróbuj ponownie.
 
@@ -37,6 +37,6 @@
 
 **Czy Seisa działa na Windows?** Nie natywnie; działa przez WSL jako Linux.
 
-**Jak zatrzymać Seisę?** Kliknij "Zamknij Seisę" w stopce albo w Informacje > Ustawienia: zatrzymuje serwer i zamyka stronę (karta otwarta ręcznie może zostać z komunikatem; zamknij ją sam). Uruchomioną z terminala zatrzyma też Ctrl+C w nim. Jeśli Seisa została uruchomiona z ikony, a strona jest już zamknięta, wpisz `kill $(lsof -ti :54321 -sTCP:LISTEN)` (tylko proces, który nasłuchuje na porcie; samo `lsof -i :54321` pokazuje też połączenia do innych maszyn, które używają tego samego numeru portu, np. klienta SSH). Seisa nigdy nie wyłącza się sama: nie ma limitu bezczynności.
+**Jak zatrzymać Seisę?** Kliknij "Zamknij Seisę" w stopce albo w Info > Ustawienia: zatrzymuje serwer i zamyka stronę (karta otwarta ręcznie może zostać z komunikatem; zamknij ją sam). Uruchomioną z terminala zatrzyma też Ctrl+C w nim. Jeśli Seisa została uruchomiona z ikony, a strona jest już zamknięta, wpisz `kill $(lsof -ti :54321 -sTCP:LISTEN)` (tylko proces, który nasłuchuje na porcie; samo `lsof -i :54321` pokazuje też połączenia do innych maszyn, które używają tego samego numeru portu, np. klienta SSH). Seisa nigdy nie wyłącza się sama: nie ma limitu bezczynności.
 
 **Gdzie są moje dane i jak zresetować Seisę?** W `data/` i `logs/` (zobacz [Pliki danych](architecture.md#pliki-danych)); zatrzymaj Seisę i usuń ich zawartość.

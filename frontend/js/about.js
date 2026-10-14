@@ -9,12 +9,16 @@ import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
 import { escapeHtml as e, fmtRelative } from "./util.js";
 
-const AUTHOR_EMAIL = "seisa@arkadiuszpolak.pl";
-const LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html";
+const AUTHOR_EMAIL = "contact@seisa.eu";
+const REPO_URL = "https://github.com/arcymonek/seisa";
+const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
+const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
 const AUTHOR_GITHUB = "https://github.com/arcymonek";
-const AUTHOR_SITE = "https://arkadiuszpolak.pl";
+const AUTHOR_SITE = "https://seisa.eu";
 
 const SERVICE_NAMES = { urlscan: "URLScan", openrouter: "OpenRouter" }; // the others are titled by the IP tab (serviceTitle)
+// An external link that opens in a new tab (text is escaped here).
+const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${e(text)}</a>`;
 const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
 // Which traditional colour plays which role in the shipped themes: [role, kanji, kana, romaji] (no kanji = no name).
 const PALETTES = [
@@ -58,7 +62,7 @@ export function initAbout(container) {
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
         <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
         GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
-        ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></span></div>
+        ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">seisa.eu</a></span></div>
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}<br>${e(t("about.name_pron"))}</span>
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>
@@ -80,7 +84,7 @@ export function initAbout(container) {
       <div class="svc-grid"><div class="svc-card" id="ab-env"></div><div id="ab-limits" class="contents"></div></div>
       <div class="ab-notes muted">${e(t("about.status_hint"))}<br>${e(t("about.limits_hint")).replace(/\n/g, "<br>")}</div>`, { id: "ab-limits-card", extra: ' <span class="em-state" id="ab-limits-state"></span>' })}
     ${block(t("about.changes_title"), '<div id="ab-changes"></div>')}
-    ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} <a href="${LICENSE_URL}" target="_blank" rel="noopener noreferrer">GNU GPL-3.0-or-later</a>${e(t("about.license_after"))}<br>${e(t("about.license_source"))}<br>${e(t("about.license_contribute"))}</p>`)}
+    ${block(t("about.license_title"), `<p class="about-license">${e(t("about.license_before"))} ${ext(LICENSE_URL, "LICENSE")}.<br>${e(t("about.license_source"))}<br>${e(t("about.license_contribute"))}<br>${e(t("about.license_contrib_before"))} ${ext(CONTRIBUTING_URL, "CONTRIBUTING.md")} ${e(t("about.license_contrib_mid"))} ${ext(REPO_URL, t("about.license_repo"))}.</p>`)}
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
   mountLangSwitch(root.querySelector("#ab-lang-switch"));
   mountThemeSwitch(root.querySelector("#ab-theme-switch"));

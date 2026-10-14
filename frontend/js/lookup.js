@@ -30,6 +30,7 @@ export function initLookup(container) {
     <div class="action-row">
       <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button>
       <button class="secondary" id="lk-clear">${escapeHtml(t("lookup.clear"))}</button>
+      <span class="us-actions" id="lk-actions"></span>
       <span class="action-info" id="lk-info"></span>
     </div>
     <div class="muted" id="lk-status"></div>
@@ -69,6 +70,7 @@ function onClear() {
   timer.stop();
   root.querySelector("#lk-indicator").value = "";
   root.querySelector("#lk-info").textContent = "";
+  root.querySelector("#lk-actions").replaceChildren();
   root.querySelector("#lk-status").textContent = "";
   root.querySelector("#lk-results").innerHTML = "";
   ALL_SERVICES.forEach((s) => enabledServices.add(s));
@@ -93,15 +95,13 @@ async function onSubmit() {
   const resultsEl = root.querySelector("#lk-results");
   const statusEl = root.querySelector("#lk-status");
   resultsEl.innerHTML = "";
+  root.querySelector("#lk-actions").replaceChildren();
   statusEl.textContent = "";
-  startTimer();
   const myRun = ++runId;
 
   const indicator = root.querySelector("#lk-indicator").value.trim();
-  if (!indicator) {
-    stopTimer();
-    return;
-  }
+  if (!indicator) return; // nothing to check: no timer either
+  startTimer();
   try {
     const result = await api.lookup({ indicator, type: "auto", services });
     if (myRun !== runId) return;
@@ -116,8 +116,8 @@ async function onSubmit() {
 }
 
 function renderResult(result) {
-  const actions = document.createElement("div");
-  actions.className = "action-row";
+  // The report buttons go into the action line next to Check and Clear, not under the title.
+  const actions = root.querySelector("#lk-actions");
   const saveBtn = document.createElement("button");
   saveBtn.className = "secondary";
   saveBtn.textContent = t("common.save_md");
@@ -146,7 +146,7 @@ function renderResult(result) {
     actions.appendChild(scanBtn);
   }
 
-  return renderLookupResult(result, actions);
+  return renderLookupResult(result);
 }
 
 function saveMarkdown(result) {

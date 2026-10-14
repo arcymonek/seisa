@@ -6,7 +6,7 @@ To pełna dokumentacja Seisy; [README](../../README.pl.md) to krótki punkt wej�
 
 ## Spis treści
 
-- [Zakładki i przykład](tabs.md) - każda zakładka szczegółowo (IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi, Informacje, język interfejsu) i przykład od podejrzanego e-maila do zgłoszenia
+- [Zakładki i przykład](tabs.md) - każda zakładka szczegółowo (IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi, Info, język interfejsu) i przykład od podejrzanego e-maila do zgłoszenia
 - [Konfiguracja i limity](configuration.md) - klucze `.env` i skąd je wziąć, limity i ograniczenia
 - [Prywatność, model zagrożeń i bezpieczeństwo](privacy-and-security.md) - pełny przepływ danych (co opuszcza komputer, co zostaje lokalnie), model zagrożeń, koszt LLM, niezmienniki bezpieczeństwa
 - [Architektura i założenia](architecture.md) - założenia projektowe i świadome ograniczenia, stos, architektura i drzewo plików, pliki danych

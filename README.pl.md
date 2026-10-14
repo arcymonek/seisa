@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.4.8</b></p>
+<p align="center"><b>Seisa 2.4.9</b></p>
 
 # Seisa
 
@@ -34,7 +34,7 @@ Autor: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mai
 | [AbuseIPDB](docs/pl/tabs.md#abuseipdb) | Przygotowuje i wysyła zgłoszenie nadużycia: IP źródłowe, kwalifikowalność, kategorie, komentarz po angielsku, twarde sprawdzenia | `ABUSEIPDB_API_KEY` (OpenRouter opcjonalnie) | IP oraz, po "Wyślij", zgłoszenie, do AbuseIPDB |
 | [Historia](docs/pl/tabs.md#historia) | Wszystko, co Seisa pamięta, z ponownym otwieraniem, porównywaniem i przypinaniem | niczego | nic |
 | [Logi](docs/pl/tabs.md#logi) | Błędy i ostrzeżenia każdej usługi | niczego | nic |
-| [Informacje](docs/pl/tabs.md#informacje) | Wersja, ustawienia (język, kolory, ikona uruchamiająca Seisę), status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
+| [Info](docs/pl/tabs.md#info) | Wersja, ustawienia (język, kolory, ikona uruchamiająca Seisę), status kluczy, limity API, ostatnie zmiany, licencja | niczego | zapytania o limity tylko po "Odśwież limity" |
 
 Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał; sekcja "Wyjaśnienia" pisana zrozumiałym językiem i kontekstowe dymki (glosariusz - najedź myszą albo zaznacz klawiaturą podkreślony na kropki termin) tłumaczą żargon także dla osób bez technicznego przygotowania.
 
@@ -43,7 +43,7 @@ Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od poc
 ### Wymagania
 
 - **Python 3.11+** na **macOS** lub **Linuksie**. Na Debianie/Ubuntu najpierw zainstaluj moduł venv (`sudo apt install python3-venv`). Windows nie jest wspierany natywnie; działa przez WSL jako Linux.
-- Aktualna przeglądarka. `git` jest opcjonalny (zakładka Informacje czyta listę wydań z `git log`, gdy katalog jest checkoutem).
+- Aktualna przeglądarka. `git` jest opcjonalny (zakładka Info czyta listę wydań z `git log`, gdy katalog jest checkoutem).
 - Do startu nie jest wymagany żaden klucz API; zobacz [Pierwsze kroki bez kluczy](#pierwsze-kroki-bez-kluczy).
 
 ### Instalacja i uruchomienie
@@ -70,7 +70,7 @@ Bez skryptu:
 
 Aby użyć innego portu, uruchom `uvicorn` samodzielnie z `--port`. Możesz dodać do skryptu alias powłoki (np. `alias seisa='~/ścieżka/do/seisa/seisa.sh'`). Po edycji `.env` uruchom Seisę ponownie; klucze są czytane przy starcie.
 
-Aby uruchamiać Seisę kliknięciem zamiast terminalem, otwórz zakładkę Informacje, Ustawienia i kliknij "Dodaj ikonę": na macOS powstaje mała aplikacja w `~/Applications` (przeciągnij ją na Dock), a na Linuksie z pulpitem wpis w menu aplikacji (przypnij go stamtąd). Ikona uruchamia serwer, gdy nie działa, i otwiera przeglądarkę. Nic nie jest dodawane automatycznie, a "Usuń ikonę" to cofa; patrz [Informacje](docs/pl/tabs.md#informacje). Aby zatrzymać Seisę bez terminala, użyj "Zamknij Seisę" w tej samej karcie albo w stopce: zatrzymuje serwer i zamyka stronę (albo prosi o zamknięcie karty, bo przeglądarka pozwala stronie zamknąć tylko karty, które sama otworzyła).
+Aby uruchamiać Seisę kliknięciem zamiast terminalem, otwórz zakładkę Info, Ustawienia i kliknij "Dodaj ikonę": na macOS powstaje mała aplikacja w `~/Applications` (przeciągnij ją na Dock), a na Linuksie z pulpitem wpis w menu aplikacji (przypnij go stamtąd). Ikona uruchamia serwer, gdy nie działa, i otwiera przeglądarkę. Nic nie jest dodawane automatycznie, a "Usuń ikonę" to cofa; patrz [Info](docs/pl/tabs.md#info). Aby zatrzymać Seisę bez terminala, użyj "Zamknij Seisę" w tej samej karcie albo w stopce: zatrzymuje serwer i zamyka stronę (albo prosi o zamknięcie karty, bo przeglądarka pozwala stronie zamknąć tylko karty, które sama otworzyła).
 
 ### Pierwsze kroki bez kluczy
 
@@ -82,7 +82,7 @@ Całe UI możesz wypróbować na fikcyjnych danych, bez kluczy i bez ruchu sieci
 
 Potem otwórz `http://127.0.0.1:8765`. Prawdziwa aplikacja bez kluczy:
 
-- **Działa:** w pełni zakładka [DMARC](docs/pl/tabs.md#dmarc), analiza deterministyczna w zakładce [Email](docs/pl/tabs.md#email), WHOIS/rDNS (RDAP i odwrotny DNS) w zakładce [IP](docs/pl/tabs.md#ip), [Historia](docs/pl/tabs.md#historia), [Logi](docs/pl/tabs.md#logi), [Informacje](docs/pl/tabs.md#informacje), przełącznik języka i przełącznik [skórki kolorystycznej](docs/pl/tabs.md#skórka-kolorystyczna-jasna--ciemna--systemowa) (jasna, ciemna, systemowa).
+- **Działa:** w pełni zakładka [DMARC](docs/pl/tabs.md#dmarc), analiza deterministyczna w zakładce [Email](docs/pl/tabs.md#email), WHOIS/rDNS (RDAP i odwrotny DNS) w zakładce [IP](docs/pl/tabs.md#ip), [Historia](docs/pl/tabs.md#historia), [Logi](docs/pl/tabs.md#logi), [Info](docs/pl/tabs.md#info), przełącznik języka i przełącznik [skórki kolorystycznej](docs/pl/tabs.md#skórka-kolorystyczna-jasna--ciemna--systemowa) (jasna, ciemna, systemowa).
 - **Wyłączone, osobno dla usługi:** każda usługa bez klucza pokazuje "brak klucza API" i jest wyłączona z wyniku zbiorczego. Bez `OPENROUTER_API_KEY` warstwa LLM jest wyłączona (zakładka [AbuseIPDB](docs/pl/tabs.md#abuseipdb) działa wtedy w trybie regułowym i nigdy nie twierdzi, że e-mail się kwalifikuje). Wysłanie zgłoszenia i karta "co AbuseIPDB już wie" wymagają `ABUSEIPDB_API_KEY`.
 
 ## Konfiguracja
@@ -116,7 +116,7 @@ Seisa nasłuchuje wyłącznie na `127.0.0.1` i nie ma logowania. Nic nie opuszcz
 
 ### Co opuszcza Twój komputer
 
-Najczęstsze akcje, w skrócie - pełna tabela każdej akcji, w tym rzadszych (opcjonalny geolookup w DMARC, "Odśwież limity" w zakładce Informacje), jest w [Co opuszcza Twój komputer](docs/pl/privacy-and-security.md#co-opuszcza-twój-komputer).
+Najczęstsze akcje, w skrócie - pełna tabela każdej akcji, w tym rzadszych (opcjonalny geolookup w DMARC, "Odśwież limity" w zakładce Info), jest w [Co opuszcza Twój komputer](docs/pl/privacy-and-security.md#co-opuszcza-twój-komputer).
 
 | Akcja | Co jest wysyłane | Dokąd | Kiedy |
 |---|---|---|---|
@@ -149,10 +149,10 @@ Pełna dokumentacja jest w [`docs/pl/`](docs/pl/index.md) (angielska: [`docs/en/
 
 ## Historia zmian
 
-Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Informacje pokazuje najnowsze z git log.
+Poniżej najważniejsze zmiany funkcjonalne; pełna lista - w tym wydania czysto porządkowe, np. poprawki dokumentacji - jest w [CHANGELOG.md](CHANGELOG.md) (po angielsku), a zakładka Info pokazuje najnowsze z git log.
 
-- **2.4.1** - ikona na pulpicie wygląda jak inne ikony aplikacji: zaokrąglony kwadrat z kanji w niebieskim kolorze logo, bez obwódki; przyciski ikony w Informacje > Ustawienia są w jednym wierszu.
-- **2.4.0** - opcjonalna ikona na pulpicie: "Dodaj ikonę" w Informacje > Ustawienia tworzy aplikację na macOS albo wpis w menu na Linuksie, który uruchamia Seisę (gdy nie działa) i otwiera ją w przeglądarce; "Usuń ikonę" to cofa. Nic nie jest dodawane automatycznie. Przycisk "Zamknij Seisę" (Informacje > Ustawienia i stopka) zatrzymuje serwer i zamyka stronę.
+- **2.4.1** - ikona na pulpicie wygląda jak inne ikony aplikacji: zaokrąglony kwadrat z kanji w niebieskim kolorze logo, bez obwódki; przyciski ikony w Info > Ustawienia są w jednym wierszu.
+- **2.4.0** - opcjonalna ikona na pulpicie: "Dodaj ikonę" w Info > Ustawienia tworzy aplikację na macOS albo wpis w menu na Linuksie, który uruchamia Seisę (gdy nie działa) i otwiera ją w przeglądarce; "Usuń ikonę" to cofa. Nic nie jest dodawane automatycznie. Przycisk "Zamknij Seisę" (Info > Ustawienia i stopka) zatrzymuje serwer i zamyka stronę.
 - **2.3.1** - trzecia skórka, "Biało-czerwona Kōhaku" (czerwień i biel flag Polski i Japonii, ciepła biała strona i dwukolorowy pasek pod nagłówkiem), osobny kolor banerów informacyjnych, żeby nie dało się ich pomylić z błędami, oraz logo jasnych skórek leżące teraz wprost na tle strony.
 
 ## Licencja i współpraca

@@ -19,8 +19,8 @@ Pełna tabela kluczy `.env` (każda zmienna, czy jest wymagana, gdzie ją zdoby�
 | Historia | 100 nieprzypiętych wpisów | przypięte nigdy nie wypadają |
 | Widoczne logi | 500 najnowszych wpisów | pliki logów starsze niż 30 dni są usuwane automatycznie |
 
-Limity planów darmowych każdej usługi z kluczem (zużyto / limit / reset) są w zakładce [Informacje](tabs.md#informacje), w karcie "Limity API".
+Limity planów darmowych każdej usługi z kluczem (zużyto / limit / reset) są w zakładce [Info](tabs.md#info), w karcie "Limity API".
 
 ### Ikona na pulpicie (opcjonalna)
 
-Przycisk "Dodaj ikonę" (Informacje > Ustawienia) wymaga sesji graficznej: macOS z własnymi narzędziami `sips` i `iconutil` (oba są w systemie) albo pulpitu Linuksa (`DISPLAY` lub `WAYLAND_DISPLAY` ustawione w środowisku, w którym działa Seisa) oraz `curl` dla skryptu startowego. Ikona uruchamia Seisę tylko na porcie 54321. Wyjście serwera uruchomionego z ikony trafia do `logs/launcher.log`. Patrz [Informacje](tabs.md#informacje).
+Przycisk "Dodaj ikonę" (Info > Ustawienia) wymaga sesji graficznej: macOS z własnymi narzędziami `sips` i `iconutil` (oba są w systemie) albo pulpitu Linuksa (`DISPLAY` lub `WAYLAND_DISPLAY` ustawione w środowisku, w którym działa Seisa) oraz `curl` dla skryptu startowego. Ikona uruchamia Seisę tylko na porcie 54321. Wyjście serwera uruchomionego z ikony trafia do `logs/launcher.log`. Patrz [Info](tabs.md#info).

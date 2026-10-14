@@ -475,9 +475,7 @@ function legendHtml() {
 
 // ---- entry point ----
 
-// `actions` (optional element with the report buttons) is placed right under the title, so it is reachable without
-// scrolling through a long report.
-export function renderLookupResult(result, actions = null) {
+export function renderLookupResult(result) {
   const wrap = document.createElement("div");
   wrap.className = "lookup-result";
   const components = componentsHtml(result.risk_score);
@@ -486,11 +484,7 @@ export function renderLookupResult(result, actions = null) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
     ${comparisonHtml(result)}
-    <div data-actions></div>
     ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml()}`;
-  const slot = wrap.querySelector("[data-actions]");
-  if (actions) slot.replaceWith(actions);
-  else slot.remove();
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button");
