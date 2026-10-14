@@ -40,5 +40,22 @@ export const textBanner = (tone, text) => `<div class="banner ${tone}">${e(text)
 // The banner shown when a request failed: the message of `err` filled into the catalog text `key`.
 export const errorBanner = (err, { tone = "warn", key = "common.error" } = {}) => textBanner(tone, t(key, { message: err.message }));
 
+// The muted dash shown in place of a missing value.
+export const DASH = '<span class="muted">-</span>';
+
 // A value in the monospace font, or a muted dash when there is none.
-export const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : '<span class="muted">-</span>');
+export const mono = (v) => (v ? `<span class="mono">${e(v)}</span>` : DASH);
+
+// ---- side-by-side comparisons (History, Email, URLScan) ----
+
+// One row: label and both cells are markup; `same` greys the row out (nothing changed there).
+export const compareRow = (labelHtml, aHtml, bHtml, same) =>
+  `<tr class="${same ? "em-same" : ""}"><td>${labelHtml}</td><td>${aHtml}</td><td>${bHtml}</td></tr>`;
+
+// The table: the two column headings are plain text, `rowsHtml` comes from compareRow.
+export const compareTable = (headA, headB, rowsHtml) =>
+  `<div class="table-wrap"><table class="fact-table em-cmp"><thead><tr><th></th><th>${e(headA)}</th><th>${e(headB)}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+
+// The banner above a comparison: green or amber when the risk level changed (green when it is low now), blue when not.
+export const levelChangeBanner = (olderLevel, newerLevel, changedText, sameText) =>
+  olderLevel !== newerLevel ? textBanner(newerLevel === "low" ? "good" : "warn", changedText) : textBanner("info", sameText);

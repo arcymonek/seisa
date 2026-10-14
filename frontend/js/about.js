@@ -3,7 +3,7 @@
 // never the key), the API limits against the free plans, the recent releases and the licence. The cards are built
 // once, so a card the user opened stays open when the tab is refreshed; only their bodies are refilled.
 import { api } from "./api.js";
-import { serviceTitle } from "./lookup-result.js";
+import { serviceTitle } from "./services.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
 import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
@@ -17,10 +17,8 @@ const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
 const AUTHOR_GITHUB = "https://github.com/arcymonek";
 const AUTHOR_SITE = "https://seisa.eu";
 
-const SERVICE_NAMES = { urlscan: "URLScan", openrouter: "OpenRouter" }; // the others are titled by the IP tab (serviceTitle)
 // An external link that opens in a new tab (text is escaped here).
 const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${e(text)}</a>`;
-const serviceName = (id) => SERVICE_NAMES[id] || serviceTitle(id);
 // Which traditional colour plays which role in the shipped themes: [role, kanji, kana, romaji] (no kanji = no name).
 const PALETTES = [
   { title: "about.colors_washi_title", intro: "about.colors_washi_intro", rows: [["bg", "鳥の子", "とりのこ", "torinoko"], ["text", "墨", "すみ", "sumi"], ["accent", "藍", "あい", "ai"],
@@ -185,7 +183,7 @@ function renderLimits(limits) {
   root.querySelector("#ab-limits").innerHTML = services
     .map((svc) => {
       const rows = byService.get(svc.id) || [];
-      const name = svc.llm ? "OpenRouter (LLM)" : serviceName(svc.id).replace(" / ", "/");
+      const name = svc.llm ? "OpenRouter (LLM)" : serviceTitle(svc.id).replace(" / ", "/");
       return `<div class="svc-card${rows.some((r) => r.exceeded) ? " over" : ""}"><div class="svc-head"><span>${e(name)}</span>${badge(svc.configured)}</div>${rows.map(limitLine).join("")}</div>`;
     })
     .join("");
@@ -199,11 +197,11 @@ function renderLimits(limits) {
   state.textContent = "";
   if (over) {
     // an HTTP 429 from the service outranks every computed percentage
-    state.textContent = t("about.lim_state_exceeded", { service: serviceName(over.service), scope: t("about.scope." + over.scope) });
+    state.textContent = t("about.lim_state_exceeded", { service: serviceTitle(over.service), scope: t("about.scope." + over.scope) });
     state.classList.add("bad");
   } else if (worst) {
     const pct = percent(worst);
-    state.textContent = `${serviceName(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)}/${amount(worst.limit, worst.unit)}`;
+    state.textContent = `${serviceTitle(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)}/${amount(worst.limit, worst.unit)}`;
     if (pct >= 90) state.classList.add("bad");
     else if (pct >= 70) state.classList.add("warn");
   }
@@ -222,7 +220,7 @@ async function refreshLimits() {
       const res = await api.aboutLimitsRefresh();
       renderLimits(res.limits);
       errorsEl.innerHTML = Object.entries(res.errors)
-        .map(([service, error]) => textBanner("bad", t("about.limits_error", { service: serviceName(service), error })))
+        .map(([service, error]) => textBanner("bad", t("about.limits_error", { service: serviceTitle(service), error })))
         .join("");
     } catch (err) {
       info.textContent = "";

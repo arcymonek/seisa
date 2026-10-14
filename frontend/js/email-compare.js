@@ -4,7 +4,7 @@ import { t, fmtDateTime } from "./i18n.js";
 import { authSummary, senderHop } from "./email-facts.js";
 import { verdictLabel } from "./email-export.js";
 import { escapeHtml as e } from "./util.js";
-import { mono, textBanner } from "./ui.js";
+import { compareRow, compareTable, DASH, mono, textBanner } from "./ui.js";
 
 const uniq = (arr) => [...new Set(arr.filter(Boolean))];
 
@@ -31,13 +31,13 @@ function signals(rec) {
 }
 
 const common = (a, b) => a.filter((x) => b.includes(x));
-const list = (arr) => (arr.length ? arr.map((x) => `<span class="mono">${e(x)}</span>`).join(", ") : '<span class="muted">-</span>');
+const list = (arr) => (arr.length ? arr.map((x) => `<span class="mono">${e(x)}</span>`).join(", ") : DASH);
 
 export function compareHtml(recA, recB) {
   const A = signals(recA);
   const B = signals(recB);
-  const row = (label, a, b, same) => `<tr class="${same ? "em-same" : ""}"><td>${e(label)}</td><td>${a}</td><td>${b}</td></tr>`;
-  const scalar = (label, key, render = (v) => (v ? e(v) : '<span class="muted">-</span>')) => row(label, render(A[key]), render(B[key]), !!A[key] && A[key] === B[key]);
+  const row = (label, a, b, same) => compareRow(e(label), a, b, same);
+  const scalar = (label, key, render = (v) => (v ? e(v) : DASH)) => row(label, render(A[key]), render(B[key]), !!A[key] && A[key] === B[key]);
   const setRow = (label, key) => {
     const both = common(A[key], B[key]);
     return row(label, list(A[key]), list(B[key]), both.length > 0);
@@ -49,7 +49,7 @@ export function compareHtml(recA, recB) {
   const summary = shared.length
     ? `<div class="banner warn"><strong>${e(t("em.cmp.similar"))}</strong><ul>${shared.map(([k, v]) => `<li>${e(k)}: ${list(v)}</li>`).join("")}</ul></div>`
     : textBanner("info", t("em.cmp.nothing_shared"));
-  return `${summary}<div class="table-wrap"><table class="fact-table em-cmp"><thead><tr><th></th><th>A</th><th>B</th></tr></thead><tbody>
+  return `${summary}${compareTable("A", "B", `
     ${scalar(t("em.cmp.date"), "date", (v) => e(fmtDateTime(v)))}
     ${scalar(t("em.f.subject_decoded"), "subject")}
     ${scalar("From", "from")}
@@ -62,5 +62,5 @@ export function compareHtml(recA, recB) {
     ${setRow(t("em.cmp.link_hosts"), "linkHosts")}
     ${setRow(t("em.cmp.attachments"), "attachments")}
     ${row(t("em.kpi.flags"), e(A.warnings), e(B.warnings), A.warnings === B.warnings)}
-  </tbody></table></div><div class="muted">${e(t("em.cmp.legend"))}</div>`;
+  `)}<div class="muted">${e(t("em.cmp.legend"))}</div>`;
 }

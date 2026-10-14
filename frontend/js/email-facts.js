@@ -4,7 +4,7 @@
 import { t, tn } from "./i18n.js";
 import { defangUrl } from "./markdown-render.js";
 import { escapeHtml as e } from "./util.js";
-import { kpiTile, mono, textBanner } from "./ui.js";
+import { DASH, kpiTile, mono, textBanner } from "./ui.js";
 
 const AUTH_BAD = ["fail", "softfail", "permerror", "temperror"];
 const AUTH_WEAK = ["none", "neutral", "policy"];
@@ -20,7 +20,7 @@ function table(headers, rows, cls = "") {
     .join("")}</tbody></table></div>`;
 }
 
-const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : '<span class="muted">-</span>');
+const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : DASH);
 const resultClass = (r) => (r === "pass" ? "ok" : AUTH_BAD.includes(r) ? "bad" : "warnc");
 
 const isPrivateIp = (ip) =>
@@ -269,7 +269,7 @@ export function factCardsHtml(f) {
     table([t("em.f.header"), "authserv-id", t("em.f.matches_receiver"), t("em.f.results"), t("em.f.details")],
       f.auth.map((x) => [
         e(x.header) + `<div class="em-row-actions">${srcBtn(x.raw)}</div>`, mono(x.authserv_id || ""),
-        x.matches_receiver === true ? `<span class="ok">${e(t("em.f.yes_by"))}</span>` : x.matches_receiver === false ? `<span class="warnc">${e(t("common.no"))}</span>` : '<span class="muted">-</span>',
+        x.matches_receiver === true ? `<span class="ok">${e(t("em.f.yes_by"))}</span>` : x.matches_receiver === false ? `<span class="warnc">${e(t("common.no"))}</span>` : DASH,
         Object.entries(x.results).map(([k, v]) => `<span class="${resultClass(v)}">${e(k)}=${e(v)}</span>`).join(" "),
         `<span class="mono">${e(Object.entries(x.details).map(([k, v]) => `${k}=${v}`).join(" "))}</span>`,
       ])) +
@@ -305,7 +305,7 @@ export function factCardsHtml(f) {
     table([t("em.f.type"), "charset", "Content-Transfer-Encoding", t("em.f.filename"), t("em.f.size"), "boundary"],
       f.mime.map((m) => [
         `<span style="padding-left:${m.depth * 16}px">${mono(m.content_type)}</span>`, e(m.charset || ""),
-        m.cte ? `<span class="${m.cte_valid ? "" : "bad"}">${e(m.cte)}${m.cte_valid ? "" : ` (${e(t("em.f.not_allowed"))})`}</span>` : '<span class="muted">-</span>',
+        m.cte ? `<span class="${m.cte_valid ? "" : "bad"}">${e(m.cte)}${m.cte_valid ? "" : ` (${e(t("em.f.not_allowed"))})`}</span>` : DASH,
         e(m.filename || ""), m.size != null ? `${m.size} B` : "", mono(m.boundary),
       ])) +
     (f.attachments.length ? `<h4>${e(t("em.f.attachments"))}</h4>` + table([t("em.f.file"), t("em.f.type"), t("em.f.size"), "SHA-256", t("em.f.notes")],

@@ -1,5 +1,6 @@
 import { api } from "./api.js";
-import { renderLookupResult, serviceTitle } from "./lookup-result.js";
+import { renderLookupResult } from "./lookup-result.js";
+import { serviceTitle } from "./services.js";
 import { bindClear } from "./clear-button.js";
 import { t } from "./i18n.js";
 import { copyText, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml, makeButton } from "./util.js";

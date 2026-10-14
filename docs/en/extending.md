@@ -25,7 +25,7 @@ A fork is a reasonable choice if you want to keep a local, dependency-light tool
 2. Register it in `SERVICE_REGISTRY` in `backend/aggregator.py`.
 3. Add its key to `Settings` in `backend/config.py` and to `.env.example`; show its status in `backend/routers/about.py`.
 4. If it should influence the score, add a `CREDIBILITY` entry and a `score_<name>` function in `backend/scoring.py` and register it in `compute_risk_score`.
-5. Frontend: the service metadata in `frontend/js/lookup-result.js` and the `ALL_SERVICES` list in `frontend/js/lookup.js`; Markdown: the title and `SERVICE_ORDER` in `backend/markdown_report.py`.
+5. Frontend: its display name in `frontend/js/services.js` (one list for every tab), its description and link in `frontend/js/lookup-result.js` and the `ALL_SERVICES` list in `frontend/js/lookup.js`; Markdown: the title and `SERVICE_ORDER` in `backend/markdown_report.py`.
 6. Optionally its free-plan limit in `backend/api_limits.py`.
 7. i18n keys (`md.service.<name>` and any messages) in both catalogs; a mocked answer in `scripts/api_harness.py`; run the checks below.
 

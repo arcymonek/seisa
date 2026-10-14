@@ -5,6 +5,7 @@ import { api } from "./api.js";
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { armedConfirm, copyText, escapeHtml, fmtRelative } from "./util.js";
 import { errorBanner, kpiTile, textBanner } from "./ui.js";
+import { serviceTitle } from "./services.js";
 
 const MAX_ENTRIES = 500; // the backend limit; a full page means older entries may be cut off
 
@@ -21,21 +22,10 @@ const LEVELS = ["all", "ERROR", "WARNING"];
 const LEVEL_KEY = { all: "logs.level_all", ERROR: "logs.level_error", WARNING: "logs.level_warning" };
 const LEVEL_BADGE = { ERROR: "high", WARNING: "medium" };
 
-// Display names of the log services (the raw logger names stay in the data and in the search).
-const SERVICE_LABEL = {
-  app: "Seisa",
-  open_router: "OpenRouter",
-  greynoise: "GreyNoise",
-  otx: "OTX",
-  cloudflare_radar: "Cloudflare",
-  virustotal: "VirusTotal",
-  abuseipdb: "AbuseIPDB",
-  urlscan: "urlscan",
-  dns_records: "DNS",
-  whois_rdns: "RDNS",
-  "whois.whois": "WHOIS",
-};
-const serviceLabel = (name) => SERVICE_LABEL[name] || name;
+// Display names of the logs: services are named as in every other tab (services.js); the loggers that are not
+// services get their own label. The raw logger names stay in the data and in the search.
+const LOGGER_LABEL = { app: "Seisa", open_router: "OpenRouter", dns_records: "DNS", "whois.whois": "WHOIS" };
+const serviceLabel = (name) => LOGGER_LABEL[name] || serviceTitle(name);
 
 const entryKey = (e) => `${e.time}|${e.service}`;
 

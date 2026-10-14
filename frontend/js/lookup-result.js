@@ -4,6 +4,7 @@
 import { t, tn, fmtDateTime, getLocale } from "./i18n.js";
 import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./util.js";
 import { kpiTile, kvHtml, legendHtml } from "./ui.js";
+import { serviceTitle } from "./services.js";
 
 // Identity field keys that carry enough jargon to deserve a one-sentence glossary tooltip next to their label.
 const GLOSS_FIELD = {
@@ -17,21 +18,17 @@ const GLOSS_FIELD = {
   caa: "lookup.gl.caa",
 };
 
-// Display-only metadata per service; the descriptions live in the i18n catalog (md.service.<id>).
+// Display-only metadata per service (the names are in services.js); the descriptions live in the i18n catalog
+// (md.service.<id>).
 const SERVICES = {
-  whois_rdns: { title: "WHOIS / rDNS", desc: "md.service.whois", url: null },
-  cloudflare_radar: { title: "Cloudflare Radar", desc: "md.service.cloudflare", url: "https://radar.cloudflare.com" },
-  otx: { title: "AlienVault OTX", desc: "md.service.otx", url: "https://otx.alienvault.com" },
-  abuseipdb: { title: "AbuseIPDB", desc: "md.service.abuseipdb", url: "https://www.abuseipdb.com" },
-  virustotal: { title: "VirusTotal", desc: "md.service.virustotal", url: "https://www.virustotal.com" },
-  greynoise: { title: "GreyNoise", desc: "md.service.greynoise", url: "https://www.greynoise.io" },
+  whois_rdns: { desc: "md.service.whois", url: null },
+  cloudflare_radar: { desc: "md.service.cloudflare", url: "https://radar.cloudflare.com" },
+  otx: { desc: "md.service.otx", url: "https://otx.alienvault.com" },
+  abuseipdb: { desc: "md.service.abuseipdb", url: "https://www.abuseipdb.com" },
+  virustotal: { desc: "md.service.virustotal", url: "https://www.virustotal.com" },
+  greynoise: { desc: "md.service.greynoise", url: "https://www.greynoise.io" },
 };
 const SERVICE_ORDER = Object.keys(SERVICES);
-// "dns" (records resolved locally) and "local_heuristics" (name/age hints) are not services but appear as sources of
-// identity fields and score components.
-export const serviceTitle = (id) =>
-  SERVICES[id] ? SERVICES[id].title : id === "dns" ? "DNS" : id === "local_heuristics" ? t("lookup.src_heuristics") : id;
-
 // Same thresholds as backend/scoring.py (MEDIUM_FROM, HIGH_FROM).
 const MEDIUM_FROM = 25;
 const HIGH_FROM = 60;
@@ -386,7 +383,8 @@ function identityRowsOf(id, identity) {
 }
 
 function sourceCard(id, res, comp, identity) {
-  const info = SERVICES[id] || { title: id, desc: null, url: null };
+  const info = SERVICES[id] || { desc: null, url: null };
+  const title = serviceTitle(id);
   const signal = Boolean(comp) && comp.risk >= MEDIUM_FROM;
   const fact = keyFact(id, res, comp);
   const badge = comp ? ` <span class="badge sm ${riskLevel(comp.risk)}">${e(t("risk." + riskLevel(comp.risk)))}</span>` : "";
@@ -404,9 +402,9 @@ function sourceCard(id, res, comp, identity) {
     const all = [...idRows, ...rows];
     body += all.length ? kvHtml(all) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`;
   }
-  const open = info.url ? `<button type="button" class="secondary mini" data-url="${e(info.url)}">${e(t("md.open_service", { name: info.title }))}</button>` : "";
+  const open = info.url ? `<button type="button" class="secondary mini" data-url="${e(info.url)}">${e(t("md.open_service", { name: title }))}</button>` : "";
   return `<details class="fact-block src" data-service="${e(id)}"${signal ? " open" : ""}>
-    <summary>${e(info.title)}${badge}${problem}${fact && res.status === "ok" ? ` <span class="muted">${e(fact)}</span>` : ""}</summary>
+    <summary>${e(title)}${badge}${problem}${fact && res.status === "ok" ? ` <span class="muted">${e(fact)}</span>` : ""}</summary>
     <div class="src-body">${info.desc ? `<div class="muted">${e(t(info.desc))}</div>` : ""}${body}${open}${rawHtml(res)}</div>
   </details>`;
 }

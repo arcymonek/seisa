@@ -25,7 +25,7 @@ Fork jest rozsądnym wyborem, jeśli chcesz zachować lokalne narzędzie o małe
 2. Zarejestruj ją w `SERVICE_REGISTRY` w `backend/aggregator.py`.
 3. Dodaj jej klucz do `Settings` w `backend/config.py` i do `.env.example`; pokaż jej status w `backend/routers/about.py`.
 4. Jeśli ma wpływać na wynik, dodaj wpis w `CREDIBILITY` i funkcję `score_<nazwa>` w `backend/scoring.py` oraz zarejestruj ją w `compute_risk_score`.
-5. Frontend: metadane usługi w `frontend/js/lookup-result.js` i lista `ALL_SERVICES` w `frontend/js/lookup.js`; Markdown: tytuł i `SERVICE_ORDER` w `backend/markdown_report.py`.
+5. Frontend: nazwa wyświetlana w `frontend/js/services.js` (jedna lista dla wszystkich zakładek), opis i link w `frontend/js/lookup-result.js` oraz lista `ALL_SERVICES` w `frontend/js/lookup.js`; Markdown: tytuł i `SERVICE_ORDER` w `backend/markdown_report.py`.
 6. Opcjonalnie jej limit planu darmowego w `backend/api_limits.py`.
 7. Klucze i18n (`md.service.<nazwa>` i ewentualne komunikaty) w obu katalogach; zamockowana odpowiedź w `scripts/api_harness.py`; uruchom kontrole poniżej.
 

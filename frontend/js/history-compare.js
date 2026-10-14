@@ -1,10 +1,9 @@
 // History tab: side-by-side comparison of two saved IP checks - what changed in the reputation between them.
 // Only the saved data is compared; nothing is queried again.
 import { t, fmtDateTime } from "./i18n.js";
-import { serviceTitle } from "./lookup-result.js";
+import { serviceTitle } from "./services.js";
 import { escapeHtml as e } from "./util.js";
-
-const dash = '<span class="muted">-</span>';
+import { compareRow, compareTable, DASH, levelChangeBanner } from "./ui.js";
 
 // One line per reporting source: what it saw and how risky that is (a source may report several signals).
 function sourceLines(result) {
@@ -22,16 +21,13 @@ function identityValues(result) {
 
 // `older` and `newer` are saved lookup results (the `data` of two history entries).
 export function compareLookups(older, newer) {
-  const row = (label, a, b) => {
-    const same = a !== undefined && a === b;
-    return `<tr class="${same ? "em-same" : ""}"><td>${label}</td><td>${a === undefined ? dash : e(a)}</td><td>${b === undefined ? dash : e(b)}</td></tr>`;
-  };
+  const cell = (v) => (v === undefined ? DASH : e(v));
+  const row = (labelHtml, a, b) => compareRow(labelHtml, cell(a), cell(b), a !== undefined && a === b);
   const rs = (r) => r.risk_score;
   const levelLabel = (r) => t("risk." + rs(r).level);
-  const changed = rs(older).level !== rs(newer).level;
-  const banner = changed
-    ? `<div class="banner ${rs(newer).level === "low" ? "good" : "warn"}">${e(t("history.cmp.level_changed", { from: levelLabel(older), to: levelLabel(newer), a: rs(older).score, b: rs(newer).score }))}</div>`
-    : `<div class="banner info">${e(t("history.cmp.level_same", { level: levelLabel(newer), a: rs(older).score, b: rs(newer).score }))}</div>`;
+  const banner = levelChangeBanner(rs(older).level, rs(newer).level,
+    t("history.cmp.level_changed", { from: levelLabel(older), to: levelLabel(newer), a: rs(older).score, b: rs(newer).score }),
+    t("history.cmp.level_same", { level: levelLabel(newer), a: rs(older).score, b: rs(newer).score }));
 
   const idA = identityValues(older);
   const idB = identityValues(newer);
@@ -42,10 +38,10 @@ export function compareLookups(older, newer) {
 
   return `<div class="card hi-compare">
     <h3>${e(t("history.cmp.title"))}: <span class="mono">${e(newer.indicator)}</span></h3>${banner}
-    <div class="table-wrap"><table class="fact-table em-cmp"><thead><tr><th></th><th>${e(fmtDateTime(older.queried_at))}</th><th>${e(fmtDateTime(newer.queried_at))}</th></tr></thead><tbody>
+    ${compareTable(fmtDateTime(older.queried_at), fmtDateTime(newer.queried_at), `
       ${row(e(t("history.cmp.level")), levelLabel(older), levelLabel(newer))}
       ${row(e(t("history.cmp.score")), String(rs(older).score), String(rs(newer).score))}
       ${row(e(t("history.cmp.sources")), `${rs(older).sources_used}/${rs(older).sources_possible}`, `${rs(newer).sources_used}/${rs(newer).sources_possible}`)}
       ${idRows}${srcRows}
-    </tbody></table></div><div class="muted">${e(t("history.cmp.legend"))}</div></div>`;
+    `)}<div class="muted">${e(t("history.cmp.legend"))}</div></div>`;
 }

@@ -2,9 +2,9 @@
 // certificate, redirects, contacted domains ...). Only the summaries are compared; nothing is scanned again.
 import { fmtDateTime, t } from "./i18n.js";
 import { escapeHtml as e, isSet } from "./util.js";
+import { compareRow, compareTable, DASH, levelChangeBanner } from "./ui.js";
 
 const DOMAIN_LIST_LIMIT = 15;
-const dash = '<span class="muted">-</span>';
 
 const list = (items) => (items && items.length ? items.join(", ") : "");
 
@@ -54,17 +54,16 @@ export function compareScans(older, newer, exact) {
     const y = b[i][1];
     const same = x === y;
     if (!same) changed += 1;
-    const cell = (v) => (v === "" ? dash : e(v));
-    return `<tr class="${same ? "em-same" : ""}"><td>${e(label)}</td><td>${cell(x)}</td><td>${cell(y)}</td></tr>`;
+    const cell = (v) => (v === "" ? DASH : e(v));
+    return compareRow(e(label), cell(x), cell(y), same);
   });
   const sc = (s) => (isSet(s.verdict.score) ? s.verdict.score : "-");
-  const levelChanged = older.verdict.level !== newer.verdict.level;
-  const banner = levelChanged
-    ? `<div class="banner ${newer.verdict.level === "low" ? "good" : "warn"}">${e(t("urlscan.cmp.level_changed", { from: t("risk." + older.verdict.level), to: t("risk." + newer.verdict.level), a: sc(older), b: sc(newer) }))}</div>`
-    : `<div class="banner info">${e(t("urlscan.cmp.level_same", { level: t("risk." + newer.verdict.level), a: sc(older), b: sc(newer), n: changed }))}</div>`;
+  const banner = levelChangeBanner(older.verdict.level, newer.verdict.level,
+    t("urlscan.cmp.level_changed", { from: t("risk." + older.verdict.level), to: t("risk." + newer.verdict.level), a: sc(older), b: sc(newer) }),
+    t("urlscan.cmp.level_same", { level: t("risk." + newer.verdict.level), a: sc(older), b: sc(newer), n: changed }));
   const otherUrl = exact ? "" : `<div class="muted">${e(t("urlscan.cmp.other_url", { url: older.submitted_url }))}</div>`;
   return `<div class="card us-compare">
     <h3>${e(t("urlscan.cmp.title", { date: older.scanned_at ? fmtDateTime(older.scanned_at) : "?" }))}</h3>${banner}${otherUrl}
-    <div class="table-wrap"><table class="fact-table em-cmp"><thead><tr><th></th><th>${e(older.scanned_at ? fmtDateTime(older.scanned_at) : "?")}</th><th>${e(newer.scanned_at ? fmtDateTime(newer.scanned_at) : "?")}</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>
+    ${compareTable(older.scanned_at ? fmtDateTime(older.scanned_at) : "?", newer.scanned_at ? fmtDateTime(newer.scanned_at) : "?", rows.join(""))}
     ${domainDiff(older, newer)}<div class="muted">${e(t("urlscan.cmp.legend"))}</div></div>`;
 }
