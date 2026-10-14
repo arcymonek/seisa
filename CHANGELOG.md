@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.11 - 2026-10-14
+- **Email and AbuseIPDB tabs:** a "Clear" button in the row of buttons brings the tab back to its starting position (empty source box, no result; in AbuseIPDB the report form is hidden and emptied too). The saved analyses and the history of sent reports stay. In Email it is disabled while an analysis runs; in AbuseIPDB it does nothing while a report is being sent, and an analysis still in flight no longer fills the form after "Clear".
+
 ## 2.4.10 - 2026-10-14
 - **Email tab:** "Saved analyses (N)" is now a collapsible card like the ones in Overview and Facts (folded at the start).
 

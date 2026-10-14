@@ -492,6 +492,7 @@
   "common.file_loaded": "Loaded file {name} ({size} KB).",
   "common.analyze": "Analyze",
   "common.analyze_no_llm": "Analyze without LLM",
+  "common.clear": "Clear",
   "common.load_eml": "Load .eml file",
   "common.none": "none",
   "rb.analysis_time": "Analysis: {time} s",

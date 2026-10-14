@@ -64,6 +64,7 @@ export function initEmail(container) {
       <button class="secondary" id="em-cancel" style="display:none">${e(t("em.cancel"))}</button>
       <button class="secondary" id="em-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
+      <button type="button" class="secondary" id="em-clear">${e(t("common.clear"))}</button>
       <button type="button" class="secondary" id="em-save-md" data-act="save-md" hidden>${e(t("common.save_md"))}</button>
       <button type="button" class="secondary" id="em-copy-md" data-act="copy-md" hidden>${e(t("common.copy_markdown"))}</button>
       <button type="button" class="secondary" id="em-save-html" data-act="save-html" hidden>${e(t("em.save_html"))}</button>
@@ -118,6 +119,7 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
   runAnalysis(raw, { useLlm: false }); // free and local: no duplicate check
 });
   $("#em-cancel").addEventListener("click", () => abortController && abortController.abort());
+  $("#em-clear").addEventListener("click", clearAll);
   $("#em-file-btn").addEventListener("click", () => $("#em-file").click());
   $("#em-file").addEventListener("change", (ev) => {
     const file = ev.target.files[0];
@@ -200,6 +202,17 @@ function updateSourceLine() {
   const o = S.facts.overview;
   const lines = S.raw.split("\n").length;
   $("#em-src-info").innerHTML = `<strong>${e(o.subject || t("em.no_subject"))}</strong> <span class="muted">${e(o.from || "")} · ${e(t("em.src.lines", { n: lines }))}</span>`;
+}
+
+// Back to the starting position: empty source box, no result, no status line. The saved analyses stay (they are data).
+function clearAll() {
+  if (abortController) return; // a running analysis is stopped with Cancel first
+  clearOutput();
+  $("#em-source").value = "";
+  $("#em-status").textContent = "";
+  $("#em-timer").textContent = "";
+  $("#em-usage").textContent = "";
+  setSourceCollapsed(false);
 }
 
 async function loadFile(file) {
@@ -465,6 +478,7 @@ function showDuplicate(matches, raw) {
 function setBusy(busy) {
   $("#em-analyze").disabled = busy;
   $("#em-analyze-no-llm").disabled = busy;
+  $("#em-clear").disabled = busy;
   $("#em-cancel").style.display = busy ? "" : "none";
 }
 

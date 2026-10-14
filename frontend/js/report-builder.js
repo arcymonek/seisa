@@ -22,6 +22,8 @@ let categoriesMap = {};
 let checksDebounce = null;
 let checksSeq = 0;
 let infoIp = null;
+let analysisSeq = 0; // a new analysis or "Clear" makes an analysis still in flight obsolete
+let sending = false;
 
 // what the current page is about (reset by a new analysis)
 const S = {
@@ -63,6 +65,7 @@ export function initReportBuilder(container) {
       <button class="secondary" id="rb-analyze-no-llm">${e(t("common.analyze_no_llm"))}</button>
       <button class="secondary" id="rb-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="rb-file" accept=".eml,.txt,message/rfc822" style="display:none">
+      <button class="secondary" id="rb-clear">${e(t("common.clear"))}</button>
       <span class="action-info">
         <span id="rb-status"></span>
         <span id="rb-timer"></span>
@@ -126,6 +129,7 @@ export function initReportBuilder(container) {
       loadFile(file);
     }
   });
+  $("#rb-clear").addEventListener("click", clearAll);
   $("#rb-copy").addEventListener("click", () => navigator.clipboard.writeText($("#rb-comment").value));
   $("#rb-export").addEventListener("click", exportMarkdown);
   $("#rb-submit").addEventListener("click", submit);
@@ -236,6 +240,35 @@ function renderCategoryHints() {
   $("#rb-cat-hints").innerHTML = hints.map((h) => `<div class="fact-flag warn">${e(h)}</div>`).join("");
 }
 
+// Back to the starting position: empty e-mail box, no result, form hidden and emptied. The sent-report history stays
+// (it is data). Not while a report is being sent: its outcome must stay visible.
+function clearAll() {
+  if (sending) return;
+  analysisSeq++;
+  clearTimeout(checksDebounce);
+  checksSeq++;
+  timer.stop();
+  resetAnalysis();
+  Object.assign(S, { checks: null, cooldownLeft: 0, previous: null, pii: [], payload: null });
+  $("#rb-email").value = "";
+  for (const id of ["rb-status", "rb-timer", "rb-usage", "rb-send-info"]) $("#" + id).textContent = "";
+  $("#rb-error").innerHTML = "";
+  $("#rb-result").innerHTML = "";
+  $("#rb-form").hidden = true;
+  $("#rb-ip").value = "";
+  $("#rb-timestamp").value = "";
+  $("#rb-comment").value = "";
+  $("#rb-ip-info").innerHTML = "";
+  $("#rb-previous").innerHTML = "";
+  $("#rb-pii").innerHTML = "";
+  $("#rb-payload-pre").textContent = "";
+  $("#rb-payload").open = false;
+  renderCategoryChips([]);
+  updateCharCount();
+  renderChecks();
+  $("#rb-email").focus();
+}
+
 async function analyze(useLlm) {
   const rawEmail = $("#rb-email").value.trim();
   if (!rawEmail) return;
@@ -245,15 +278,18 @@ async function analyze(useLlm) {
   $("#rb-timer").textContent = "";
   $("#rb-status").textContent = "";
   resetAnalysis();
+  const seq = ++analysisSeq;
   timer.start();
   let data;
   try {
     data = await api.analyzeEmail({ raw_email: rawEmail, use_llm: useLlm });
   } catch (err) {
+    if (seq !== analysisSeq) return;
     timer.stop();
     $("#rb-error").innerHTML = `<div class="banner warn">${e(t("rb.analysis_error", { message: err.message }))}</div>`;
     return;
   }
+  if (seq !== analysisSeq) return; // cleared or restarted meanwhile
   timer.stop();
   $("#rb-usage").textContent = formatUsage(data.usage);
   categoriesMap = data.categories;
@@ -505,6 +541,7 @@ async function submit() {
   if (S.pii.length && !confirm(t("rb.pii_confirm", { n: S.pii.length }))) return;
   const fields = buildFields();
   const resultEl = $("#rb-submit-result");
+  sending = true;
   $("#rb-submit").disabled = true; // no double click: the same IP cannot be reported twice within 15 minutes
   resultEl.textContent = t("rb.sending");
   let res = null;
@@ -515,9 +552,13 @@ async function submit() {
   } catch (err) {
     resultEl.innerHTML = `<div class="banner warn">${e(t("rb.send_error", { message: err.message }))}</div>`;
   }
-  await runChecks();
-  const history = await refreshReportHistory();
-  if (history) $("#rb-send-info").textContent = limitText(history.rate_limit);
+  try {
+    await runChecks();
+    const history = await refreshReportHistory();
+    if (history) $("#rb-send-info").textContent = limitText(history.rate_limit);
+  } finally {
+    sending = false;
+  }
 }
 
 function limitText(rate) {

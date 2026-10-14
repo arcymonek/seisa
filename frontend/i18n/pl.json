@@ -510,6 +510,7 @@
   "common.file_loaded": "Wczytano plik {name} ({size} KB).",
   "common.analyze": "Analizuj",
   "common.analyze_no_llm": "Analizuj bez LLM",
+  "common.clear": "Wyczyść",
   "common.load_eml": "Wczytaj plik .eml",
   "common.none": "brak",
   "rb.analysis_time": "Analiza: {time} s",
