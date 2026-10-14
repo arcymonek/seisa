@@ -461,9 +461,17 @@ button.secondary.armed { border-color: var(--fail); color: var(--fail); }
 .log-entry .mono { font-family: var(--mono); font-size: 13px; flex: none; }
 .log-entry .tag, .log-entry .badge { flex: none; }
 .log-line { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.log-entry[open] .log-line { white-space: normal; overflow-wrap: anywhere; }
-.log-body { padding: 0 12px 10px; }
-.log-body .raw-json { margin-top: 2px; }
+.log-entry[open] .log-line { white-space: pre-wrap; overflow-wrap: anywhere; }
+.day-group { margin: 14px 0 0; }
+.day-group > summary { cursor: pointer; display: flex; align-items: baseline; gap: 10px; padding: 4px 0; }
+.day-group .hi-day { margin: 0; }
+.day-count { font-size: 13px; }
+.copy-icon { flex: none; align-self: center; margin: 0 0 0 auto; padding: 4px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--muted); cursor: pointer; }
+.copy-icon:hover { color: var(--text); border-color: var(--hair); }
+.copy-icon .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.copy-icon .ic-ok, .copy-icon .ic-fail, .copy-icon.done .ic-copy, .copy-icon.failed .ic-copy { display: none; }
+.copy-icon.done .ic-ok { display: block; color: var(--pass); }
+.copy-icon.failed .ic-fail { display: block; color: var(--fail); }
 button.kpi { font: inherit; color: inherit; text-align: left; }
 .kpi.click { cursor: pointer; }
 .kpi.click:hover { border-color: var(--accent); }

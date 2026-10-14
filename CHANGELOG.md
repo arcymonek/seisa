@@ -22,6 +22,10 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.16 - 2026-10-14
+- **History and Logs:** entries are grouped into sections by day ("Today", "Yesterday", then one section per earlier day; History also has "Pinned"). The sections start folded and show how many entries they hold; the ones you unfold stay unfolded across refreshes, and a search unfolds the sections that contain matches.
+- **Logs:** a small copy icon at the end of each entry's line copies the complete message, also while the entry is folded. The unfolded entry shows the whole message in the line itself; the separate "Copy" button and the code box repeating the text are gone.
+
 ## 2.4.15 - 2026-10-14
 - **Email:** the notice about what is sent to OpenRouter is shown only before an analysis. It disappears after "Analyze" or "Analyze without LLM" (and when a saved analysis is opened) and comes back with "Clear". The text is split into three lines and now says that Seisa does not open attachments and does not download images or other files the message links to.
 - **URLScan:** the visibility hints keep the user agent and scan country on a separate line; the Private and Public wording is clearer.

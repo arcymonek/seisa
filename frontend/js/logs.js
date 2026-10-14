@@ -1,10 +1,10 @@
 // Logs tab: WARNING+ entries of the daily log files as summary tiles, filter chips (range, level, service), a search
-// box and one collapsible card per entry. The date range is fetched from the backend; level, service and search
+// box and the entries grouped by day: one folded section per day, in it one collapsible card per entry. The date range is fetched from the backend; level, service and search
 // filter the fetched entries in the browser, so the tiles and chip counts always describe the whole range.
 import { api } from "./api.js";
 import { t, tn, fmtDateTime } from "./i18n.js";
-import { armedConfirm, copyText, escapeHtml, fmtRelative } from "./util.js";
-import { errorBanner, kpiTile, textBanner } from "./ui.js";
+import { armedConfirm, escapeHtml, fmtRelative } from "./util.js";
+import { bindCopyIcon, bindDaySections, copyIconButton, dayHeading, daySection, errorBanner, kpiTile, textBanner } from "./ui.js";
 import { serviceTitle } from "./services.js";
 
 const MAX_ENTRIES = 500; // the backend limit; a full page means older entries may be cut off
@@ -16,6 +16,7 @@ let level = "all";
 let service = "all";
 let query = "";
 const openKeys = new Set(); // cards the user expanded, kept across re-renders and refreshes
+const openDays = new Set(); // day sections the user unfolded (they start folded)
 
 const RANGE_KEY = { today: "common.range_today", "3d": "common.range_3d", week: "common.range_week", month: "common.range_month", all: "common.range_all" };
 const LEVELS = ["all", "ERROR", "WARNING"];
@@ -73,6 +74,7 @@ export function initLogs(container) {
   armedConfirm(root.querySelector("#lg-clear"), t("logs.clear_confirm"), async () => {
     await api.logsClear();
     openKeys.clear();
+    openDays.clear();
     load();
   });
 }
@@ -171,27 +173,32 @@ function renderList() {
     listEl.innerHTML = `<div class="muted">${escapeHtml(t("logs.no_match"))}</div>`;
     return;
   }
-  listEl.innerHTML = shown
-    .map((e) => {
-      const key = entryKey(e);
-      const message = String(e.message ?? "");
-      const firstLine = message.split("\n", 1)[0];
-      return `<details class="log-entry" data-key="${escapeHtml(key)}"${openKeys.has(key) ? " open" : ""}>
-        <summary>
-          <span class="muted mono">${escapeHtml(fmtDateTime(e.time))}</span>
-          <span class="badge sm ${LEVEL_BADGE[e.level] || "single"}">${escapeHtml(e.level)}</span>
-          <span class="tag">${escapeHtml(serviceLabel(e.service))}</span>
-          <span class="log-line">${escapeHtml(firstLine)}</span>
-        </summary>
-        <div class="log-body">
-          <button class="secondary mini log-copy" type="button">${escapeHtml(t("common.copy"))}</button>
-          <pre class="raw-json">${escapeHtml(message)}</pre>
-        </div>
-      </details>`;
-    })
-    .join("");
+  const entryHtml = (e) => {
+    const key = entryKey(e);
+    const message = String(e.message ?? "");
+    return `<details class="log-entry" data-key="${escapeHtml(key)}"${openKeys.has(key) ? " open" : ""}>
+      <summary>
+        <span class="muted mono">${escapeHtml(fmtDateTime(e.time))}</span>
+        <span class="badge sm ${LEVEL_BADGE[e.level] || "single"}">${escapeHtml(e.level)}</span>
+        <span class="tag">${escapeHtml(serviceLabel(e.service))}</span>
+        <span class="log-line">${escapeHtml(message)}</span>
+        ${copyIconButton()}
+      </summary>
+    </details>`;
+  };
+  // the list is newest first, so entries of one day are neighbours
+  const days = [];
+  shown.forEach((e) => {
+    const day = new Date(e.time).toDateString();
+    if (!days.length || days[days.length - 1].day !== day) days.push({ day, time: e.time, items: [] });
+    days[days.length - 1].items.push(e);
+  });
+  const forced = !!query; // a search must not hide its matches inside folded days
+  listEl.innerHTML = days.map((d) => daySection(d.day, dayHeading(d.time), d.items.length, d.items.map(entryHtml).join(""), forced || openDays.has(d.day))).join("");
+  bindDaySections(listEl, openDays, () => !!query);
   listEl.querySelectorAll("details.log-entry").forEach((d) => {
     d.addEventListener("toggle", () => (d.open ? openKeys.add(d.dataset.key) : openKeys.delete(d.dataset.key)));
-    d.querySelector(".log-copy").addEventListener("click", (ev) => copyText(d.querySelector("pre").textContent, ev.currentTarget));
+    const entry = shown.find((e) => entryKey(e) === d.dataset.key);
+    bindCopyIcon(d.querySelector(".copy-icon"), () => String(entry.message ?? ""));
   });
 }

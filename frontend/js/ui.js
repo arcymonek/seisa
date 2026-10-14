@@ -1,7 +1,7 @@
 // HTML building blocks of the result views shared by the tabs (one copy instead of one per tab). Plain-text arguments
 // are escaped here; arguments named ...Html are markup the caller has already escaped.
-import { t } from "./i18n.js";
-import { escapeHtml as e } from "./util.js";
+import { t, getLocale } from "./i18n.js";
+import { escapeHtml as e, copyText } from "./util.js";
 import { glossAbbr } from "./glossary.js";
 
 const classes = (...names) => names.filter(Boolean).join(" ");
@@ -59,3 +59,66 @@ export const compareTable = (headA, headB, rowsHtml) =>
 // The banner above a comparison: green or amber when the risk level changed (green when it is low now), blue when not.
 export const levelChangeBanner = (olderLevel, newerLevel, changedText, sameText) =>
   olderLevel !== newerLevel ? textBanner(newerLevel === "low" ? "good" : "warn", changedText) : textBanner("info", sameText);
+
+// ---- collapsible day sections (History and Logs tabs) ----
+
+const DAY_MS = 86400000;
+
+// "Today" / "Yesterday" / "Monday, 12 October 2026" for an ISO time, in the interface language.
+export function dayHeading(iso) {
+  const day = new Date(iso);
+  const today = new Date();
+  const sameDay = (a, b) => a.toDateString() === b.toDateString();
+  if (sameDay(day, today)) return t("common.day_today");
+  if (sameDay(day, new Date(today.getTime() - DAY_MS))) return t("common.day_yesterday");
+  return day.toLocaleDateString(getLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+// One collapsed-by-default <details> section: the day heading, how many entries it holds, then `bodyHtml`.
+// `key` identifies the section across re-renders (see bindDaySections).
+export const daySection = (key, title, count, bodyHtml, open = false) =>
+  `<details class="day-group" data-key="${e(key)}"${open ? " open" : ""}>
+    <summary><span class="hi-day">${e(title)}</span><span class="muted day-count">${count}</span></summary>
+    ${bodyHtml}
+  </details>`;
+
+// Remembers which sections the user opened in `openSet` so a refresh or a filter change does not fold them again.
+// While `isForced()` is true (a search is active and every match must be visible) the sections are open and the
+// remembered set is left alone.
+export function bindDaySections(listEl, openSet, isForced = () => false) {
+  listEl.querySelectorAll("details.day-group").forEach((d) =>
+    d.addEventListener("toggle", () => {
+      if (isForced()) return;
+      if (d.open) openSet.add(d.dataset.key);
+      else openSet.delete(d.dataset.key);
+    })
+  );
+}
+
+// ---- copy icon ----
+
+const ICON_COPY = '<svg class="ic ic-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
+const ICON_OK = '<svg class="ic ic-ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L19 7"/></svg>';
+const ICON_FAIL = '<svg class="ic ic-fail" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+// A small icon-only "copy" button. Wire it with bindCopyIcon.
+export const copyIconButton = () =>
+  `<button class="copy-icon" type="button" title="${e(t("common.copy"))}" aria-label="${e(t("common.copy"))}">${ICON_COPY}${ICON_OK}${ICON_FAIL}</button>`;
+
+// Clicking copies getText() and shows a tick (or a cross when the browser refuses) for a moment. The click never
+// reaches the surrounding <summary>, so it does not fold or unfold the entry.
+export function bindCopyIcon(btn, getText) {
+  btn.addEventListener("click", async (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const ok = await copyText(getText());
+    clearTimeout(Number(btn.dataset.timer));
+    btn.classList.toggle("done", ok);
+    btn.classList.toggle("failed", !ok);
+    btn.title = t(ok ? "common.copied" : "common.copy_failed");
+    btn.dataset.timer = String(setTimeout(() => {
+      btn.classList.remove("done", "failed");
+      btn.title = t("common.copy");
+    }, 1500));
+  });
+}

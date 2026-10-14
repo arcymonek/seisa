@@ -4,9 +4,9 @@
 import { api } from "./api.js";
 import { renderLookupResult } from "./lookup-result.js";
 import { compareLookups } from "./history-compare.js";
-import { t, fmtDateTime, getLang, getLocale } from "./i18n.js";
+import { t, fmtDateTime, getLang } from "./i18n.js";
 import { armedConfirm, downloadText, escapeHtml, fmtRelative, makeButton } from "./util.js";
-import { errorBanner, kpiTile, textBanner } from "./ui.js";
+import { bindDaySections, dayHeading, daySection, errorBanner, kpiTile, textBanner } from "./ui.js";
 
 let root;
 let entries = [];
@@ -15,6 +15,7 @@ let riskFilter = "all";
 let range = "all";
 let query = "";
 const compareIds = []; // at most two IP checks ticked for comparison, oldest tick first
+const openGroups = new Set(); // sections (pinned, days) the user unfolded; they start folded
 
 const TYPE_LABEL = { lookup: "IP", urlscan: "URLScan", dmarc: "DMARC", email: "Email", report: "AbuseIPDB" };
 const PINNABLE = new Set(["lookup", "urlscan", "dmarc"]); // stored in history.json; the others live in their own stores
@@ -163,15 +164,6 @@ function filtered() {
   );
 }
 
-function dayHeading(iso) {
-  const day = new Date(iso);
-  const today = new Date();
-  const sameDay = (a, b) => a.toDateString() === b.toDateString();
-  if (sameDay(day, today)) return t("history.day_today");
-  if (sameDay(day, new Date(today.getTime() - DAY_MS))) return t("history.day_yesterday");
-  return day.toLocaleDateString(getLocale(), { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-}
-
 function cardHtml(e, previous) {
   const risk = riskOf(e);
   const lang = e.lang && e.lang !== getLang() ? ` <span class="badge lang sm">${escapeHtml(e.lang.toUpperCase())}</span>` : "";
@@ -210,17 +202,18 @@ function renderList() {
     return;
   }
   const previous = previousRisks();
-  let lastGroup = "";
   // pinned entries first in their own group, the rest grouped by day (the list is newest first)
-  const ordered = [...shown.filter((e) => e.pinned), ...shown.filter((e) => !e.pinned)];
-  listEl.innerHTML = ordered
-    .map((e) => {
-      const group = e.pinned ? "pinned" : new Date(e.created_at).toDateString();
-      const heading = group === lastGroup ? "" : `<h3 class="hi-day">${escapeHtml(e.pinned ? t("history.group_pinned") : dayHeading(e.created_at))}</h3>`;
-      lastGroup = group;
-      return heading + cardHtml(e, previous);
-    })
-    .join("");
+  const groups = [];
+  [...shown.filter((e) => e.pinned), ...shown.filter((e) => !e.pinned)].forEach((e) => {
+    const key = e.pinned ? "pinned" : new Date(e.created_at).toDateString();
+    if (!groups.length || groups[groups.length - 1].key !== key) {
+      groups.push({ key, title: e.pinned ? t("history.group_pinned") : dayHeading(e.created_at), items: [] });
+    }
+    groups[groups.length - 1].items.push(e);
+  });
+  const forced = !!query; // a search must not hide its matches inside folded sections
+  listEl.innerHTML = groups.map((g) => daySection(g.key, g.title, g.items.length, g.items.map((e) => cardHtml(e, previous)).join(""), forced || openGroups.has(g.key))).join("");
+  bindDaySections(listEl, openGroups, () => !!query);
   listEl.querySelectorAll(".hi-card").forEach(bindCard);
 }
 
