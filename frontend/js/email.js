@@ -99,7 +99,7 @@ export function initEmail(container) {
       </div>
     </div>
 
-    <details class="hop-chain" id="em-saved" style="margin-top:28px">
+    <details class="fact-block" id="em-saved" style="margin-top:28px">
       <summary id="em-saved-summary">${e(t("em.saved_title"))}</summary>
       <div class="em-cmp-bar muted" id="em-cmp-bar"><button type="button" class="secondary" id="em-cmp-btn" disabled>${e(t("em.cmp.button"))}</button> <span id="em-cmp-hint">${e(t("em.cmp.hint"))}</span></div>
       <div id="em-compare"></div>

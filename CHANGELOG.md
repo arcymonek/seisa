@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.10 - 2026-10-14
+- **Email tab:** "Saved analyses (N)" is now a collapsible card like the ones in Overview and Facts (folded at the start).
+
 ## 2.4.9 - 2026-10-14
 - **Info tab:** the Polish tab is called "Info" (as the English one already was; links in the README and `docs/pl` follow). The author card shows `contact@seisa.eu` and `seisa.eu`. "About colours" starts with the three themes and ends with the note about the traditional colours. The API-limits hint reads "Assumed limits of the free plans". The licence card is shortened, and LICENSE, CONTRIBUTING.md and the Seisa GitHub repository are links.
 - **URLScan:** the History button with an empty URL field now shows a yellow reminder next to it (it used to do nothing); the Scan button stays silent on purpose.
