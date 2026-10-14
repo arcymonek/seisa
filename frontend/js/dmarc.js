@@ -7,21 +7,15 @@
 import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { readReports } from "./archive.js";
-import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
+import { t, tn, fmtSeconds } from "./i18n.js";
 import { copyText, downloadMarkdown, escapeHtml as e } from "./util.js";
-import { glossAbbr } from "./glossary.js";
-import { kpiTile, legendHtml, textBanner } from "./ui.js";
+import { kpiTile, kvHtml, legendHtml, textBanner } from "./ui.js";
+import { aggregate, dailyStats, fmtDate, fmtDateTime, fmtPct, isPass, parseReport, providerStats, riskLevel, sumBy } from "./dmarc-data.js";
+import { buildMarkdown, reportFields } from "./dmarc-export.js";
 
 const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
 const SOURCE_LIMIT = 50; // rows shown before the "show all" button
 const RISK_RANK = { high: 0, medium: 1, low: 2 };
-const META_KNOWN = ["org_name", "email", "extra_contact_info", "report_id", "date_range", "error"];
-const POLICY_KNOWN = ["domain", "adkim", "aspf", "p", "sp", "pct", "fo"];
-const REPORT_KNOWN = ["version", "report_metadata", "policy_published", "record"];
-const ID_KNOWN = ["header_from", "envelope_from", "envelope_to"];
-const EVAL_KNOWN = ["disposition", "dkim", "spf", "reason"];
-const ROW_KNOWN = ["source_ip", "count", "policy_evaluated"];
-const RECORD_KNOWN = ["row", "identifiers", "auth_results"];
 
 let root;
 let allRecords = []; // one entry per <record>; the report it came from is reportMeta[record.reportIdx]
@@ -80,7 +74,7 @@ export function initDmarc(container) {
     watch: [root.querySelector("#dm-files"), root.querySelector("#dm-results")],
   });
   root.querySelector("#dm-save").addEventListener("click", saveMarkdown);
-  root.querySelector("#dm-copy").addEventListener("click", (ev) => copyText(buildMarkdown(), ev.currentTarget));
+  root.querySelector("#dm-copy").addEventListener("click", (ev) => copyText(buildMarkdown({ reportMeta, records: allRecords, sources }), ev.currentTarget));
 }
 
 function resetState() {
@@ -149,7 +143,7 @@ async function handleFiles(files) {
     }
     for (const rep of reports) {
       try {
-        parseXML(rep.text, rep.name);
+        addReport(rep.text, rep.name);
         items.push({ kind: "ok", text: "✓ " + rep.name });
       } catch (err) {
         if (err.duplicateOf) items.push({ kind: "skip", text: "= " + t("dmarc.duplicate_skipped", { file: rep.name, first: err.duplicateOf }) });
@@ -166,6 +160,16 @@ async function handleFiles(files) {
 }
 
 // Re-opens a report set saved in the history (see saveSummaryToHistory).
+// Adds one report to the import; a report already loaded (same provider and report id) is skipped.
+function addReport(xml, filename) {
+  const { meta, records } = parseReport(xml, filename, reportMeta.length);
+  const dupKey = meta.reportId ? `${meta.org}|${meta.reportId}` : null;
+  if (dupKey && seenReports.has(dupKey)) throw Object.assign(new Error("duplicate"), { duplicateOf: seenReports.get(dupKey) });
+  if (dupKey) seenReports.set(dupKey, filename);
+  reportMeta.push(meta);
+  for (const r of records) allRecords.push(r);
+}
+
 export function loadDmarcData(data) {
   importId++;
   resetState();
@@ -175,164 +179,6 @@ export function loadDmarcData(data) {
   showFiles(reportMeta.map((m) => ({ kind: "ok", text: "✓ " + m.filename })));
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.restored");
-}
-
-function txt(el, sel) {
-  const node = el.querySelector(sel);
-  return node ? node.textContent.trim() : null;
-}
-
-function epoch(value) {
-  const n = parseInt(value, 10);
-  return Number.isFinite(n) ? new Date(n * 1000) : null;
-}
-
-const lower = (v, fallback) => (v || fallback).toLowerCase();
-
-// Leaf child elements not in `known`, as {name, value}: fields the schema (or a newer draft of it) has and we do not label.
-function extraFields(el, known) {
-  if (!el) return [];
-  return Array.from(el.children)
-    .filter((c) => !known.includes(c.localName) && !c.children.length && c.textContent.trim())
-    .map((c) => ({ name: c.localName, value: c.textContent.trim() }));
-}
-
-function parseXML(xmlString, filename) {
-  const doc = new DOMParser().parseFromString(xmlString, "text/xml");
-  if (doc.querySelector("parsererror")) throw new Error(t("dmarc.invalid_xml"));
-
-  const org = txt(doc, "report_metadata > org_name") || t("dmarc.unknown");
-  const reportId = txt(doc, "report_metadata > report_id");
-  const dupKey = reportId ? `${org}|${reportId}` : null;
-  if (dupKey && seenReports.has(dupKey)) throw Object.assign(new Error("duplicate"), { duplicateOf: seenReports.get(dupKey) });
-  if (dupKey) seenReports.set(dupKey, filename);
-
-  const domain = txt(doc, "policy_published > domain") || "?";
-  const begin = epoch(txt(doc, "report_metadata > date_range > begin"));
-  const end = epoch(txt(doc, "report_metadata > date_range > end"));
-  const reportIdx = reportMeta.length;
-
-  reportMeta.push({
-    idx: reportIdx,
-    filename,
-    org,
-    email: txt(doc, "report_metadata > email"),
-    extraContact: txt(doc, "report_metadata > extra_contact_info"),
-    reportId,
-    version: txt(doc, "feedback > version"),
-    errors: Array.from(doc.querySelectorAll("report_metadata > error")).map((x) => x.textContent.trim()).filter(Boolean),
-    domain,
-    policy: txt(doc, "policy_published > p") || "?",
-    subdomainPolicy: txt(doc, "policy_published > sp"),
-    pct: txt(doc, "policy_published > pct"),
-    adkim: txt(doc, "policy_published > adkim"),
-    aspf: txt(doc, "policy_published > aspf"),
-    fo: txt(doc, "policy_published > fo"),
-    policyExtras: extraFields(doc.querySelector("policy_published"), POLICY_KNOWN),
-    extras: [
-      ...extraFields(doc.querySelector("report_metadata"), META_KNOWN),
-      ...extraFields(doc.documentElement, REPORT_KNOWN),
-    ],
-    begin,
-    end,
-  });
-
-  doc.querySelectorAll("record").forEach((rec) => {
-    const count = parseInt(txt(rec, "row > count") || "1", 10);
-    allRecords.push({
-      reportIdx,
-      sourceIp: txt(rec, "row > source_ip") || "?",
-      count: Number.isFinite(count) ? count : 1,
-      disposition: lower(txt(rec, "row > policy_evaluated > disposition"), "unknown"),
-      dkimEval: lower(txt(rec, "row > policy_evaluated > dkim"), "fail"),
-      spfEval: lower(txt(rec, "row > policy_evaluated > spf"), "fail"),
-      headerFrom: txt(rec, "identifiers > header_from") || domain,
-      envelopeFrom: txt(rec, "identifiers > envelope_from"),
-      envelopeTo: txt(rec, "identifiers > envelope_to"),
-      reasons: Array.from(rec.querySelectorAll("row > policy_evaluated > reason")).map((r) => ({
-        type: txt(r, "type"),
-        comment: txt(r, "comment"),
-      })),
-      spfResults: Array.from(rec.querySelectorAll("auth_results > spf")).map((s) => ({
-        domain: txt(s, "domain"),
-        scope: txt(s, "scope"),
-        result: txt(s, "result"),
-        humanResult: txt(s, "human_result"),
-      })),
-      dkimResults: Array.from(rec.querySelectorAll("auth_results > dkim")).map((d) => ({
-        domain: txt(d, "domain"),
-        selector: txt(d, "selector"),
-        result: txt(d, "result"),
-        humanResult: txt(d, "human_result"),
-      })),
-      extras: [
-        ...extraFields(rec.querySelector("identifiers"), ID_KNOWN),
-        ...extraFields(rec.querySelector("row > policy_evaluated"), EVAL_KNOWN),
-        ...extraFields(rec.querySelector("row"), ROW_KNOWN),
-        ...extraFields(rec, RECORD_KNOWN),
-      ],
-    });
-  });
-}
-
-function aggregate() {
-  const byIp = {};
-  allRecords.forEach((r) => {
-    const m = reportMeta[r.reportIdx];
-    if (!byIp[r.sourceIp]) {
-      byIp[r.sourceIp] = {
-        sourceIp: r.sourceIp,
-        count: 0,
-        spfPass: 0,
-        spfFail: 0,
-        dkimPass: 0,
-        dkimFail: 0,
-        none: 0,
-        quarantine: 0,
-        reject: 0,
-        earliestSeen: null,
-        latestSeen: null,
-        records: [],
-      };
-    }
-    const b = byIp[r.sourceIp];
-    b.count += r.count;
-    if (r.spfEval === "pass") b.spfPass += r.count;
-    else b.spfFail += r.count;
-    if (r.dkimEval === "pass") b.dkimPass += r.count;
-    else b.dkimFail += r.count;
-    if (r.disposition === "none") b.none += r.count;
-    else if (r.disposition === "quarantine") b.quarantine += r.count;
-    else if (r.disposition === "reject") b.reject += r.count;
-    if (m.begin && (!b.earliestSeen || m.begin < b.earliestSeen)) b.earliestSeen = m.begin;
-    if (m.end && (!b.latestSeen || m.end > b.latestSeen)) b.latestSeen = m.end;
-    b.records.push(r);
-  });
-  return Object.values(byIp);
-}
-
-function riskLevel(row) {
-  if (row.spfFail > 0 && row.dkimFail > 0) return "high";
-  if (row.spfFail > 0 || row.dkimFail > 0) return "medium";
-  return "low";
-}
-
-const isPass = (r) => r.spfEval === "pass" || r.dkimEval === "pass"; // DMARC passes when SPF or DKIM is aligned
-
-function fmtDate(d) {
-  return d ? i18nDate(d) : "-";
-}
-
-function fmtDateTime(d) {
-  return d ? i18nDateTime(d) : "-";
-}
-
-function fmtPct(part, total) {
-  return total ? `${(Math.floor((part / total) * 1000) / 10).toLocaleString(getLocale(), { maximumFractionDigits: 1 })}%` : "-";
-}
-
-function sumBy(rows, key) {
-  return rows.reduce((s, r) => s + r[key], 0);
 }
 
 async function lookupGeo(ip, btn) {
@@ -440,29 +286,6 @@ function kpiHtml() {
   </div>`;
 }
 
-// One row per report provider (org_name): how much mail each of them saw and how much of it passed DMARC.
-function providerStats() {
-  const by = new Map();
-  reportMeta.forEach((m) => {
-    if (!by.has(m.org)) by.set(m.org, { org: m.org, reports: 0, messages: 0, failed: 0, days: new Map() });
-    by.get(m.org).reports++;
-  });
-  allRecords.forEach((r) => {
-    const meta = reportMeta[r.reportIdx];
-    const g = by.get(meta.org);
-    g.messages += r.count;
-    if (!isPass(r)) g.failed += r.count;
-    const day = dayKey(meta.begin);
-    if (day) {
-      if (!g.days.has(day)) g.days.set(day, { messages: 0, failed: 0 });
-      const d = g.days.get(day);
-      d.messages += r.count;
-      if (!isPass(r)) d.failed += r.count;
-    }
-  });
-  return Array.from(by.values()).sort((a, b) => b.messages - a.messages);
-}
-
 // Mini bar chart of one provider over the shared list of days (empty slot = no report that day).
 function sparklineHtml(g, dayList) {
   const max = Math.max(...Array.from(g.days.values(), (d) => d.messages)) || 1;
@@ -480,12 +303,12 @@ function sparklineHtml(g, dayList) {
 
 // One section: the total per-day chart, then a table with one row per provider and a mini chart of its own days.
 function providersHtml() {
-  const days = dailyStats();
+  const days = dailyStats(allRecords, reportMeta);
   const showTable = reportMeta.length >= 2;
   if (!showTable && days.length < 2) return "";
   const dayList = days.map((d) => d.day);
   const rows = showTable
-    ? providerStats()
+    ? providerStats(allRecords, reportMeta)
         .map((g) => `<tr><td>${e(g.org)}</td><td>${g.reports}</td><td>${g.messages}</td><td>${e(fmtPct(g.messages - g.failed, g.messages))}</td><td class="${g.failed ? "bad" : ""}">${g.failed}</td><td>${dayList.length > 1 ? sparklineHtml(g, dayList) : ""}</td></tr>`)
         .join("")
     : "";
@@ -496,24 +319,6 @@ function providersHtml() {
 }
 
 // ---- rendering: mail volume per day ----
-
-// Reports are per day (usually 24 h), so the day of the report start is the bucket of all its records.
-function dayKey(begin) {
-  return begin && !Number.isNaN(begin.getTime()) ? begin.toISOString().slice(0, 10) : "";
-}
-
-function dailyStats() {
-  const by = new Map();
-  allRecords.forEach((r) => {
-    const day = dayKey(reportMeta[r.reportIdx].begin);
-    if (!day) return;
-    if (!by.has(day)) by.set(day, { day, messages: 0, failed: 0 });
-    const d = by.get(day);
-    d.messages += r.count;
-    if (!isPass(r)) d.failed += r.count;
-  });
-  return Array.from(by.values()).sort((a, b) => a.day.localeCompare(b.day));
-}
 
 function timelineHtml(days) {
   if (days.length < 2) return "";
@@ -592,68 +397,10 @@ function reportsHtml() {
   return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${reportMeta.map((m) => reportHtml(m, false)).join("")}</details>`;
 }
 
-
-function alignWord(v) {
-  if (v === "r") return t("dmarc.relaxed");
-  if (v === "s") return t("dmarc.strict");
-  return v;
-}
-
-function policyTokens(m) {
-  const tokens = [
-    { name: "p", value: m.policy },
-    { name: "sp", value: m.subdomainPolicy || m.policy, def: !m.subdomainPolicy },
-    { name: "pct", value: m.pct || "100", def: !m.pct },
-  ];
-  if (m.fo) tokens.push({ name: "fo", value: m.fo });
-  m.policyExtras.forEach((x) => tokens.push({ name: x.name, value: x.value }));
-  return tokens;
-}
-
-function tokenHtml(x) {
-  return `<span class="mono">${e(x.name)}=${e(x.value)}</span>${x.def ? ` <span class="muted">(${e(t("dmarc.default"))})</span>` : ""}`;
-}
-
-const tokenText = (x) => `${x.name}=${x.value}${x.def ? ` (${t("dmarc.default")})` : ""}`;
-
-// Every field of one report as {label, html, text}; the page uses html, the Markdown export text.
-function reportFields(m) {
-  const recs = allRecords.filter((r) => r.reportIdx === m.idx);
-  const fields = [];
-  const add = (label, html, text, glKey) => fields.push({ label, html, text, glKey });
-  const plain = (label, value) => add(label, e(value), value);
-
-  add(t("dmarc.f_file"), `<span class="mono">${e(m.filename)}</span>`, m.filename);
-  plain(t("dmarc.f_provider"), m.org);
-  if (m.email) plain(t("dmarc.f_contact"), m.email);
-  if (m.extraContact) plain(t("dmarc.f_extra_contact"), m.extraContact);
-  if (m.reportId) add(t("dmarc.f_report_id"), `<span class="mono">${e(m.reportId)}</span>`, m.reportId);
-  if (m.version) plain(t("dmarc.f_version"), m.version);
-  plain(t("dmarc.f_period"), `${fmtDateTime(m.begin)} - ${fmtDateTime(m.end)}`);
-  plain(t("dmarc.f_domain"), m.domain);
-  const policy = policyTokens(m);
-  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "), "dmarc.gl.policy");
-  const align = [
-    { name: "adkim", label: "DKIM", value: m.adkim },
-    { name: "aspf", label: "SPF", value: m.aspf },
-  ];
-  const alignPart = (x) => `${x.label} (${x.name}): ${alignWord(x.value || "r")}`;
-  add(
-    t("dmarc.f_alignment"),
-    align.map((x) => `${e(alignPart(x))}${x.value ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`}`).join(" · "),
-    align.map((x) => alignPart(x) + (x.value ? "" : ` (${t("dmarc.default")})`)).join(", "),
-    "dmarc.gl.alignment",
-  );
-  plain(t("dmarc.f_contents"), `${tn("dmarc.records", recs.length)}, ${tn("dmarc.messages", sumBy(recs, "count"))}`);
-  if (m.errors.length) add(t("dmarc.f_errors"), m.errors.map((x) => `<div class="bad">${e(x)}</div>`).join(""), m.errors.join("; "));
-  if (m.extras.length) add(t("dmarc.f_extra"), m.extras.map((x) => `<div>${tokenHtml(x)}</div>`).join(""), m.extras.map(tokenText).join(", "));
-  return fields;
-}
-
 function reportHtml(m, open) {
-  const kv = reportFields(m).map((f) => `<dt>${f.glKey ? glossAbbr(f.label, f.glKey) : e(f.label)}</dt><dd>${f.html}</dd>`);
+  const kv = kvHtml(reportFields(m, allRecords).map((f) => [f.label, f.html, f.glKey]));
   const flag = m.errors.length ? ` · <span class="bad">⚠ ${e(t("dmarc.f_errors"))}</span>` : "";
-  return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary><dl class="kv">${kv.join("")}</dl></details>`;
+  return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary>${kv}</details>`;
 }
 
 function legendCard() {
@@ -855,7 +602,7 @@ function render() {
     resultsEl.innerHTML = `<div class="muted">${e(t("dmarc.no_records"))}</div>`;
     return;
   }
-  sources = aggregate().sort((a, b) => RISK_RANK[riskLevel(a)] - RISK_RANK[riskLevel(b)] || b.count - a.count);
+  sources = aggregate(allRecords, reportMeta).sort((a, b) => RISK_RANK[riskLevel(a)] - RISK_RANK[riskLevel(b)] || b.count - a.count);
 
   resultsEl.innerHTML =
     bannersHtml() +
@@ -880,76 +627,9 @@ function render() {
 
 // ---- Markdown export ----
 
-// Every value that came from the XML goes into a code span, so nothing in it can act as Markdown or HTML.
-const mdCode = (v) => "`" + String(v ?? "-").replace(/`/g, "'").replace(/\s+/g, " ").trim() + "`";
-const mdCell = (v) => mdCode(v).replace(/\|/g, "\\|");
-
-function authText(list, extraKey, kind) {
-  if (!list.length) return t("dmarc.no_auth_data", { section: kind });
-  return list.map((a) => `${mdCode(a.domain || "-")} ${extraKey}=${mdCode(a[extraKey] || "-")} ${mdCode(a.result || "-")}${a.humanResult ? ` (${mdCode(a.humanResult)})` : ""}`).join("; ");
-}
-
-function buildMarkdown() {
-  const domains = [...new Set(reportMeta.map((m) => m.domain))].join(", ");
-  const totalMsgs = sumBy(allRecords, "count");
-  const out = [`# ${t("dmarc.md_title")}: ${mdCode(domains)}`, ""];
-  out.push(`- ${t("dmarc.kpi_messages")}: ${totalMsgs}`);
-  out.push(`- ${t("dmarc.kpi_ips")}: ${sources.length}`);
-  out.push(`- ${t("dmarc.kpi_suspicious")}: ${sources.filter((s) => riskLevel(s) !== "low").length}`);
-  out.push(`- ${t("dmarc.kpi_pass")}: ${fmtPct(sumBy(allRecords.filter(isPass), "count"), totalMsgs)}`, "");
-
-  if (reportMeta.length > 1) {
-    out.push(`## ${t("dmarc.h_providers")}`, "");
-    out.push(`| ${t("dmarc.f_provider")} | ${t("dmarc.col_reports")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|---|");
-    providerStats().forEach((g) => out.push(`| ${mdCell(g.org)} | ${g.reports} | ${g.messages} | ${fmtPct(g.messages - g.failed, g.messages)} | ${g.failed} |`));
-    out.push("");
-  }
-
-  const days = dailyStats();
-  if (days.length > 1) {
-    out.push(`## ${t("dmarc.h_timeline")}`, "");
-    out.push(`| ${t("dmarc.col_day")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|");
-    days.forEach((d) => out.push(`| ${d.day} | ${d.messages} | ${fmtPct(d.messages - d.failed, d.messages)} | ${d.failed} |`));
-    out.push("");
-  }
-
-  out.push(`## ${t("dmarc.h_reports")}`, "");
-  reportMeta.forEach((m) => {
-    out.push(`### ${mdCode(m.org)} - ${mdCode(m.domain)} - ${fmtDate(m.begin)} - ${fmtDate(m.end)}`, "");
-    reportFields(m).forEach((f) => out.push(`- ${f.label}: ${mdCode(f.text)}`));
-    out.push("");
-  });
-
-  out.push(`## ${t("dmarc.h_sources")}`, "");
-  out.push(`| IP | ${t("dmarc.col_messages")} | SPF | DKIM | ${t("dmarc.col_decision")} | ${t("dmarc.col_risk")} |`, "|---|---|---|---|---|---|");
-  sources.forEach((s) => {
-    const decision = [s.reject && `reject ${s.reject}`, s.quarantine && `quarantine ${s.quarantine}`, s.none && `none ${s.none}`].filter(Boolean).join(", ") || "-";
-    out.push(`| ${mdCell(s.sourceIp)} | ${s.count} | pass ${s.spfPass} / fail ${s.spfFail} | pass ${s.dkimPass} / fail ${s.dkimFail} | ${decision} | ${t("risk." + riskLevel(s))} |`);
-  });
-  out.push("");
-
-  sources.forEach((s) => {
-    out.push(`### ${mdCode(s.sourceIp)} - ${t("risk." + riskLevel(s))}`, "");
-    s.records.forEach((r) => {
-      const m = reportMeta[r.reportIdx];
-      const ids = [`Header From ${mdCode(r.headerFrom)}`];
-      if (r.envelopeFrom) ids.push(`Envelope From ${mdCode(r.envelopeFrom)}`);
-      if (r.envelopeTo) ids.push(`Envelope To ${mdCode(r.envelopeTo)}`);
-      out.push(`- ${ids.join(", ")} - ${tn("dmarc.messages", r.count)} (${mdCode(t("dmarc.record_meta", { file: m.filename, from: fmtDateTime(m.begin), to: fmtDateTime(m.end) }))})`);
-      out.push(`  - SPF: policy_evaluated ${mdCode(r.spfEval)}; auth_results: ${authText(r.spfResults, "scope", "spf")}`);
-      out.push(`  - DKIM: policy_evaluated ${mdCode(r.dkimEval)}; auth_results: ${authText(r.dkimResults, "selector", "dkim")}`);
-      const reasons = r.reasons.map((rs) => `${t("dmarc.override_reason")} ${mdCode(`${rs.type || "?"}${rs.comment ? " - " + rs.comment : ""}`)}`);
-      out.push(`  - ${t("dmarc.policy_decision")}: ${mdCode(r.disposition)}${reasons.length ? `; ${reasons.join("; ")}` : ""}`);
-      r.extras.forEach((x) => out.push(`  - ${x.name}: ${mdCode(x.value)}`));
-    });
-    out.push("");
-  });
-  return out.join("\n");
-}
-
 function saveMarkdown() {
   const domains = [...new Set(reportMeta.map((m) => m.domain))].join("_").replace(/[^a-zA-Z0-9.-]+/g, "_").slice(0, 60) || "report";
-  return downloadMarkdown(`dmarc-${domains}-${new Date().toISOString().slice(0, 10)}.md`, buildMarkdown(), { native: true });
+  return downloadMarkdown(`dmarc-${domains}-${new Date().toISOString().slice(0, 10)}.md`, buildMarkdown({ reportMeta, records: allRecords, sources }), { native: true });
 }
 
 // ---- history ----
@@ -962,7 +642,7 @@ async function saveSummaryToHistory() {
     await api.historyCreate({
       type: "dmarc",
       label: `${domains} - ${tn("dmarc.reports", reportMeta.length)}, ${tn("dmarc.messages", totalMsgs)}`,
-      risk_summary: aggregate().some((r) => riskLevel(r) === "high") ? "High" : null,
+      risk_summary: aggregate(allRecords, reportMeta).some((r) => riskLevel(r) === "high") ? "High" : null,
       data: { reportMeta, records: allRecords },
     });
   } catch {
