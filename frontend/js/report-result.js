@@ -92,14 +92,13 @@ export function ipCardHtml(facts, candidates, llm, llmChars) {
   html += "</div>";
   const atts = facts.attachments || [];
   if (atts.length) {
-    const doubles = atts.some((a) => a.apparent_extension);
     const rows = atts
       .map((a) => {
         const flag = a.apparent_extension ? ` <strong>(${e(t("rb.double_extension", { apparent: a.apparent_extension, declared: a.declared_extension }))})</strong>` : "";
         return `<div class="hop-row">${e(a.filename)} - ${a.size_bytes} B, ${e(a.content_type || "?")}${flag}</div>`;
       })
       .join("");
-    html += `<details class="fact-block"${doubles ? " open" : ""}><summary>${e(t("rb.attachments_summary", { n: atts.length }))}</summary>${rows}</details>`;
+    html += `<details class="fact-block"><summary>${e(t("rb.attachments_summary", { n: atts.length }))}</summary>${rows}</details>`;
   }
   return html;
 }
@@ -151,7 +150,7 @@ export function checksCardHtml(model, wasOpen) {
         : { cls: "good", text: t("rb.checks_ok") };
   const group = (title, rows) => (rows.length ? `<h4>${e(title)}</h4>${rows.map((r) => item(...r)).join("")}` : "");
   const blocked = model.llmBlocked ? textBanner("warn", t("rb.llm_blocked")) : "";
-  return `<details class="fact-block" id="rb-checks"${wasOpen || model.failing ? " open" : ""}>
+  return `<details class="fact-block" id="rb-checks"${wasOpen ? " open" : ""}>
     <summary>${e(t("rb.checks_title"))} <span class="em-state ${state.cls}">${e(state.text)}</span></summary>
     ${group(t("rb.group_required"), model.required)}
     ${group(t("rb.group_blocking"), model.blocking)}${blocked}

@@ -121,7 +121,6 @@ function showFiles(items) {
   });
   root.querySelector("#dm-files-summary").textContent = t("dmarc.files_summary", { ok: n.ok, skipped: n.skip, failed: n.fail });
   const box = root.querySelector("#dm-files");
-  box.open = n.skip + n.fail > 0;
   box.hidden = false;
 }
 
@@ -394,13 +393,13 @@ async function showComparison(id) {
 
 function reportsHtml() {
   // A folded card, so the sources stay in view; the reports inside are folded too.
-  return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${reportMeta.map((m) => reportHtml(m, false)).join("")}</details>`;
+  return `<details class="fact-block"><summary>${e(t("dmarc.h_reports"))} (${reportMeta.length})</summary>${reportMeta.map((m) => reportHtml(m)).join("")}</details>`;
 }
 
-function reportHtml(m, open) {
+function reportHtml(m) {
   const kv = kvHtml(reportFields(m, allRecords).map((f) => [f.label, f.html, f.glKey]));
   const flag = m.errors.length ? ` · <span class="bad">⚠ ${e(t("dmarc.f_errors"))}</span>` : "";
-  return `<details class="fact-block"${open ? " open" : ""}><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary>${kv}</details>`;
+  return `<details class="fact-block"><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary>${kv}</details>`;
 }
 
 function legendCard() {

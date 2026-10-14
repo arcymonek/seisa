@@ -300,8 +300,7 @@ function componentsHtml(rs) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("lookup.col_source"))}</th><th>${e(t("lookup.col_signal"))}</th><th>${e(t("lookup.col_value"))}</th><th>${e(t("lookup.col_risk"))}</th><th>${e(t("lookup.col_credibility"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : "";
   const excluded = excludedSources.length ? `<div class="excluded-sources">${e(t("lookup.excluded"))}: ${e(excludedSources.join("; "))}</div>` : "";
-  // A collapsible card like the others (open by default); it can be folded away once the arithmetic is understood.
-  return `<details class="fact-block" data-sec="components" open><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
+  return `<details class="fact-block" data-sec="components"><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
 }
 
 // ---- identity card ----
@@ -343,8 +342,7 @@ function identityHtml(identity, type) {
     : `<span class="ident-state ok">${e(t("lookup.identity_ok"))}</span>`;
   const notes = identity.notes.map((n) => `<div class="muted">${e(n)}</div>`).join("");
   const title = t(type === "domain" ? "lookup.h_identity_domain" : "lookup.h_identity");
-  // Collapsed while the sources agree; opened by itself when they do not (that is what needs a look).
-  return `<details class="fact-block identity" data-sec="identity"${off.length ? " open" : ""}><summary>${e(title)} ${state}</summary>${kvHtml(identity.fields.map(identityRow))}${notes}</details>`;
+  return `<details class="fact-block identity" data-sec="identity"><summary>${e(title)} ${state}</summary>${kvHtml(identity.fields.map(identityRow))}${notes}</details>`;
 }
 
 // ---- source cards ----
@@ -385,7 +383,6 @@ function identityRowsOf(id, identity) {
 function sourceCard(id, res, comp, identity) {
   const info = SERVICES[id] || { desc: null, url: null };
   const title = serviceTitle(id);
-  const signal = Boolean(comp) && comp.risk >= MEDIUM_FROM;
   const fact = keyFact(id, res, comp);
   const badge = comp ? ` <span class="badge sm ${riskLevel(comp.risk)}">${e(t("risk." + riskLevel(comp.risk)))}</span>` : "";
   const problem = res.status !== "ok" ? ` <span class="badge sm conflict">${e(t("lookup.status." + res.status))}</span>` : "";
@@ -403,7 +400,7 @@ function sourceCard(id, res, comp, identity) {
     body += all.length ? kvHtml(all) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`;
   }
   const open = info.url ? `<button type="button" class="secondary mini" data-url="${e(info.url)}">${e(t("md.open_service", { name: title }))}</button>` : "";
-  return `<details class="fact-block src" data-service="${e(id)}"${signal ? " open" : ""}>
+  return `<details class="fact-block src" data-service="${e(id)}">
     <summary>${e(title)}${badge}${problem}${fact && res.status === "ok" ? ` <span class="muted">${e(fact)}</span>` : ""}</summary>
     <div class="src-body">${info.desc ? `<div class="muted">${e(t(info.desc))}</div>` : ""}${body}${open}${rawHtml(res)}</div>
   </details>`;
@@ -417,7 +414,7 @@ function failedSourcesHtml(entries) {
     const msg = res.error_message || (res.summary && res.summary.message) || "";
     return [serviceTitle(id), `${e(t("lookup.status." + res.status))}${msg ? ` <span class="muted">- ${e(msg)}</span>` : ""}`];
   });
-  return `<details class="fact-block failed-sources"${problem ? " open" : ""}><summary>${e(tn("lookup.failed_sources", entries.length))} <span class="ident-state ${problem ? "warn" : ""}">${e(entries.map(([id]) => serviceTitle(id)).join(", "))}</span></summary>${kvHtml(rows)}</details>`;
+  return `<details class="fact-block failed-sources"><summary>${e(tn("lookup.failed_sources", entries.length))} <span class="ident-state ${problem ? "warn" : ""}">${e(entries.map(([id]) => serviceTitle(id)).join(", "))}</span></summary>${kvHtml(rows)}</details>`;
 }
 
 function sourcesHtml(result) {

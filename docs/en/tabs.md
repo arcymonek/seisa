@@ -4,7 +4,7 @@
 
 ## Tabs
 
-The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round settings button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards that open by themselves only when they carry a signal; most of them also offer a plain-language "Explanations" card and glossary tooltips on jargon terms (a dotted underline - hover or keyboard focus shows the definition).
+The tab row: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [History](#history), [Logs](#logs) and the round settings button ([Info](#info)). The IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs and Info tabs share one layout: a verdict banner (colour by level), summary tiles, then collapsible cards, all folded at the start (a card you open or fold keeps that state until Seisa is closed); most of them also offer a plain-language "Explanations" card and glossary tooltips on jargon terms (a dotted underline - hover or keyboard focus shows the definition).
 
 ### IP
 
@@ -26,10 +26,10 @@ What you get:
 - **One aggregate score** 0-100 and a verdict banner: LOW below 25, MEDIUM 25-59, HIGH from 60 (colour by level, with the values behind it).
 - **Summary tiles:** abuse confidence, detections, GreyNoise, OTX pulses, country, ASN, IP type, and the component-score table. For a domain: domain age, registrar, time to expiry, Cloudflare popularity, category, name servers and IP addresses.
 - **An address identity card** (for a domain: **domain identity**) that merges owner, ASN, country, network, reverse DNS, usage type and Tor from all sources (for a domain: registrar, dates, age, name servers checked against WHOIS and DNS, IP addresses, mail servers, SPF, DMARC, CAA, category, popularity) and shows how many sources agree. It is collapsed with a green "sources agree" note, and opens by itself when the sources disagree.
-- **One collapsible card per source** (the "Expand all" / "Collapse all" buttons next to the "Sources" heading open or fold them at once), open only for sources with a signal (source risk of 25 or more, i.e. Medium or High); lists (tags, CVEs, ports, pulses) are chips with "show more". The WHOIS / rDNS card repeats the identity rows that come from it, so nothing has to be looked up in two places.
+- **One collapsible card per source** (the "Expand all" / "Collapse all" buttons next to the "Sources" heading open or fold them at once), all folded at the start (a card you open stays open until you close Seisa); lists (tags, CVEs, ports, pulses) are chips with "show more". The WHOIS / rDNS card repeats the identity rows that come from it, so nothing has to be looked up in two places.
 - **Pasted input is cleaned up:** a URL (`https://Example.com:8080/a?b`), a defanged indicator (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` or an upper-case name is reduced to the bare host or IP address. Private, loopback and reserved addresses are refused with an explanation instead of being sent to the services.
 - **Comparison with the previous scan:** when the same indicator is in the History, a line under the report title shows the previous score, the difference, the sources whose risk moved by 10 or more and a bar per earlier scan (the History keeps 100 unpinned entries, so the trend is at most that long).
-- **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each; it opens by itself on an error. "Component scores" is a collapsible card, open by default. When GreyNoise answers with its search limit (HTTP 429) the card says so in plain words, with the reset date when GreyNoise names one; the score is then computed without it.
+- **Sources without a result** (error, no key, daily limit, not applicable) share one collapsed bar instead of a card each. "Component scores" and the identity card are collapsible cards, folded at the start like the rest. When GreyNoise answers with its search limit (HTTP 429) the card says so in plain words, with the reset date when GreyNoise names one; the score is then computed without it.
 - **"Clear"** next to "Check" (shown only once the field has text or there is a report; at start-up it is hidden, as in every tab) empties the field, drops the report and the timing line and switches all sources back on - the tab is as after start-up.
 - **A domain report** has a "Scan in URLScan" button that fills the URLScan tab with `https://<domain>/`.
 - **By provider:** one section: a bar chart of messages over time on top (messages per day, the failing share in red, when the reports span at least two days), then a table of providers with a "Daily trend" column (a small bar chart of that provider's days).
@@ -59,7 +59,7 @@ What you get:
 - **A verdict banner** coloured from the urlscan.io score and the engine and community verdicts; "no verdict" is shown neutrally and explicitly not as "safe".
 - **Summary tiles:** score, HTTP status, server country, ASN, requests, certificate age (with a "new" mark below 7 days), redirects.
 - **The page screenshot** and a **Page identity** card: submitted and final URL, the redirect chain, title, domain, domain with a **Check domain** button, main IP with a **Check IP** button, location, PTR, server, MIME type, scan time and visibility.
-- **Collapsible detail cards** (with "Expand all" / "Collapse all" next to the "Details" heading): the urlscan.io verdict (open only when it signals a risk), forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
+- **Collapsible detail cards** (with "Expand all" / "Collapse all" next to the "Details" heading): the urlscan.io verdict, forms, the TLS certificate, technologies, contacted IP addresses (each with **Check IP**), contacted domains and links.
 - **Earlier scans** of the same domain (the **History** button; with an empty URL field a yellow reminder to enter an address appears next to the button), so a recent report can be opened instead of ordering a new scan (a "?" tip explains what the list contains); "Scan again" repeats the scan.
 - **One action line:** Scan, Clear (back to the starting position; shown once the field has text or there is a result), then (after a report) Scan again, Save .md and Copy Markdown, then History (earlier scans of the domain), Compare (with the previous scan) and Open in urlscan.io; the state and the time are always at the end of the line. A running scan has a **Cancel** button (only the waiting stops - the scan itself goes on at urlscan.io).
 - **Compare with the previous scan:** finds the newest earlier scan of the domain (the very same URL first), fetches it and shows a side-by-side table - risk level, score, redirects, IP, ASN, server, certificate, forms, technologies - with unchanged rows dimmed, plus the domains that appeared or disappeared.
@@ -105,7 +105,7 @@ What you get:
 <details>
 <summary>Details: what each part shows</summary>
 
-**Reports.** A folded card right after the sources; only the IP sources section is open by default, every other section is folded (the providers table too). Each uploaded report inside is an expandable block with every field of its metadata and published policy: provider, contact and additional contact, report ID and version, period, domain, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, with defaults marked), report errors and any other element the report carries (for example `np`, `testing` or vendor tags).
+**Reports.** A folded card right after the sources; every section is folded at the start (the IP sources section and the providers table too). Each uploaded report inside is an expandable block with every field of its metadata and published policy: provider, contact and additional contact, report ID and version, period, domain, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, with defaults marked), report errors and any other element the report carries (for example `np`, `testing` or vendor tags).
 
 **Sources.** An override such as `forwarded` is noted next to the policy decision, so legitimate forwarding is not mistaken for an attack.
 
@@ -149,7 +149,7 @@ Like the IP, DMARC and URLScan tabs:
 
 - **A verdict banner** on top: the verdict, the confidence, the summary of the analysis, the citation check status and the actions (report, save/copy, finish a truncated analysis).
 - **A row of tiles:** warnings, SPF/DKIM/DMARC as written by the recipient's server, sender identity alignment, the IP at the trust boundary (with a button that puts it into the IP tab), links/attachments/hidden content, the recipient's filter, the delivery time.
-- **Three panes with a table of contents on the left:** **Overview** (the route of the message as a diagram with the trust boundary, the warnings, the checklist and the "what to do" part of the analysis, the citation check; every one of them is a collapsible card, open at the start, with "Expand all" / "Collapse all" above the first), **Facts** (the deterministic analysis as collapsible cards; a card opens by itself only when it carries a signal, and shows a one-line state in its header) and **Lesson** (the whole LLM analysis).
+- **Three panes with a table of contents on the left:** **Overview** (the route of the message as a diagram with the trust boundary, the warnings, the checklist and the "what to do" part of the analysis, the citation check; every one of them is a collapsible card, folded at the start, with "Expand all" / "Collapse all" above the first), **Facts** (the deterministic analysis as collapsible cards; every card starts folded and shows a one-line state in its header) and **Lesson** (the whole LLM analysis).
 - The source collapses to a one-line bar after the analysis ("Edit source" brings the field back). The tab remembers the chosen pane.
 
 </details>
@@ -207,7 +207,7 @@ flowchart LR
 
 In words: the code extracts the facts, the optional LLM assesses and writes the comment, the report card and the checks are shown, the backend re-checks the hard criteria, and only your click sends anything.
 
-**Checks before sending** (a collapsible card that opens by itself when something blocks, with a state on its header):
+**Checks before sending** (a collapsible card, folded at the start, with a state on its header):
 
 | Kind | Items | Effect |
 |---|---|---|

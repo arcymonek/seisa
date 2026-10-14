@@ -115,8 +115,8 @@ function identityHtml(summary) {
 
 // ---- detail cards ----
 
-function card(title, { badge = "", fact = "", open = false, body = "", key = "" }) {
-  return `<details class="fact-block src"${key ? ` data-card="${key}"` : ""}${open ? " open" : ""}>
+function card(title, { badge = "", fact = "", body = "", key = "" }) {
+  return `<details class="fact-block src"${key ? ` data-card="${key}"` : ""}>
     <summary>${e(title)}${badge}${fact ? ` <span class="muted">- ${e(fact)}</span>` : ""}</summary>
     <div class="src-body">${body}</div></details>`;
 }
@@ -137,10 +137,8 @@ function verdictCard(summary) {
   if (v.engines) rows.push([t("usr.f.engines"), e(`${v.engines.malicious} / ${v.engines.total}`), "usr.gl.engines"]);
   if (v.community) rows.push([t("usr.f.community"), e(`${v.community.malicious} / ${v.community.total}`), "usr.gl.community"]);
   if (isSet(v.flagged_requests)) rows.push([t("usr.f.flagged"), e(v.flagged_requests), "usr.gl.flagged"]);
-  const signal = v.level === "high" || v.level === "medium";
   return card(t("usr.c_verdict"), {
     key: "verdict",
-    open: signal,
     badge: ` <span class="badge sm ${v.level === "unknown" ? "single" : v.level}">${e(levelLabel(v.level))}</span>`,
     body: `${rows.length ? kvHtml(rows) : `<div class="muted">${e(t("lookup.nothing_more"))}</div>`}`,
   });
@@ -171,7 +169,6 @@ function formsCard(summary) {
   });
   return card(`${t("usr.c_forms")} (${forms.length})`, {
     key: "forms",
-    open: summary.verdict.form_signal,
     body: `<div class="muted">${e(t("usr.d_forms"))}</div>${rows.join("")}`,
   });
 }

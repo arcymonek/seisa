@@ -9,6 +9,7 @@ import { initHistory, refreshHistory } from "./history.js";
 import { initLogs, refreshLogs } from "./logs.js";
 import { initUrlscan, prefillUrlscan, repeatUrlscan, showSavedScan } from "./urlscan.js";
 import { initAbout, refreshAbout } from "./about.js";
+import { initFoldState } from "./fold-state.js";
 
 const panels = {
   lookup: document.getElementById("panel-lookup"),
@@ -80,6 +81,8 @@ window.seisaApp = {
 
 applyStatic();
 initTheme();
+// every foldable section starts folded and keeps what the reader did to it (the Info tab keeps its own defaults)
+initFoldState(Object.entries(panels).filter(([k]) => k !== "about").map(([, el]) => el));
 mountShutdown(document.getElementById("footer-shutdown"));
 
 initLookup(panels.lookup);

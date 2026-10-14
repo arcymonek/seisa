@@ -4,7 +4,7 @@
 
 ## Zakładki
 
-Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk ustawień ([Info](#info)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Info mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, które otwierają się same tylko przy sygnale; większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
+Rząd zakładek: [IP](#ip), [URLScan](#urlscan), [DMARC](#dmarc), [Email](#email), [AbuseIPDB](#abuseipdb), [Historia](#historia), [Logi](#logi) i okrągły przycisk ustawień ([Info](#info)). Zakładki IP, URLScan, DMARC, Email, AbuseIPDB, Historia, Logi i Info mają wspólny układ: baner werdyktu (kolor wg poziomu), kafelki podsumowania, a niżej zwijane karty, wszystkie na starcie zwinięte (karta, którą rozwiniesz lub zwiniesz, zachowuje ten stan do zamknięcia Seisy); większość ma też sekcję "Wyjaśnienia" pisaną zrozumiałym językiem oraz dymki glosariusza na żargonowych terminach (podkreślenie kropkami - najedź myszą albo zaznacz klawiaturą, żeby zobaczyć definicję).
 
 ### IP
 
@@ -26,10 +26,10 @@ Co dostajesz:
 - **Jeden wynik zbiorczy** 0-100 i baner werdyktu: LOW poniżej 25, MEDIUM 25-59, HIGH od 60 (kolor wg poziomu, z wartościami, na których się opiera).
 - **Kafelki podsumowania:** pewność nadużyć, wykrycia, GreyNoise, pulsy OTX, kraj, ASN, typ IP oraz tabela wyników składowych. Dla domeny: wiek domeny, rejestrator, czas do wygaśnięcia, popularność w Cloudflare, kategoria, serwery nazw i adresy IP.
 - **Karta tożsamości adresu** (dla domeny: **tożsamość domeny**), która scala właściciela, ASN, kraj, sieć, odwrotny DNS, typ użycia i Tor ze wszystkich źródeł (dla domeny: rejestrator, daty, wiek, serwery nazw sprawdzone między WHOIS a DNS, adresy IP, serwery poczty, SPF, DMARC, CAA, kategoria, popularność) i pokazuje, ile źródeł się zgadza. Jest zwinięta z zieloną informacją "źródła są zgodne", a gdy źródła się rozchodzą, rozwija się sama.
-- **Jedna zwijana karta na źródło** (przyciski "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Źródła" otwierają lub zwijają je naraz), otwarta tylko dla źródeł z sygnałem (ryzyko źródła co najmniej 25, czyli Średnie lub Wysokie); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
+- **Jedna zwijana karta na źródło** (przyciski "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Źródła" otwierają lub zwijają je naraz), na starcie wszystkie zwinięte (karta, którą rozwiniesz, zostaje rozwinięta do zamknięcia Seisy); listy (tagi, CVE, porty, pulsy) to chipy z "pokaż więcej". Karta WHOIS / rDNS powtarza wiersze tożsamości, które od niej pochodzą, więc nie trzeba szukać w dwóch miejscach.
 - **Wklejone dane są porządkowane:** URL (`https://Example.com:8080/a?b`), zdefangowany wskaźnik (`hxxps://evil[.]example`, `1[.]2[.]3[.]4`), `ip:port`, `user@host` czy nazwa wielkimi literami są sprowadzane do samego hosta lub adresu IP. Adresy prywatne, pętli zwrotnej i zarezerwowane są odrzucane z wyjaśnieniem, zamiast trafiać do usług.
 - **Porównanie z poprzednim skanem:** gdy ten sam wskaźnik jest w Historii, linia pod tytułem raportu pokazuje poprzedni wynik, różnicę, źródła, których ryzyko zmieniło się o 10 lub więcej, i słupek na każdy wcześniejszy skan (Historia trzyma 100 niezapiętych wpisów, więc trend jest co najwyżej tak długi).
-- **Źródła bez wyniku** (błąd, brak klucza, limit dzienny, nie dotyczy) mają jedną zwiniętą belkę zamiast karty każde; przy błędzie rozwija się sama. "Wyniki składowe" to zwijana karta, domyślnie rozwinięta. Gdy GreyNoise odpowiada wyczerpanym limitem wyszukiwań (HTTP 429), karta mówi o tym zwykłym językiem, z datą odnowienia, jeśli GreyNoise ją podaje; wynik jest wtedy liczony bez tego źródła.
+- **Źródła bez wyniku** (błąd, brak klucza, limit dzienny, nie dotyczy) mają jedną zwiniętą belkę zamiast karty każde. "Wyniki składowe" i karta tożsamości to zwijane karty, na starcie zwinięte jak reszta. Gdy GreyNoise odpowiada wyczerpanym limitem wyszukiwań (HTTP 429), karta mówi o tym zwykłym językiem, z datą odnowienia, jeśli GreyNoise ją podaje; wynik jest wtedy liczony bez tego źródła.
 - **"Wyczyść"** obok "Sprawdź" (widoczny dopiero, gdy w polu jest tekst albo jest raport; zaraz po uruchomieniu jest ukryty, tak jak w każdej zakładce) czyści pole, usuwa raport i linię z czasem oraz włącza z powrotem wszystkie źródła - zakładka wygląda jak tuż po uruchomieniu.
 - **Raport domeny** ma przycisk "Skanuj w URLScan", który wypełnia zakładkę URLScan adresem `https://<domena>/`.
 - **Według dostawcy:** jedna sekcja: u góry wykres słupkowy wiadomości w czasie (wiadomości na dzień, udział niezgodnych na czerwono, gdy raporty obejmują co najmniej dwa dni), pod nim tabela dostawców z kolumną „Trend dzienny” (mały wykres słupkowy dni danego dostawcy).
@@ -59,7 +59,7 @@ Co dostajesz:
 - **Baner werdyktu** w kolorze z wyniku urlscan.io oraz werdyktów silników i społeczności; "brak werdyktu" jest pokazany neutralnie i wprost nie jako "bezpieczne".
 - **Kafelki podsumowania:** wynik, status HTTP, kraj serwera, ASN, żądania, wiek certyfikatu (ze znacznikiem "nowy" poniżej 7 dni), przekierowania.
 - **Zrzut ekranu strony** i karta **Tożsamość strony**: zgłoszony i końcowy URL, łańcuch przekierowań, tytuł, domena z przyciskiem **Sprawdź domenę**, główne IP z przyciskiem **Sprawdź IP**, lokalizacja, PTR, serwer, typ MIME, czas skanu i widoczność.
-- **Zwijane karty szczegółów** (z przyciskami "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Szczegóły"): werdykt urlscan.io (otwarty tylko przy sygnale ryzyka), formularze, certyfikat TLS, technologie, adresy IP, z którymi łączyła się strona (każdy z przyciskiem **Sprawdź IP**), domeny, z którymi łączyła się strona i linki.
+- **Zwijane karty szczegółów** (z przyciskami "Rozwiń wszystko" / "Zwiń wszystko" obok nagłówka "Szczegóły"): werdykt urlscan.io, formularze, certyfikat TLS, technologie, adresy IP, z którymi łączyła się strona (każdy z przyciskiem **Sprawdź IP**), domeny, z którymi łączyła się strona i linki.
 - **Wcześniejsze skany** tej samej domeny (przycisk **Historia**; przy pustym polu URL obok przycisku pojawia się żółte przypomnienie, żeby wpisać adres), żeby otworzyć świeży raport zamiast zlecać nowy skan (podpowiedź "?" tłumaczy, co zawiera lista); "Skanuj ponownie" powtarza skan.
 - **Jedna linia akcji:** Skanuj, Wyczyść (powrót do pozycji startowej; widoczny, gdy w polu jest tekst albo jest wynik), po raporcie Skanuj ponownie, Zapisz .md i Kopiuj Markdown, potem Historia (wcześniejsze skany domeny), Porównaj (z poprzednim skanem) i Otwórz w urlscan.io; stan i czas są zawsze na końcu linii. Trwający skan ma przycisk **Anuluj** (przerywa tylko czekanie - sam skan trwa dalej w urlscan.io).
 - **Porównanie z poprzednim skanem:** znajduje najnowszy wcześniejszy skan domeny (najpierw ten sam URL), pobiera go i pokazuje tabelę obok siebie - poziom ryzyka, wynik, przekierowania, IP, ASN, serwer, certyfikat, formularze, technologie - z przyciemnionymi wierszami bez zmian oraz domenami, które doszły lub zniknęły.
@@ -105,7 +105,7 @@ Co dostajesz:
 <details>
 <summary>Szczegóły: co pokazuje każda część</summary>
 
-**Raporty.** Zwinięta karta zaraz po źródłach; domyślnie rozwinięta jest tylko sekcja Źródła IP, każda inna jest zwinięta (także tabela dostawców). Każdy wgrany raport w środku to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
+**Raporty.** Zwinięta karta zaraz po źródłach; każda sekcja jest na starcie zwinięta (także Źródła IP i tabela dostawców). Każdy wgrany raport w środku to rozwijany blok z każdym polem metadanych i opublikowanej polityki: dostawca, kontakt i dodatkowy kontakt, ID i wersja raportu, okres, domena, `p`/`sp`/`pct`/`fo`, alignment (`adkim`/`aspf`, z oznaczonymi wartościami domyślnymi), błędy raportu i każdy inny element, który raport zawiera (np. `np`, `testing` albo znaczniki dostawcy).
 
 **Źródła.** Override, np. `forwarded`, jest odnotowany obok decyzji polityki, żeby prawowite przekazywanie poczty nie wyglądało jak atak.
 
@@ -149,7 +149,7 @@ Jak w zakładkach IP, DMARC i URLScan:
 
 - **Baner werdyktu** na górze: werdykt, pewność, streszczenie analizy, stan kontroli cytatów i akcje (zgłoszenie, zapis/kopia, dokończenie ściętej analizy).
 - **Rząd kafelków:** ostrzeżenia, SPF/DKIM/DMARC zapisane przez serwer odbiorcy, zgodność tożsamości nadawcy, IP na granicy zaufania (z przyciskiem wstawiającym je do zakładki IP), linki/załączniki/ukryta treść, filtr odbiorcy, czas doręczenia.
-- **Trzy panele ze spisem treści po lewej:** **Przegląd** (trasa wiadomości jako diagram z granicą zaufania, ostrzeżenia, lista kontrolna i część "co robić" z analizy, kontrola cytatów; każda z nich to zwijana karta, na starcie otwarta, a nad pierwszą są przyciski "Rozwiń wszystko" / "Zwiń wszystko"), **Fakty** (analiza deterministyczna jako zwijane karty; karta otwiera się sama tylko przy sygnale i pokazuje jednoliniowy stan w nagłówku) i **Lekcja** (cała analiza LLM).
+- **Trzy panele ze spisem treści po lewej:** **Przegląd** (trasa wiadomości jako diagram z granicą zaufania, ostrzeżenia, lista kontrolna i część "co robić" z analizy, kontrola cytatów; każda z nich to zwijana karta, na starcie zwinięta, a nad pierwszą są przyciski "Rozwiń wszystko" / "Zwiń wszystko"), **Fakty** (analiza deterministyczna jako zwijane karty; każda karta startuje zwinięta i pokazuje jednoliniowy stan w nagłówku) i **Lekcja** (cała analiza LLM).
 - Po analizie źródło zwija się do jednolinijkowego paska ("Edytuj źródło" przywraca pole). Zakładka pamięta wybrany panel.
 
 </details>
@@ -207,7 +207,7 @@ flowchart LR
 
 Słowami: kod wyciąga fakty, opcjonalny LLM ocenia i pisze komentarz, pokazywane są karta zgłoszenia i kontrole, backend ponownie sprawdza twarde kryteria, a cokolwiek zostaje wysłane dopiero po Twoim kliknięciu.
 
-**Kontrole przed wysyłką** (zwijana karta, która otwiera się sama, gdy coś blokuje, ze stanem w nagłówku):
+**Kontrole przed wysyłką** (zwijana karta, na starcie zwinięta, ze stanem w nagłówku):
 
 | Rodzaj | Pozycje | Skutek |
 |---|---|---|

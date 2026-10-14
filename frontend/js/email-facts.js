@@ -228,10 +228,9 @@ export function flagsHtml(f) {
 
 const MARK = { bad: "✗ ", warn: "⚠ ", good: "✓ ", neutral: "" };
 
-// Every card is collapsed, except those that carry a signal (state bad / warn): the reader opens only what matters.
+// Every card starts collapsed (see fold-state.js).
 function card(id, title, state, note, inner) {
-  const open = state === "bad" || state === "warn";
-  return `<details class="fact-block em-fcard" id="em-fc-${id}" data-toc="${e(title)}" data-state="${state}"${open ? " open" : ""}>
+  return `<details class="fact-block em-fcard" id="em-fc-${id}" data-toc="${e(title)}" data-state="${state}">
     <summary><span>${e(title)}</span>${note ? `<span class="em-state ${state}">${e(MARK[state] + note)}</span>` : ""}</summary>${inner}</details>`;
 }
 

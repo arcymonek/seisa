@@ -89,11 +89,11 @@ export function initEmail(container) {
           </div>
           <div class="em-pane" id="em-pane-overview" role="tabpanel">
             <div class="em-facts-tools">${toggleAllHtml(".em-ocard")}</div>
-            <details class="fact-block em-ocard" data-toc="${e(t("em.route.title"))}" id="em-sec-route" open></details>
-            <details class="fact-block em-ocard" data-toc="${e(t("em.f.flags_short"))}" id="em-sec-flags" open></details>
-            <details class="fact-block em-ocard" data-toc="${e(t("em.checklist.title"))}" id="em-sec-checklist" open hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
-            <details class="fact-block em-ocard" data-toc="${e(t("em.advice.title"))}" id="em-sec-advice" open hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
-            <details class="fact-block em-ocard" data-toc="${e(t("em.cite.title"))}" id="em-sec-citations" open hidden></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.route.title"))}" id="em-sec-route"></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.f.flags_short"))}" id="em-sec-flags"></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.checklist.title"))}" id="em-sec-checklist" hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.advice.title"))}" id="em-sec-advice" hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
+            <details class="fact-block em-ocard" data-toc="${e(t("em.cite.title"))}" id="em-sec-citations" hidden></details>
           </div>
           <div class="em-pane" id="em-pane-facts" role="tabpanel"></div>
           <div class="em-pane" id="em-pane-lesson" role="tabpanel"></div>
@@ -306,9 +306,6 @@ function clearOutput() {
   $("#em-sec-citations").hidden = true;
   ["checklist", "advice"].forEach((k) => {
     $(`#em-sec-${k}`).hidden = true;
-  });
-  document.querySelectorAll(".em-ocard").forEach((d) => {
-    d.open = true; // a new analysis starts with every Overview card open
   });
   $("#em-alert").innerHTML = "";
   $("#em-dup").innerHTML = "";
