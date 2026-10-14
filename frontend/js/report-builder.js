@@ -5,6 +5,7 @@
 // when sending - the frontend only mirrors them. The pieces are split: report-result.js (renderers),
 // report-history.js (the log of sent reports), report-export.js (Markdown).
 import { api } from "./api.js";
+import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, registerDirtyCheck } from "./i18n.js";
 import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, legendHtml, tilesHtml, verdictBannerHtml } from "./report-result.js";
 import { reportMarkdown } from "./report-export.js";
@@ -65,7 +66,7 @@ export function initReportBuilder(container) {
       <button class="secondary" id="rb-analyze-no-llm">${e(t("common.analyze_no_llm"))}</button>
       <button class="secondary" id="rb-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="rb-file" accept=".eml,.txt,message/rfc822" style="display:none">
-      <button class="secondary" id="rb-clear">${e(t("common.clear"))}</button>
+      <button class="secondary" id="rb-clear" hidden>${e(t("common.clear"))}</button>
       <span class="action-info">
         <span id="rb-status"></span>
         <span id="rb-timer"></span>
@@ -129,7 +130,13 @@ export function initReportBuilder(container) {
       loadFile(file);
     }
   });
-  $("#rb-clear").addEventListener("click", clearAll);
+  bindClear($("#rb-clear"), {
+    hasContent: () =>
+      !!$("#rb-email").value.trim() || !$("#rb-form").hidden || !!$("#rb-status").textContent || !!$("#rb-result").children.length || !!$("#rb-error").children.length,
+    onClear: clearAll,
+    inputs: [$("#rb-email")],
+    watch: [$("#rb-form"), $("#rb-status"), $("#rb-result"), $("#rb-error")],
+  });
   $("#rb-copy").addEventListener("click", () => navigator.clipboard.writeText($("#rb-comment").value));
   $("#rb-export").addEventListener("click", exportMarkdown);
   $("#rb-submit").addEventListener("click", submit);

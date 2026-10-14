@@ -1,4 +1,5 @@
 import { api } from "./api.js";
+import { bindClear } from "./clear-button.js";
 import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";
 import { countryName } from "./lookup-result.js";
 import { compareScans } from "./urlscan-compare.js";
@@ -67,6 +68,7 @@ export function initUrlscan(container) {
     <div id="us-warn"></div>
     <div class="action-row">
       <button class="primary" id="us-submit">${escapeHtml(t("urlscan.submit"))}</button>
+      <button class="secondary" id="us-clear" hidden>${escapeHtml(t("urlscan.clear"))}</button>
       <span class="us-actions" id="us-actions-pre"></span>
       <button class="secondary" id="us-existing" title="${escapeHtml(t("urlscan.existing_tip"))}">${escapeHtml(t("urlscan.existing"))}</button>
       <span class="us-actions" id="us-actions"></span>
@@ -79,6 +81,17 @@ export function initUrlscan(container) {
   const urlInput = root.querySelector("#us-url");
   root.querySelector("#us-submit").addEventListener("click", onSubmit);
   root.querySelector("#us-existing").addEventListener("click", onExisting);
+  bindClear(root.querySelector("#us-clear"), {
+    hasContent: () =>
+      !!urlInput.value.trim() ||
+      !!root.querySelector("#us-result").children.length ||
+      !!root.querySelector("#us-batch").children.length ||
+      !!root.querySelector("#us-error").children.length ||
+      !!root.querySelector("#us-status").textContent,
+    onClear: resetTab,
+    inputs: [urlInput],
+    watch: ["#us-result", "#us-batch", "#us-error", "#us-status"].map((sel) => root.querySelector(sel)),
+  });
   urlInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -162,8 +175,7 @@ export function prefillUrlscan(url) {
   if (!root) return;
   const field = root.querySelector("#us-url");
   field.value = url;
-  growUrlField();
-  updateHint();
+  field.dispatchEvent(new Event("input")); // resizes the field, updates the hint and the Clear button
   field.focus();
 }
 
@@ -572,14 +584,13 @@ function existingList(data) {
 
 // ---- report ----
 
-// Two groups: `pre` (Scan again, Clear, Save .md, Copy .md) go after Scan, `post` (Compare, Open in urlscan.io) after History.
+// Two groups: `pre` (Scan again, Save .md, Copy .md) go after Scan, `post` (Compare, Open in urlscan.io) after History.
 function actionButtons(summary, markdown) {
   const pre = [
     button(t("urlscan.scan_again"), "secondary", () => {
       prefillUrlscan(summary.submitted_url);
       onSubmit();
     }),
-    button(t("urlscan.clear"), "secondary", resetTab),
   ];
   if (markdown) {
     const name = `urlscan-${(summary.page.apex_domain || summary.page.domain || "scan").replace(/[^a-zA-Z0-9.-]/g, "_")}-${new Date().toISOString().slice(0, 10)}.md`;

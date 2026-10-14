@@ -5,6 +5,7 @@
 // (Overview, Facts, Lesson) with a table of contents on the left. The LLM output is rendered through renderMarkdownSafe
 // (links defanged); nothing is reported here.
 import { api } from "./api.js";
+import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
 import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, handleToggleAll, readEmlFile, toggleAllHtml } from "./util.js";
@@ -64,7 +65,7 @@ export function initEmail(container) {
       <button class="secondary" id="em-cancel" style="display:none">${e(t("em.cancel"))}</button>
       <button class="secondary" id="em-file-btn">${e(t("common.load_eml"))}</button>
       <input type="file" id="em-file" accept=".eml,.txt,message/rfc822" style="display:none">
-      <button type="button" class="secondary" id="em-clear">${e(t("common.clear"))}</button>
+      <button type="button" class="secondary" id="em-clear" hidden>${e(t("common.clear"))}</button>
       <button type="button" class="secondary" id="em-save-md" data-act="save-md" hidden>${e(t("common.save_md"))}</button>
       <button type="button" class="secondary" id="em-copy-md" data-act="copy-md" hidden>${e(t("common.copy_markdown"))}</button>
       <button type="button" class="secondary" id="em-save-html" data-act="save-html" hidden>${e(t("em.save_html"))}</button>
@@ -119,7 +120,12 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
   runAnalysis(raw, { useLlm: false }); // free and local: no duplicate check
 });
   $("#em-cancel").addEventListener("click", () => abortController && abortController.abort());
-  $("#em-clear").addEventListener("click", clearAll);
+  bindClear($("#em-clear"), {
+    hasContent: () => !!$("#em-source").value.trim() || !$("#em-result").hidden || !!$("#em-status").textContent || !!$("#em-alert").children.length,
+    onClear: clearAll,
+    inputs: [$("#em-source")],
+    watch: [$("#em-result"), $("#em-status"), $("#em-alert")],
+  });
   $("#em-file-btn").addEventListener("click", () => $("#em-file").click());
   $("#em-file").addEventListener("change", (ev) => {
     const file = ev.target.files[0];

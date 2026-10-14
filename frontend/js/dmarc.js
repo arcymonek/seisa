@@ -5,6 +5,7 @@
 // The tab also compares the import with the previous one for the same domain (from the History), draws the mail volume
 // per day and derives fix hints per source from the SPF/DKIM results. Every value from the XML is untrusted: escapeHtml in the page, code spans in the Markdown export.
 import { api } from "./api.js";
+import { bindClear } from "./clear-button.js";
 import { readReports } from "./archive.js";
 import { t, tn, fmtDate as i18nDate, fmtDateTime as i18nDateTime, fmtSeconds, getLocale } from "./i18n.js";
 import { downloadMarkdown, escapeHtml as e } from "./util.js";
@@ -41,11 +42,11 @@ export function initDmarc(container) {
       <p class="muted dz-hint">${e(t("dmarc.drop_multiple"))}</p>
       <input type="file" id="dm-file-input" accept=".xml,.gz,.zip" multiple style="display:none">
     </div>
-    <details class="fact-block" id="dm-files" style="display:none"><summary id="dm-files-summary"></summary><div class="muted" id="dm-file-list"></div></details>
-    <div class="action-row" id="dm-actions" style="display:none">
-      <button class="secondary" id="dm-clear">${e(t("dmarc.btn_clear"))}</button>
-      <button class="secondary" id="dm-save">${e(t("common.save_md"))}</button>
-      <button class="secondary" id="dm-copy">${e(t("common.copy_markdown"))}</button>
+    <details class="fact-block" id="dm-files" hidden><summary id="dm-files-summary"></summary><div class="muted" id="dm-file-list"></div></details>
+    <div class="action-row" id="dm-actions">
+      <button class="secondary" id="dm-clear" hidden>${e(t("dmarc.btn_clear"))}</button>
+      <button class="secondary" id="dm-save" hidden>${e(t("common.save_md"))}</button>
+      <button class="secondary" id="dm-copy" hidden>${e(t("common.copy_markdown"))}</button>
       <span class="action-info" id="dm-info"></span>
     </div>
     <div id="dm-results"></div>
@@ -71,7 +72,12 @@ export function initDmarc(container) {
     handleFiles(ev.target.files);
     fileInput.value = ""; // the same file can be chosen again
   });
-  root.querySelector("#dm-clear").addEventListener("click", clearAll);
+  // Clear is there as soon as files were read (also when none could be used: the file list is then the only output).
+  bindClear(root.querySelector("#dm-clear"), {
+    hasContent: () => !root.querySelector("#dm-files").hidden || !!root.querySelector("#dm-results").children.length,
+    onClear: clearAll,
+    watch: [root.querySelector("#dm-files"), root.querySelector("#dm-results")],
+  });
   root.querySelector("#dm-save").addEventListener("click", saveMarkdown);
   root.querySelector("#dm-copy").addEventListener("click", () => navigator.clipboard.writeText(buildMarkdown()));
 }
@@ -89,15 +95,20 @@ function resetState() {
 function clearAll() {
   resetState();
   root.querySelector("#dm-results").innerHTML = "";
-  root.querySelector("#dm-files").style.display = "none";
+  root.querySelector("#dm-files").hidden = true;
   root.querySelector("#dm-info").textContent = "";
-  root.querySelector("#dm-actions").style.display = "none";
+  setSaveCopyHidden(true);
   root.querySelector("#dm-dropzone").classList.remove("compact");
+}
+
+function setSaveCopyHidden(hidden) {
+  root.querySelector("#dm-save").hidden = hidden;
+  root.querySelector("#dm-copy").hidden = hidden;
 }
 
 function showResults() {
   root.querySelector("#dm-dropzone").classList.add("compact");
-  root.querySelector("#dm-actions").style.display = "";
+  setSaveCopyHidden(false);
   render();
 }
 
@@ -116,7 +127,7 @@ function showFiles(items) {
   root.querySelector("#dm-files-summary").textContent = t("dmarc.files_summary", { ok: n.ok, skipped: n.skip, failed: n.fail });
   const box = root.querySelector("#dm-files");
   box.open = n.skip + n.fail > 0;
-  box.style.display = "";
+  box.hidden = false;
 }
 
 async function handleFiles(files) {

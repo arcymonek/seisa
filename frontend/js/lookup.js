@@ -1,5 +1,6 @@
 import { api } from "./api.js";
 import { renderLookupResult, serviceTitle } from "./lookup-result.js";
+import { bindClear } from "./clear-button.js";
 import { t } from "./i18n.js";
 import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml } from "./util.js";
 
@@ -29,7 +30,7 @@ export function initLookup(container) {
 
     <div class="action-row">
       <button class="primary" id="lk-submit">${escapeHtml(t("lookup.submit"))}</button>
-      <button class="secondary" id="lk-clear">${escapeHtml(t("lookup.clear"))}</button>
+      <button class="secondary" id="lk-clear" hidden>${escapeHtml(t("lookup.clear"))}</button>
       <span class="us-actions" id="lk-actions"></span>
       <span class="action-info" id="lk-info"></span>
     </div>
@@ -55,7 +56,15 @@ export function initLookup(container) {
   });
 
   root.querySelector("#lk-submit").addEventListener("click", onSubmit);
-  root.querySelector("#lk-clear").addEventListener("click", onClear);
+  bindClear(root.querySelector("#lk-clear"), {
+    hasContent: () =>
+      !!root.querySelector("#lk-indicator").value.trim() ||
+      !!root.querySelector("#lk-results").children.length ||
+      !!root.querySelector("#lk-status").textContent,
+    onClear,
+    inputs: [root.querySelector("#lk-indicator")],
+    watch: [root.querySelector("#lk-results"), root.querySelector("#lk-status")],
+  });
   root.querySelector("#lk-indicator").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.isComposing) {
       e.preventDefault();
@@ -80,7 +89,9 @@ function onClear() {
 
 export function prefillLookup(indicator) {
   if (!root) return;
-  root.querySelector("#lk-indicator").value = indicator;
+  const field = root.querySelector("#lk-indicator");
+  field.value = indicator;
+  field.dispatchEvent(new Event("input")); // updates the Clear button
 }
 
 // Runs the check again from another tab (History); every check is fresh, so the result is never stale.
