@@ -22,6 +22,12 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.15 - 2026-10-14
+- **Email:** the notice about what is sent to OpenRouter is shown only before an analysis. It disappears after "Analyze" or "Analyze without LLM" (and when a saved analysis is opened) and comes back with "Clear". The text is split into three lines and now says that Seisa does not open attachments and does not download images or other files the message links to.
+- **URLScan:** the visibility hints keep the user agent and scan country on a separate line; the Private and Public wording is clearer.
+- **AbuseIPDB:** the note about sending the content to an LLM starts on its own line under the subtitle.
+- Banners can now show line breaks (`.banner.nl`).
+
 ## 2.4.14 - 2026-10-14
 - **Service names are the same in every tab:** the Logs tab now names the services like the IP and Info tabs (AlienVault OTX, Cloudflare Radar, URLScan and WHOIS / rDNS instead of OTX, Cloudflare, urlscan and RDNS). One list in `frontend/js/services.js`.
 - **DMARC legend** is spaced like the legends of the other tabs.

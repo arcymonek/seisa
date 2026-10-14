@@ -230,10 +230,10 @@ function sensitiveParams(text) {
 
 function updateHint() {
   const hint = root.querySelector("#us-hint");
-  hint.className = `banner ${options.visibility === "public" ? "warn" : "info"}`;
+  hint.className = `banner nl ${options.visibility === "public" ? "warn" : "info"}`;
   const ua = !userAgentValue() ? t("urlscan.agent_default") : options.agent === "custom" ? t("urlscan.agent.custom").toLowerCase() : t("urlscan.agent." + options.agent);
   const country = options.country ? countryName(options.country.toUpperCase()) : t("urlscan.country_auto");
-  hint.textContent = `${t("urlscan.hint." + options.visibility)} ${t("urlscan.hint_options", { ua, country })}`;
+  hint.textContent = `${t("urlscan.hint." + options.visibility)}\n${t("urlscan.hint_options", { ua, country })}`;
   const found = options.visibility === "public" ? sensitiveParams(root.querySelector("#us-url").value) : [];
   root.querySelector("#us-warn").innerHTML = found.length ? textBanner("warn", t("urlscan.warn_sensitive", { list: found.join(", ") })) : "";
 }

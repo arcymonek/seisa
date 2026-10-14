@@ -182,6 +182,7 @@ td { padding: 8px; border-bottom: 1px solid var(--hair-soft); vertical-align: to
 
 /* Banners have no background; only the border carries the meaning: bad = red, warn = yellow, good = green, default = strong text colour; the text always uses it */
 .banner { background: none; border: 1px solid var(--text-strong); border-radius: 6px; padding: 14px 16px; margin: 12px 0; font-size: 15.5px; color: var(--text-strong); }
+.banner.nl { white-space: pre-line; }
 .banner.warn { border-color: var(--warn); }
 .banner.info { border-color: var(--info); }
 .banner.bad { border-color: var(--fail); }

@@ -58,7 +58,7 @@ export function initEmail(container) {
       <button type="button" class="secondary" id="em-src-view">${e(t("em.src.view"))}</button>
       <button type="button" class="secondary" id="em-src-toggle"></button>
     </div>
-    <div class="banner info">${e(t("em.banner"))}</div>
+    <div class="banner info nl" id="em-privacy">${e(t("em.banner"))}</div>
     <div class="action-row">
       <button class="action" id="em-analyze">${e(t("common.analyze"))}</button>
       <button class="secondary" id="em-analyze-no-llm">${e(t("common.analyze_no_llm"))}</button>
@@ -205,6 +205,7 @@ function clearAll() {
   $("#em-status").textContent = "";
   $("#em-timer").textContent = "";
   $("#em-usage").textContent = "";
+  $("#em-privacy").hidden = false;
   setSourceCollapsed(false);
 }
 
@@ -477,6 +478,7 @@ function setBusy(busy) {
 
 async function runAnalysis(raw, { useLlm = true } = {}) {
   clearOutput();
+  $("#em-privacy").hidden = true;
   S.raw = raw;
   const statusEl = $("#em-status");
   statusEl.textContent = "";
@@ -776,6 +778,7 @@ async function openSaved(id) {
     return;
   }
   clearOutput();
+  $("#em-privacy").hidden = true;
   S.raw = rec.raw_email;
   $("#em-source").value = rec.raw_email;
   S.facts = rec.facts;
