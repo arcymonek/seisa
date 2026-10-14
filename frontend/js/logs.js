@@ -3,7 +3,7 @@
 // filter the fetched entries in the browser, so the tiles and chip counts always describe the whole range.
 import { api } from "./api.js";
 import { t, tn, fmtDateTime } from "./i18n.js";
-import { armedConfirm, escapeHtml, fmtRelative } from "./util.js";
+import { armedConfirm, escapeHtml, fmtRelative, handleToggleAll, toggleAllHtml } from "./util.js";
 import { bindCopyIcon, bindDaySections, copyIconButton, dayHeading, daySection, errorBanner, kpiTile, textBanner } from "./ui.js";
 import { serviceTitle } from "./services.js";
 
@@ -47,6 +47,7 @@ export function initLogs(container) {
     <div class="lg-svc-row"><div class="chip-row" id="lg-services"></div><span class="action-info" id="lg-info"></span></div>
     <div class="lg-tools">
       <input type="text" id="lg-search" class="lg-search" placeholder="${escapeHtml(t("logs.search"))}" aria-label="${escapeHtml(t("logs.search"))}">
+      ${toggleAllHtml("details.day-group")}
     </div>
     <div id="lg-list"></div>`;
 
@@ -70,6 +71,7 @@ export function initLogs(container) {
     query = ev.target.value.trim().toLowerCase();
     renderList();
   });
+  root.querySelector(".lg-tools").addEventListener("click", (ev) => handleToggleAll(root, ev.target.closest("[data-toggle-all]")));
   root.querySelector("#lg-refresh").addEventListener("click", load);
   armedConfirm(root.querySelector("#lg-clear"), t("logs.clear_confirm"), async () => {
     await api.logsClear();

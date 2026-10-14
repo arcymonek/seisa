@@ -77,8 +77,8 @@ export function dayHeading(iso) {
 // One collapsed-by-default <details> section: the day heading, how many entries it holds, then `bodyHtml`.
 // `key` identifies the section across re-renders (see bindDaySections).
 export const daySection = (key, title, count, bodyHtml, open = false) =>
-  `<details class="day-group" data-key="${e(key)}"${open ? " open" : ""}>
-    <summary><span class="hi-day">${e(title)}</span><span class="muted day-count">${count}</span></summary>
+  `<details class="fact-block day-group" data-key="${e(key)}"${open ? " open" : ""}>
+    <summary>${e(title)}<span class="em-state">${count}</span></summary>
     ${bodyHtml}
   </details>`;
 

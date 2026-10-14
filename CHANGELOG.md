@@ -23,7 +23,8 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
 ## 2.4.16 - 2026-10-14
-- **History and Logs:** entries are grouped into sections by day ("Today", "Yesterday", then one section per earlier day; History also has "Pinned"). The sections start folded and show how many entries they hold; the ones you unfold stay unfolded across refreshes, and a search unfolds the sections that contain matches.
+- **History and Logs:** entries are grouped into sections by day ("Today", "Yesterday", then one section per earlier day; History also has "Pinned"). The sections are cards like the rest of the program, start folded and show how many entries they hold; "Expand all" and "Collapse all" next to the search box open or fold all of them. The ones you unfold stay unfolded across refreshes, and a search unfolds the sections that contain matches.
+- **History:** the hint "Tick two IP checks to compare them." moved into a tooltip of the "Compare selected" button.
 - **Logs:** a small copy icon at the end of each entry's line copies the complete message, also while the entry is folded. The unfolded entry shows the whole message in the line itself; the separate "Copy" button and the code box repeating the text are gone.
 
 ## 2.4.15 - 2026-10-14

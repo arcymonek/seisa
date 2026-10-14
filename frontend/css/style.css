@@ -451,6 +451,7 @@ details.legend { margin-top: 24px; }
 /* --- zakladki Logi i Historia --- */
 .lg-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 8px 0 2px; }
 .lg-search { flex: 0 1 320px; width: auto; padding: 6px 10px; font-size: 15px; }
+.lg-tools .toggle-all { display: inline-flex; gap: 6px; }
 .lg-svc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; }
 .lg-svc-row .action-info { margin-top: 0; }
 .inline-check { display: inline-flex; align-items: center; margin: 0; font-size: 14px; }
@@ -462,10 +463,6 @@ button.secondary.armed { border-color: var(--fail); color: var(--fail); }
 .log-entry .tag, .log-entry .badge { flex: none; }
 .log-line { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .log-entry[open] .log-line { white-space: pre-wrap; overflow-wrap: anywhere; }
-.day-group { margin: 14px 0 0; }
-.day-group > summary { cursor: pointer; display: flex; align-items: baseline; gap: 10px; padding: 4px 0; }
-.day-group .hi-day { margin: 0; }
-.day-count { font-size: 13px; }
 .copy-icon { flex: none; align-self: center; margin: 0 0 0 auto; padding: 4px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; background: transparent; border: 1px solid transparent; border-radius: 6px; color: var(--muted); cursor: pointer; }
 .copy-icon:hover { color: var(--text); border-color: var(--hair); }
 .copy-icon .ic { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -476,7 +473,6 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .kpi.click { cursor: pointer; }
 .kpi.click:hover { border-color: var(--accent); }
 .kpi.on { border-color: var(--accent); }
-.hi-day { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 22px 0 6px; font-weight: 400; }
 .hi-card { border: 1px solid var(--hair); border-radius: 6px; background: var(--bg-raised); padding: 8px 12px; margin: 6px 0; }
 .hi-card.pinned { border-color: var(--accent); }
 .hi-main { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }

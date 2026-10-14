@@ -5,7 +5,7 @@ import { api } from "./api.js";
 import { renderLookupResult } from "./lookup-result.js";
 import { compareLookups } from "./history-compare.js";
 import { t, fmtDateTime, getLang } from "./i18n.js";
-import { armedConfirm, downloadText, escapeHtml, fmtRelative, makeButton } from "./util.js";
+import { armedConfirm, downloadText, escapeHtml, fmtRelative, handleToggleAll, makeButton, toggleAllHtml } from "./util.js";
 import { bindDaySections, dayHeading, daySection, errorBanner, kpiTile, textBanner } from "./ui.js";
 
 let root;
@@ -46,7 +46,7 @@ export function initHistory(container) {
       <div class="chip-row" id="hi-range">${Object.keys(RANGE_KEY).map((r) => `<span class="chip${r === range ? " on" : ""}" role="button" tabindex="0" data-range="${r}">${escapeHtml(t(RANGE_KEY[r]))}</span>`).join("")}</div>
       <div class="chip-row" id="hi-risks">${RISKS.map((r) => `<span class="chip${r === riskFilter ? " on" : ""}" role="button" tabindex="0" data-risk="${r}">${escapeHtml(t(RISK_KEY[r]))}</span>`).join("")}</div>
     </div>
-    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}"><span id="hi-compare-bar"></span></div>
+    <div class="lg-tools"><input type="text" id="hi-search" class="lg-search" placeholder="${escapeHtml(t("history.search"))}" aria-label="${escapeHtml(t("history.search"))}">${toggleAllHtml("details.day-group")}<span id="hi-compare-bar"></span></div>
     <div id="hi-compare"></div>
     <div id="hi-list"></div>`;
 
@@ -73,6 +73,7 @@ export function initHistory(container) {
     query = ev.target.value.trim().toLowerCase();
     renderList();
   });
+  root.querySelector(".lg-tools").addEventListener("click", (ev) => handleToggleAll(root, ev.target.closest("[data-toggle-all]")));
   root.querySelector("#hi-refresh").addEventListener("click", load);
   root.querySelector("#hi-export-json").addEventListener("click", () => exportList("json"));
   root.querySelector("#hi-export-csv").addEventListener("click", () => exportList("csv"));
@@ -285,8 +286,7 @@ function renderCompareBar() {
     bar.innerHTML = "";
     return;
   }
-  bar.innerHTML = `<span class="muted">${escapeHtml(t("history.compare_hint"))}</span>
-    <button class="secondary" id="hi-cmp-go"${compareIds.length === 2 ? "" : " disabled"}>${escapeHtml(t("history.compare_go"))}</button>
+  bar.innerHTML = `<button class="secondary" id="hi-cmp-go" title="${escapeHtml(t("history.compare_hint"))}"${compareIds.length === 2 ? "" : " disabled"}>${escapeHtml(t("history.compare_go"))}</button>
     ${compareIds.length ? `<button class="secondary" id="hi-cmp-clear">${escapeHtml(t("history.compare_clear"))}</button>` : ""}`;
   const go = bar.querySelector("#hi-cmp-go");
   go.addEventListener("click", showComparison);
