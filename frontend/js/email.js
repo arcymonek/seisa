@@ -393,8 +393,24 @@ function renderBanner() {
   updateSummary(S.summary);
 }
 
-function updateSummary(md) {
-  S.summary = md;
+// Older analyses (and a model that ignores the layout) give the summary as one block with "(1) ... (2) ..." inside.
+// Cut that into a lead, a bullet list and a closing sentence; a summary that already has structure is left alone.
+function structureSummary(md) {
+  if (!md || /\n\s*\n|^\s*([-*]|\d+\.)\s/m.test(md)) return md;
+  const marks = md.match(/\(\d+\)/g) || [];
+  if (marks.length < 2) return md;
+  const [lead, ...items] = md.split(/\s*\(\d+\)\s*/);
+  const tidy = (s) => s.trim().replace(/[;,]\s*(i|oraz|and|a)?\s*$/i, "");
+  const last = items.pop();
+  const cut = last.search(/[.)]\s+(?=\p{Lu})/u);
+  const closing = cut === -1 ? "" : last.slice(cut + 1).trim();
+  items.push(cut === -1 ? last : last.slice(0, cut + 1));
+  return `${lead.trim()}\n\n${items.map((s) => `- ${tidy(s)}`).join("\n")}${closing ? `\n\n${closing}` : ""}`;
+}
+
+function updateSummary(raw) {
+  const md = structureSummary(raw);
+  S.summary = raw;
   const target = $("#em-summary > div");
   if (!target || summaryShown === md) return;
   summaryShown = md;

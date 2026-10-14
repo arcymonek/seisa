@@ -118,7 +118,9 @@ the response-language column of section 0:
 
 ```
 # <title (H1)>
-<summary of 3-5 sentences: what kind of message it is, the verdict, the 3 most important pieces of evidence>
+<summary, laid out for quick reading: ONE short lead sentence (what kind of message it is and the verdict), an empty
+line, then 3-5 bullet points "- **short label:** one sentence" with the most important pieces of evidence, and at
+most one closing sentence after the list. No paragraph longer than 2 sentences, no numbering inside a sentence>
 
 ## <Part 1>
 ## <Part 2>

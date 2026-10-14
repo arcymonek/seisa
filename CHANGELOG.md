@@ -24,6 +24,7 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 
 ## 2.4.17 - 2026-10-14
 - **All tabs (IP, URLScan, DMARC, Email, AbuseIPDB, History, Logs):** every collapsible section now starts folded. Before, some opened by themselves (sources with a signal, the identity card when sources disagree, the component scores, the checks before sending, DMARC files with errors, the Email Overview and Facts cards with a signal). A section you open or fold keeps that state until Seisa is closed, also when you run another lookup or analysis. The new `frontend/js/fold-state.js` does this for all the tabs in one place; the Info tab is unchanged.
+- **Email:** the summary in the verdict banner is no longer a wall of text. The analysis guide now asks the model for one short lead sentence and a bullet list of the key evidence; an older or unstructured summary written as "(1) ... (2) ..." is cut into a lead, bullets and a closing sentence when it is shown. Lists and paragraphs in the banner got proper spacing.
 
 ## 2.4.16 - 2026-10-14
 - **History and Logs:** entries are grouped into sections by day ("Today", "Yesterday", then one section per earlier day; History also has "Pinned"). The sections are cards like the rest of the program, start folded and show how many entries they hold; "Expand all" and "Collapse all" next to the search box open or fold all of them. The ones you unfold stay unfolded across refreshes, and a search unfolds the sections that contain matches.
