@@ -9,6 +9,7 @@ from __future__ import annotations
 import plistlib
 import shlex
 import shutil
+import subprocess
 
 import pytest
 
@@ -161,8 +162,19 @@ def test_mac_without_sips_and_iconutil_is_unsupported(mac, monkeypatch):
     assert not (mac / "Applications").exists()
 
 
+def _skip_unless_sips_can_write(tmp_path):
+    """sips fails with "Cannot write to file" inside a sandbox that forbids its own temporary files (for example the
+    Claude Code sandbox). That is the environment, not the code, so one tiny trial run decides between run and skip."""
+    try:
+        subprocess.run(["sips", "-z", "16", "16", str(di.ICON), "--out", str(tmp_path / "probe.png")],
+                       check=True, capture_output=True, timeout=di.TOOL_TIMEOUT)
+    except (OSError, subprocess.SubprocessError):
+        pytest.skip("sips cannot write here (sandbox?); run the tests outside it to cover this one")
+
+
 @pytest.mark.skipif(not (shutil.which("sips") and shutil.which("iconutil")), reason="needs the macOS image tools")
-def test_mac_install_and_remove_round_trip(home, monkeypatch):
+def test_mac_install_and_remove_round_trip(home, monkeypatch, tmp_path_factory):
+    _skip_unless_sips_can_write(tmp_path_factory.mktemp("probe"))
     monkeypatch.setattr(di, "_system", lambda: "Darwin")
     result = di.install()
     app = home / "Applications" / "Seisa.app"
