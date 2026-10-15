@@ -95,11 +95,11 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     return b;
   };
   tools.append(search, mkBtn("↑", "hit-prev", t("em.lesson.hit_prev")), mkBtn("↓", "hit-next", t("em.lesson.hit_next")),
-    mkBtn(t("common.expand_all"), "expand"), mkBtn(t("common.collapse_all"), "collapse"), searchInfo);
+    searchInfo);
   const titleEl = el("h3", "em-lesson-title");
   const cardsEl = el("div", "em-cards");
   const fallbackEl = el("div", "em-flat");
-  pane.append(tools, titleEl, cardsEl, fallbackEl);
+  pane.append(titleEl, cardsEl, fallbackEl);
 
   // ---- enhancing a rendered body ------------------------------------------------------------------------------
 
@@ -255,8 +255,11 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
 
   // ---- search ------------------------------------------------------------------------------------------------------
 
+  // The search covers whichever pane is open (the Email tab calls `setSearchRoot` on every tab switch).
+  let searchRoot = pane;
+
   function clearMarks() {
-    pane.querySelectorAll("mark.em-hit").forEach((m) => {
+    searchRoot.querySelectorAll("mark.em-hit").forEach((m) => {
       const parent = m.parentNode;
       m.replaceWith(document.createTextNode(m.textContent));
       parent.normalize();
@@ -272,7 +275,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
       return;
     }
     const needle = query.toLowerCase();
-    const walker = document.createTreeWalker(pane, NodeFilter.SHOW_TEXT, {
+    const walker = document.createTreeWalker(searchRoot, NodeFilter.SHOW_TEXT, {
       acceptNode: (n) => (n.parentElement.closest(".em-lesson-tools, button, script, style") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
     });
     const nodes = [];
@@ -291,7 +294,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
       frag.appendChild(document.createTextNode(text.slice(last)));
       node.replaceWith(frag);
     });
-    const marks = pane.querySelectorAll("mark.em-hit");
+    const marks = searchRoot.querySelectorAll("mark.em-hit");
     marks.forEach((m) => {
       for (let d = m.parentElement.closest("details"); d; d = d.parentElement && d.parentElement.closest("details")) setOpen(d, true);
     });
@@ -301,13 +304,21 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
   }
 
   function stepHit(d) {
-    const marks = Array.from(pane.querySelectorAll("mark.em-hit"));
+    const marks = Array.from(searchRoot.querySelectorAll("mark.em-hit"));
     if (!marks.length) return;
     marks.forEach((m) => m.classList.remove("cur"));
     hitIdx = (hitIdx + d + marks.length) % marks.length;
     marks[hitIdx].classList.add("cur");
     marks[hitIdx].scrollIntoView({ block: "center", behavior: "smooth" });
     searchInfo.textContent = t("em.lesson.hit_of", { i: hitIdx + 1, n: marks.length });
+  }
+
+  function setSearchRoot(root) {
+    if (root === searchRoot) return;
+    clearMarks();
+    searchRoot = root;
+    if (query) runSearch(query, { scroll: false });
+    else searchInfo.textContent = "";
   }
 
   let searchTimer = null;
@@ -319,14 +330,17 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     if (ev.key === "Enter") stepHit(ev.shiftKey ? -1 : 1);
   });
 
+  // the search tools live in the tab bar of the Email tab (the caller places `tools`), not in the pane
+  tools.addEventListener("click", (ev) => {
+    const act = ev.target.closest("[data-act]")?.dataset.act;
+    if (act === "hit-next") stepHit(1);
+    else if (act === "hit-prev") stepHit(-1);
+  });
   pane.addEventListener("click", (ev) => {
     const btn = ev.target.closest("[data-act]");
     if (btn) {
       const act = btn.dataset.act;
-      if (act === "hit-next") stepHit(1);
-      else if (act === "hit-prev") stepHit(-1);
-      else if (act === "expand" || act === "collapse") cards.forEach((c) => setOpen(c.det, act === "expand"));
-      else if (act === "quote-copy") copyText(btn.dataset.copyText || "", btn);
+      if (act === "quote-copy") copyText(btn.dataset.copyText || "", btn);
     }
   });
 
@@ -345,5 +359,5 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
   // The source changed (new analysis): earlier lookups are void.
   const sourceChanged = () => findCache.clear();
 
-  return { render, reset, sourceChanged, renderInto, cards, openCard: (i) => cards[i] && setOpen(cards[i].det, true), search: runSearch };
+  return { tools, setSearchRoot, render, reset, sourceChanged, renderInto, cards, setAll: (open) => cards.forEach((c) => setOpen(c.det, open)), openCard: (i) => cards[i] && setOpen(cards[i].det, true), search: runSearch };
 }

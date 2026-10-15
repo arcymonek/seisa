@@ -112,6 +112,7 @@ export function initEmail(container) {
 
   viewer = createSourceViewer(root);
   lesson = createLesson({ pane: $("#em-pane-lesson"), viewer, onStructure: scheduleToc });
+  root.querySelector(".em-bar-toggle").before(lesson.tools);
   $("#em-cmp-btn").addEventListener("click", showComparison);
   $("#em-analyze").addEventListener("click", analyze);
 $("#em-analyze-no-llm").addEventListener("click", () => {
@@ -243,6 +244,7 @@ function setPane(name) {
     root.querySelector(`.em-tab[data-pane="${p}"]`).classList.toggle("on", p === name);
     root.querySelector(`.em-tab[data-pane="${p}"]`).setAttribute("aria-selected", String(p === name));
   });
+  lesson.setSearchRoot($("#em-pane-" + name));
   try {
     localStorage.setItem(PANE_KEY, name);
   } catch { /* storage blocked */ }

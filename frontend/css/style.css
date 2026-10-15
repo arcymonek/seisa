@@ -298,10 +298,12 @@ button.linklike { background: none; border: none; padding: 0; font: inherit; cur
 .em-hop.ghost { background: none; border-style: dotted; }
 .em-hop-title { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
 .em-arrow { align-self: center; color: var(--muted); }
-.em-lesson-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-bottom: 10px; }
+.em-lesson-tools { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin-left: auto; }
+.em-lesson-tools:not([hidden]) + .em-bar-toggle { margin-left: 6px; }
 .em-lesson-tools button { margin: 0; }
-.em-search { width: 260px; max-width: 100%; background: var(--bg-raised); border: 1px solid var(--hair); color: var(--text); border-radius: 4px; padding: 6px 10px; font-family: var(--sans); font-size: 15px; }
-.em-search-info { min-width: 5em; }
+.em-search { width: 150px; max-width: 100%; background: var(--bg-raised); border: 1px solid var(--hair); color: var(--text); border-radius: 4px; padding: 2px 8px; font-family: var(--sans); font-size: 13px; }
+.em-search-info { font-size: 13px; white-space: nowrap; }
+@media (min-width: 700px) { .em-tabs { flex-wrap: nowrap; } .em-tabs .em-tab { padding-left: 10px; padding-right: 10px; } .em-search { width: 130px; min-width: 60px; flex: 0 1 130px; } }
 .em-lesson-title { color: var(--accent); margin: 10px 0; }
 .em-card { margin: 10px 0; border: 1px solid var(--hair); border-radius: 6px; background: var(--bg-raised); }
 .em-card > summary { cursor: pointer; padding: 10px 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; color: var(--accent); font-size: 17px; }
