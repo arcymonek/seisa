@@ -23,14 +23,55 @@ from backend.report_utils import attack_age, is_reportable_ip
 _BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
 _RANSOM_KEYWORDS = ("bitcoin", "btc", "ransom", "payment", "wallet", "crypto", "decrypt")
 _FROM_BY_RE = re.compile(r"from\s+(?P<from>.+?)\s+by\s+(?P<by>\S+)", re.IGNORECASE)
-_PAREN_RE = re.compile(r"\(([^)]+)\)")
-_BRACKET_RE = re.compile(r"\[([^\]]+)\]")
 _HEADER_START_RE = re.compile(r"^[A-Za-z][A-Za-z0-9-]*:")
 _INDENTED_HEADER_START_RE = re.compile(r"^\s+[A-Za-z][A-Za-z0-9-]*:(\s|$)")
 _HTML_SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
 _HTML_BLOCK_CLOSE_RE = re.compile(r"</(p|div|tr|li|h[1-6]|table)>|<br\s*/?>", re.IGNORECASE)
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
 _BLANK_LINES_RE = re.compile(r"\n{3,}")
+
+# Size limits for hostile input (a Received header is attacker-controlled text). They bound the work of the parsers so
+# one oversized message cannot keep the server busy; real headers are far below them.
+MAX_RECEIVED_CHARS = 8192  # characters of ONE Received header that are analysed
+MAX_RECEIVED_HEADERS = 100  # Received headers analysed, newest first (a real route has a handful)
+
+
+def _enclosed(text: str, opening: str, closing: str) -> list[str]:
+    """The non-empty texts between `opening` and the next `closing`, left to right and non-overlapping - exactly what
+    the regular expressions `\\(([^)]+)\\)` and `\\[([^\\]]+)\\]` returned (an opening character inside a group stays in
+    it, so `(a (b)` yields `a (b`). Those expressions take quadratic time on a long run of unclosed brackets, because
+    the engine rescans to the end of the text from every opening character; here a missing closing character ends
+    the search at once, so the time is linear."""
+    groups = []
+    pos = text.find(opening)
+    while pos != -1:
+        end = text.find(closing, pos + 1)
+        if end == -1:
+            break  # no closing character anywhere after this point, so no later group can exist either
+        if end > pos + 1:
+            groups.append(text[pos + 1:end])
+            pos = text.find(opening, end + 1)
+        else:
+            pos = text.find(opening, pos + 1)  # "()" holds nothing
+    return groups
+
+
+def _strip_html_tags(text: str) -> str:
+    """Removes every `<...>` run (at least one character inside, `<` allowed inside) - the same result as
+    `re.sub(r"<[^>]+>", "", text)`, but linear on a long run of unclosed `<` (see `_enclosed`)."""
+    out = []
+    pos = 0
+    while True:
+        start = text.find("<", pos)
+        end = text.find(">", start + 1) if start != -1 else -1
+        if end == -1:
+            out.append(text[pos:])
+            return "".join(out)
+        if end > start + 1:
+            out.append(text[pos:start])
+            pos = end + 1
+        else:
+            out.append(text[pos:start + 1])  # "<>" is kept as it is
+            pos = start + 1
 
 
 
@@ -39,7 +80,7 @@ def _html_to_text(html: str) -> str:
     tags into newlines, strips the remaining tags, decodes HTML entities and collapses extra blank lines."""
     text = _HTML_SCRIPT_STYLE_RE.sub(" ", html)
     text = _HTML_BLOCK_CLOSE_RE.sub("\n", text)
-    text = _HTML_TAG_RE.sub("", text)
+    text = _strip_html_tags(text)
     text = html_module.unescape(text)
     text = _BLANK_LINES_RE.sub("\n\n", text)
     return text.strip()
@@ -79,14 +120,13 @@ def _extract_ip_candidates(text: str) -> list[str]:
     private ones - MTAs such as Microsoft EOP may write `[127.0.0.1] (real_ip)`, where the parentheses, not the
     square brackets, carry the real sender address."""
     candidates = []
-    for pattern in (_BRACKET_RE, _PAREN_RE):
-        for m in pattern.finditer(text):
-            ip = parse_ip(m.group(1))
-            if ip:
-                candidates.append(ip)
-            elif pattern is _PAREN_RE:
-                # "(host.example. 192.0.2.1)": a verified reverse-DNS name followed by the address, no brackets
-                candidates.extend(found for token in re.split(r"[\s\[\]]+", m.group(1)) if (found := parse_ip(token.rstrip(".,;"))))
+    for in_parens, group in [(False, g) for g in _enclosed(text, "[", "]")] + [(True, g) for g in _enclosed(text, "(", ")")]:
+        ip = parse_ip(group)
+        if ip:
+            candidates.append(ip)
+        elif in_parens:
+            # "(host.example. 192.0.2.1)": a verified reverse-DNS name followed by the address, no brackets
+            candidates.extend(found for token in re.split(r"[\s\[\]]+", group) if (found := parse_ip(token.rstrip(".,;"))))
     public = [ip for ip in candidates if not is_special_ip(ip)]
     return public or candidates
 
@@ -96,8 +136,8 @@ def _rdns_host(from_raw: str) -> str | None:
     Unlike the first word after "from" (the HELO name, which the connecting machine chooses freely), mail servers
     such as Postfix, Exim and Gmail print this name only after looking it up themselves, so the sender cannot
     simply claim another one."""
-    for m in _PAREN_RE.finditer(from_raw):
-        tokens = [tok for tok in re.split(r"[\s\[\]]+", m.group(1)) if tok]
+    for group in _enclosed(from_raw, "(", ")"):
+        tokens = [tok for tok in re.split(r"[\s\[\]]+", group) if tok]
         name = tokens[0].rstrip(".").lower() if tokens else ""
         if len(tokens) >= 2 and "." in name and parse_ip(name) is None and any(parse_ip(tok.rstrip(".,;")) for tok in tokens[1:]):
             return name
@@ -105,7 +145,7 @@ def _rdns_host(from_raw: str) -> str | None:
 
 
 def parse_received_header(raw_header: str) -> dict:
-    normalized = re.sub(r"\s+", " ", raw_header).strip()
+    normalized = re.sub(r"\s+", " ", raw_header[:MAX_RECEIVED_CHARS]).strip()
     match = _FROM_BY_RE.search(normalized)
     from_raw = match.group("from") if match else ""
     by_host = match.group("by").rstrip(";,") if match else None
@@ -191,7 +231,7 @@ def _find_boundary_hop(received_headers: list[str]) -> tuple[dict | None, list[d
     hop where they differ (or where "from" is just an IP/placeholder such as [127.0.0.1], the typical way a mail
     gateway records the actually connecting client) is the boundary of the trusted infrastructure - its IP is
     the one worth reporting."""
-    hops = [parse_received_header(h) for h in received_headers]
+    hops = [parse_received_header(h) for h in received_headers[:MAX_RECEIVED_HEADERS]]
     if not hops:
         return None, [], "low", t("parser.no_received")
 
@@ -412,6 +452,8 @@ def parse_email(source: str | Message) -> dict:
 
     received_headers = msg.get_all("Received") or []
     boundary_hop, hop_chain, ip_confidence, ip_reasoning = _find_boundary_hop(received_headers)
+    if len(received_headers) > MAX_RECEIVED_HEADERS:
+        ip_reasoning += " " + t("parser.too_many_received", limit=MAX_RECEIVED_HEADERS, total=len(received_headers))
     trusted_ip = boundary_hop["ip"] if boundary_hop else None
 
     # SMTP-AUTH/DKIM corroboration for every hop (not just the boundary) - so a manual override to a different

@@ -6,6 +6,7 @@ an already analysed message; the remaining endpoints list, open and delete the s
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -159,13 +160,14 @@ async def analyze(req: EmailAnalysisRequest):
             return
 
         try:
-            facts = compute_facts(src)
+            # off the event loop: a hostile message must not freeze the other tabs while it is parsed
+            facts = await asyncio.to_thread(compute_facts, src)
         except Exception as exc:  # the parser must not bring down the whole analysis
             logger.error(f"email: deterministic analysis failed: {type(exc).__name__}: {exc}")
             yield sse({"type": "error", "message": t("email.deterministic_failed", message=exc)})
             return
 
-        prepared, prep_notes = prepare_for_llm(src)
+        prepared, prep_notes = await asyncio.to_thread(prepare_for_llm, src)
         yield sse({
             "type": "facts", "facts": facts, "prep_notes": prep_notes,
             "llm_configured": llm_analyzer.is_configured() and req.use_llm,
@@ -188,7 +190,7 @@ async def analyze(req: EmailAnalysisRequest):
         markdown = "".join(run.chunks)
         verdict, confidence = parse_verdict(markdown)
         truncated = run.finish == "length"
-        citations = _citation_check(markdown, src, prepared, facts)
+        citations = await asyncio.to_thread(_citation_check, markdown, src, prepared, facts)
         analysis_id = None
         try:
             analysis_id = save_analysis({
@@ -235,7 +237,7 @@ async def continue_analysis(analysis_id: str):
     lang = record.get("lang") or "pl"  # records saved before the language field existed are Polish
 
     async def stream():
-        prepared, prep_notes = prepare_for_llm(record["raw_email"])
+        prepared, prep_notes = await asyncio.to_thread(prepare_for_llm, record["raw_email"])
         run = _LlmRun()
         continuation = llm_analyzer.stream_chat(
             _system_prompt(lang),
@@ -250,7 +252,7 @@ async def continue_analysis(analysis_id: str):
         markdown = record["markdown"] + "".join(run.chunks)
         truncated = run.finish == "length"
         total_usage = _sum_usage(record.get("usage"), run.usage)
-        citations = _citation_check(markdown, record["raw_email"], prepared, record["facts"])
+        citations = await asyncio.to_thread(_citation_check, markdown, record["raw_email"], prepared, record["facts"])
         try:
             update_analysis(analysis_id, {"markdown": markdown, "truncated": truncated, "usage": total_usage,
                                           "citation_check": citations})

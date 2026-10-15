@@ -8,7 +8,7 @@ generous on purpose (a slow CI runner must not flake), a quadratic regex misses 
 The child process is also what makes the known-slow cases safe to keep in the suite: it is killed after
 KILL_AFTER seconds instead of blocking the run for minutes (there is no `timeout` command on macOS to rely on).
 
-Known slow cases from the 2026-10-15 audit (B03) are `xfail(strict=True)` until stage 1 fixes them.
+The slow cases found by the 2026-10-15 audit (B03) are fixed; this file keeps them from coming back.
 """
 from __future__ import annotations
 
@@ -36,8 +36,6 @@ print(time.perf_counter() - t)
 
 pytestmark = pytest.mark.slow  # about a minute: every case starts its own interpreter
 
-SLOW = "audit 2026-10-15 B03: quadratic regex, fixed in stage 1"
-
 
 def repeat(unit: str, head: str, tail: str = "\n\nb") -> str:
     return head + unit * ((SIZE - len(head)) // len(unit)) + tail
@@ -61,17 +59,13 @@ CASES = {
     "email-like": lambda: repeat("a.", "\n\n", "@"),
     "btc": lambda: repeat("1", "\n\n", "\n"),
     "boundary": lambda: repeat("a", "Content-Type: multipart/mixed; boundary=", "\n\n--" + "a" * 1000),
+    "many received": lambda: "".join("Received: from a ((1 [[2 by mx.example; Mon, 5 Oct 2026 10:00:00 +0000\n" for _ in range(SIZE // 71)) + "\nb",
+    "100 long received": lambda: "".join("Received: from a " + "((1" * 2700 + " by mx.example; Mon, 5 Oct 2026 10:00:00 +0000\n" for _ in range(37)) + "\nb",
     "mbox": lambda: repeat("x ", "From ", "\nA: b\n\nc"),
 }
-KNOWN_SLOW = {"received nested parens", "received brackets", "html tag names", "subject words"}
 
 
-def _param(name: str):
-    marks = [pytest.mark.xfail(strict=True, reason=SLOW)] if name in KNOWN_SLOW else []
-    return pytest.param(name, id=name, marks=marks)
-
-
-@pytest.mark.parametrize("name", [_param(n) for n in CASES])
+@pytest.mark.parametrize("name", list(CASES))
 def test_hostile_input_is_parsed_quickly(name):
     src = CASES[name]()
     assert SIZE * 0.9 <= len(src) <= SIZE * 1.1, len(src)

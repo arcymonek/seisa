@@ -22,7 +22,7 @@ from email.utils import parseaddr, parsedate_to_datetime
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
 
-from backend.email_parser import find_boundary_index, parse_received_header
+from backend.email_parser import MAX_RECEIVED_CHARS, MAX_RECEIVED_HEADERS, find_boundary_index, parse_received_header
 from backend.i18n import t
 from backend.mail_trust import (
     domains_consistent,
@@ -235,9 +235,12 @@ def _parse_date(value: str | None) -> datetime | None:
     return dt.astimezone(timezone.utc)
 
 
+MAX_DECODE_CHARS = 4000  # the standard-library decoder of encoded words is quadratic on thousands of them
+
+
 def _decode_words(value: str) -> str:
     try:
-        return str(make_header(decode_header(value)))
+        return str(make_header(decode_header(value[:MAX_DECODE_CHARS])))
     except Exception:
         return value
 
@@ -639,11 +642,17 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
     and the index of the hop the "sender IP" fact should point to."""
     received = []
     recv_raw = ctx.all_of("received")
-    for idx, raw in enumerate(recv_raw):
+    received_total = len(recv_raw)
+    if received_total > MAX_RECEIVED_HEADERS:
+        # An enormous number of hops is itself suspicious; only the newest ones are analysed (see email_parser).
+        ctx.flag("info", t("forensics.flag.too_many_received", total=received_total, limit=MAX_RECEIVED_HEADERS))
+        recv_raw = recv_raw[:MAX_RECEIVED_HEADERS]
+    for idx, full_raw in enumerate(recv_raw):
+        raw = full_raw[:MAX_RECEIVED_CHARS]  # the patterns below only need the start of a (possibly hostile) header
         hop = parse_received_header(raw)
         ts = None
-        if ";" in raw:
-            ts = _parse_date(raw.rsplit(";", 1)[1])
+        if ";" in full_raw:
+            ts = _parse_date(full_raw.rsplit(";", 1)[1])
         hop_flags = []
         info_hop_flags = set()  # findings that are informational only
         m_id = re.search(r"\bid\s+(\S+?)(?:[;\s]|$)", raw)
@@ -655,7 +664,7 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
         m_tz = re.search(r"([+-]\d{4})\s*\((\w+)\)\s*$", raw.strip())
         if m_tz and m_tz.group(2).upper() in TZ_ABBR and TZ_ABBR[m_tz.group(2).upper()] != int(m_tz.group(1)):
             hop_flags.append(t("forensics.hop.tz_mismatch", offset=m_tz.group(1), name=m_tz.group(2)))
-        if ts and ctx.date_dt and ts == ctx.date_dt and idx == len(recv_raw) - 1 and len(recv_raw) > 1:
+        if ts and ctx.date_dt and ts == ctx.date_dt and idx == received_total - 1 and received_total > 1:
             same_time = t("forensics.hop.same_time_as_date")
             hop_flags.append(same_time)
             info_hop_flags.add(same_time)
@@ -694,6 +703,13 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
     trust_note = None
     trust_index = 0
     if received:
+        # One algorithm decides the trust boundary: the same walk the AbuseIPDB tab uses to pick its report IP. A
+        # separate rule here ("one operator wrote the whole chain, so believe the oldest line") let a forged bottom
+        # `Received ... by <same operator>` line become the sender IP, so the walk's answer is the only one used.
+        walked_index, _walk_confidence = find_boundary_index(recv_raw)
+        walked_ip = received[walked_index]["ip"] if walked_index is not None else None
+        walked_usable = walked_index is not None and bool(walked_ip) and not is_special_ip(walked_ip)
+        oldest_index = len(received) - 1
         # A by_host without a dot (e.g. a Kubernetes pod name) says nothing about which operator owns the hop
         # as long as its own recorded IP is private/absent - so it is excluded here rather than counted as a
         # spurious "different family", the same way an unparseable domain (None) already was.
@@ -703,9 +719,16 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
             if (by_host := (r["by_host"] or "").strip("[]")) and not is_dotless_internal_hop(by_host, r["ip"])
         }
         by_fams.discard(None)
-        oldest_index = len(received) - 1
         oldest_ip = received[oldest_index]["ip"]
-        if len(received) > 1 and len(by_fams) == 1 and oldest_ip and not is_special_ip(oldest_ip):
+        if (
+            walked_usable
+            and walked_index == oldest_index
+            and len(received) > 1
+            and len(by_fams) == 1
+            and oldest_ip
+            and not is_special_ip(oldest_ip)
+        ):
+            # The walk went all the way down and one operator wrote every line, so the educational note is true.
             single_operator = next(iter(by_fams))
             trust_index = oldest_index
             for r in received:
@@ -716,27 +739,22 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
                 )
             trust_note = t("forensics.trust_note", operator=single_operator, index=trust_index)
             ctx.flag("info", trust_note)
-        else:
-            # No single operator wrote the whole chain - but the top hop (written by the recipient's own
-            # server) may itself be just a relay: walk through same-relay internal hops (the exact algorithm
-            # the AbuseIPDB tab uses to pick its report IP) to see if a deeper hop is the real trust boundary.
-            walked_index, _walk_confidence = find_boundary_index(recv_raw)
-            walked_ip = received[walked_index]["ip"] if walked_index is not None else None
-            if walked_index is not None and walked_index > 0 and walked_ip and not is_special_ip(walked_ip):
-                trust_index = walked_index
-                ctx.flag("warn", t("forensics.walked_warning", ip=received[0]["ip"] or "?"))
-                for r in received:
-                    if r["index"] < trust_index:
-                        r["role"] = t("forensics.role.internal_hop")
-                    elif r["index"] == trust_index:
-                        r["role"] = t("forensics.role.walked_boundary")
-                    else:
-                        r["role"] = t("forensics.role.below")
-            else:
-                trust_index = 0
-                received[0]["role"] = t("forensics.role.top")
-                for r in received[1:]:
+        elif walked_usable and walked_index > 0:
+            # The top hop (written by the recipient's own server) is only a relay: a deeper hop is the real boundary.
+            trust_index = walked_index
+            ctx.flag("warn", t("forensics.walked_warning", ip=received[0]["ip"] or "?"))
+            for r in received:
+                if r["index"] < trust_index:
+                    r["role"] = t("forensics.role.internal_hop")
+                elif r["index"] == trust_index:
+                    r["role"] = t("forensics.role.walked_boundary")
+                else:
                     r["role"] = t("forensics.role.below")
+        else:
+            trust_index = 0
+            received[0]["role"] = t("forensics.role.top")
+            for r in received[1:]:
+                r["role"] = t("forensics.role.below")
     return received, single_operator, trust_note, trust_index
 
 
@@ -763,7 +781,9 @@ def _authentication(ctx: _Ctx, received: list[dict]) -> list[dict]:
                     entry["details"][k] = mm.group(1)
         else:
             body = re.sub(r"^\s*i\s*=\s*\d+\s*;\s*", "", v)
-            authserv = body.split(";", 1)[0].strip().split()[0] if body.strip() else None
+            # The authserv-id is the first token before the first ";"; there may be none (e.g. "; spf=pass").
+            authserv_tokens = body.split(";", 1)[0].split()
+            authserv = authserv_tokens[0] if authserv_tokens else None
             entry["authserv_id"] = authserv
             ad = family(registrable_domain((authserv or "").lower())) if authserv else None
             entry["matches_receiver"] = (ad in top_by_domains) if (ad and top_by_domains) else None

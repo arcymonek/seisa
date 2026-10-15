@@ -21,13 +21,14 @@ import os
 import re
 
 import pytest
-from hypothesis import HealthCheck, example, given, settings
+from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis import strategies as st
 
 from backend.aggregator import detect_indicator_type, is_valid_indicator, normalize_indicator
 from backend.citation_check import verify_citations
 from backend.email_forensics import compute_facts, decoded_text_parts, normalize_source, prepare_for_llm
-from backend.email_parser import extract_addresses, parse_email, parse_message
+from backend.email_parser import _enclosed, _strip_html_tags, extract_addresses, parse_email, parse_message
+from backend.mail_trust import is_special_ip
 from backend.report_builder import local_assessment
 from backend.report_utils import find_pii, redact_pii, sanitize_comment, truncate_chars
 from backend.urlscan_input import InvalidScanUrl, normalize_scan_url
@@ -156,15 +157,9 @@ def check_email(src: str, *, with_facts: bool = True):
             assert h["ip"]
     f = None
     if with_facts:
-        try:
-            f = compute_facts(norm)
-        except IndexError:
-            # Known bug B02 (audit 2026-10-15, fixed in stage 1): an empty authserv-id raises IndexError. The
-            # dedicated xfail test below pins it; here we only skip the facts of such an input.
-            f = None
-        if f is not None:
-            json.dumps(f)
-            assert 0 <= f["trust_index"] <= max(0, len(f["received"]) - 1)
+        f = compute_facts(norm)
+        json.dumps(f)
+        assert 0 <= f["trust_index"] <= max(0, len(f["received"]) - 1)
     prep, _notes = prepare_for_llm(norm)
     assert len(prep) <= MAX_LLM_SOURCE_CHARS + MARKER_ROOM
     decoded_text_parts(norm)
@@ -223,7 +218,7 @@ def test_verdict_parts_come_together(raw):
     assert (v is None) == (c is None)
 
 
-# --- known bugs (audit 2026-10-15): one fixed input each, strict xfail ------------------------------------------
+# --- audit 2026-10-15 stage 1 (B01, B02, B03): fixed, kept as properties ------------------------------------------
 
 B01_SRC = (
     "Received: by 2002:a05:6638:4e2f::1 with SMTP id x1; Mon, 5 Oct 2026 10:00:05 -0700\n"
@@ -234,22 +229,42 @@ B01_SRC = (
 )
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B02: Authentication-Results with an empty authserv-id raises IndexError")
 @example("Authentication-Results: ;x\n\nbody\n")
 @given(st.just("From: a@example.org\n\nbody\n"))
 def test_compute_facts_never_raises(src):
     compute_facts(normalize_source(src))
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B01: the Email tab trusts a forged bottom Received of the same operator")
 @example(B01_SRC)
-@given(st.just("From: a@example.org\n\nbody\n"))
+@given(email())
 def test_tabs_agree_on_sender_ip(src):
+    """The Email tab and the AbuseIPDB tab use one algorithm, so they name the same machine (when it is public: the
+    Email tab never points at a private or reserved address, AbuseIPDB reports it and then refuses it)."""
     a = parse_email(src)
-    f = compute_facts(normalize_source(src))
-    email_tab = f["received"][f["trust_index"]]["ip"] if f["received"] else None
-    if a["trusted_source_ip"] and email_tab:
+    facts = compute_facts(normalize_source(src))
+    # Only when both tabs read the same Received lines: the Email tab does not yet repair a header whose folding was
+    # lost in the middle (audit B06, stage 2), so for such an input the tabs read different text, not different rules.
+    same_lines = [h["raw"] for h in facts["received"]] == [
+        re.sub(r"\s+", " ", v).strip()[:400] for v in parse_message(src).get_all("Received") or []
+    ]
+    assume(same_lines)
+    email_tab = facts["received"][facts["trust_index"]]["ip"] if facts["received"] else None
+    if a["trusted_source_ip"] and email_tab and not is_special_ip(a["trusted_source_ip"]):
         assert a["trusted_source_ip"] == email_tab
+
+
+# The pre-fix expressions, kept as the reference: the linear scanners must return exactly what they returned.
+_OLD_PAREN = re.compile(r"\(([^)]+)\)")
+_OLD_BRACKET = re.compile(r"\[([^\]]+)\]")
+_OLD_HTML_TAG = re.compile(r"<[^>]+>")
+_BRACKETY = st.text("()[]<>a b.:", max_size=60)
+
+
+@given(_BRACKETY)
+def test_scanners_return_what_the_old_regexes_returned(text):
+    assert _enclosed(text, "(", ")") == _OLD_PAREN.findall(text)
+    assert _enclosed(text, "[", "]") == _OLD_BRACKET.findall(text)
+    assert _strip_html_tags(text) == _OLD_HTML_TAG.sub("", text)
 
 
 @pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B08: single-part base64 in iso-8859-2/windows-1250 is decoded as UTF-8")

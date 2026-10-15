@@ -223,3 +223,63 @@ def test_email_tab_warns_when_the_boundary_comes_from_relay_written_lines():
 def test_email_tab_has_no_relay_warning_for_a_direct_boundary(name):
     flags = compute_facts(load_eml(name))["flags"]
     assert not [f for f in flags if f["level"] == "warn" and "relay" in f["text"].lower() and "Received" in f["text"]]
+
+
+# ---- audit 2026-10-15, stage 1 (B01, B02) ----
+
+# The bottom line is forged (it claims the same operator, mx.google.com, wrote it); the line above it is the one the
+# recipient's own infrastructure wrote for the real connecting machine.
+FORGED_BOTTOM_RECEIVED = (
+    "Received: by 2002:a05:6638:4e2f::1 with SMTP id x1; Mon, 5 Oct 2026 10:00:05 -0700\n"
+    "Received: from mail.attacker.example (mail.attacker.example. [9.9.9.9]) by mx.google.com with ESMTPS id y2; "
+    "Mon, 5 Oct 2026 10:00:04 -0700\n"
+    "Received: from innocent.example (innocent.example. 1.1.1.1) by mx.google.com with ESMTPS id z3; "
+    "Mon, 5 Oct 2026 09:00:00 -0700\n"
+    "From: a@example.org\n\nbody\n"
+)
+
+
+def test_forged_bottom_received_of_the_same_operator_does_not_pick_the_sender_ip():
+    facts = compute_facts(normalize_source(FORGED_BOTTOM_RECEIVED))
+    assert facts["received"][facts["trust_index"]]["ip"] == "9.9.9.9"
+    assert facts["single_operator"] is None
+    assert facts["trust_note"] is None
+    # the Email tab and the AbuseIPDB tab name the same machine
+    assert parse_email(FORGED_BOTTOM_RECEIVED)["trusted_source_ip"] == "9.9.9.9"
+
+
+@pytest.mark.parametrize("header", ["Authentication-Results: ;x", "Authentication-Results:  ; ", "Authentication-Results: i=1; ;"])
+def test_authentication_results_without_an_authserv_id_does_not_break_the_facts(header):
+    facts = compute_facts(normalize_source(f"{header}\nFrom: a@example.org\n\nbody\n"))
+    assert facts["auth"][0]["authserv_id"] is None
+    assert facts["auth"][0]["matches_receiver"] is None
+
+
+def _received_lines(count: int) -> str:
+    return "".join(
+        f"Received: from relay{i}.example.net (relay{i}.example.net. [8.8.{i % 250}.{i % 200 + 1}]) by mx{i}.example.org "
+        f"with ESMTPS id x{i}; Mon, 5 Oct 2026 10:00:00 +0000\n"
+        for i in range(count)
+    )
+
+
+def test_an_enormous_number_of_received_headers_is_cut_and_reported():
+    from backend.email_parser import MAX_RECEIVED_HEADERS
+
+    src = _received_lines(MAX_RECEIVED_HEADERS + 40) + "From: a@example.org\n\nbody\n"
+    facts = compute_facts(normalize_source(src))
+    assert len(facts["received"]) == MAX_RECEIVED_HEADERS
+    assert any(str(MAX_RECEIVED_HEADERS + 40) in f["text"] and f["level"] == "info" for f in facts["flags"])
+    assert "Received" in parse_email(src)["ip_reasoning"] and str(MAX_RECEIVED_HEADERS + 40) in parse_email(src)["ip_reasoning"]
+    # a normal message gets no such note
+    normal = compute_facts(normalize_source(_received_lines(5) + "From: a@example.org\n\nbody\n"))
+    assert not any("Received headers" in f["text"] for f in normal["flags"])
+
+
+def test_an_oversized_received_header_still_yields_its_leading_fields():
+    from backend.email_parser import MAX_RECEIVED_CHARS, parse_received_header
+
+    raw = "from mail.example.net (mail.example.net. [8.8.4.4]) by mx.example.org with ESMTPS id x; " + "(x " * MAX_RECEIVED_CHARS
+    hop = parse_received_header(raw)
+    assert (hop["from_host"], hop["ip"], hop["by_host"]) == ("mail.example.net", "8.8.4.4", "mx.example.org")
+    assert len(hop["raw"]) <= MAX_RECEIVED_CHARS

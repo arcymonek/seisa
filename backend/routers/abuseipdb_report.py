@@ -8,6 +8,7 @@ refusals (quota, repeat rule, invalid data, key) are turned into readable errors
 """
 from __future__ import annotations
 
+import asyncio
 import re
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -138,12 +139,13 @@ def _api_timestamp(value: str | None) -> str:
 
 @router.post("/email/analyze")
 async def analyze_email(req: EmailAnalyzeRequest):
-    msg = parse_message(req.raw_email)
-    facts = parse_email(msg)
+    # the parsing runs off the event loop: a hostile message must not freeze the other tabs while it is analysed
+    msg = await asyncio.to_thread(parse_message, req.raw_email)
+    facts = await asyncio.to_thread(parse_email, msg)
 
     # The model gets the same prepared source as the Email tab (text parts decoded from base64, binary parts replaced
     # by a size + sha256 marker, headers untouched). The facts above are still computed from the original source.
-    prepared, _prep_notes = prepare_for_llm(normalize_source(req.raw_email))
+    prepared, _prep_notes = await asyncio.to_thread(lambda: prepare_for_llm(normalize_source(req.raw_email)))
 
     llm_analysis = None
     if req.use_llm and llm_analyzer.is_configured():
@@ -162,12 +164,13 @@ async def analyze_email(req: EmailAnalyzeRequest):
         report_comment = _fallback_comment(facts)
     report_comment = truncate_chars(sanitize_comment(_strip_ports(report_comment)))
 
-    addr = extract_addresses(msg)
+    addr = await asyncio.to_thread(extract_addresses, msg)
+    assessment = await asyncio.to_thread(local_assessment, msg, facts)
     return {
         "facts": facts,
         "ip_candidates": _ip_candidates(facts, llm_analysis),
         "own_terms": own_identifiers(addr["recipients"]),
-        "local_assessment": local_assessment(msg, facts),
+        "local_assessment": assessment,
         "categories": ABUSEIPDB_CATEGORIES,
         "llm_configured": llm_analyzer.is_configured(),
         "llm_analysis": llm_analysis,
