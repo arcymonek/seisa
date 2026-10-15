@@ -38,6 +38,23 @@ Author: Arkadiusz Polak ([GitHub: seisa](https://github.com/arcymonek/seisa), e-
 
 Every tab is described in [Tabs](docs/en/tabs.md); an end-to-end example is the [Walkthrough](docs/en/tabs.md#walkthrough-from-a-suspicious-e-mail-to-a-report). All tabs share one layout: a verdict banner (no fill, only its border is coloured red, amber or green), summary tiles, then collapsible cards that open by themselves only when they carry a signal; a plain-language "Explanations" card and contextual glossary tooltips (hover or keyboard focus on a dotted-underline term) turn the technical detail into something a non-specialist can read.
 
+## Screenshots
+
+Click a picture to see it full size. The screenshots show the default light theme.
+
+<p align="center"><a href="docs/images/email_en.png"><img src="docs/images/email_en.png" alt="Email tab: an LLM verdict banner for a phishing e-mail, summary tiles for warnings, authentication, sender identity and sender IP, and the lesson tabs" width="830"></a><br><sub><b>Email:</b> hard facts computed locally, then an optional step-by-step lesson.</sub></p>
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/images/ip_en.png"><img src="docs/images/ip_en.png" alt="IP tab: reputation report for an address with one aggregate score, per-source tiles, component scores and address identity"></a><br><sub><b>IP:</b> several sources merged into one explained score.</sub></td>
+<td width="50%" valign="top"><a href="docs/images/urlscan_en.png"><img src="docs/images/urlscan_en.png" alt="URLScan tab: scan report with a verdict, summary tiles and the page screenshot rendered by urlscan.io"></a><br><sub><b>URLScan:</b> a live scan without opening the link yourself.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/images/abuseipdb_en.png"><img src="docs/images/abuseipdb_en.png" alt="AbuseIPDB tab: eligibility verdict, source IP, age, authentication and the Received chain that explains where the IP comes from"></a><br><sub><b>AbuseIPDB:</b> the hard checks run in code, not in the LLM.</sub></td>
+<td width="50%" valign="top"><a href="docs/images/dmarc_en.png"><img src="docs/images/dmarc_en.png" alt="DMARC tab: aggregate report summary with failing sources, pass rate and a table of IP sources with risk"></a><br><sub><b>DMARC:</b> who sends mail as your domain, and who should not.</sub></td>
+</tr>
+</table>
+
 ## Quick start
 
 ### Requirements

@@ -38,6 +38,23 @@ Autor: Arkadiusz Polak ([GitHub: seisa](https://github.com/arcymonek/seisa), e-m
 
 Każda zakładka jest opisana w [Zakładkach](docs/pl/tabs.md); przykład od początku do końca to [Przykład: od podejrzanego e-maila do zgłoszenia](docs/pl/tabs.md#przykład-od-podejrzanego-e-maila-do-zgłoszenia). Wszystkie zakładki mają wspólny układ: baner werdyktu (bez tła, tylko obramowanie jest czerwone, żółte lub zielone), kafelki podsumowania, a potem zwijane karty, które otwierają się same tylko wtedy, gdy niosą sygnał; sekcja "Wyjaśnienia" pisana zrozumiałym językiem i kontekstowe dymki (glosariusz - najedź myszą albo zaznacz klawiaturą podkreślony na kropki termin) tłumaczą żargon także dla osób bez technicznego przygotowania.
 
+## Zrzuty ekranu
+
+Kliknij obrazek, żeby zobaczyć go w pełnym rozmiarze. Zrzuty pokazują domyślny jasny motyw.
+
+<p align="center"><a href="docs/images/email_pl.png"><img src="docs/images/email_pl.png" alt="Zakładka Email: baner werdyktu LLM dla e-maila phishingowego, kafelki ostrzeżeń, uwierzytelniania, tożsamości nadawcy i IP nadawcy oraz zakładki lekcji" width="830"></a><br><sub><b>Email:</b> twarde fakty liczone lokalnie, potem opcjonalna lekcja krok po kroku.</sub></p>
+
+<table>
+<tr>
+<td width="50%" valign="top"><a href="docs/images/ip_pl.png"><img src="docs/images/ip_pl.png" alt="Zakładka IP: raport reputacji adresu z jednym zbiorczym wynikiem, kafelkami źródeł, wynikami składowymi i tożsamością adresu"></a><br><sub><b>IP:</b> kilka źródeł scalonych w jeden wynik z wyjaśnieniem.</sub></td>
+<td width="50%" valign="top"><a href="docs/images/urlscan_pl.png"><img src="docs/images/urlscan_pl.png" alt="Zakładka URLScan: raport ze skanu z werdyktem, kafelkami podsumowania i zrzutem strony wykonanym przez urlscan.io"></a><br><sub><b>URLScan:</b> żywy skan bez otwierania linku samemu.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><a href="docs/images/abuseipdb_pl.png"><img src="docs/images/abuseipdb_pl.png" alt="Zakładka AbuseIPDB: werdykt kwalifikowalności, IP źródłowe, wiek, uwierzytelnianie i łańcuch Received tłumaczący skąd pochodzi IP"></a><br><sub><b>AbuseIPDB:</b> twarde sprawdzenia działają w kodzie, nie w LLM.</sub></td>
+<td width="50%" valign="top"><a href="docs/images/dmarc_pl.png"><img src="docs/images/dmarc_pl.png" alt="Zakładka DMARC: podsumowanie raportów zbiorczych z niezgodnymi źródłami, odsetkiem zgodnych i tabelą źródeł IP z ryzykiem"></a><br><sub><b>DMARC:</b> kto wysyła pocztę w imieniu Twojej domeny, a kto nie powinien.</sub></td>
+</tr>
+</table>
+
 ## Szybki start
 
 ### Wymagania
