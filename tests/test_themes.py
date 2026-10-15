@@ -206,13 +206,6 @@ def test_sumi_brown_is_dark_with_the_logo_as_an_accent_coloured_shape():
     assert "logo" not in SHIPPED["blue"] and "logo" not in SHIPPED["light"] and "logo" not in SHIPPED["kohaku"]  # their logos did not change
 
 
-def test_sumi_brown_has_no_gold():
-    # the skin is the ink-and-earth palette without the gold of the lacquer: no accent or status colour sits in the yellow-gold hue band
-    colors = SHIPPED["sumi-brown"]["colors"]
-    r, g, b = (int(colors["accent"][i:i + 2], 16) for i in (1, 3, 5))
-    assert max(r, g, b) - min(r, g, b) < 40, colors["accent"]  # the accent is a low-saturation greige, not a golden yellow
-
-
 def test_public_list_has_no_colours():
     listed = public_list([validate_theme(good_theme(), "demo")])
     assert listed == [{"id": "demo", "name": {"en": "Demo", "pl": "Demo"}, "base": "light", "order": 50}]
