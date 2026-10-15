@@ -14,7 +14,6 @@ const AUTHOR_EMAIL = "contact@seisa.eu";
 const REPO_URL = "https://github.com/arcymonek/seisa";
 const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
-const AUTHOR_GITHUB = "https://github.com/arcymonek";
 const AUTHOR_SITE = "https://seisa.eu";
 
 // An external link that opens in a new tab (text is escaped here).
@@ -45,7 +44,7 @@ function colourExplanation() {
     rows.map(([role, kanji, kana, name]) => `<div class="colour-row"><span class="kanji" lang="ja">${e(kanji || "-")}</span>
       <span class="mono">${kanji ? `${e(kana)}<br>${e(name)}` : ""}</span>
       <span><strong>${e(t("about.role." + role))}:</strong> ${e(t("about.col." + name))}</span></div>`).join("") + "</details>";
-  return `<div class="colour-pal"><p>${e(t("about.colors_intro")).replace(/\n/g, "<br>")}</p><div class="colour-tiles">${PALETTES.map(palette).join("")}</div></div>`;
+  return `<div class="colour-pal"><div class="colour-tiles">${PALETTES.map(palette).join("")}</div><p>${e(t("about.colors_note"))}</p></div>`;
 }
 
 export function initAbout(container) {
@@ -59,7 +58,7 @@ export function initAbout(container) {
     <div class="kpi-row">
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
         <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
-        GitHub: <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener noreferrer">arcymonek</a><br>
+        GitHub: <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer">seisa</a><br>
         ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">seisa.eu</a></span></div>
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}<br>${e(t("about.name_pron"))}</span>
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>

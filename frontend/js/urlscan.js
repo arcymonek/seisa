@@ -43,7 +43,6 @@ const formatElapsed = elapsedSeconds("urlscan.seconds");
 export function initUrlscan(container) {
   root = container;
   loadOptions();
-  const advancedOpen = Boolean(options.country || options.agent);
   root.innerHTML = `
     <div class="subtitle">${escapeHtml(t("urlscan.subtitle"))}</div>
     <label for="us-url">${escapeHtml(t("urlscan.url_label"))}</label>
@@ -52,9 +51,9 @@ export function initUrlscan(container) {
       <span id="us-visibility" role="group" aria-label="${escapeHtml(t("urlscan.visibility_label"))}">${VISIBILITIES.map(
         (v) => `<button type="button" class="secondary${v === options.visibility ? " on" : ""}" data-vis="${v}" aria-pressed="${v === options.visibility}">${escapeHtml(t("urlscan.vis." + v))}</button>`
       ).join("")}</span>
-      <button type="button" class="secondary${advancedOpen ? " on" : ""}" id="us-adv-toggle" aria-expanded="${advancedOpen}" aria-controls="us-adv">${escapeHtml(t("urlscan.advanced"))}</button>
+      <button type="button" class="secondary" id="us-adv-toggle" aria-expanded="false" aria-controls="us-adv">${escapeHtml(t("urlscan.advanced"))}</button>
     </div>
-    <div class="us-adv-grid" id="us-adv"${advancedOpen ? "" : " hidden"}>
+    <div class="us-adv-grid" id="us-adv" hidden>
       <label for="us-country">${escapeHtml(t("urlscan.country_label"))}</label>
       <select id="us-country"><option value="">${escapeHtml(t("urlscan.country_auto"))}</option>${COUNTRIES.map(
         (c) => `<option value="${c}"${c === options.country ? " selected" : ""}>${escapeHtml(countryName(c.toUpperCase()))}</option>`

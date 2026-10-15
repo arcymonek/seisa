@@ -233,7 +233,7 @@ function tilesHtml(result) {
   if (vt && vt.total_engines)
     tiles.push(kpiTile(t("lookup.kpi_detections"), `${(vt.malicious || 0) + (vt.suspicious || 0)}/${vt.total_engines}`, { sub: t("lookup.kpi_detections_sub", { malicious: vt.malicious || 0, suspicious: vt.suspicious || 0 }) }));
   const gn = svc("greynoise");
-  if (gn) tiles.push(kpiTile("GreyNoise", gn.classification || (gn.has_data === false ? t("lookup.no_data") : "-"), { sub: gn.actor && String(gn.actor).toLowerCase() !== "unknown" ? gn.actor : "" }));
+  if (gn) tiles.push(kpiTile("GreyNoise", gn.classification || (gn.has_data === false ? t("lookup.no_data") : "-"), { sub: gn.actor && String(gn.actor).toLowerCase() !== "unknown" ? gn.actor : "", subHtml: gn.actor && String(gn.actor).toLowerCase() !== "unknown" ? undefined : "<br>&nbsp;" }));
   const otx = svc("otx");
   if (otx) tiles.push(kpiTile(t("lookup.kpi_pulses"), otx.pulse_count ?? 0, { sub: t("lookup.kpi_pulses_sub", { recent: otx.recent_pulse_count ?? 0 }) }));
 
@@ -245,7 +245,7 @@ function tilesHtml(result) {
     tiles.push(kpiTile("ASN", asn.value, { sub: org ? org.value : "", mark: agreementMark(asn), glKey: "lookup.gl.asn" }));
   }
   const usage = idf("usage_type");
-  if (usage) tiles.push(kpiTile(t("lookup.kpi_type"), usage.value, { sub: idf("tor") ? t("lookup.tor_node") : "" }));
+  if (usage) tiles.push(kpiTile(t("lookup.kpi_type"), usage.value, { sub: idf("tor") ? t("lookup.tor_node") : "", valueClass: "kpi-value-sm" }));
   if (result.indicator_type === "domain") tiles.push(...domainTiles(result, idf, svc));
   return tiles.length ? `<div class="kpi-row">${tiles.join("")}</div>` : "";
 }
@@ -300,7 +300,7 @@ function componentsHtml(rs) {
     ? `<div class="table-wrap"><table><thead><tr><th>${e(t("lookup.col_source"))}</th><th>${e(t("lookup.col_signal"))}</th><th>${e(t("lookup.col_value"))}</th><th>${e(t("lookup.col_risk"))}</th><th>${e(t("lookup.col_credibility"))}</th></tr></thead><tbody>${rows}</tbody></table></div>`
     : "";
   const excluded = excludedSources.length ? `<div class="excluded-sources">${e(t("lookup.excluded"))}: ${e(excludedSources.join("; "))}</div>` : "";
-  return `<details class="fact-block" data-sec="components"><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
+  return `<details class="fact-block" data-sec="components" data-open-default><summary>${e(t("lookup.h_components"))}</summary>${table}${excluded}</details>`;
 }
 
 // ---- identity card ----
@@ -342,7 +342,7 @@ function identityHtml(identity, type) {
     : `<span class="ident-state ok">${e(t("lookup.identity_ok"))}</span>`;
   const notes = identity.notes.map((n) => `<div class="muted">${e(n)}</div>`).join("");
   const title = t(type === "domain" ? "lookup.h_identity_domain" : "lookup.h_identity");
-  return `<details class="fact-block identity" data-sec="identity"><summary>${e(title)} ${state}</summary>${kvHtml(identity.fields.map(identityRow))}${notes}</details>`;
+  return `<details class="fact-block identity" data-sec="identity" data-open-default><summary>${e(title)} ${state}</summary>${kvHtml(identity.fields.map(identityRow))}${notes}</details>`;
 }
 
 // ---- source cards ----
@@ -452,7 +452,8 @@ function navHtml(result, sections) {
   return `<nav class="result-nav" aria-label="${e(t("lookup.nav_label"))}">${links.join("")}</nav>`;
 }
 
-// Glossary at the bottom, like in the DMARC tab: terms are data, texts live in the catalog (lookup.legend.<id>).
+// Glossary at the bottom, like in the DMARC tab: terms are data, texts live in the catalog (lookup.legend.<id> is the one-sentence lead, lookup.legend_more.<id> the details folded under it).
+const LEGEND_PARAMS = { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP };
 const LEGEND = ["score", "risk", "signal", "identity", "priority", "country", "confidence", "greynoise", "riot", "pulses", "whitelisted", "domain", "heuristics", "comparison"];
 
 
@@ -467,7 +468,7 @@ export function renderLookupResult(result) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("lookup.report_title"))} - <code>${e(result.indicator)}</code>
       <button type="button" class="secondary" data-copy>${e(t(result.indicator_type === "domain" ? "common.copy_domain" : "common.copy_ip"))}</button></h2>
     ${comparisonHtml(result)}
-    ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml(t("lookup.h_legend"), LEGEND.map((id) => [t("lookup.legend_term." + id), t("lookup.legend." + id, { medium: MEDIUM_FROM, high: HIGH_FROM, cap: BENIGN_CAP })]))}`;
+    ${bannerHtml(result)}${navHtml(result, sections)}${tilesHtml(result)}${components}${identity}${sourcesHtml(result)}${legendHtml(t("lookup.h_legend"), LEGEND.map((id) => [t("lookup.legend_term." + id), t("lookup.legend." + id, LEGEND_PARAMS), t("lookup.legend_more." + id, LEGEND_PARAMS), id]))}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button");

@@ -22,6 +22,13 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.20 - 2026-10-15
+- **Explanations are easier to read (IP, URLScan, DMARC, AbuseIPDB):** every term shows one plain sentence, and the rest sits under a small "Details" toggle with one sentence per line (the catalogs got `legend_more` keys next to the existing texts; a term with a single sentence has no toggle). `legendHtml` in `ui.js` builds it and `fold-state.js` remembers each toggle separately.
+- **Email:** the row of the three pane buttons (Overview, Facts, Lesson) stays at the top while you scroll, with an arrow button at its right end that scrolls the page to the top. Jumps from the table of contents stop below that row.
+- **IP:** "Component scores" and "Address identity" start unfolded (`data-open-default`, the only exception to "everything starts folded"). The GreyNoise tile keeps its value level with the other tiles when there is no actor line, and the "Address type" value is 4 px smaller.
+- **URLScan:** the "Advanced options" always start folded (a saved country or user agent is still sent, only hidden); the tiles "URLScan score", "Certificate age" (no TLS) and "Redirects" (none) keep their value level with the other tiles.
+- **Info:** the colour card has no intro above the tiles, and its one sentence about traditional Japanese colours stands under them. The author tile reads "GitHub: seisa" and links to the repository (both READMEs too).
+
 ## 2.4.19 - 2026-10-15
 - **Themes:** Light Washi is now the default theme, and the browser remembers a theme you pick. "Dark Sumi" is renamed "Blue Sumi" (id `blue`; a choice stored under the old id still works) and the buttons are ordered Light Washi, Brown Sumi, Blue Sumi, Red-and-white Kōhaku, System. "System" gives Light Washi for a light operating system and Brown Sumi for a dark one. The two-tone bar under the header of Kōhaku is gone, and so is the `stripe` key: a theme file that carries it is now rejected like any other unknown key.
 - **Info > Settings > About the colours:** every theme is its own tile (two per row) that starts folded and shows the theme name and one sentence; click it for the colours. Brown Sumi comes before Blue Sumi, the Kōhaku text no longer repeats 紅白.

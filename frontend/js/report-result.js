@@ -134,7 +134,7 @@ function item(key, status, note) {
 
 const LEGEND = ["groups", "boundary_hop", "smtp_auth", "double_extension", "cooldown", "pii", "confidence", "qualifies"];
 
-export const legendHtml = () => legendCard(t("rb.h_legend"), LEGEND.map((id) => [t("rb.legend_term." + id), t("rb.legend." + id)]));
+export const legendHtml = () => legendCard(t("rb.h_legend"), LEGEND.map((id) => [t("rb.legend_term." + id), t("rb.legend." + id), t("rb.legend_more." + id), id]));
 
 // model: {required: [[key, status, note]], blocking: [...], info: [...], failing: n}
 export function checksCardHtml(model, wasOpen) {

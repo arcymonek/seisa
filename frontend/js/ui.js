@@ -10,13 +10,14 @@ const classes = (...names) => names.filter(Boolean).join(" ");
 // - tone: "good" | "warn" | "bad" | "neutral" colours the border
 // - mark: markup shown after the value (an agreement badge, a warning badge)
 // - glKey: glossary tooltip on the caption (glossary.js)
+// - valueClass: extra class on the value (e.g. "kpi-value-sm" for a long text value)
 // - valueHtml / subHtml: already escaped markup instead of the plain value / sub
 // - filter: the tile is a button that filters a list (History tab); `on` marks the active filter
-export function kpiTile(label, value, { sub = "", tone = "", mark = "", glKey = "", valueHtml, subHtml, filter, on = false } = {}) {
+export function kpiTile(label, value, { sub = "", tone = "", mark = "", glKey = "", valueClass = "", valueHtml, subHtml, filter, on = false } = {}) {
   const caption = glKey ? glossAbbr(label, glKey) : e(label);
   const valueMarkup = (valueHtml ?? e(value)) + (mark ? ` ${mark}` : "");
   const subMarkup = subHtml ?? (sub ? e(sub) : "");
-  const inner = `<span class="kpi-label">${caption}</span><span class="kpi-value">${valueMarkup}</span>${subMarkup ? `<span class="muted">${subMarkup}</span>` : ""}`;
+  const inner = `<span class="kpi-label">${caption}</span><span class="${classes("kpi-value", valueClass)}">${valueMarkup}</span>${subMarkup ? `<span class="muted">${subMarkup}</span>` : ""}`;
   if (filter !== undefined) {
     return `<button type="button" class="${classes("kpi", "click", tone, on && "on")}" data-filter="${e(filter)}">${inner}</button>`;
   }
@@ -30,8 +31,11 @@ export function kvHtml(rows, cls = "") {
 
 // The collapsed "Legend" card at the end of a result: rows are [term, explanation], both plain text. The callers build
 // them with literal catalog keys, so scripts/check_i18n.py sees which keys are used.
+// A row may also be [term, lead, more, id] (the toggle is labelled by common.legend_more): the lead stays visible and `more`
+// is folded under a small "details" toggle (`id` keeps the open state of each toggle apart, see fold-state.js).
 export function legendHtml(title, rows) {
-  return `<details class="fact-block legend"><summary>${e(title)}</summary>${kvHtml(rows.map(([term, text]) => [term, e(text)]), "legend")}</details>`;
+  const cell = ([term, text, more, id]) => [term, more ? `<span class="legend-lead">${e(text)}</span><details class="legend-more" data-key="legend-${e(id)}"><summary>${e(t("common.legend_more"))}</summary>${e(more)}</details>` : e(text)];
+  return `<details class="fact-block legend"><summary>${e(title)}</summary>${kvHtml(rows.map(cell), "legend")}</details>`;
 }
 
 // A one-line banner with plain text: tone is "info" | "good" | "warn" | "bad".

@@ -1,4 +1,5 @@
-// Foldable sections (<details>) in the analysis tabs: every one starts folded, and a section the reader opened or
+// Foldable sections (<details>) in the analysis tabs: every one starts folded (except those marked
+// `data-open-default`, which start open), and a section the reader opened or
 // closed keeps that state until the page is closed (kept in memory only, nothing is stored on disk).
 //
 // A MutationObserver watches the tab panels; each <details> that appears is folded (or restored from the remembered
@@ -22,7 +23,7 @@ function keyOf(det, panelId) {
 function bind(det, panelId) {
   if (applied.has(det) || det.closest(SELF_MANAGED)) return;
   const key = keyOf(det, panelId);
-  det.open = remembered.has(key) ? remembered.get(key) : false;
+  det.open = remembered.has(key) ? remembered.get(key) : det.hasAttribute("data-open-default");
   applied.set(det, det.open);
   // The toggle event is queued, so one caused by the line above arrives later and carries the state already applied.
   det.addEventListener("toggle", () => {

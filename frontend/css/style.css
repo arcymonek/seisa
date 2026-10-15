@@ -277,13 +277,19 @@ button.linklike { background: none; border: none; padding: 0; font: inherit; cur
 .em-toc button[data-state="bad"]::after { content: " ●"; color: var(--fail); }
 .em-toc button[data-state="warn"]::after { content: " ●"; color: var(--warn); }
 .em-main { min-width: 0; }
-.em-tabs { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--hair); margin-bottom: 14px; }
+.em-tabs { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; background: var(--bg); border-bottom: 1px solid var(--hair); margin-bottom: 14px; }
+.em-bar-toggle { margin-left: auto; display: inline-flex; gap: 6px; }
+.em-bar-toggle button { margin: 0; }
+.em-top { margin-left: 0; display: flex; align-items: center; background: none; border: none; color: var(--muted); padding: 8px 12px; cursor: pointer; }
+.em-top:hover { color: var(--accent); }
+.em-top .ic { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .em-tab { background: none; border: none; color: var(--muted); font-family: var(--mono); font-size: 15px; padding: 8px 16px; cursor: pointer; border-bottom: 2px solid transparent; }
 .em-tab:hover { color: var(--text); }
 .em-tab.on { color: var(--accent); border-bottom-color: var(--accent); }
 .em-pane > section { margin-bottom: 22px; scroll-margin-top: 16px; }
 .em-pane h3 { margin: 6px 0 8px; font-size: 18px; }
 .fact-block, .em-card { scroll-margin-top: 16px; }
+.em-main .fact-block, .em-main .em-card, .em-pane > section { scroll-margin-top: 56px; }
 .em-route { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 10px 0; }
 .em-hop { display: flex; flex-direction: column; gap: 2px; min-width: 150px; max-width: 250px; padding: 8px 12px; border: 1px solid var(--hair); border-radius: 6px; background: var(--bg-raised); font-size: 14px; overflow-wrap: anywhere; }
 .em-hop .mono { font-family: var(--mono); font-size: 13px; }
@@ -358,6 +364,7 @@ mark.em-hit.cur { background: var(--warn); color: var(--on-warn); }
 .kpi.wide { flex: 2 1 260px; }
 .kpi-label { display: block; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 .kpi-value { display: block; font-size: 24px; line-height: 1.35; }
+.kpi-value.kpi-value-sm { font-size: 20px; }
 .disp-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0 6px; background: var(--hair); }
 .disp-bar .reject { background: var(--fail); }
 .disp-bar .quarantine { background: var(--warn); }
@@ -369,6 +376,10 @@ mark.em-hit.cur { background: var(--warn); color: var(--on-warn); }
 .kv .mono, .src-detail .mono { font-family: var(--mono); font-size: 13.5px; word-break: normal; overflow-wrap: break-word; }
 .kv.legend dd { color: var(--muted); font-size: 14.5px; }
 .kv.legend dt { color: var(--text); font-family: var(--mono); }
+.kv.legend .legend-lead { color: var(--text); }
+.legend-more { margin-top: 4px; white-space: pre-line; }
+.legend-more > summary { cursor: pointer; color: var(--accent); font-size: 13.5px; width: max-content; }
+.legend-more[open] > summary { margin-bottom: 4px; }
 .chip[role="button"] { cursor: pointer; }
 tr.src-row { cursor: pointer; }
 tr.src-row:hover { background: var(--bg-raised); }

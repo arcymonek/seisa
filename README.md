@@ -1,5 +1,5 @@
 <p align="center"><img src="frontend/logo.png" alt="Seisa" width="120"></p>
-<p align="center"><b>Seisa 2.4.19</b></p>
+<p align="center"><b>Seisa 2.4.20</b></p>
 
 # Seisa
 
@@ -21,7 +21,7 @@ Free software (GPL-3.0-or-later). Bug reports, ideas and pull requests are welco
 
 **Seisa** (精査, *せいさ*, pronounced roughly "say-sah") is a Japanese word meaning a thorough, detailed examination - looking at something closely. 精 (*sei*) = precise, exact, detailed; 査 (*sa*) = to examine, to inspect.
 
-Author: Arkadiusz Polak ([GitHub: arcymonek](https://github.com/arcymonek), e-mail: kontakt (at) arkadiuszpolak (dot) pl). Security issues: see [SECURITY.md](SECURITY.md).
+Author: Arkadiusz Polak ([GitHub: seisa](https://github.com/arcymonek/seisa), e-mail: kontakt (at) arkadiuszpolak (dot) pl). Security issues: see [SECURITY.md](SECURITY.md).
 
 ## What Seisa does
 

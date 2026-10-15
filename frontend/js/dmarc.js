@@ -404,15 +404,15 @@ function reportHtml(m) {
 
 function legendCard() {
   return legendHtml(t("dmarc.h_legend"), [
-    ["SPF", t("dmarc.legend_spf")],
-    ["DKIM", t("dmarc.legend_dkim")],
-    [t("dmarc.legend_policy_term"), t("dmarc.legend_policy")],
-    [t("dmarc.legend_table_term"), t("dmarc.legend_table")],
-    [t("dmarc.legend_risk_term"), t("dmarc.legend_risk")],
-    [t("dmarc.legend_tiles_term"), t("dmarc.legend_tiles")],
-    [t("dmarc.legend_geo_term"), t("dmarc.legend_geo")],
-    [t("dmarc.legend_fix_term"), t("dmarc.legend_fix")],
-    [t("dmarc.legend_compare_term"), t("dmarc.legend_compare")],
+    ["SPF", t("dmarc.legend_spf"), t("dmarc.legend_more_spf"), "spf"],
+    ["DKIM", t("dmarc.legend_dkim"), t("dmarc.legend_more_dkim"), "dkim"],
+    [t("dmarc.legend_policy_term"), t("dmarc.legend_policy"), t("dmarc.legend_more_policy"), "policy"],
+    [t("dmarc.legend_table_term"), t("dmarc.legend_table"), t("dmarc.legend_more_table"), "table"],
+    [t("dmarc.legend_risk_term"), t("dmarc.legend_risk"), t("dmarc.legend_more_risk"), "risk"],
+    [t("dmarc.legend_tiles_term"), t("dmarc.legend_tiles"), t("dmarc.legend_more_tiles"), "tiles"],
+    [t("dmarc.legend_geo_term"), t("dmarc.legend_geo"), t("dmarc.legend_more_geo"), "geo"],
+    [t("dmarc.legend_fix_term"), t("dmarc.legend_fix"), t("dmarc.legend_more_fix"), "fix"],
+    [t("dmarc.legend_compare_term"), t("dmarc.legend_compare"), t("dmarc.legend_more_compare"), "compare"],
   ]);
 }
 

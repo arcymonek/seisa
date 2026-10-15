@@ -8,7 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, handleToggleAll, readEmlFile, toggleAllHtml } from "./util.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
 import { buildExport, buildHtmlExport, citationKind, downloadHtml, exportFilename, langName, parseStream, VERDICT_LEVEL, verdictLabel } from "./email-export.js";
 import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
@@ -86,9 +86,10 @@ export function initEmail(container) {
         <div class="em-main">
           <div class="em-tabs" role="tablist">
             ${PANES.map((p) => `<button type="button" class="em-tab" role="tab" data-pane="${p}">${e(t("em.tab." + p))}</button>`).join("")}
+            <span class="toggle-all em-bar-toggle"><button type="button" class="secondary mini" data-bar-toggle="open">${e(t("common.expand_all"))}</button><button type="button" class="secondary mini" data-bar-toggle="close">${e(t("common.collapse_all"))}</button></span>
+            <button type="button" class="em-top" title="${e(t("em.back_to_top"))}" aria-label="${e(t("em.back_to_top"))}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10v10M12 10l-4 4M12 10l4 4M6 4h12"/></svg></button>
           </div>
           <div class="em-pane" id="em-pane-overview" role="tabpanel">
-            <div class="em-facts-tools">${toggleAllHtml(".em-ocard")}</div>
             <details class="fact-block em-ocard" data-toc="${e(t("em.route.title"))}" id="em-sec-route"></details>
             <details class="fact-block em-ocard" data-toc="${e(t("em.f.flags_short"))}" id="em-sec-flags"></details>
             <details class="fact-block em-ocard" data-toc="${e(t("em.checklist.title"))}" id="em-sec-checklist" hidden><summary><span></span></summary><div class="em-flat"><div></div></div></details>
@@ -132,6 +133,18 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
   $("#em-src-view").addEventListener("click", () => viewer.open());
   root.addEventListener("click", onClick);
   root.querySelector(".em-tabs").addEventListener("click", (ev) => {
+    if (ev.target.closest(".em-top")) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const bar = ev.target.closest("[data-bar-toggle]");
+    if (bar) {
+      const open = bar.dataset.barToggle === "open";
+      const pane = PANES.find((p) => !$("#em-pane-" + p).hidden);
+      if (pane === "lesson") lesson.setAll(open);
+      else $("#em-pane-" + pane).querySelectorAll(pane === "facts" ? ".em-fcard" : ".em-ocard").forEach((d) => { d.open = open; });
+      return;
+    }
     const btn = ev.target.closest("[data-pane]");
     if (btn) {
       paneTouched = true;
@@ -149,8 +162,6 @@ $("#em-analyze-no-llm").addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 
 function onClick(ev) {
-  const toggle = ev.target.closest("[data-toggle-all]");
-  if (toggle && handleToggleAll(toggle.closest(".em-pane"), toggle)) return undefined;
   const scan = ev.target.closest("[data-scan-url]");
   if (scan) return window.seisaApp.scanUrl(scan.dataset.scanUrl);
   const ip = ev.target.closest("[data-lookup-ip]");
@@ -327,7 +338,7 @@ function showFacts(f) {
   $("#em-kpis").innerHTML = kpiHtml(f);
   $("#em-sec-route").innerHTML = `${ocardSummary(t("em.route.title"))}${routeHtml(f) || `<div class="muted">${e(t("common.none"))}</div>`}`;
   $("#em-sec-flags").innerHTML = `${ocardSummary(t("em.f.flags", { n: f.flags.length }))}${flagsHtml(f)}`;
-  $("#em-pane-facts").innerHTML = `<div class="em-facts-tools">${toggleAllHtml(".em-fcard")}</div>${factCardsHtml(f)}`;
+  $("#em-pane-facts").innerHTML = factCardsHtml(f);
   viewer.setSource(S.raw);
   lesson.sourceChanged();
   updateSourceLine();

@@ -58,7 +58,7 @@ function hostOf(url) {
 function tilesHtml(summary) {
   const { page, verdict: v, stats, tls, redirects } = summary;
   const tiles = [];
-  if (v.score != null) tiles.push(kpiTile(t("usr.kpi_score"), v.score, { sub: v.categories.join(", ") }));
+  if (v.score != null) tiles.push(kpiTile(t("usr.kpi_score"), v.score, v.categories.length ? { sub: v.categories.join(", ") } : { subHtml: "&nbsp;" }));
   if (isSet(page.status)) tiles.push(kpiTile(t("usr.kpi_status"), page.status, { sub: [page.mime_type, page.server].filter(Boolean).join(" - ") }));
   if (page.country) tiles.push(kpiTile(t("usr.kpi_country"), page.country, { sub: countryName(page.country, false) }));
   if (page.asn) tiles.push(kpiTile("ASN", page.asn, { sub: page.asn_name || "", glKey: "lookup.gl.asn" }));
@@ -67,10 +67,10 @@ function tilesHtml(summary) {
     const fresh = tls.age_days < NEW_CERT_DAYS ? `<span class="badge sm conflict" title="${e(t("usr.cert_new_title"))}">${e(t("usr.cert_new"))}</span>` : "";
     tiles.push(kpiTile(t("usr.kpi_cert"), t("usr.days", { n: tls.age_days }), { sub: tls.issuer || "", mark: fresh }));
   } else if (!tls) {
-    tiles.push(kpiTile(t("usr.kpi_cert"), t("usr.no_tls")));
+    tiles.push(kpiTile(t("usr.kpi_cert"), t("usr.no_tls"), { subHtml: "&nbsp;" }));
   }
   const hops = Math.max(redirects.length - 1, 0);
-  tiles.push(kpiTile(t("usr.kpi_redirects"), hops || t("usr.none"), { sub: hops ? page.domain || hostOf(page.final_url) : "" }));
+  tiles.push(kpiTile(t("usr.kpi_redirects"), hops || t("usr.none"), hops ? { sub: page.domain || hostOf(page.final_url) } : { subHtml: "&nbsp;" }));
   return `<div class="kpi-row">${tiles.join("")}</div>`;
 }
 
@@ -225,7 +225,7 @@ export function renderUrlscanResult(summary, opts = {}) {
   wrap.innerHTML = `<h2 class="report-title">${e(t("usr.report_title"))} - <code>${e(summary.submitted_url)}</code>
       <button type="button" class="secondary mini" data-copy title="${e(t("usr.copy_title"))}">${e(t("common.copy"))}</button></h2>
     ${bannerHtml(summary)}${tilesHtml(summary)}${shotHtml(opts)}${identityHtml(summary)}
-    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}${legendHtml(t("usr.h_legend"), LEGEND.map((id) => [t("usr.legend_term." + id), t("usr.legend." + id)]))}`;
+    <h3>${e(t("usr.h_details"))} ${toggleAllHtml("details.fact-block.src")}</h3>${detailCards(summary)}${rawCard(opts.raw)}${legendHtml(t("usr.h_legend"), LEGEND.map((id) => [t("usr.legend_term." + id), t("usr.legend." + id), t("usr.legend_more." + id), id]))}`;
 
   wrap.addEventListener("click", (ev) => {
     const target = ev.target.closest("button, img");
