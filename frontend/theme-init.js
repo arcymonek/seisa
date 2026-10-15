@@ -1,8 +1,9 @@
 // Classic (non-module) script in <head>: sets the theme before the first paint, so the page never flashes the wrong
-// colours. The theme list, the footer switch and the "system" listener live in js/theme.js. Default: dark.
+// colours. The theme list, the footer switch and the "system" listener live in js/theme.js. Default: light (Light Washi).
 (function () {
-  var mode = "dark";
-  try { mode = localStorage.getItem("seisa.theme") || "dark"; } catch (e) { /* storage blocked: default */ }
+  var mode = "light";
+  try { mode = localStorage.getItem("seisa.theme") || "light"; } catch (e) { /* storage blocked: default */ }
+  if (mode === "dark") mode = "blue"; // the old id of Blue Sumi
   var light = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-  document.documentElement.setAttribute("data-theme", mode === "system" ? (light ? "light" : "dark") : mode);
+  document.documentElement.setAttribute("data-theme", mode === "system" ? (light ? "light" : "sumi-brown") : mode);
 })();

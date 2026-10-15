@@ -49,14 +49,14 @@ KNOWN_BELOW_AA: dict[str, set[tuple[str, str]]] = {}
 
 
 def test_shipped_themes_are_light_dark_kohaku_and_sumi_brown():
-    assert set(SHIPPED) == {"light", "dark", "kohaku", "sumi-brown"}
-    assert SHIPPED["light"]["base"] == "light" and SHIPPED["dark"]["base"] == "dark" and SHIPPED["kohaku"]["base"] == "light"
+    assert set(SHIPPED) == {"light", "blue", "kohaku", "sumi-brown"}
+    assert SHIPPED["light"]["base"] == "light" and SHIPPED["blue"]["base"] == "dark" and SHIPPED["kohaku"]["base"] == "light"
     assert SHIPPED["sumi-brown"]["base"] == "dark"
-    # button order: light, dark, kohaku, sumi-brown (System is added last)
-    assert [th["id"] for th in load_themes()] == ["light", "dark", "kohaku", "sumi-brown"]
+    # button order: light, sumi-brown, dark, kohaku (System is added last)
+    assert [th["id"] for th in load_themes()] == ["light", "sumi-brown", "blue", "kohaku"]
 
 
-@pytest.mark.parametrize("theme_id", ["light", "dark", "kohaku", "sumi-brown"])
+@pytest.mark.parametrize("theme_id", ["light", "blue", "kohaku", "sumi-brown"])
 def test_shipped_theme_contrast(theme_id):
     colors = SHIPPED[theme_id]["colors"]
     for fg, bg in TEXT_PAIRS:
@@ -72,18 +72,13 @@ def test_light_theme_is_not_pure_white_or_black():
     assert "#ffffff" not in colors.values() and "#000000" not in colors.values()
 
 
-def test_kohaku_has_a_red_and_white_stripe_and_the_others_have_none():
-    assert SHIPPED["kohaku"]["stripe"] == {"top": "#e9e6e3", "bottom": SHIPPED["kohaku"]["colors"]["accent"]}
-    assert "stripe" not in SHIPPED["light"] and "stripe" not in SHIPPED["dark"] and "stripe" not in SHIPPED["sumi-brown"]
-
-
 def test_status_red_is_darker_than_the_accent_red_in_kohaku():
     # both are red there; the error colour must stay visibly different from the accent (links, buttons, active tab)
     colors = SHIPPED["kohaku"]["colors"]
     assert _lum(colors["fail"]) < _lum(colors["accent"]) * 0.6, (colors["fail"], colors["accent"])
 
 
-@pytest.mark.parametrize("theme_id", ["light", "dark", "kohaku", "sumi-brown"])
+@pytest.mark.parametrize("theme_id", ["light", "blue", "kohaku", "sumi-brown"])
 def test_info_banner_colour_is_not_the_error_colour(theme_id):
     colors = SHIPPED[theme_id]["colors"]
     assert colors["info"] != colors["fail"]
@@ -96,7 +91,7 @@ def test_info_colour_is_not_the_accent_where_the_accent_is_red():
     assert colors["info"] not in (colors["accent"], colors["fail"])
     # the other two themes keep their blue accent for information, so their look did not change
     assert SHIPPED["light"]["colors"]["info"] == SHIPPED["light"]["colors"]["accent"]
-    assert SHIPPED["dark"]["colors"]["info"] == SHIPPED["dark"]["colors"]["accent"]
+    assert SHIPPED["blue"]["colors"]["info"] == SHIPPED["blue"]["colors"]["accent"]
 
 
 def test_logo_of_light_themes_is_a_mask_painted_in_the_accent_colour():
@@ -156,14 +151,7 @@ def test_missing_language_falls_back_to_the_other_one():
     lambda d: d["colors"].update(bg="#12345678"),
     lambda d: d["colors"].update(bg=123456),
     lambda d: d.update(colors=[]),
-    lambda d: d.update(stripe="#ff0000"),                                          # must be an object
-    lambda d: d.update(stripe={"top": "#ffffff"}),                                 # bottom missing
-    lambda d: d.update(stripe={"top": "#ffffff", "bottom": "#ff0000", "mid": "#000000"}),
-    lambda d: d.update(stripe={"top": "#fff", "bottom": "#ff0000"}),
-    lambda d: d.update(stripe={"top": "red", "bottom": "#ff0000"}),
-    lambda d: d.update(stripe={"top": "url(https://attacker.example/x)", "bottom": "#ff0000"}),
-    lambda d: d.update(stripe={"top": "#ffffff;}body{display:none", "bottom": "#ff0000"}),
-    lambda d: d.update(stripe={"top": 16777215, "bottom": "#ff0000"}),
+    lambda d: d.update(stripe={"top": "#ffffff", "bottom": "#ff0000"}),          # the header stripe no longer exists: an unknown key
     lambda d: d.update(logo="url(https://attacker.example/x)"),                   # only the two words are allowed
     lambda d: d.update(logo="Mask"),
     lambda d: d.update(logo=""),
@@ -192,16 +180,6 @@ def test_rendered_css_only_holds_whitelisted_pieces():
     assert css.count("--") == len(COLOR_KEYS) + 2  # + the two logo switches
 
 
-def test_stripe_is_optional_lowercased_and_rendered_as_two_variables():
-    plain = render_css([validate_theme(good_theme(), "demo")])
-    assert "stripe" not in plain and "stripe" not in validate_theme(good_theme(), "demo")
-    out = validate_theme(good_theme(stripe={"top": "#ABCDEF", "bottom": "#123456"}), "demo")
-    assert out["stripe"] == {"top": "#abcdef", "bottom": "#123456"}
-    css = render_css([out])
-    assert "--stripe-top:#abcdef;--stripe-bottom:#123456;" in css
-    assert css.count("--") == len(COLOR_KEYS) + 2 + 2  # colours + two logo switches + two stripe colours
-    pattern = r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+'
-    assert re.fullmatch(pattern, css)  # still only whitelisted hex variables, so the strict pattern needs no change
 
 
 @pytest.mark.parametrize(("base", "logo", "badge_shown"), [
@@ -225,7 +203,7 @@ def test_sumi_brown_is_dark_with_the_logo_as_an_accent_coloured_shape():
     assert brown["logo"] == "mask" and brown["name"] == {"en": "Brown Sumi", "pl": "Brązowy Sumi"}
     css = render_css([brown])
     assert "color-scheme:dark;--logo-dark-display:none;--logo-light-display:inline;" in css
-    assert "logo" not in SHIPPED["dark"] and "logo" not in SHIPPED["light"] and "logo" not in SHIPPED["kohaku"]  # their logos did not change
+    assert "logo" not in SHIPPED["blue"] and "logo" not in SHIPPED["light"] and "logo" not in SHIPPED["kohaku"]  # their logos did not change
 
 
 def test_sumi_brown_has_no_gold():

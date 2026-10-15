@@ -4,7 +4,8 @@ import { getLang, t } from "./i18n.js";
 
 const STORAGE_KEY = "seisa.theme";
 const SYSTEM = "system";
-const DEFAULT = "dark";
+const DEFAULT = "light";
+const RENAMED = { dark: "blue" }; // the id of Blue Sumi before 2.4.19: a stored choice keeps working
 const prefersLight = window.matchMedia("(prefers-color-scheme: light)");
 
 let themes = [];
@@ -12,7 +13,8 @@ let mode = DEFAULT;
 
 function readMode() {
   try {
-    return localStorage.getItem(STORAGE_KEY) || DEFAULT;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return RENAMED[stored] || stored || DEFAULT;
   } catch {
     return DEFAULT;
   }
@@ -22,8 +24,9 @@ function readMode() {
 function resolve(choice) {
   const known = (id) => themes.find((th) => th.id === id);
   if (choice !== SYSTEM && known(choice)) return choice;
-  const base = choice === SYSTEM && prefersLight.matches ? "light" : "dark";
-  return (known(base) || themes.find((th) => th.base === base) || themes[0]).id;
+  const base = choice === SYSTEM && !prefersLight.matches ? "dark" : "light";
+  const first = base === "dark" ? "sumi-brown" : "light"; // the main theme of each kind, not just the first by order
+  return (known(first) || themes.find((th) => th.base === base) || themes[0]).id;
 }
 
 function apply() {

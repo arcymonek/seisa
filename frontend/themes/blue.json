@@ -1,6 +1,6 @@
 {
-  "id": "dark",
-  "name": {"en": "Dark Sumi", "pl": "Ciemny Sumi"},
+  "id": "blue",
+  "name": {"en": "Blue Sumi", "pl": "Niebieski Sumi"},
   "base": "dark",
   "order": 20,
   "colors": {

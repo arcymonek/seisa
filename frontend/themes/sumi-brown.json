@@ -2,7 +2,7 @@
   "id": "sumi-brown",
   "name": {"en": "Brown Sumi", "pl": "Brązowy Sumi"},
   "base": "dark",
-  "order": 40,
+  "order": 15,
   "logo": "mask",
   "colors": {
     "bg": "#141312",

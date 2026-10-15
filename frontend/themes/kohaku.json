@@ -3,7 +3,6 @@
   "name": {"en": "Red-and-white Kōhaku", "pl": "Biało-czerwona Kōhaku"},
   "base": "light",
   "order": 30,
-  "stripe": {"top": "#e9e6e3", "bottom": "#c8102e"},
   "colors": {
     "bg": "#fbf8f6",
     "bg-raised": "#ffffff",

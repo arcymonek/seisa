@@ -11,7 +11,7 @@ What it checks, always on what is STAGED (the index), not on the working tree:
   3. Language pairs: README.md <-> README.pl.md and docs/en/X.md <-> docs/pl/X.md must be staged together.
      `SEISA_ONE_LANG=1 git commit ...` skips ONLY this rule (a typo fixed in one language); everything else still runs.
   4. scripts/check_i18n.py --strict, run on an export of the index: catalogs, heading parity, dead links, the same
-     version in all five places.
+     version in all four places.
   5. Version step: if the version differs from the one on `main` (merge-base), the difference must be exactly one
      allowed step: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice. A bump must come
      together with its release notes: a `## X.Y.Z - YYYY-MM-DD` entry in CHANGELOG.md whose date is the one in
@@ -287,7 +287,7 @@ def base_commit() -> str | None:
 
 
 def versions_at(ci, revs: list[str]) -> list[dict[str, str]]:
-    """The version in each of the five places at each rev (empty rev = the index), all files read in one git call."""
+    """The version in each of the four places at each rev (empty rev = the index), all files read in one git call."""
     files = sorted({rel for _, rel, _ in ci.VERSION_PLACES})
     blobs = show_many([f"{rev}:{rel}" for rev in revs for rel in files])
     result = []

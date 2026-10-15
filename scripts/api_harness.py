@@ -696,23 +696,20 @@ if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) ==
 if probes["text/plain cross-site POST (CSRF without preflight)"] not in (403, 422):
     failures.append("a text/plain cross-site POST reached the handler")
 _themes = _themes_resp.json()
-if [th["id"] for th in _themes] != ["light", "dark", "kohaku", "sumi-brown"] or any("colors" in th for th in _themes):
-    failures.append(f"theme list is wrong (shipped themes light, dark, kohaku and sumi-brown, no colours in the list): {_themes}")
+if [th["id"] for th in _themes] != ["light", "sumi-brown", "blue", "kohaku"] or any("colors" in th for th in _themes):
+    failures.append(f"theme list is wrong (shipped themes light, sumi-brown, blue and kohaku, no colours in the list): {_themes}")
 if not re.fullmatch(r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+', _themes_css.text) \
         or not _themes_css.headers.get("content-type", "").startswith("text/css"):
     failures.append("themes.css holds something other than whitelisted colour variables")
-if '--stripe-top:#e9e6e3;--stripe-bottom:#c8102e;' not in _themes_css.text or _themes_css.text.count('--stripe-') != 2:
-    failures.append("themes.css must carry the header stripe of the kohaku theme only")
 # hostile themes dropped into the folder must never reach the stylesheet: the validator whitelists every piece of them
 import backend.themes as _themes_mod  # noqa: E402
 
 _theme_dir = Path(tempfile.mkdtemp(prefix="seisa-themes-"))
 _theme_base = {"name": {"en": "X", "pl": "X"}, "base": "light", "order": 40,
-               "colors": dict.fromkeys(_themes_mod.COLOR_KEYS, "#123456"), "stripe": {"top": "#abcdef", "bottom": "#123456"}}
+               "colors": dict.fromkeys(_themes_mod.COLOR_KEYS, "#123456")}
 _theme_cases = {
     "okcopy": {},  # control: valid, so the folder switch itself works
-    "badstripe": {"stripe": {"top": "url(https://attacker.example/x)", "bottom": "#123456"}},
-    "badstripekey": {"stripe": {"top": "#abcdef", "bottom": "#123456", "extra": "#000000"}},
+    "badstripe": {"stripe": {"top": "#abcdef", "bottom": "#123456"}},  # a key no theme may have (the header stripe was removed)
     "badinfo": {"colors": {**_theme_base["colors"], "info": "#123456;}body{display:none"}},
     "badtop": {"x-rule": "body{display:none}"},
     "okmask": {"logo": "mask"},  # control: the one allowed non-default logo word works

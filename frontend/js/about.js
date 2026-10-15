@@ -23,12 +23,12 @@ const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener nor
 const PALETTES = [
   { title: "about.colors_washi_title", intro: "about.colors_washi_intro", rows: [["bg", "鳥の子", "とりのこ", "torinoko"], ["text", "墨", "すみ", "sumi"], ["accent", "藍", "あい", "ai"],
     ["fail", "紅", "べに", "beni"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
+  { title: "about.colors_brown_title", intro: "about.colors_brown_intro", rows: [["bg", "黒橡", "くろつるばみ", "kurotsurubami"], ["text", "白練", "しろねり", "shironeri"], ["accent", "利休白茶", "りきゅうしろちゃ", "rikyushiracha"],
+    ["fail", "鴇羽", "ときは", "tokiha"], ["pass", "白緑", "びゃくろく", "byakuroku"], ["warn", "黄朽葉", "きくちば", "kikuchiba"]] },
   { title: "about.colors_sumi_title", intro: "about.colors_sumi_intro", rows: [["bg", "濡羽", "ぬれば", "nureba"], ["text", "白練", "しろねり", "shironeri"], ["accent", "浅葱", "あさぎ", "asagi"],
     ["fail", "朱", "しゅ", "shu"], ["pass", "若竹", "わかたけ", "wakatake"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
   { title: "about.colors_kohaku_title", intro: "about.colors_kohaku_intro", rows: [["bg", "白練", "しろねり", "shironeri"], ["text", "墨", "すみ", "sumi"], ["accent", "紅", "べに", "beni"],
     ["fail", "臙脂", "えんじ", "enji"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
-  { title: "about.colors_brown_title", intro: "about.colors_brown_intro", rows: [["bg", "黒橡", "くろつるばみ", "kurotsurubami"], ["text", "白練", "しろねり", "shironeri"], ["accent", "利休白茶", "りきゅうしろちゃ", "rikyushiracha"],
-    ["fail", "鴇羽", "ときは", "tokiha"], ["pass", "白緑", "びゃくろく", "byakuroku"], ["warn", "黄朽葉", "きくちば", "kikuchiba"]] },
 ];
 let root;
 let version = "";
@@ -41,17 +41,16 @@ function block(title, body, { open = false, id = "", extra = "" } = {}) {
 }
 
 function colourExplanation() {
-  const palette = ({ title, intro, rows }) => `<h4>${e(t(title))}</h4><p class="muted">${e(t(intro))}</p>` +
+  const palette = ({ title, intro, rows }) => `<details class="kpi colour-tile"><summary><h4>${e(t(title))}</h4><p class="muted">${e(t(intro))}</p></summary>` +
     rows.map(([role, kanji, kana, name]) => `<div class="colour-row"><span class="kanji" lang="ja">${e(kanji || "-")}</span>
       <span class="mono">${kanji ? `${e(kana)}<br>${e(name)}` : ""}</span>
-      <span><strong>${e(t("about.role." + role))}:</strong> ${e(t("about.col." + name))}</span></div>`).join("");
-  return `<div class="colour-pal"><p>${e(t("about.colors_intro")).replace(/\n/g, "<br>")}</p>${PALETTES.map(palette).join("")}</div>`;
+      <span><strong>${e(t("about.role." + role))}:</strong> ${e(t("about.col." + name))}</span></div>`).join("") + "</details>";
+  return `<div class="colour-pal"><p>${e(t("about.colors_intro")).replace(/\n/g, "<br>")}</p><div class="colour-tiles">${PALETTES.map(palette).join("")}</div></div>`;
 }
 
 export function initAbout(container) {
   root = container;
-  const versionEl = document.querySelector("h1 small");
-  version = versionEl ? versionEl.textContent.trim() : "";
+  version = document.title.replace(/^Seisa\s*/, "").trim();
   const dateEl = document.querySelector('meta[name="seisa-release-date"]');
   releaseDate = dateEl ? t("about.kpi_version_sub", { date: fmtDate(`${dateEl.content}T00:00`) }) : "";
   root.innerHTML = `
@@ -191,21 +190,14 @@ function renderLimits(limits) {
     .join("");
   const rows = limits.rows;
 
-  // the summary line names the entry closest to its limit
+  // the summary line stays empty until a service answers that its limit is used up (an HTTP 429)
   const state = root.querySelector("#ab-limits-state");
-  const worst = rows.filter((r) => percent(r) != null).sort((a, b) => percent(b) - percent(a))[0];
   const over = rows.find((r) => r.exceeded);
   state.className = "em-state";
   state.textContent = "";
   if (over) {
-    // an HTTP 429 from the service outranks every computed percentage
     state.textContent = t("about.lim_state_exceeded", { service: serviceTitle(over.service), scope: t("about.scope." + over.scope) });
     state.classList.add("bad");
-  } else if (worst) {
-    const pct = percent(worst);
-    state.textContent = `${serviceTitle(worst.service)} ${t("about.scope." + worst.scope)}: ${amount(worst.used, worst.unit)}/${amount(worst.limit, worst.unit)}`;
-    if (pct >= 90) state.classList.add("bad");
-    else if (pct >= 70) state.classList.add("warn");
   }
   const info = root.querySelector("#ab-limits-info");
   info.textContent = limits.fetched_at ? t("about.limits_fetched", { date: fmtDate(limits.fetched_at), time: new Date(limits.fetched_at).toLocaleTimeString(getLocale()) }) : "";

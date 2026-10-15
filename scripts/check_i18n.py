@@ -5,7 +5,7 @@ Usage: python3 scripts/check_i18n.py [--strict]
 
 Checks: key parity pl/en, {placeholder} parity, plural-suffix completeness, forbidden characters (HTML, U+2014),
 keys used in code but missing from the catalog, unused keys, README heading parity, docs/en <-> docs/pl parity (same files, same heading levels 1-4),
-dead relative links and anchors in the Markdown files, the same version in all five places and (with --strict) user-facing
+dead relative links and anchors in the Markdown files, the same version in all four places and (with --strict) user-facing
 literals with Polish diacritics that bypass t(). Exit code 1 on errors. Warnings never fail the run.
 """
 from __future__ import annotations
@@ -267,11 +267,10 @@ def check_markdown_links() -> None:
                         errors.append(f"{rel_f}:{n}: dead anchor {target}")
 
 
-# The five places that carry the version: (label, file relative to the project root, regex with the version as group 1).
+# The four places that carry the version: (label, file relative to the project root, regex with the version as group 1).
 # scripts/hooks/pre-commit reuses this table, so the hook and this check cannot disagree about where the version lives.
 VERSION_PLACES = (
     ("index.html <title>", "frontend/index.html", r"<title>Seisa ([\d.]+)</title>"),
-    ("index.html header", "frontend/index.html", r"<small>([\d.]+)</small>"),
     ("index.html footer", "frontend/index.html", r"<footer>Seisa ([\d.]+)"),
     ("README.md", "README.md", r"<b>Seisa ([\d.]+)</b>"),
     ("README.pl.md", "README.pl.md", r"<b>Seisa ([\d.]+)</b>"),
@@ -279,7 +278,7 @@ VERSION_PLACES = (
 
 
 def read_versions(read: Callable[[str], str]) -> dict[str, str]:
-    """The version found in each of the five places ('?' where the pattern does not match); `read` returns a file's text by relative path."""
+    """The version found in each of the four places ('?' where the pattern does not match); `read` returns a file's text by relative path."""
     found: dict[str, str] = {}
     for label, rel, pattern in VERSION_PLACES:
         m = re.search(pattern, read(rel))
@@ -288,7 +287,7 @@ def read_versions(read: Callable[[str], str]) -> dict[str, str]:
 
 
 def check_versions() -> None:
-    """The visible version must be identical everywhere: 3x index.html (title, header, footer) + 2x README."""
+    """The visible version must be identical everywhere: 2x index.html (title, footer) + 2x README."""
     html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
     found = read_versions(lambda rel: (ROOT / rel).read_text(encoding="utf-8"))
     if len(set(found.values())) != 1:

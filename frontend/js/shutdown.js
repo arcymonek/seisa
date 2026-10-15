@@ -32,8 +32,7 @@ function el(tag, props = {}, ...children) {
 
 // Resolves to true when the user confirmed. Esc and "Cancel" resolve to false; "Cancel" has the focus, so Enter is safe.
 function confirmShutdown(unsaved) {
-  const versionEl = document.querySelector("h1 small");
-  const title = `Seisa ${versionEl ? versionEl.textContent.trim() : ""}`.trim();
+  const title = document.title.trim(); // "Seisa X.Y.Z"
   const dontAsk = el("input", { type: "checkbox" });
   const cancel = el("button", { type: "button", className: "secondary" }, t("app.shutdown_cancel"));
   const ok = el("button", { type: "button", className: "primary" }, t("app.shutdown_button"));

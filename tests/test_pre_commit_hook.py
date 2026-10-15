@@ -77,9 +77,9 @@ def current_version(repo: Path) -> str:
     return re.search(r"<title>Seisa ([\d.]+)</title>", html)[1]
 
 
-# The five places, written out here on purpose (CLAUDE.md "Wersjonowanie"), not taken from the hook's own table.
+# The four places, written out here on purpose (CLAUDE.md "Wersjonowanie"), not taken from the hook's own table.
 _PLACES = {
-    "frontend/index.html": (r"<title>Seisa [\d.]+</title>", r"<small>[\d.]+</small>", r"<footer>Seisa [\d.]+"),
+    "frontend/index.html": (r"<title>Seisa [\d.]+</title>", r"<footer>Seisa [\d.]+"),
     "README.md": (r"<b>Seisa [\d.]+</b>",),
     "README.pl.md": (r"<b>Seisa [\d.]+</b>",),
 }
@@ -97,7 +97,7 @@ RELEASE_DATE = "2031-01-02"
 
 
 def bump(repo: Path, new: str, *, date: str = RELEASE_DATE) -> None:
-    """A complete release: the five places, a CHANGELOG entry and the release date of the Info tab."""
+    """A complete release: the four places, a CHANGELOG entry and the release date of the Info tab."""
     set_version(repo, new)
     changelog = (repo / "CHANGELOG.md").read_text(encoding="utf-8")
     changelog = re.sub(r"^## (\d)", f"## {new} - {date}\n\nA test entry.\n\n## \\1", changelog, count=1, flags=re.MULTILINE)
@@ -286,7 +286,7 @@ def test_check_i18n_runs_on_the_index_not_on_the_working_tree(repo):
 
 
 def test_a_broken_staged_check_i18n_stops_the_commit_with_a_message(repo):
-    # the hook takes the five version places from the check_i18n.py that is in the INDEX; a wrong copy must not crash it
+    # the hook takes the four version places from the check_i18n.py that is in the INDEX; a wrong copy must not crash it
     # and, above all, must not let the commit through (a module that calls sys.exit(0) on import is a way to fail open)
     write(repo, "scripts/check_i18n.py", "X = 1\n")
     stage(repo, "scripts/check_i18n.py")
@@ -331,7 +331,7 @@ def test_a_wrong_version_step_is_rejected(repo):
     assert "VERSION STEP" in r.stdout
 
 
-def test_the_five_places_must_agree(repo):
+def test_the_four_places_must_agree(repo):
     set_version(repo, step(current_version(repo), "z"), files=("README.md",))
     stage(repo, "README.md")
     r = run_hook(repo, env={"SEISA_ONE_LANG": "1"})
@@ -444,7 +444,7 @@ DASH = chr(0x2014)    # built here so that this file itself passes the long dash
 
 
 def test_a_bump_needs_its_changelog_entry(repo):
-    set_version(repo, step(current_version(repo), "z"))    # the five places only
+    set_version(repo, step(current_version(repo), "z"))    # the four places only
     stage(repo, *_PLACES)
     r = run_hook(repo)
     assert r.returncode == 1
