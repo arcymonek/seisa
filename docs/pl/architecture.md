@@ -67,7 +67,7 @@ seisa/
 │   ├── mail_trust.py         # wspólne funkcje zaufania łańcucha Received/domen/IP/SMTP AUTH (obie zakładki)
 │   ├── citation_check.py     # lokalna kontrola cytatów LLM względem źródła
 │   ├── analyses.py           # zapis analiz e-maili w data/analyses/
-│   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb; plus opcjonalny dwukolorowy pasek pod nagłówkiem) i generuje zmienne CSS
+│   ├── themes.py             # skórki kolorystyczne: sprawdza frontend/themes/*.json (stały zestaw kluczy, tylko #rrggbb) i generuje zmienne CSS
 │   ├── desktop_icon.py       # ikona na pulpicie (aplikacja macOS / wpis w menu Linuksa): status, instalacja, usunięcie; wspólny dla zakładki Info i `python -m backend.desktop_icon`
 │   ├── i18n.py               # tłumaczenia backendu: język żądania (ContextVar), t()/tn(), katalogi w locales/
 │   ├── locales/              # katalogi tekstów backendu: pl.json, en.json
@@ -90,7 +90,7 @@ seisa/
 │   ├── logo.png               # okrągłe logo, ciemna odznaka (nagłówek strony w ciemnych skórkach, README)
 │   ├── logo-mask.png          # sam kształt logo (pierścień i kanji, reszta przezroczysta); jasne skórki malują go kolorem akcentu
 │   ├── theme-init.js          # zwykły skrypt w <head>: stosuje zapamiętaną skórkę przed pierwszym narysowaniem strony
-│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json, kohaku.json, sumi-brown.json); tylko kolory (i opcjonalny dwukolorowy pasek pod nagłówkiem)
+│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (light.json, sumi-brown.json, blue.json, kohaku.json); tylko kolory
 │   ├── css/style.css          # układ i komponenty, bez kolorów (pochodzą ze skórki)
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej

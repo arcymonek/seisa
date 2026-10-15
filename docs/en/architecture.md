@@ -67,7 +67,7 @@ seisa/
 │   ├── mail_trust.py         # shared Received-chain/domain/IP/SMTP-AUTH trust helpers (both tabs)
 │   ├── citation_check.py     # local check of the LLM's quotes against the source
 │   ├── analyses.py           # storage of e-mail analyses in data/analyses/
-│   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only; plus an optional two-colour header stripe) and generates the CSS variables
+│   ├── themes.py             # colour themes: validates frontend/themes/*.json (fixed keys, #rrggbb only) and generates the CSS variables
 │   ├── desktop_icon.py       # the desktop icon (macOS app / Linux menu entry): status, install, remove; shared by the Info tab and `python -m backend.desktop_icon`
 │   ├── i18n.py               # backend translations: request language (ContextVar), t()/tn(), catalogs in locales/
 │   ├── locales/              # backend text catalogs: pl.json, en.json
@@ -90,7 +90,7 @@ seisa/
 │   ├── logo.png               # round logo, dark badge (page header on dark themes, README)
 │   ├── logo-mask.png          # the logo shape only (ring and kanji, transparent elsewhere); light themes paint it in their accent colour
 │   ├── theme-init.js          # classic script in <head>: applies the stored theme before the first paint
-│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json, kohaku.json, sumi-brown.json); colours only (and an optional two-colour header stripe)
+│   ├── themes/                # colour themes, one JSON file each (light.json, sumi-brown.json, blue.json, kohaku.json); colours only
 │   ├── css/style.css          # layout and components, no colours (they come from the theme)
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below
