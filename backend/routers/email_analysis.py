@@ -30,10 +30,10 @@ from backend.email_forensics import (
     EMAIL_START,
     compute_facts,
     decoded_text_parts,
-    normalize_source,
     prepare_for_llm,
 )
 from backend.i18n import current_lang, t
+from backend.mail_source import normalize_source
 from backend.services.llm_analyzer import llm_analyzer
 from backend.sse import sse
 from backend.verdict import parse_verdict

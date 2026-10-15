@@ -1,30 +1,37 @@
 from __future__ import annotations
 
+import hashlib
 import html as html_module
 import re
 from datetime import timezone
-from email import message_from_string
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 
 from backend.i18n import t
+from backend.mail_source import attachment_info, load_message, unfold
 from backend.mail_trust import (
     PROVIDER_FAMILIES,
-    domains_consistent,
     family,
+    hop_corroboration,
     hop_specific_auth,
     is_dotless_internal_hop,
     is_special_ip,
     parse_ip,
+    receiver_auth,
     registrable_domain,
 )
 from backend.report_utils import attack_age, is_reportable_ip
 
-_BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,39}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
-_RANSOM_KEYWORDS = ("bitcoin", "btc", "ransom", "payment", "wallet", "crypto", "decrypt")
+# Candidates only: a match counts as a Bitcoin address after `is_valid_btc_address` has checked its checksum. Native
+# SegWit addresses are up to 90 characters long (the bech32 limit); the usual ones are 42 (pay-to-witness-pubkey-hash)
+# and 62 (pay-to-witness-script-hash, Taproot).
+_BTC_RE = re.compile(r"\b(bc1[a-z0-9]{25,87}|BC1[A-Z0-9]{25,87}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
+# Whole words only (a substring such as "subpayment" or "cryptography" is no sign of a ransom demand), with the common
+# endings of the same word.
+_RANSOM_RE = re.compile(
+    r"\b(?:bitcoins?|btc|ransom(?:ware)?|payments?|wallets?|crypto(?:currenc(?:y|ies))?|decrypt(?:ed|ion|or)?)\b", re.IGNORECASE
+)
 _FROM_BY_RE = re.compile(r"from\s+(?P<from>.+?)\s+by\s+(?P<by>\S+)", re.IGNORECASE)
-_HEADER_START_RE = re.compile(r"^[A-Za-z][A-Za-z0-9-]*:")
-_INDENTED_HEADER_START_RE = re.compile(r"^\s+[A-Za-z][A-Za-z0-9-]*:(\s|$)")
 _HTML_SCRIPT_STYLE_RE = re.compile(r"<(script|style)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
 _HTML_BLOCK_CLOSE_RE = re.compile(r"</(p|div|tr|li|h[1-6]|table)>|<br\s*/?>", re.IGNORECASE)
 _BLANK_LINES_RE = re.compile(r"\n{3,}")
@@ -33,6 +40,79 @@ _BLANK_LINES_RE = re.compile(r"\n{3,}")
 # one oversized message cannot keep the server busy; real headers are far below them.
 MAX_RECEIVED_CHARS = 8192  # characters of ONE Received header that are analysed
 MAX_RECEIVED_HEADERS = 100  # Received headers analysed, newest first (a real route has a handful)
+
+
+_BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+_BECH32 = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
+_BECH32_CONST = 1  # BIP-173: native SegWit version 0
+_BECH32M_CONST = 0x2BC830A3  # BIP-350: versions 1 to 16
+
+
+def _base58check_valid(address: str) -> bool:
+    """A legacy address (starts with 1 or 3) is 25 bytes: a version byte (0x00 pay-to-pubkey-hash, 0x05
+    pay-to-script-hash), a 20-byte hash and the first 4 bytes of the double SHA-256 of the first 21 as the checksum.
+    See https://en.bitcoin.it/wiki/Base58Check_encoding."""
+    number = 0
+    for char in address:
+        number = number * 58 + _BASE58.index(char)
+    if number >> 200:
+        return False  # more than 25 bytes
+    raw = number.to_bytes(25, "big")
+    leading_ones = len(address) - len(address.lstrip("1"))
+    if leading_ones != len(raw) - len(raw.lstrip(b"\0")):
+        return False  # every leading "1" stands for exactly one zero byte, and only for those
+    return raw[0] in (0x00, 0x05) and hashlib.sha256(hashlib.sha256(raw[:21]).digest()).digest()[:4] == raw[21:]
+
+
+def _bech32_polymod(values: list[int]) -> int:
+    generator = (0x3B6A57B2, 0x26508E6D, 0x1EA119FA, 0x3D4233DD, 0x2A1462B3)
+    checksum = 1
+    for value in values:
+        top = checksum >> 25
+        checksum = (checksum & 0x1FFFFFF) << 5 ^ value
+        for i in range(5):
+            if (top >> i) & 1:
+                checksum ^= generator[i]
+    return checksum
+
+
+def _bech32_valid(address: str) -> bool:
+    """A native SegWit address (starts with bc1): BIP-173 (bech32, witness version 0, program of 20 or 32 bytes) and
+    BIP-350 (bech32m, versions 1 to 16, program of 2 to 40 bytes). Upper case is allowed when used throughout (QR
+    codes), mixed case is not."""
+    if address != address.lower() and address != address.upper():
+        return False
+    address = address.lower()
+    if not address.startswith("bc1") or len(address) > 90:
+        return False
+    data_chars = address[3:]
+    if any(char not in _BECH32 for char in data_chars) or len(data_chars) < 7:
+        return False
+    data = [_BECH32.index(char) for char in data_chars]
+    checksum_ok = _bech32_polymod([ord(char) >> 5 for char in "bc"] + [0] + [ord(char) & 31 for char in "bc"] + data)
+    version, payload = data[0], data[1:-6]
+    if version > 16 or checksum_ok != (_BECH32_CONST if version == 0 else _BECH32M_CONST):
+        return False
+    # the payload is 5-bit groups of the witness program: regroup into bytes; leftover bits must be fewer than 5 and zero
+    accumulator, bits, program = 0, 0, []
+    for value in payload:
+        accumulator = (accumulator << 5) | value
+        bits += 5
+        while bits >= 8:
+            bits -= 8
+            program.append((accumulator >> bits) & 0xFF)
+        accumulator &= (1 << bits) - 1
+    if bits >= 5 or accumulator:
+        return False
+    return (len(program) in (20, 32)) if version == 0 else 2 <= len(program) <= 40
+
+
+def is_valid_btc_address(address: str) -> bool:
+    """True when `address` is a well-formed Bitcoin mainnet address with a correct checksum - a random string that
+    merely looks like one (a tracking number, an order id) fails the checksum with a probability of about 1 - 2^-32."""
+    if address[:3].lower() == "bc1":
+        return _bech32_valid(address)
+    return address[:1] in ("1", "3") and all(char in _BASE58 for char in address) and _base58check_valid(address)
 
 
 def _enclosed(text: str, opening: str, closing: str) -> list[str]:
@@ -84,33 +164,6 @@ def _html_to_text(html: str) -> str:
     text = html_module.unescape(text)
     text = _BLANK_LINES_RE.sub("\n\n", text)
     return text.strip()
-
-
-def _refold_headers(raw_email: str) -> str:
-    """Many mail clients/browsers lose the indentation of continuation lines (RFC 5322 folding) of long headers
-    when you "show the source" - especially multi-line `Received`. For the stdlib `email` parser a line without
-    a leading space that does not look like `Header-Name:` ends the header block, so a pasted e-mail like that
-    can stop parsing at the very first header. We restore the missing indentation where it is unambiguous (a
-    non-empty line inside the header block that starts neither with `Name:` nor with whitespace). The reverse
-    also happens - the next header is wrongly indented (e.g. by a paste tool that keeps nesting) - such a line
-    is recognised by the `Name:` pattern despite the indentation and un-indented, so that the stdlib treats it
-    as a new header and not as a continuation."""
-    lines = raw_email.split("\n")
-    out: list[str] = []
-    in_headers = True
-    for line in lines:
-        if in_headers and line.strip() == "":
-            in_headers = False
-            out.append(line)
-            continue
-        if in_headers and line.startswith((" ", "\t")):
-            indented_header = _INDENTED_HEADER_START_RE.match(line)
-            out.append(line.lstrip() if indented_header else line)
-        elif in_headers and out and not _HEADER_START_RE.match(line):
-            out.append(" " + line)
-        else:
-            out.append(line)
-    return "\n".join(out)
 
 
 def _extract_ip_candidates(text: str) -> list[str]:
@@ -307,42 +360,14 @@ def find_boundary_index(received_headers: list[str]) -> tuple[int | None, str]:
     return next(i for i, h in enumerate(hops) if h is boundary), confidence
 
 
-def _parse_auth_results(header_value: str) -> dict[str, str]:
-    out = {}
-    for mechanism in ("spf", "dkim", "dmarc"):
-        m = re.search(rf"{mechanism}=(\w+)", header_value, re.IGNORECASE)
-        if m:
-            out[mechanism] = m.group(1).lower()
-    return out
-
-
 _CONFIDENCE_LADDER = {"low": "medium", "medium": "high", "high": "high"}
-
-
-def _hop_corroboration(corroboration: dict | None) -> dict | None:
-    """Per-hop SMTP-AUTH/DKIM corroboration (smtp_auth_account/dkim_domain/consistent), or None when there is
-    nothing to report for this hop - shared by every hop's own fact in received_chain and by
-    _apply_auth_corroboration below, which additionally turns the boundary hop's result into reasoning text and
-    a confidence bump."""
-    if not corroboration:
-        return None
-    account = corroboration.get("smtp_auth_account")
-    if corroboration.get("auth") != "pass" or not account:
-        return None
-    dkim_domain = corroboration.get("dkim_domain")
-    account_domain = account.split("@")[-1] if "@" in account else None
-    if dkim_domain and domains_consistent(account_domain, dkim_domain):
-        return {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": True}
-    if dkim_domain:
-        return {"smtp_auth_account": account, "dkim_domain": dkim_domain, "consistent": False}
-    return {"smtp_auth_account": account, "dkim_domain": None, "consistent": None}
 
 
 def _apply_auth_corroboration(confidence: str, reasoning: str, corroboration: dict) -> tuple[str, str, dict | None]:
     """Turns a hop-specific SMTP-AUTH/DKIM corroboration into extra reasoning text and (only when the SMTP-AUTH
     account's domain matches the validated DKIM domain) a one-step confidence bump. Never changes which IP was
     selected - this only explains and reinforces the choice _find_boundary_hop already made."""
-    per_hop = _hop_corroboration(corroboration)
+    per_hop = hop_corroboration(corroboration)
     if not per_hop:
         return confidence, reasoning, None
     account, dkim_domain, consistent = per_hop["smtp_auth_account"], per_hop["dkim_domain"], per_hop["consistent"]
@@ -356,38 +381,24 @@ def _apply_auth_corroboration(confidence: str, reasoning: str, corroboration: di
     return confidence, reasoning, per_hop
 
 
-_COMMON_DISPLAY_EXTENSIONS = {
-    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv",
-    "jpg", "jpeg", "png", "gif", "bmp", "zip", "rar",
-}
-
-
 def _extract_attachments(msg: Message) -> list[dict]:
     """`declared_extension` is the real (last) extension of the file. `apparent_extension` detects the classic
     double-extension phishing trick (e.g. "invoice.pdf.exe") - it is set only when the second-to-last segment of
-    the name looks like a popular, "innocent" document/image extension different from the real one."""
+    the name looks like a popular, "innocent" document/image extension different from the real one. The name is
+    read by `mail_source.attachment_info`, the same description the Email tab builds on."""
     attachments = []
     for part in msg.walk():
-        filename = part.get_filename()
-        if not filename:
-            continue
-        payload = part.get_payload(decode=True) or b""
-        segments = filename.split(".")
-        declared_ext = segments[-1].lower() if len(segments) > 1 else ""
-        apparent_ext = None
-        if len(segments) > 2:
-            candidate = segments[-2].lower()
-            if candidate in _COMMON_DISPLAY_EXTENSIONS and candidate != declared_ext:
-                apparent_ext = candidate
-        attachments.append(
-            {
-                "filename": filename,
-                "size_bytes": len(payload),
-                "content_type": part.get_content_type(),
-                "declared_extension": declared_ext,
-                "apparent_extension": apparent_ext,
-            }
-        )
+        info = attachment_info(part)
+        if info:
+            attachments.append(
+                {
+                    "filename": info["filename"],
+                    "size_bytes": info["size"],
+                    "content_type": info["content_type"],
+                    "declared_extension": info["extension"],
+                    "apparent_extension": info["double_extension_as"],
+                }
+            )
     return attachments
 
 
@@ -424,8 +435,9 @@ def _extract_body_text(msg: Message) -> str:
 
 def parse_message(raw_email: str) -> Message:
     """Parses the pasted source once; the functions below accept the result instead of the raw text, so that one
-    request does not parse the same e-mail five times."""
-    return message_from_string(_refold_headers(raw_email))
+    request does not parse the same e-mail five times. The text is read exactly like the Email tab reads it
+    (`mail_source.load_message`: BOM, mbox envelope, leading blank lines, lost header indentation)."""
+    return load_message(raw_email)
 
 
 def _as_message(source: str | Message) -> Message:
@@ -462,7 +474,7 @@ def parse_email(source: str | Message) -> dict:
     hop_auth = hop_specific_auth(list(msg.items()), len(hop_chain))
     boundary_auth_corroboration = None
     for i, h in enumerate(hop_chain):
-        per_hop = _hop_corroboration(hop_auth.get(i))
+        per_hop = hop_corroboration(hop_auth.get(i))
         h["smtp_auth_account"] = per_hop["smtp_auth_account"] if per_hop else None
         h["dkim_domain"] = per_hop["dkim_domain"] if per_hop else None
         h["auth_consistent"] = per_hop["consistent"] if per_hop else None
@@ -477,14 +489,9 @@ def parse_email(source: str | Message) -> dict:
     if via_relay_lines and ip_confidence == "high":
         ip_confidence = "medium"
 
-    # Servers without their own Authentication-Results (e.g. Exim) leave the results only in Microsoft/ARC headers.
-    auth_header = (
-        msg.get("Authentication-Results")
-        or msg.get("X-MS-Exchange-Authentication-Results")
-        or msg.get("ARC-Authentication-Results")
-        or ""
-    )
-    auth_results = _parse_auth_results(auth_header)
+    # The receiver's own verdicts, read by the same code as in the Email tab (mail_trust.receiver_auth): Microsoft 365
+    # without a server name, X-MS-Exchange-Authentication-Results and, for servers such as Exim, the ARC copy.
+    auth_results = receiver_auth([(name, unfold(value)) for name, value in msg.items()], [h["by_host"] for h in hop_chain])
 
     date_header = msg.get("Date")
     date_parsed = None
@@ -500,8 +507,8 @@ def parse_email(source: str | Message) -> dict:
             pass
 
     body = _extract_body_text(msg)
-    btc_matches = sorted(set(_BTC_RE.findall(body)))
-    ransom_hint = any(kw in body.lower() for kw in _RANSOM_KEYWORDS)
+    btc_matches = sorted({found for found in _BTC_RE.findall(body) if is_valid_btc_address(found)})
+    ransom_hint = bool(_RANSOM_RE.search(body))
 
     if trusted_ip:
         ip_ok, ip_reject_reason = is_reportable_ip(trusted_ip)
@@ -533,10 +540,10 @@ def parse_email(source: str | Message) -> dict:
         "date_parsed": date_parsed.isoformat() if date_parsed else None,
         "age_days": age_days,
         "age_ok": age_ok,
-        "spf": auth_results.get("spf"),
-        "dkim": auth_results.get("dkim"),
-        "dmarc": auth_results.get("dmarc"),
-        "spoofing_suspected": auth_results.get("spf") == "fail" or auth_results.get("dmarc") == "fail",
+        "spf": auth_results["spf"],
+        "dkim": auth_results["dkim"],
+        "dmarc": auth_results["dmarc"],
+        "spoofing_suspected": auth_results["spf"] == "fail" or auth_results["dmarc"] == "fail",
         "attachments": _extract_attachments(msg),
         "btc_addresses_found": btc_matches,
         "ransom_keywords_found": ransom_hint,

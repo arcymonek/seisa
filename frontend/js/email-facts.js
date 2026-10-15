@@ -88,8 +88,12 @@ function filterRows(fl) {
 // chain to find it), so the KPI tile and the route diagram always agree on the same hop.
 const trustIndex = (f) => f.trust_index ?? 0;
 
-// SPF / DKIM / DMARC as written by the recipient's server (Authentication-Results with a matching authserv-id).
+// SPF / DKIM / DMARC as written by the recipient's server. The backend decides which header that is (`auth_summary`,
+// mail_trust.receiver_auth - also Microsoft 365, which writes no server name); analyses saved before that field existed
+// fall back to picking from the header list here.
 export function authSummary(f) {
+  const s = f.auth_summary;
+  if (s) return { spf: s.spf || undefined, dkim: s.dkim || undefined, dmarc: s.dmarc || undefined, verified: s.verified, server: s.authserv_id, any: !!s.header };
   const ar = f.auth.filter((a) => a.header === "Authentication-Results");
   const pick = ar.find((a) => a.matches_receiver === true) || ar[0] || null;
   const res = { ...(pick ? pick.results : {}) };
@@ -149,7 +153,7 @@ export function kpiHtml(f) {
   tiles.push(kpiTile(t("em.kpi.flags"), warns, { tone: warns >= 3 ? "bad" : warns ? "warn" : "good", sub: t("em.kpi.flags_sub", { info: f.flags.length - warns }) }));
 
   const a = authSummary(f);
-  const authSub = !a.any ? t("em.kpi.auth_none") : a.verified ? t("em.kpi.auth_by", { server: a.server || "?" }) : t("em.kpi.auth_unverified");
+  const authSub = !a.any ? t("em.kpi.auth_none") : a.verified ? (a.server ? t("em.kpi.auth_by", { server: a.server }) : t("em.kpi.auth_by_position")) : t("em.kpi.auth_unverified");
   tiles.push(kpiTile(t("em.kpi.auth"), null, { tone: authState(a), valueHtml: `<span class="em-res-row">${chip("SPF", a.spf)}${chip("DKIM", a.dkim)}${chip("DMARC", a.dmarc)}</span>`, sub: authSub }));
 
   const bad = misaligned(f);

@@ -18,6 +18,7 @@ Messageheader, or the RFCs - never from running Seisa and pasting its answer bac
       "trust_index": 0,                        # which Received entry (0 = top) is the trust boundary
       "spf": "pass", "dkim": "pass", "dmarc": "pass",
       "spoofing_suspected": false,
+      "auth_verified": true,                   # the Email tab found the verdicts written by the recipient's own server
       "label": "legitimate"                    # or "phishing"; overrides the folder
     }
 
@@ -53,5 +54,7 @@ def test_private_message(path):
             assert parsed[key] == expected[key], key
     if "trust_index" in expected:
         assert compute_facts(src)["trust_index"] == expected["trust_index"]
+    if "auth_verified" in expected:
+        assert compute_facts(src)["auth_summary"]["verified"] is expected["auth_verified"]
     if label == "legitimate":
         assert parsed["spoofing_suspected"] is False, "a legitimate message was flagged as spoofed (false alarm)"

@@ -808,6 +808,7 @@
   "em.kpi.auth": "Authentication",
   "em.kpi.auth_none": "no Authentication-Results",
   "em.kpi.auth_by": "as written by {server}",
+  "em.kpi.auth_by_position": "next to the recipient's own Received line (no server name)",
   "em.kpi.auth_unverified": "not written by the recipient's server",
   "em.kpi.identity": "Sender identity",
   "em.kpi.identity_ok": "Consistent",

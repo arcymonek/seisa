@@ -267,7 +267,6 @@ def test_scanners_return_what_the_old_regexes_returned(text):
     assert _strip_html_tags(text) == _OLD_HTML_TAG.sub("", text)
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B08: single-part base64 in iso-8859-2/windows-1250 is decoded as UTF-8")
 @pytest.mark.parametrize("charset", ["iso-8859-2", "windows-1250"])
 def test_single_part_base64_charset(charset):
     text = "Zażółć gęślą jaźń"
@@ -278,7 +277,6 @@ def test_single_part_base64_charset(charset):
     assert text in prepare_for_llm(src)[0]
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B04: an RFC 2047 encoded attachment name hides the .exe extension")
 @pytest.mark.parametrize("name", ["faktura.pdf.exe", "scan.doc.js", "a.exe", "zdjęcie.jpg.scr"])
 @pytest.mark.parametrize("encoding", ["B", "Q"])
 def test_encoded_attachment_name(name, encoding):

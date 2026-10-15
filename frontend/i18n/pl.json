@@ -830,6 +830,7 @@
   "em.kpi.auth": "Uwierzytelnianie",
   "em.kpi.auth_none": "brak Authentication-Results",
   "em.kpi.auth_by": "wg {server}",
+  "em.kpi.auth_by_position": "obok linii Received odbiorcy (bez nazwy serwera)",
   "em.kpi.auth_unverified": "nie zapisał go serwer odbiorcy",
   "em.kpi.identity": "Tożsamość nadawcy",
   "em.kpi.identity_ok": "Spójna",

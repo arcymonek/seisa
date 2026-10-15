@@ -15,8 +15,6 @@ import binascii
 import hashlib
 import re
 from datetime import datetime, timezone
-from email import message_from_string
-from email.header import decode_header, make_header
 from email.message import Message
 from email.utils import parseaddr, parsedate_to_datetime
 from html.parser import HTMLParser
@@ -24,13 +22,22 @@ from urllib.parse import parse_qsl, urlsplit
 
 from backend.email_parser import MAX_RECEIVED_CHARS, MAX_RECEIVED_HEADERS, find_boundary_index, parse_received_header
 from backend.i18n import t
+from backend.mail_source import (  # noqa: F401  (normalize_source and decode_words are also re-exported: callers and scripts import them from here)
+    attachment_info,
+    decode_words,
+    load_message,
+    normalize_source,
+    unfold,
+)
 from backend.mail_trust import (
-    domains_consistent,
+    auth_entries,
     family,
+    hop_corroboration,
     hop_specific_auth,
     is_dotless_internal_hop,
     is_special_ip,
     parse_ip,
+    receiver_auth,
     registrable_domain,
 )
 
@@ -41,10 +48,10 @@ EMAIL_START = "===EMAIL-START==="
 EMAIL_END = "===EMAIL-END==="
 
 VALID_CTE = {"7bit", "8bit", "binary", "quoted-printable", "base64"}
-SINGLE_INSTANCE_HEADERS = {
+SINGLE_INSTANCE_HEADERS = frozenset({
     "from", "to", "subject", "date", "message-id", "reply-to", "sender", "mime-version",
     "content-type", "content-transfer-encoding", "content-length",
-}
+})
 TZ_ABBR = {
     "UTC": 0, "GMT": 0, "Z": 0, "PDT": -700, "PST": -800, "MDT": -600, "MST": -700, "CDT": -500, "CST": -600,
     "EDT": -400, "EST": -500, "CET": 100, "CEST": 200, "BST": 100, "EET": 200, "EEST": 300, "JST": 900, "IST": 530,
@@ -56,11 +63,6 @@ ABUSED_HOSTS = (
     "cdn.discordapp.com", "t.me", "herokuapp.com", "netlify.app", "vercel.app", "weebly.com", "wixsite.com",
 )
 SHORTENERS = {"bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly", "shorturl.at"}
-RISKY_EXTENSIONS = {
-    "exe", "scr", "bat", "cmd", "com", "js", "jse", "vbs", "vbe", "wsf", "jar", "lnk", "iso", "img", "hta", "ps1",
-    "msi", "dll", "docm", "xlsm", "pptm", "html", "htm", "svg", "one", "zip", "rar", "7z", "ace",
-}
-DOUBLE_EXT_DISPLAY = {"pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "jpg", "jpeg", "png", "gif", "zip"}
 PLACEHOLDER_RES = [
     re.compile(r"\{\{[^}]{1,40}\}\}"), re.compile(r"@@\w{2,30}@@"), re.compile(r"%%\w{2,30}%%"),
     re.compile(r"\[\[\w{2,30}\]\]"), re.compile(r"\$\{\w{2,30}\}"), re.compile(r"\{%\s*\w+[^%]{0,30}%\}"),
@@ -90,29 +92,21 @@ HIDDEN_STYLE_RES = {
 
 
 # ---------------------------------------------------------------------------
-# normalisation and preparation of the source
+# preparation of the source (normalize_source, the loading of the message and the attachment description live in
+# mail_source.py and are shared with the AbuseIPDB tab)
 # ---------------------------------------------------------------------------
-
-def normalize_source(raw: str) -> str:
-    """Unifies the source pasted/loaded from a file: BOM, line endings, mbox envelope ("From ..."), leading
-    empty lines. Does not change anything inside the headers or the body."""
-    text = raw.lstrip("\ufeff").replace("\r\n", "\n").replace("\r", "\n")
-    text = text.lstrip("\n")
-    lines = text.split("\n", 1)
-    if lines and re.match(r"^From \S+", lines[0]) and ":" not in lines[0].split(" ", 1)[0]:
-        text = lines[1] if len(lines) > 1 else ""
-    return text.lstrip("\n")
-
-
-def _unfold(value: str) -> str:
-    return re.sub(r"\n[ \t]+", " ", str(value)).strip()
-
 
 def _b64_decode(lines: list[str]) -> bytes | None:
     try:
         return base64.b64decode("".join(line.strip() for line in lines), validate=False)
     except (binascii.Error, ValueError):
         return None
+
+
+def _part_charset(headers: dict[str, str]) -> str:
+    """The charset declared in a part's Content-Type, or "" when it declares none."""
+    found = re.search(r"charset\s*=\s*\"?([\w.-]+)", headers.get("content-type", ""), re.IGNORECASE)
+    return found.group(1) if found else ""
 
 
 def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[str, list[str]]:
@@ -163,8 +157,7 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
     for line in lines:
         if mode == "capture":
             if is_boundary(line):
-                flush_capture(hdrs.get("content-type", "").split(";")[0].strip().lower(),
-                              (re.search(r"charset\s*=\s*\"?([\w.-]+)", hdrs.get("content-type", ""), re.IGNORECASE) or [None, ""])[1])
+                flush_capture(hdrs.get("content-type", "").split(";")[0].strip().lower(), _part_charset(hdrs))
                 capture = []
                 out.append(line)
                 mode, hdrs, last_name = "headers", {}, None
@@ -191,7 +184,7 @@ def prepare_for_llm(src: str, max_chars: int = MAX_LLM_SOURCE_CHARS) -> tuple[st
             mode, hdrs, last_name = "headers", {}, None
 
     if mode == "capture" and capture:
-        flush_capture(hdrs.get("content-type", "").split(";")[0].strip().lower(), "")
+        flush_capture(hdrs.get("content-type", "").split(";")[0].strip().lower(), _part_charset(hdrs))
 
     text = "\n".join(out)
     if len(text) > max_chars:
@@ -233,16 +226,6 @@ def _parse_date(value: str | None) -> datetime | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
-
-
-MAX_DECODE_CHARS = 4000  # the standard-library decoder of encoded words is quadratic on thousands of them
-
-
-def _decode_words(value: str) -> str:
-    try:
-        return str(make_header(decode_header(value[:MAX_DECODE_CHARS])))
-    except Exception:
-        return value
 
 
 def _tags(value: str) -> dict[str, str]:
@@ -557,7 +540,7 @@ def decoded_text_parts(src: str) -> str:
     """Decoded (quoted-printable/base64) text parts of the message - quotes from the HTML body made by the model
     correspond to them, not to the raw source."""
     try:
-        msg = message_from_string(src)
+        msg = load_message(src)
         leaves: list[Message] = []
         _walk_mime(msg, 0, [], [], leaves)
         return "\n".join(_leaf_text(leaf) for leaf in leaves if leaf.get_content_maintype() == "text" and not leaf.get_filename())
@@ -573,8 +556,8 @@ class _Ctx:
 
     def __init__(self, src: str) -> None:
         self.src = src
-        self.msg = message_from_string(src)
-        self.headers = [(n, _unfold(v)) for n, v in self.msg.items()]
+        self.msg = load_message(src)  # repairs lost header indentation; `self.src` stays as it was pasted
+        self.headers = [(n, unfold(v)) for n, v in self.msg.items()]
         self.lower_names = [n.lower() for n, _ in self.headers]
         self.flags: list[dict] = []  # {"level": "warn"|"info", "text": ...}
         self.date_dt = _parse_date(self.first("date"))
@@ -595,9 +578,9 @@ class _Ctx:
 def _overview(ctx: _Ctx) -> dict:
     subject_raw = ctx.first("subject") or ""
     return {
-        "subject": _decode_words(subject_raw)[:300],
-        "from": _decode_words(ctx.first("from") or "")[:300],
-        "to": _decode_words(ctx.first("to") or "")[:300],
+        "subject": decode_words(subject_raw)[:300],
+        "from": decode_words(ctx.first("from") or "")[:300],
+        "to": decode_words(ctx.first("to") or "")[:300],
         "date": ctx.first("date"),
         "date_utc": _fmt_utc(ctx.date_dt),
         "message_id": ctx.first("message-id"),
@@ -610,7 +593,7 @@ def _overview(ctx: _Ctx) -> dict:
 def _header_hygiene(ctx: _Ctx) -> tuple[list, dict, list, list[str]]:
     """Duplicated single-instance headers, letter-case variants, encoded words, template placeholders in headers."""
     dup = []
-    for name in SINGLE_INSTANCE_HEADERS:
+    for name in sorted(SINGLE_INSTANCE_HEADERS):  # a set has no fixed order, and the flags must come out the same every run
         vals = ctx.all_of(name)
         if len(vals) > 1:
             dup.append({"name": name, "count": len(vals), "values": [v[:80] for v in vals]})
@@ -624,7 +607,7 @@ def _header_hygiene(ctx: _Ctx) -> tuple[list, dict, list, list[str]]:
     encoded_words, non_ascii = [], []
     for n, v in ctx.headers:
         if "=?" in v and re.search(r"=\?[\w-]+\?[bBqQ]\?", v):
-            encoded_words.append({"header": n, "raw": v[:160], "decoded": _decode_words(v)[:160]})
+            encoded_words.append({"header": n, "raw": v[:160], "decoded": decode_words(v)[:160]})
         elif not v.isascii():
             non_ascii.append(n)
     if non_ascii:
@@ -688,16 +671,10 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
     # could defeat) - purely informational: it never changes which hop is the trust boundary, only annotates one.
     hop_auth = hop_specific_auth(ctx.headers, len(received))
     for r in received:
-        corroboration = hop_auth.get(r["index"])
-        account = corroboration.get("smtp_auth_account") if corroboration else None
-        if not corroboration or corroboration.get("auth") != "pass" or not account:
-            r["smtp_auth_account"], r["dkim_domain"], r["auth_consistent"] = None, None, None
-            continue
-        dkim_domain = corroboration.get("dkim_domain")
-        account_domain = account.split("@")[-1] if "@" in account else None
-        r["smtp_auth_account"] = account
-        r["dkim_domain"] = dkim_domain
-        r["auth_consistent"] = domains_consistent(account_domain, dkim_domain) if dkim_domain else None
+        per_hop = hop_corroboration(hop_auth.get(r["index"]))
+        r["smtp_auth_account"] = per_hop["smtp_auth_account"] if per_hop else None
+        r["dkim_domain"] = per_hop["dkim_domain"] if per_hop else None
+        r["auth_consistent"] = per_hop["consistent"] if per_hop else None
 
     single_operator = None
     trust_note = None
@@ -759,40 +736,9 @@ def _received_hops(ctx: _Ctx) -> tuple[list[dict], str | None, str | None, int]:
 
 
 def _authentication(ctx: _Ctx, received: list[dict]) -> list[dict]:
-    """Authentication-Results, ARC-Authentication-Results and Received-SPF headers as structured entries."""
-    top_by_domains = set()  # operator families that wrote Received on the recipient's side
-    for r in received:
-        d = family(registrable_domain((r["by_host"] or "").strip("[]")))
-        if d:
-            top_by_domains.add(d)
-    auth = []
-    for n, v in ctx.headers:
-        ln = n.lower()
-        if ln not in ("authentication-results", "arc-authentication-results", "received-spf"):
-            continue
-        entry: dict = {"header": n, "raw": v[:400], "results": {}, "details": {}}
-        if ln == "received-spf":
-            m = re.match(r"\s*(pass|fail|softfail|neutral|none|temperror|permerror)", v, re.IGNORECASE)
-            if m:
-                entry["results"]["spf"] = m.group(1).lower()
-            for k in ("client-ip", "envelope-from", "helo", "identity"):
-                mm = re.search(rf"{k}\s*=\s*\"?([^;\s\"]+)", v, re.IGNORECASE)
-                if mm:
-                    entry["details"][k] = mm.group(1)
-        else:
-            body = re.sub(r"^\s*i\s*=\s*\d+\s*;\s*", "", v)
-            # The authserv-id is the first token before the first ";"; there may be none (e.g. "; spf=pass").
-            authserv_tokens = body.split(";", 1)[0].split()
-            authserv = authserv_tokens[0] if authserv_tokens else None
-            entry["authserv_id"] = authserv
-            ad = family(registrable_domain((authserv or "").lower())) if authserv else None
-            entry["matches_receiver"] = (ad in top_by_domains) if (ad and top_by_domains) else None
-            for m in re.finditer(r"\b(spf|dkim|dmarc|arc|dkim-atps|compauth)\s*=\s*([a-z]+)", body, re.IGNORECASE):
-                entry["results"].setdefault(m.group(1).lower(), m.group(2).lower())
-            for m in re.finditer(r"\b(smtp\.mailfrom|smtp\.helo|header\.from|header\.d|header\.i|header\.s)\s*=\s*([^\s;]+)", body, re.IGNORECASE):
-                entry["details"].setdefault(m.group(1).lower(), m.group(2))
-        auth.append(entry)
-    return auth
+    """Authentication-Results (also Microsoft's X-MS-Exchange variant), ARC-Authentication-Results and Received-SPF
+    headers as structured entries; read by `mail_trust.auth_entries`, the same code the AbuseIPDB tab uses."""
+    return auth_entries(ctx.headers, [r["by_host"] for r in received])
 
 
 def _dkim_arc(ctx: _Ctx) -> tuple[list[dict], list[dict]]:
@@ -935,24 +881,17 @@ def _mime_and_body(ctx: _Ctx, placeholders: list[str]) -> tuple[list[dict], list
     html_parts, text_parts = [], []
     for leaf in leaves:
         ctype = leaf.get_content_type()
-        fname = leaf.get_filename()
-        if fname:
-            try:
-                payload = leaf.get_payload(decode=True) or b""
-            except Exception:
-                payload = b""
-            segs = fname.split(".")
-            ext = segs[-1].lower() if len(segs) > 1 else ""
-            apparent = segs[-2].lower() if len(segs) > 2 and segs[-2].lower() in DOUBLE_EXT_DISPLAY and segs[-2].lower() != ext else None
+        info = attachment_info(leaf)
+        if info:
             attachments.append({
-                "filename": _decode_words(fname)[:120], "content_type": ctype, "size": len(payload),
-                "sha256": hashlib.sha256(payload).hexdigest() if payload else None,
-                "extension": ext, "double_extension_as": apparent, "risky_extension": ext in RISKY_EXTENSIONS,
+                "filename": info["filename"], "content_type": ctype, "size": info["size"], "sha256": info["sha256"],
+                "extension": info["extension"], "double_extension_as": info["double_extension_as"],
+                "risky_extension": info["risky_extension"],
             })
-            if apparent:
-                ctx.flag("warn", t("forensics.flag.att_double_ext", name=fname[:60], apparent=apparent, ext=ext))
-            elif ext in RISKY_EXTENSIONS:
-                ctx.flag("warn", t("forensics.flag.att_risky", name=fname[:60], ext=ext))
+            if info["double_extension_as"]:
+                ctx.flag("warn", t("forensics.flag.att_double_ext", name=info["filename"][:60], apparent=info["double_extension_as"], ext=info["extension"]))
+            elif info["risky_extension"]:
+                ctx.flag("warn", t("forensics.flag.att_risky", name=info["filename"][:60], ext=info["extension"]))
             continue
         if ctype == "text/html":
             html_parts.append(_leaf_text(leaf))
@@ -1047,6 +986,7 @@ def compute_facts(src: str) -> dict:
     dup, casing_variants, encoded_words, placeholders = _header_hygiene(ctx)
     received, single_operator, trust_note, trust_index = _received_hops(ctx)
     auth = _authentication(ctx, received)
+    auth_summary = receiver_auth(ctx.headers, [r["by_host"] for r in received], auth)
     dkim, arc = _dkim_arc(ctx)
     identity_rows, unsub_hdr, unsub_urls = _identity(ctx, dkim, auth)
     timeline = _timeline(ctx, received)
@@ -1067,6 +1007,7 @@ def compute_facts(src: str) -> dict:
         "trust_index": trust_index,
         "filters": filters,
         "auth": auth,
+        "auth_summary": auth_summary,
         "dkim": dkim,
         "arc": arc,
         "identity": identity_rows,

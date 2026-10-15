@@ -4,6 +4,14 @@
    "arc": [],
    "attachments": [],
    "auth": [],
+   "auth_summary": {
+    "authserv_id": null,
+    "dkim": null,
+    "dmarc": null,
+    "header": null,
+    "spf": null,
+    "verified": false
+   },
    "casing_variants": {},
    "dkim": [],
    "duplicates": [],
@@ -257,6 +265,14 @@
      }
     }
    ],
+   "auth_summary": {
+    "authserv_id": "mx.recipient.example",
+    "dkim": "pass",
+    "dmarc": "pass",
+    "header": "Authentication-Results",
+    "spf": "pass",
+    "verified": true
+   },
    "casing_variants": {},
    "dkim": [
     {
@@ -519,6 +535,14 @@
      }
     }
    ],
+   "auth_summary": {
+    "authserv_id": "mailer-out.relaywave.example",
+    "dkim": "pass",
+    "dmarc": "pass",
+    "header": "Authentication-Results",
+    "spf": "pass",
+    "verified": true
+   },
    "casing_variants": {},
    "dkim": [
     {
@@ -861,6 +885,14 @@
      }
     }
    ],
+   "auth_summary": {
+    "authserv_id": "mx.recipient.example",
+    "dkim": "none",
+    "dmarc": "fail",
+    "header": "Authentication-Results",
+    "spf": "fail",
+    "verified": true
+   },
    "casing_variants": {},
    "dkim": [
     {
