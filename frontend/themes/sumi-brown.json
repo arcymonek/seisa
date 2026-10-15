@@ -1,0 +1,32 @@
+{
+  "id": "sumi-brown",
+  "name": {"en": "Brown Sumi", "pl": "Brązowy Sumi"},
+  "base": "dark",
+  "order": 40,
+  "logo": "mask",
+  "colors": {
+    "bg": "#141312",
+    "bg-raised": "#1d1b19",
+    "bg-inset": "#0c0b0a",
+    "hair": "#33302c",
+    "hair-soft": "#292724",
+    "text": "#e8e4de",
+    "text-strong": "#f6f2ec",
+    "muted": "#a39d94",
+    "accent": "#c4b8a9",
+    "on-accent": "#14100b",
+    "info": "#c4b8a9",
+    "fail": "#e5836f",
+    "fail-bg": "#3a1f1b",
+    "pass": "#93b58d",
+    "pass-bg": "#1e2a1f",
+    "warn": "#dcaa5c",
+    "warn-bg": "#352b1a",
+    "on-warn": "#14100b",
+    "hit-bg": "#5a4a2a",
+    "focus": "#f6f2ec",
+    "tooltip-bg": "#0c0b0a",
+    "shadow": "#000000",
+    "cite-hover-bg": "#2a2622"
+  }
+}

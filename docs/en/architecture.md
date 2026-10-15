@@ -90,7 +90,7 @@ seisa/
 │   ├── logo.png               # round logo, dark badge (page header on dark themes, README)
 │   ├── logo-mask.png          # the logo shape only (ring and kanji, transparent elsewhere); light themes paint it in their accent colour
 │   ├── theme-init.js          # classic script in <head>: applies the stored theme before the first paint
-│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json, kohaku.json); colours only (and an optional two-colour header stripe)
+│   ├── themes/                # colour themes, one JSON file each (dark.json, light.json, kohaku.json, sumi-brown.json); colours only (and an optional two-colour header stripe)
 │   ├── css/style.css          # layout and components, no colours (they come from the theme)
 │   ├── i18n/                  # interface text catalogs: pl.json, en.json
 │   ├── js/                    # one module per tab and shared helpers, listed below

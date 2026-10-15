@@ -27,6 +27,8 @@ const PALETTES = [
     ["fail", "朱", "しゅ", "shu"], ["pass", "若竹", "わかたけ", "wakatake"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
   { title: "about.colors_kohaku_title", intro: "about.colors_kohaku_intro", rows: [["bg", "白練", "しろねり", "shironeri"], ["text", "墨", "すみ", "sumi"], ["accent", "紅", "べに", "beni"],
     ["fail", "臙脂", "えんじ", "enji"], ["pass", "松葉", "まつば", "matsuba"], ["warn", "山吹", "やまぶき", "yamabuki"]] },
+  { title: "about.colors_brown_title", intro: "about.colors_brown_intro", rows: [["bg", "黒橡", "くろつるばみ", "kurotsurubami"], ["text", "白練", "しろねり", "shironeri"], ["accent", "利休白茶", "りきゅうしろちゃ", "rikyushiracha"],
+    ["fail", "鴇羽", "ときは", "tokiha"], ["pass", "白緑", "びゃくろく", "byakuroku"], ["warn", "黄朽葉", "きくちば", "kikuchiba"]] },
 ];
 let root;
 let version = "";

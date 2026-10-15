@@ -90,7 +90,7 @@ seisa/
 │   ├── logo.png               # okrągłe logo, ciemna odznaka (nagłówek strony w ciemnych skórkach, README)
 │   ├── logo-mask.png          # sam kształt logo (pierścień i kanji, reszta przezroczysta); jasne skórki malują go kolorem akcentu
 │   ├── theme-init.js          # zwykły skrypt w <head>: stosuje zapamiętaną skórkę przed pierwszym narysowaniem strony
-│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json, kohaku.json); tylko kolory (i opcjonalny dwukolorowy pasek pod nagłówkiem)
+│   ├── themes/                # skórki kolorystyczne, po jednym pliku JSON (dark.json, light.json, kohaku.json, sumi-brown.json); tylko kolory (i opcjonalny dwukolorowy pasek pod nagłówkiem)
 │   ├── css/style.css          # układ i komponenty, bez kolorów (pochodzą ze skórki)
 │   ├── i18n/                  # katalogi tekstów interfejsu: pl.json, en.json
 │   ├── js/                    # po jednym module na zakładkę i wspólne pomocnicze, poniżej

@@ -1,6 +1,6 @@
 """Colour themes: JSON files in frontend/themes/ turned into CSS.
 
-A theme file holds colours only (a fixed set of keys, each value #rrggbb, plus an optional two-colour header stripe),
+A theme file holds colours only (a fixed set of keys, each value #rrggbb, plus an optional two-colour header stripe and an optional logo choice of two words),
 never CSS. The CSS is generated here from validated values, so a theme dropped into the folder (or sent in a pull
 request) cannot carry url(), @import or any other rule: everything that reaches the stylesheet is a whitelisted key,
 a hex colour, a checked id or 'dark'/'light'.
@@ -29,6 +29,7 @@ COLOR_KEYS = (
     "hit-bg", "focus", "tooltip-bg", "shadow", "cite-hover-bg",
 )
 STRIPE_KEYS = ("top", "bottom")  # optional two-tone bar under the page header (top half, bottom half), colours only
+LOGOS = ("badge", "mask")  # optional header logo: the ready-made badge picture, or the bare shape painted in the accent colour
 _ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,31}$")
 _HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 _NAME_CHARS = re.compile(r"^[^\x00-\x1f\x7f<>&\"'`]{1,40}$")
@@ -42,7 +43,7 @@ def validate_theme(data: object, stem: str) -> dict:
     """Return the normalised theme or raise ThemeError (the message names the problem, never echoes the content)."""
     if not isinstance(data, dict):
         raise ThemeError("not a JSON object")
-    if set(data) - {"id", "name", "base", "order", "colors", "stripe"}:
+    if set(data) - {"id", "name", "base", "order", "colors", "stripe", "logo"}:
         raise ThemeError("unknown top-level key")
     theme_id = data.get("id")
     if not isinstance(theme_id, str) or not _ID.match(theme_id):
@@ -73,6 +74,9 @@ def validate_theme(data: object, stem: str) -> dict:
         for value in stripe.values():
             if not isinstance(value, str) or not _HEX.match(value):
                 raise ThemeError("every stripe colour must be #rrggbb")
+    logo = data.get("logo")
+    if logo is not None and logo not in LOGOS:  # a list or dict never equals a string, so only the two words get through
+        raise ThemeError("logo must be badge or mask")
     fallback = names.get("en") or next(iter(names.values()))
     out = {
         "id": theme_id,
@@ -83,6 +87,8 @@ def validate_theme(data: object, stem: str) -> dict:
     }
     if stripe is not None:
         out["stripe"] = {key: stripe[key].lower() for key in STRIPE_KEYS}
+    if logo is not None:
+        out["logo"] = logo
     return out
 
 
@@ -107,8 +113,10 @@ def render_css(themes: list[dict]) -> str:
         body = "".join(f"--{key}:{value};" for key, value in th["colors"].items())
         if "stripe" in th:  # themes without it leave the variables unset, and the stylesheet then paints nothing
             body += "".join(f"--stripe-{key}:{th['stripe'][key]};" for key in STRIPE_KEYS)
-        # which logo variant is shown follows the base: the dark badge on a dark theme, the accent-coloured shape on a light one
-        dark_logo, light_logo = ("inline", "none") if th["base"] == "dark" else ("none", "inline")
+        # which logo variant is shown follows the theme's "logo" or, without it, the base: the dark badge on a dark theme,
+        # the accent-coloured shape on a light one
+        logo = th.get("logo") or ("badge" if th["base"] == "dark" else "mask")
+        dark_logo, light_logo = ("inline", "none") if logo == "badge" else ("none", "inline")
         blocks.append(
             f':root[data-theme="{th["id"]}"]{{color-scheme:{th["base"]};'
             f"--logo-dark-display:{dark_logo};--logo-light-display:{light_logo};{body}}}"

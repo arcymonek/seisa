@@ -28,9 +28,10 @@ header::after {
 h1 { font-family: var(--mono); font-size: 24px; margin: 0 0 6px; display: flex; align-items: center; gap: 14px; }
 h1 .brand-name { color: var(--accent); }
 h1 .logo-img { flex: none; }
-/* two logo variants; the theme (generated CSS) decides which one is displayed. The dark one is a picture with its own
-   badge. The light one is only a shape (logo-mask.png) painted in the theme's accent colour, so it has no background
-   of its own and always sits on the page background of whichever light theme is active. */
+/* two logo variants; the theme (generated CSS) decides which one is displayed. The "dark" one is a picture with its own
+   badge. The "light" one is only a shape (logo-mask.png) painted in the theme's accent colour, so it has no background
+   of its own and sits on the page background of the active theme. Light themes use it by default; a dark theme can
+   ask for it with "logo": "mask" in its JSON file. */
 h1 .logo-img[data-logo="dark"] { display: var(--logo-dark-display, inline); }
 h1 .logo-img[data-logo="light"] {
   display: var(--logo-light-display, none); width: 56px; height: 56px; background-color: var(--accent);
@@ -93,7 +94,7 @@ footer .lang-btn.on { color: var(--text); border-color: var(--text); cursor: def
 .settings-row .lang-btn { background: none; border: 1px solid var(--hair); color: var(--text); font: inherit; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
 .settings-row .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
 .settings-row .lang-btn.on { border-color: var(--accent); color: var(--accent); cursor: default; }
-.colour-row { display: grid; grid-template-columns: 4.5em 8em 1fr; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--hair-soft); }
+.colour-row { display: grid; grid-template-columns: 5.5em 8em 1fr; gap: 4px 12px; padding: 6px 0; border-bottom: 1px solid var(--hair-soft); }
 .colour-row .kanji { font-size: 18px; line-height: 1.3; }
 .colour-row .mono { color: var(--muted); }
 .colour-pal { margin: 10px 14px 0; }

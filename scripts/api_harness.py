@@ -696,8 +696,8 @@ if not (_summary["verdict"]["level"] == "high" and len(_summary["redirects"]) ==
 if probes["text/plain cross-site POST (CSRF without preflight)"] not in (403, 422):
     failures.append("a text/plain cross-site POST reached the handler")
 _themes = _themes_resp.json()
-if [th["id"] for th in _themes] != ["light", "dark", "kohaku"] or any("colors" in th for th in _themes):
-    failures.append(f"theme list is wrong (shipped themes light, dark and kohaku, no colours in the list): {_themes}")
+if [th["id"] for th in _themes] != ["light", "dark", "kohaku", "sumi-brown"] or any("colors" in th for th in _themes):
+    failures.append(f"theme list is wrong (shipped themes light, dark, kohaku and sumi-brown, no colours in the list): {_themes}")
 if not re.fullmatch(r'(:root\[data-theme="[a-z0-9-]+"\]\{color-scheme:(?:dark|light);--logo-dark-display:(?:inline|none);--logo-light-display:(?:inline|none);(?:--[a-z-]+:#[0-9a-f]{6};)+\}\n)+', _themes_css.text) \
         or not _themes_css.headers.get("content-type", "").startswith("text/css"):
     failures.append("themes.css holds something other than whitelisted colour variables")
@@ -715,6 +715,9 @@ _theme_cases = {
     "badstripekey": {"stripe": {"top": "#abcdef", "bottom": "#123456", "extra": "#000000"}},
     "badinfo": {"colors": {**_theme_base["colors"], "info": "#123456;}body{display:none"}},
     "badtop": {"x-rule": "body{display:none}"},
+    "okmask": {"logo": "mask"},  # control: the one allowed non-default logo word works
+    "badlogo": {"logo": "url(https://attacker.example/x)"},
+    "badlogotype": {"logo": ["mask"]},
 }
 for _tid, _over in _theme_cases.items():
     (_theme_dir / f"{_tid}.json").write_text(json.dumps({**_theme_base, "id": _tid, **_over}), encoding="utf-8")
@@ -726,7 +729,7 @@ try:
 finally:
     _themes_mod.THEMES_DIR = _real_theme_dir
     shutil.rmtree(_theme_dir, ignore_errors=True)
-if [th["id"] for th in _hostile_list] != ["okcopy"] or "attacker" in _hostile_css or "body{" in _hostile_css or "extra" in _hostile_css:
+if [th["id"] for th in _hostile_list] != ["okcopy", "okmask"] or "attacker" in _hostile_css or "body{" in _hostile_css or "extra" in _hostile_css:
     failures.append(f"a hostile theme file got through the theme validator: {[th['id'] for th in _hostile_list]}")
 _blocked = ["guard GET Sec-Fetch-Site cross-site", "guard themes.css cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
             "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin",
