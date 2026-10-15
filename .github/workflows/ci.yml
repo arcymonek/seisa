@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-24.04
     # A run takes about a minute; the default limit is 360 minutes, so a hung job would hold a runner for 6 hours.
     timeout-minutes: 15
+    env:
+      # 300 derandomized examples per property test (tests/test_fuzz_parsers.py): the same inputs on every run.
+      HYPOTHESIS_PROFILE: ci
     strategy:
       fail-fast: false
       matrix:
@@ -41,10 +44,26 @@ jobs:
             requirements-dev.txt
       - run: pip install -r requirements.lock -r requirements-dev.txt
       - run: ruff check backend scripts tests
+      # The whole suite, including the golden pattern of the e-mail facts (tests/test_dump_facts_golden.py, which runs
+      # scripts/dump_facts.py in both languages and compares it with tests/golden/).
       - run: python -m pytest -q
       - run: python scripts/api_harness.py
       - run: python scripts/check_i18n.py --strict
-      - run: python scripts/dump_facts.py > /dev/null
+      # Syntax of the frontend modules (there is no build step and no JS test runner). `node --check` treats a .js file
+      # as CommonJS, so each module is copied to a .mjs name first, as the local checklist does. Node is preinstalled
+      # on the ubuntu-24.04 runner.
+      - name: Syntax check of frontend/js/*.js
+        run: |
+          for f in frontend/js/*.js; do
+            cp "$f" "$RUNNER_TEMP/x.mjs" && node --check "$RUNNER_TEMP/x.mjs" || { echo "SYNTAX ERROR in $f"; exit 1; }
+          done
+      # Informational coverage report (no threshold, it cannot fail the run for being low): fast tests plus the harness.
+      - name: Coverage report (informational)
+        run: |
+          coverage run -p -m pytest -q -m "not slow"
+          coverage run -p scripts/api_harness.py
+          coverage combine
+          coverage report
       - name: Version rule and added-line rules for the whole branch (own pull requests)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -57,3 +76,37 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: python scripts/hooks/pre-commit --range "origin/$BASE_REF" --no-version-rule
+
+  # A separate job, so that a new vulnerability or a new licence never hides the results of the tests above (and the
+  # tests never hide it). When this job turns red WITHOUT a change in the code, the world changed, not the repository:
+  #   - pip-audit names a package with a newly published vulnerability: update that library in its own branch
+  #     (requirements.txt minimum, requirements.lock exact version, full local test suite), do not silence the check;
+  #   - pip-licenses names a package whose licence is not on the allowed list: read the licence first (it must stay
+  #     compatible with GPL-3.0-or-later), and only then extend the list below, in the same pull request, with a reason.
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+        with:
+          python-version: "3.x"
+          cache: pip
+          cache-dependency-path: |
+            requirements.lock
+            requirements-dev.txt
+      - run: pip install -r requirements.lock -r requirements-dev.txt
+      # Known vulnerabilities (PyPI/OSV database) of the exact versions Seisa is tested with. The lock file pins every
+      # package, so pip-audit needs no dependency resolution.
+      - name: Known vulnerabilities in requirements.lock
+        run: pip-audit -r requirements.lock --no-deps --disable-pip
+      # Licences of the packages of requirements.lock only (the development tools are not shipped). The list is matched
+      # as text parts: "BSD" covers "BSD License" and "BSD-3-Clause", "MIT" covers "MIT License". "GPL" is deliberately
+      # not on the list, so nothing licensed (L)GPL passes by accident.
+      - name: Licences of requirements.lock
+        run: |
+          packages=$(grep -E '^[A-Za-z0-9_.-]+==' requirements.lock | cut -d= -f1 | tr '\n' ' ')
+          pip-licenses --packages $packages --partial-match \
+            --allow-only="MIT;BSD;Apache;ISC;Mozilla Public License 2.0;MPL-2.0;PSF" --format=plain

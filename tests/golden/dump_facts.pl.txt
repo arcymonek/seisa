@@ -1,0 +1,1444 @@
+{
+ "multihop.eml": {
+  "facts": {
+   "arc": [],
+   "attachments": [],
+   "auth": [],
+   "casing_variants": {},
+   "dkim": [],
+   "duplicates": [],
+   "encoded_words": [],
+   "epochs": [],
+   "filters": {
+    "microsoft": null,
+    "other": [],
+    "sender_set": []
+   },
+   "flags": [
+    {
+     "level": "info",
+     "text": "Received #2 (od góry): czas najstarszego Received identyczny co do sekundy z Date."
+    },
+    {
+     "level": "info",
+     "text": "Cały łańcuch Received należy do jednego operatora (google) - to infrastruktura odbiorcy. Granicą zaufania jest najstarszy wpis (#2): to on zapisał adres IP połączenia; wyższe wpisy to wewnętrzne skoki tego samego operatora."
+    },
+    {
+     "level": "warn",
+     "text": "Nagłówki o nazwach używanych przez odbiorcę/dostawcę są PONIŻEJ wszystkich Received (tekst nadawcy, nie serwera): X-Google-Original-From."
+    }
+   ],
+   "html": null,
+   "identity": [
+    {
+     "aligned": null,
+     "domain": "example.org",
+     "field": "From",
+     "value": "someone@example.org"
+    },
+    {
+     "aligned": true,
+     "domain": "example.org",
+     "field": "Message-ID",
+     "value": "<m1@example.org>"
+    }
+   ],
+   "ips": [
+    {
+     "ip": "192.0.2.41",
+     "is_private": true,
+     "where": "Received #1"
+    },
+    {
+     "ip": "176.9.44.107",
+     "is_private": false,
+     "where": "Received #2"
+    },
+    {
+     "ip": "176.9.44.107",
+     "is_private": false,
+     "where": "x-sender-ip"
+    }
+   ],
+   "list_unsubscribe": {
+    "one_click": false,
+    "urls": []
+   },
+   "mime": [
+    {
+     "boundary": null,
+     "charset": "us-ascii",
+     "content_type": "text/plain",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 0,
+     "filename": null,
+     "size": 27
+    }
+   ],
+   "overview": {
+    "date": "Mon, 21 Sep 2026 17:00:00 +0000",
+    "date_utc": "2026-09-21 17:00:00 UTC",
+    "from": "Someone <someone@example.org>",
+    "header_count": 11,
+    "message_id": "<m1@example.org>",
+    "received_count": 3,
+    "source_chars": 627,
+    "subject": "Hi",
+    "to": "me@gmail.example"
+   },
+   "placeholders": [],
+   "received": [
+    {
+     "auth_consistent": null,
+     "by_host": null,
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": null,
+     "helo": null,
+     "index": 0,
+     "ip": null,
+     "is_private": null,
+     "ptr": null,
+     "raw": "by 2002:a05:6a00:1 with SMTP id abc; Mon, 21 Sep 2026 10:00:03 -0700 (PDT)",
+     "role": "wewnętrzny skok tego samego operatora (po granicy zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-21 17:00:03 UTC",
+     "tls": null,
+     "with": "SMTP"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mx.google.com",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "mail-wr1-f41.google.com",
+     "helo": null,
+     "index": 1,
+     "ip": "192.0.2.41",
+     "is_private": true,
+     "ptr": "mail-wr1-f41.google.com",
+     "raw": "from mail-wr1-f41.google.com (mail-wr1-f41.google.com. [192.0.2.41]) by mx.google.com with ESMTPS id x1; Mon, 21 Sep 2026 10:00:02 -0700 (PDT)",
+     "role": "wewnętrzny skok tego samego operatora (po granicy zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-21 17:00:02 UTC",
+     "tls": null,
+     "with": "ESMTPS"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mail-wr1-f41.google.com",
+     "dkim_domain": null,
+     "flags": [
+      "czas najstarszego Received identyczny co do sekundy z Date"
+     ],
+     "from_host": "127.0.0.1",
+     "helo": null,
+     "index": 2,
+     "ip": "176.9.44.107",
+     "is_private": false,
+     "ptr": null,
+     "raw": "from [127.0.0.1] (176.9.44.107) by mail-wr1-f41.google.com with SMTP; Mon, 21 Sep 2026 17:00:00 +0000",
+     "role": "najstarszy wpis operatora odbiorcy - pierwszy zapis połączenia, IP z gniazda TCP (granica zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-21 17:00:00 UTC",
+     "tls": null,
+     "with": "SMTP"
+    }
+   ],
+   "single_operator": "google",
+   "timeline": [
+    {
+     "delta_s": null,
+     "event": "Date (deklaracja nadawcy)",
+     "raw": "Mon, 21 Sep 2026 17:00:00 +0000",
+     "utc": "2026-09-21 17:00:00 UTC"
+    },
+    {
+     "delta_s": 0,
+     "event": "Received #2 (mail-wr1-f41.google.com)",
+     "raw": "2026-09-21 17:00:00 UTC",
+     "utc": "2026-09-21 17:00:00 UTC"
+    },
+    {
+     "delta_s": 2,
+     "event": "Received #1 (mx.google.com)",
+     "raw": "2026-09-21 17:00:02 UTC",
+     "utc": "2026-09-21 17:00:02 UTC"
+    },
+    {
+     "delta_s": 1,
+     "event": "Received #0 (?)",
+     "raw": "2026-09-21 17:00:03 UTC",
+     "utc": "2026-09-21 17:00:03 UTC"
+    }
+   ],
+   "trust_index": 2,
+   "trust_note": "Cały łańcuch Received należy do jednego operatora (google) - to infrastruktura odbiorcy. Granicą zaufania jest najstarszy wpis (#2): to on zapisał adres IP połączenia; wyższe wpisy to wewnętrzne skoki tego samego operatora.",
+   "urls_plain": []
+  },
+  "parse_email": {
+   "age_days": 24,
+   "age_ok": true,
+   "attachments": [],
+   "boundary_auth_corroboration": null,
+   "btc_addresses_found": [],
+   "date": "Mon, 21 Sep 2026 17:00:00 +0000",
+   "date_parsed": "2026-09-21T17:00:00+00:00",
+   "dkim": null,
+   "dmarc": null,
+   "from": "Someone <someone@example.org>",
+   "ip_confidence": "high",
+   "ip_from_relay_lines": false,
+   "ip_ok": true,
+   "ip_reasoning": "Hop graniczny: 'from 127.0.0.1' nie należy już do zaufanej domeny 'google.com' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie łączącego się nadawcy.",
+   "ip_reject_reason": null,
+   "message_id": "<m1@example.org>",
+   "ransom_keywords_found": false,
+   "received_chain": [
+    {
+     "auth_consistent": null,
+     "by_host": null,
+     "dkim_domain": null,
+     "from_host": null,
+     "ip": null,
+     "is_boundary": false,
+     "is_private": null,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mx.google.com",
+     "dkim_domain": null,
+     "from_host": "mail-wr1-f41.google.com",
+     "ip": "192.0.2.41",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mail-wr1-f41.google.com",
+     "dkim_domain": null,
+     "from_host": "127.0.0.1",
+     "ip": "176.9.44.107",
+     "is_boundary": true,
+     "is_private": false,
+     "smtp_auth_account": null
+    }
+   ],
+   "spf": null,
+   "spoofing_suspected": false,
+   "subject": "Hi",
+   "to": "me@gmail.example",
+   "trusted_source_ip": "176.9.44.107"
+  },
+  "prepared_notes": []
+ },
+ "newsletter.eml": {
+  "facts": {
+   "arc": [],
+   "attachments": [],
+   "auth": [
+    {
+     "authserv_id": "mx.recipient.example",
+     "details": {
+      "header.d": "news.example",
+      "header.from": "news.example",
+      "smtp.mailfrom": "news.example"
+     },
+     "header": "Authentication-Results",
+     "matches_receiver": true,
+     "raw": "mx.recipient.example; spf=pass smtp.mailfrom=news.example; dkim=pass header.d=news.example; dmarc=pass header.from=news.example",
+     "results": {
+      "dkim": "pass",
+      "dmarc": "pass",
+      "spf": "pass"
+     }
+    }
+   ],
+   "casing_variants": {},
+   "dkim": [
+    {
+     "a": "rsa-sha256",
+     "bh_len": 44,
+     "c": "relaxed/relaxed",
+     "d": "news.example",
+     "hash_hint": "SHA-256 (32 B)",
+     "i": null,
+     "legacy_sha1": false,
+     "s": "s1",
+     "signed_headers": [
+      "from",
+      "to",
+      "subject",
+      "date",
+      "message-id",
+      "list-unsubscribe"
+     ],
+     "t": null,
+     "unsigned_important": [
+      "reply-to",
+      "content-type"
+     ]
+    }
+   ],
+   "duplicates": [],
+   "encoded_words": [],
+   "epochs": [],
+   "filters": {
+    "microsoft": null,
+    "other": [],
+    "sender_set": []
+   },
+   "flags": [],
+   "html": {
+    "comment_chars": 0,
+    "comment_count": 0,
+    "comment_samples": [],
+    "forms": 0,
+    "hidden": [],
+    "hidden_text_total": 0,
+    "iframes": 0,
+    "images": [],
+    "links": [
+     {
+      "abused_host": false,
+      "host": "news.example",
+      "href": "https://news.example/digest",
+      "idn": false,
+      "query_params": 0,
+      "scheme": "https",
+      "shortener": false,
+      "text": "Read more",
+      "text_host_mismatch": false
+     }
+    ],
+    "mixed_case_tags": [],
+    "objects": 0,
+    "scripts": 0,
+    "unknown_tag_count": 0,
+    "unknown_tags": [],
+    "wrapped_anchor": false
+   },
+   "identity": [
+    {
+     "aligned": null,
+     "domain": "news.example",
+     "field": "From",
+     "value": "hello@news.example"
+    },
+    {
+     "aligned": true,
+     "domain": "news.example",
+     "field": "Message-ID",
+     "value": "<abc123@news.example>"
+    },
+    {
+     "aligned": true,
+     "domain": "news.example",
+     "field": "DKIM (d=)",
+     "value": "news.example"
+    },
+    {
+     "aligned": true,
+     "domain": "news.example",
+     "field": "Authentication-Results smtp.mailfrom",
+     "value": "news.example"
+    },
+    {
+     "aligned": true,
+     "domain": "news.example",
+     "field": "List-Unsubscribe",
+     "value": "mailto:unsub@news.example"
+    },
+    {
+     "aligned": true,
+     "domain": "news.example",
+     "field": "List-Unsubscribe",
+     "value": "https://news.example/unsub"
+    }
+   ],
+   "ips": [
+    {
+     "ip": "192.0.2.10",
+     "is_private": true,
+     "where": "Received #0"
+    }
+   ],
+   "list_unsubscribe": {
+    "one_click": true,
+    "urls": [
+     "mailto:unsub@news.example",
+     "https://news.example/unsub"
+    ]
+   },
+   "mime": [
+    {
+     "boundary": "b1",
+     "charset": null,
+     "content_type": "multipart/alternative",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 0,
+     "filename": null,
+     "size": null
+    },
+    {
+     "boundary": null,
+     "charset": "utf-8",
+     "content_type": "text/plain",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 1,
+     "filename": null,
+     "size": 47
+    },
+    {
+     "boundary": null,
+     "charset": "utf-8",
+     "content_type": "text/html",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 1,
+     "filename": null,
+     "size": 89
+    }
+   ],
+   "overview": {
+    "date": "Mon, 21 Sep 2026 08:00:00 +0000",
+    "date_utc": "2026-09-21 08:00:00 UTC",
+    "from": "News <hello@news.example>",
+    "header_count": 12,
+    "message_id": "<abc123@news.example>",
+    "received_count": 1,
+    "source_chars": 1058,
+    "subject": "Weekly digest",
+    "to": "reader@recipient.example"
+   },
+   "placeholders": [],
+   "received": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "smtp.news.example",
+     "helo": null,
+     "index": 0,
+     "ip": "192.0.2.10",
+     "is_private": true,
+     "ptr": "smtp.news.example",
+     "raw": "from smtp.news.example (smtp.news.example [192.0.2.10]) by mx.recipient.example with ESMTPS; Mon, 21 Sep 2026 08:00:05 +0000",
+     "role": "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-21 08:00:05 UTC",
+     "tls": null,
+     "with": "ESMTPS"
+    }
+   ],
+   "single_operator": null,
+   "timeline": [
+    {
+     "delta_s": null,
+     "event": "Date (deklaracja nadawcy)",
+     "raw": "Mon, 21 Sep 2026 08:00:00 +0000",
+     "utc": "2026-09-21 08:00:00 UTC"
+    },
+    {
+     "delta_s": 5,
+     "event": "Received #0 (mx.recipient.example)",
+     "raw": "2026-09-21 08:00:05 UTC",
+     "utc": "2026-09-21 08:00:05 UTC"
+    }
+   ],
+   "trust_index": 0,
+   "trust_note": null,
+   "urls_plain": [
+    "https://news.example/digest"
+   ]
+  },
+  "parse_email": {
+   "age_days": 24,
+   "age_ok": true,
+   "attachments": [],
+   "boundary_auth_corroboration": null,
+   "btc_addresses_found": [],
+   "date": "Mon, 21 Sep 2026 08:00:00 +0000",
+   "date_parsed": "2026-09-21T08:00:00+00:00",
+   "dkim": "pass",
+   "dmarc": "pass",
+   "from": "News <hello@news.example>",
+   "ip_confidence": "high",
+   "ip_from_relay_lines": false,
+   "ip_ok": false,
+   "ip_reasoning": "Hop graniczny: 'from smtp.news.example' nie należy już do zaufanej domeny 'recipient.example' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie łączącego się nadawcy.",
+   "ip_reject_reason": "adres prywatny/zarezerwowany",
+   "message_id": "<abc123@news.example>",
+   "ransom_keywords_found": false,
+   "received_chain": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "from_host": "smtp.news.example",
+     "ip": "192.0.2.10",
+     "is_boundary": true,
+     "is_private": true,
+     "smtp_auth_account": null
+    }
+   ],
+   "spf": "pass",
+   "spoofing_suspected": false,
+   "subject": "Weekly digest",
+   "to": "reader@recipient.example",
+   "trusted_source_ip": "192.0.2.10"
+  },
+  "prepared_notes": []
+ },
+ "ovh_style_relay.eml": {
+  "facts": {
+   "arc": [],
+   "attachments": [],
+   "auth": [
+    {
+     "authserv_id": "mailer-out.relaywave.example",
+     "details": {
+      "header.d": "brightfield-consult.example",
+      "header.from": "brightfield-consult.example",
+      "header.s": "sel1",
+      "smtp.mailfrom": "brightfield-consult.example"
+     },
+     "header": "Authentication-Results",
+     "matches_receiver": true,
+     "raw": "mailer-out.relaywave.example; spf=pass smtp.mailfrom=brightfield-consult.example; dkim=pass header.d=brightfield-consult.example header.s=sel1; dmarc=pass header.from=brightfield-consult.example; auth=pass smtp.auth=sales@brightfield-consult.example",
+     "results": {
+      "dkim": "pass",
+      "dmarc": "pass",
+      "spf": "pass"
+     }
+    }
+   ],
+   "casing_variants": {},
+   "dkim": [
+    {
+     "a": "rsa-sha256",
+     "bh_len": 44,
+     "c": "relaxed/relaxed",
+     "d": "brightfield-consult.example",
+     "hash_hint": "SHA-256 (32 B)",
+     "i": null,
+     "legacy_sha1": false,
+     "s": "sel1",
+     "signed_headers": [
+      "from",
+      "to",
+      "subject",
+      "date",
+      "message-id"
+     ],
+     "t": null,
+     "unsigned_important": [
+      "reply-to",
+      "content-type"
+     ]
+    }
+   ],
+   "duplicates": [],
+   "encoded_words": [],
+   "epochs": [],
+   "filters": {
+    "microsoft": null,
+    "other": [],
+    "sender_set": []
+   },
+   "flags": [
+    {
+     "level": "warn",
+     "text": "Uwaga: adres nadawcy wzięto ze starszych linii Received zapisanych przez zewnętrzny przekaźnik, a nie przez serwer odbiorcy, a nadawca może takie linie sfałszować. Serwer odbiorcy zapisał połączenie z 198.51.100.20 (przekaźnik)."
+    }
+   ],
+   "html": null,
+   "identity": [
+    {
+     "aligned": null,
+     "domain": "brightfield-consult.example",
+     "field": "From",
+     "value": "sales@brightfield-consult.example"
+    },
+    {
+     "aligned": true,
+     "domain": "brightfield-consult.example",
+     "field": "Message-ID",
+     "value": "<cold1@brightfield-consult.example>"
+    },
+    {
+     "aligned": true,
+     "domain": "brightfield-consult.example",
+     "field": "DKIM (d=)",
+     "value": "brightfield-consult.example"
+    },
+    {
+     "aligned": true,
+     "domain": "brightfield-consult.example",
+     "field": "Authentication-Results smtp.mailfrom",
+     "value": "brightfield-consult.example"
+    }
+   ],
+   "ips": [
+    {
+     "ip": "198.51.100.20",
+     "is_private": true,
+     "where": "Received #0"
+    },
+    {
+     "ip": "10.42.3.11",
+     "is_private": true,
+     "where": "Received #1"
+    },
+    {
+     "ip": "10.42.1.7",
+     "is_private": true,
+     "where": "Received #2"
+    },
+    {
+     "ip": "154.16.88.201",
+     "is_private": false,
+     "where": "Received #3"
+    }
+   ],
+   "list_unsubscribe": {
+    "one_click": false,
+    "urls": []
+   },
+   "mime": [
+    {
+     "boundary": null,
+     "charset": "utf-8",
+     "content_type": "text/plain",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 0,
+     "filename": null,
+     "size": 98
+    }
+   ],
+   "overview": {
+    "date": "Wed, 23 Sep 2026 09:15:00 +0000",
+    "date_utc": "2026-09-23 09:15:00 UTC",
+    "from": "Sales <sales@brightfield-consult.example>",
+    "header_count": 13,
+    "message_id": "<cold1@brightfield-consult.example>",
+    "received_count": 4,
+    "source_chars": 1556,
+    "subject": "Quick question about your Q4 plans",
+    "to": "prospect@northlake-corp.example"
+   },
+   "placeholders": [],
+   "received": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx1.northlake-corp.example",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "mailer-out.relaywave.example",
+     "helo": null,
+     "index": 0,
+     "ip": "198.51.100.20",
+     "is_private": true,
+     "ptr": "mailer-out.relaywave.example",
+     "raw": "from mailer-out.relaywave.example (mailer-out.relaywave.example [198.51.100.20]) by mx1.northlake-corp.example with ESMTPS id R1; Wed, 23 Sep 2026 09:15:40 +0000",
+     "role": "wewnętrzny skok tego samego operatora (po granicy zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-23 09:15:40 UTC",
+     "tls": null,
+     "with": "ESMTPS"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mailer-out.relaywave.example",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "msg-submission-7c9d8f5b6-x2p9k",
+     "helo": null,
+     "index": 1,
+     "ip": "10.42.3.11",
+     "is_private": true,
+     "ptr": "msg-submission-7c9d8f5b6-x2p9k",
+     "raw": "from msg-submission-7c9d8f5b6-x2p9k (msg-submission-7c9d8f5b6-x2p9k [10.42.3.11]) by mailer-out.relaywave.example with ESMTP id R2; Wed, 23 Sep 2026 09:15:38 +0000",
+     "role": "wewnętrzny skok tego samego operatora (po granicy zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-23 09:15:38 UTC",
+     "tls": null,
+     "with": "ESMTP"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "msg-submission-7c9d8f5b6-x2p9k",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "msg-router-59f7c8d4b-q7t3m",
+     "helo": null,
+     "index": 2,
+     "ip": "10.42.1.7",
+     "is_private": true,
+     "ptr": "msg-router-59f7c8d4b-q7t3m",
+     "raw": "from msg-router-59f7c8d4b-q7t3m (msg-router-59f7c8d4b-q7t3m [10.42.1.7]) by msg-submission-7c9d8f5b6-x2p9k with ESMTP id R3; Wed, 23 Sep 2026 09:15:35 +0000",
+     "role": "wewnętrzny skok tego samego operatora (po granicy zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-23 09:15:35 UTC",
+     "tls": null,
+     "with": "ESMTP"
+    },
+    {
+     "auth_consistent": true,
+     "by_host": "msg-router-59f7c8d4b-q7t3m",
+     "dkim_domain": "brightfield-consult.example",
+     "flags": [],
+     "from_host": "154.16.88.201",
+     "helo": null,
+     "index": 3,
+     "ip": "154.16.88.201",
+     "is_private": false,
+     "ptr": "unverified",
+     "raw": "from [154.16.88.201] (unverified [154.16.88.201]) by msg-router-59f7c8d4b-q7t3m with ESMTPSA id R4 (Authenticated sender: sales@brightfield-consult.example); Wed, 23 Sep 2026 09:15:30 +0000",
+     "role": "granica zaufania - tu zewnętrzny operator zapisał adres faktycznie łączącego się klienta; wcześniejsze wpisy to jego własna wewnętrzna sieć przekazująca wiadomość dalej",
+     "smtp_auth_account": "sales@brightfield-consult.example",
+     "time_utc": "2026-09-23 09:15:30 UTC",
+     "tls": null,
+     "with": "ESMTPSA"
+    }
+   ],
+   "single_operator": null,
+   "timeline": [
+    {
+     "delta_s": null,
+     "event": "Date (deklaracja nadawcy)",
+     "raw": "Wed, 23 Sep 2026 09:15:00 +0000",
+     "utc": "2026-09-23 09:15:00 UTC"
+    },
+    {
+     "delta_s": 30,
+     "event": "Received #3 (msg-router-59f7c8d4b-q7t3m)",
+     "raw": "2026-09-23 09:15:30 UTC",
+     "utc": "2026-09-23 09:15:30 UTC"
+    },
+    {
+     "delta_s": 5,
+     "event": "Received #2 (msg-submission-7c9d8f5b6-x2p9k)",
+     "raw": "2026-09-23 09:15:35 UTC",
+     "utc": "2026-09-23 09:15:35 UTC"
+    },
+    {
+     "delta_s": 3,
+     "event": "Received #1 (mailer-out.relaywave.example)",
+     "raw": "2026-09-23 09:15:38 UTC",
+     "utc": "2026-09-23 09:15:38 UTC"
+    },
+    {
+     "delta_s": 2,
+     "event": "Received #0 (mx1.northlake-corp.example)",
+     "raw": "2026-09-23 09:15:40 UTC",
+     "utc": "2026-09-23 09:15:40 UTC"
+    }
+   ],
+   "trust_index": 3,
+   "trust_note": null,
+   "urls_plain": []
+  },
+  "parse_email": {
+   "age_days": 22,
+   "age_ok": true,
+   "attachments": [],
+   "boundary_auth_corroboration": {
+    "consistent": true,
+    "dkim_domain": "brightfield-consult.example",
+    "smtp_auth_account": "sales@brightfield-consult.example"
+   },
+   "btc_addresses_found": [],
+   "date": "Wed, 23 Sep 2026 09:15:00 +0000",
+   "date_parsed": "2026-09-23T09:15:00+00:00",
+   "dkim": "pass",
+   "dmarc": "pass",
+   "from": "Sales <sales@brightfield-consult.example>",
+   "ip_confidence": "medium",
+   "ip_from_relay_lines": true,
+   "ip_ok": true,
+   "ip_reasoning": "Hop graniczny: 'from 154.16.88.201' nie należy już do zaufanej domeny 'northlake-corp.example' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie łączącego się nadawcy. Pierwszy hop spoza domeny odbiorcy to przekaźnik operatora 'relaywave.example', a nie nadawca, więc przeszedłem dalej łańcuchem (relaywave.example) do hopu, w którym operator zapisał adres faktycznie łączącego się nadawcy. Uwaga: ten adres jest mniej pewny. Pochodzi ze starszych linii Received zapisanych przez sam przekaźnik, a nie przez Twój serwer pocztowy, a nadawca może takie linie sfałszować. Twój serwer zapisał połączenie z 198.51.100.20 (przekaźnik). Sprawdź adres przed zgłoszeniem. Nagłówek Authentication-Results bezpośrednio sąsiadujący z tym hopem (kolejność oryginalna, nie dopasowanie tekstowe) potwierdza uwierzytelnione konto SMTP AUTH 'sales@brightfield-consult.example', którego domena zgadza się z domeną DKIM 'brightfield-consult.example' - dodatkowy sygnał, że to nie współdzielony ani podszyty przekaźnik.",
+   "ip_reject_reason": null,
+   "message_id": "<cold1@brightfield-consult.example>",
+   "ransom_keywords_found": false,
+   "received_chain": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx1.northlake-corp.example",
+     "dkim_domain": null,
+     "from_host": "mailer-out.relaywave.example",
+     "ip": "198.51.100.20",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mailer-out.relaywave.example",
+     "dkim_domain": null,
+     "from_host": "msg-submission-7c9d8f5b6-x2p9k",
+     "ip": "10.42.3.11",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "msg-submission-7c9d8f5b6-x2p9k",
+     "dkim_domain": null,
+     "from_host": "msg-router-59f7c8d4b-q7t3m",
+     "ip": "10.42.1.7",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": true,
+     "by_host": "msg-router-59f7c8d4b-q7t3m",
+     "dkim_domain": "brightfield-consult.example",
+     "from_host": "154.16.88.201",
+     "ip": "154.16.88.201",
+     "is_boundary": true,
+     "is_private": false,
+     "smtp_auth_account": "sales@brightfield-consult.example"
+    }
+   ],
+   "spf": "pass",
+   "spoofing_suspected": false,
+   "subject": "Quick question about your Q4 plans",
+   "to": "prospect@northlake-corp.example",
+   "trusted_source_ip": "154.16.88.201"
+  },
+  "prepared_notes": []
+ },
+ "phishing.eml": {
+  "facts": {
+   "arc": [],
+   "attachments": [
+    {
+     "content_type": "application/octet-stream",
+     "double_extension_as": "pdf",
+     "extension": "exe",
+     "filename": "invoice.pdf.exe",
+     "risky_extension": true,
+     "sha256": "d930a77b4e5a6df96f8be687f754be90fa6da7939406d214814a80393847ce1b",
+     "size": 12
+    }
+   ],
+   "auth": [
+    {
+     "authserv_id": "mx.recipient.example",
+     "details": {
+      "header.from": "bank.example",
+      "smtp.mailfrom": "bank.example"
+     },
+     "header": "Authentication-Results",
+     "matches_receiver": true,
+     "raw": "mx.recipient.example; spf=fail smtp.mailfrom=bank.example; dkim=none; dmarc=fail header.from=bank.example",
+     "results": {
+      "dkim": "none",
+      "dmarc": "fail",
+      "spf": "fail"
+     }
+    },
+    {
+     "details": {
+      "client-ip": "203.0.113.45",
+      "envelope-from": "news@bank.example",
+      "helo": "mail-out.example.net"
+     },
+     "header": "Received-SPF",
+     "raw": "fail (bank.example: domain does not designate 203.0.113.45 as permitted sender) client-ip=203.0.113.45; envelope-from=news@bank.example; helo=mail-out.example.net",
+     "results": {
+      "spf": "fail"
+     }
+    }
+   ],
+   "casing_variants": {},
+   "dkim": [
+    {
+     "a": "rsa-sha1",
+     "bh_len": 28,
+     "c": "relaxed/relaxed",
+     "d": "evil.example",
+     "hash_hint": "SHA-1 (20 B)",
+     "i": null,
+     "legacy_sha1": true,
+     "s": "sel1",
+     "signed_headers": [
+      "from",
+      "to"
+     ],
+     "t": "1790000000",
+     "unsigned_important": [
+      "subject",
+      "date",
+      "reply-to",
+      "message-id",
+      "content-type"
+     ]
+    }
+   ],
+   "duplicates": [
+    {
+     "count": 2,
+     "name": "to",
+     "values": [
+      "victim@recipient.example",
+      "second@recipient.example"
+     ]
+    }
+   ],
+   "encoded_words": [
+    {
+     "decoded": "Pilne: zweryfikuj konto",
+     "header": "Subject",
+     "raw": "=?utf-8?q?Pilne:_zweryfikuj_konto?="
+    }
+   ],
+   "epochs": [
+    {
+     "diff_vs_date_s": -121015,
+     "unit": "ms",
+     "utc": "2026-09-21 14:13:20 UTC",
+     "value": "1790000000123",
+     "where": "Message-ID"
+    },
+    {
+     "diff_vs_date_s": -121016,
+     "unit": "s",
+     "utc": "2026-09-21 14:13:20 UTC",
+     "value": "1790000000",
+     "where": "DKIM-Signature"
+    }
+   ],
+   "filters": {
+    "microsoft": {
+     "auth_as": "Anonymous",
+     "auth_source": null,
+     "bcl": null,
+     "folder": "Wiadomości-śmieci (Junk)",
+     "forefront": {
+      "CAT": "PHSH",
+      "DIR": "INB",
+      "IPV": "NLI",
+      "SFV": "SPM"
+     },
+     "mailbox_delivery": {
+      "DEST": "J",
+      "RF": "JunkEmail"
+     },
+     "message_delivery_decoded": null,
+     "opaque_headers": [],
+     "scl": {
+      "X-Forefront-Antispam-Report": "9",
+      "X-MS-Exchange-Organization-SCL": "9"
+     },
+     "sid_pra": null,
+     "sid_result": null
+    },
+    "other": [],
+    "sender_set": [
+     {
+      "header": "x-message-flag",
+      "note": "flaga wiadomości ustawiana przez nadawcę (Outlook pokaże ją przy wiadomości) - technika przyciągania uwagi",
+      "value": "Follow up"
+     },
+     {
+      "header": "importance",
+      "note": "ważność deklarowana przez nadawcę (wpływa tylko na wyświetlanie w kliencie)",
+      "value": "high"
+     },
+     {
+      "header": "return-receipt-to",
+      "note": "żądanie potwierdzenia odbioru (śledzenie: potwierdza, że skrzynka żyje)",
+      "value": "<track@evil.example>"
+     }
+    ]
+   },
+   "flags": [
+    {
+     "level": "warn",
+     "text": "Nagłówek `to` występuje 2 razy (powinien raz): wartości są różne."
+    },
+    {
+     "level": "warn",
+     "text": "Received #1 (od góry): pole id zawiera parametry URL (`12345?x=1`)."
+    },
+    {
+     "level": "warn",
+     "text": "Received #2 (od góry): `for <` bez adresu (placeholder?)."
+    },
+    {
+     "level": "warn",
+     "text": "Received #2 (od góry): strefa +0000 nie zgadza się z (PST)."
+    },
+    {
+     "level": "info",
+     "text": "Received #2 (od góry): czas najstarszego Received identyczny co do sekundy z Date."
+    },
+    {
+     "level": "warn",
+     "text": "DKIM `d=evil.example` używa rsa-sha1 (SHA-1 jest przestarzały, RFC 8301)."
+    },
+    {
+     "level": "warn",
+     "text": "Obecny nagłówek `DomainKey-Signature` (przestarzały poprzednik DKIM)."
+    },
+    {
+     "level": "warn",
+     "text": "Domeny niezgodne z domeną `From` (bank.example): DKIM (d=)=evil.example, List-Unsubscribe=tracker.evil.example, Reply-To=evil.example."
+    },
+    {
+     "level": "warn",
+     "text": "Reply-To w innej domenie niż From (klasyczny sygnał ostrzegawczy)."
+    },
+    {
+     "level": "warn",
+     "text": "Boundary `=_boundary_0123456789` zawiera ręcznie wpisany ciąg cyfr (imituje generator)."
+    },
+    {
+     "level": "warn",
+     "text": "Niedozwolone Content-Transfer-Encoding: `weird` (część text/plain) - filtr i klient mogą je zinterpretować różnie (parser differential)."
+    },
+    {
+     "level": "warn",
+     "text": "Załącznik `invoice.pdf.exe`: podwójne rozszerzenie (wygląda na .pdf, faktycznie .exe)."
+    },
+    {
+     "level": "warn",
+     "text": "Niepodstawione placeholdery szablonu: `{{first_name}}`."
+    },
+    {
+     "level": "warn",
+     "text": "Ukryta treść: 1 elementów (25 znaków), techniki: display:none."
+    },
+    {
+     "level": "warn",
+     "text": "5 nieznanych znaczników HTML (możliwy hash busting), np. `custom1`, `custom2`, `custom3`."
+    },
+    {
+     "level": "warn",
+     "text": "Treść zawiera formularz (1)."
+    },
+    {
+     "level": "warn",
+     "text": "Treść zawiera skrypt (1)."
+    },
+    {
+     "level": "info",
+     "text": "1 obrazów wygląda na śledzące (1x1 lub z parametrami w URL)."
+    },
+    {
+     "level": "warn",
+     "text": "Link: widoczny tekst wskazuje inną domenę niż href (`bank.example {{first_name}}` -> `bit.ly`)."
+    },
+    {
+     "level": "info",
+     "text": "Link używa http:// (`bit.ly`)."
+    },
+    {
+     "level": "warn",
+     "text": "Link przez skracacz: `bit.ly`."
+    },
+    {
+     "level": "warn",
+     "text": "Link: widoczny tekst wskazuje inną domenę niż href (`https://bank.example/login` -> `xn--bank-example.evil.example`)."
+    },
+    {
+     "level": "info",
+     "text": "Link z wieloma parametrami w URL (identyfikatory śledzące?)."
+    },
+    {
+     "level": "info",
+     "text": "`List-Unsubscribe` bez `List-Unsubscribe-Post` (brak one-click RFC 8058)."
+    },
+    {
+     "level": "warn",
+     "text": "Filtr odbiorcy (Microsoft): SCL=9 (0-1 czysta, 5-6 spam, 9 najwyższa pewność spamu)."
+    },
+    {
+     "level": "warn",
+     "text": "Wiadomość została dostarczona do folderu Wiadomości-śmieci (znaczniki RF:JunkEmail / dest:J w nagłówku dostarczenia filtra)."
+    },
+    {
+     "level": "warn",
+     "text": "Kategoria filtra Microsoftu: PHSH (phishing)."
+    },
+    {
+     "level": "info",
+     "text": "Wiadomość weszła do tenanta anonimowo (AuthAs: Anonymous), bez uwierzytelnionej tożsamości nadawcy."
+    },
+    {
+     "level": "warn",
+     "text": "Nadawca ustawił `x-message-flag: Follow up` - flaga wiadomości ustawiana przez nadawcę (Outlook pokaże ją przy wiadomości) - technika przyciągania uwagi."
+    },
+    {
+     "level": "info",
+     "text": "Nadawca deklaruje wysoki priorytet (`importance: high`) - element presji."
+    },
+    {
+     "level": "warn",
+     "text": "Nadawca ustawił `return-receipt-to: <track@evil.example>` - żądanie potwierdzenia odbioru (śledzenie: potwierdza, że skrzynka żyje)."
+    },
+    {
+     "level": "info",
+     "text": "Nagłówek `X-Originating-IP` może być wyciekiem infrastruktury albo przynętą - nie nadaje się do zgłoszeń bez potwierdzenia w zaufanym Received."
+    }
+   ],
+   "html": {
+    "comment_chars": 9,
+    "comment_count": 1,
+    "comment_samples": [
+     "comment"
+    ],
+    "forms": 1,
+    "hidden": [
+     {
+      "sample": "hidden words hidden words",
+      "tag": "div",
+      "techniques": [
+       "display:none"
+      ],
+      "text_len": 25
+     }
+    ],
+    "hidden_text_total": 25,
+    "iframes": 0,
+    "images": [
+     {
+      "height": "1",
+      "src": "http://t.evil.example/p.gif",
+      "src_host": "t.evil.example",
+      "tracking_hint": true,
+      "width": "1"
+     }
+    ],
+    "links": [
+     {
+      "abused_host": false,
+      "host": "bit.ly",
+      "href": "http://bit.ly/abc",
+      "idn": false,
+      "query_params": 0,
+      "scheme": "http",
+      "shortener": true,
+      "text": "bank.example {{first_name}}",
+      "text_host_mismatch": true
+     },
+     {
+      "abused_host": false,
+      "host": "xn--bank-example.evil.example",
+      "href": "https://xn--bank-example.evil.example/login?a=1&b=2&c=3&d=4",
+      "idn": true,
+      "query_params": 4,
+      "scheme": "https",
+      "shortener": false,
+      "text": "https://bank.example/login",
+      "text_host_mismatch": true
+     }
+    ],
+    "mixed_case_tags": [],
+    "objects": 0,
+    "scripts": 1,
+    "unknown_tag_count": 5,
+    "unknown_tags": [
+     "custom1",
+     "custom2",
+     "custom3",
+     "custom4",
+     "custom5"
+    ],
+    "wrapped_anchor": false
+   },
+   "identity": [
+    {
+     "aligned": null,
+     "domain": "bank.example",
+     "field": "From",
+     "value": "service@bank.example"
+    },
+    {
+     "aligned": false,
+     "domain": "evil.example",
+     "field": "Reply-To",
+     "value": "helpdesk@evil.example"
+    },
+    {
+     "aligned": false,
+     "domain": "mail-out.example.net",
+     "field": "Message-ID",
+     "value": "<1790000000123@mail-out.example.net>"
+    },
+    {
+     "aligned": false,
+     "domain": "evil.example",
+     "field": "DKIM (d=)",
+     "value": "evil.example"
+    },
+    {
+     "aligned": true,
+     "domain": "bank.example",
+     "field": "Authentication-Results smtp.mailfrom",
+     "value": "bank.example"
+    },
+    {
+     "aligned": false,
+     "domain": "tracker.evil.example",
+     "field": "List-Unsubscribe",
+     "value": "https://tracker.evil.example/u?a=1&b=2&c=3&d=4&e=5"
+    }
+   ],
+   "ips": [
+    {
+     "ip": "203.0.113.45",
+     "is_private": true,
+     "where": "Received #0"
+    },
+    {
+     "ip": "10.1.2.3",
+     "is_private": true,
+     "where": "Received #1"
+    },
+    {
+     "ip": "127.0.0.1",
+     "is_private": true,
+     "where": "Received #2"
+    },
+    {
+     "ip": "198.51.100.7",
+     "is_private": true,
+     "where": "x-originating-ip"
+    }
+   ],
+   "list_unsubscribe": {
+    "one_click": false,
+    "urls": [
+     "https://tracker.evil.example/u?a=1&b=2&c=3&d=4&e=5"
+    ]
+   },
+   "mime": [
+    {
+     "boundary": "=_boundary_0123456789",
+     "charset": null,
+     "content_type": "multipart/mixed",
+     "cte": null,
+     "cte_valid": true,
+     "depth": 0,
+     "filename": null,
+     "size": null
+    },
+    {
+     "boundary": null,
+     "charset": "utf-8",
+     "content_type": "text/html",
+     "cte": "quoted-printable",
+     "cte_valid": true,
+     "depth": 1,
+     "filename": null,
+     "size": 477
+    },
+    {
+     "boundary": null,
+     "charset": null,
+     "content_type": "application/octet-stream",
+     "cte": "base64",
+     "cte_valid": true,
+     "depth": 1,
+     "filename": "invoice.pdf.exe",
+     "size": 12
+    },
+    {
+     "boundary": null,
+     "charset": null,
+     "content_type": "text/plain",
+     "cte": "weird",
+     "cte_valid": false,
+     "depth": 1,
+     "filename": null,
+     "size": 9
+    }
+   ],
+   "overview": {
+    "date": "Tue, 22 Sep 2026 23:50:16 +0000",
+    "date_utc": "2026-09-22 23:50:16 UTC",
+    "from": "\"Example Bank\" <service@bank.example>",
+    "header_count": 25,
+    "message_id": "<1790000000123@mail-out.example.net>",
+    "received_count": 3,
+    "source_chars": 2684,
+    "subject": "Pilne: zweryfikuj konto",
+    "to": "victim@recipient.example"
+   },
+   "placeholders": [
+    "{{first_name}}"
+   ],
+   "received": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "flags": [],
+     "from_host": "mail-out.example.net",
+     "helo": null,
+     "index": 0,
+     "ip": "203.0.113.45",
+     "is_private": true,
+     "ptr": "mail-out.example.net",
+     "raw": "from mail-out.example.net (mail-out.example.net [203.0.113.45]) by mx.recipient.example with ESMTPS (version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384); Tue, 22 Sep 2026 23:50:31 +0000",
+     "role": "najwyższy - dopisany przez serwer odbiorcy (granica zaufania)",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-22 23:50:31 UTC",
+     "tls": "(version=TLS1_2, cipher=TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384)",
+     "with": "ESMTPS"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "flags": [
+      "pole id zawiera parametry URL (`12345?x=1`)"
+     ],
+     "from_host": "relay1.recipient.example",
+     "helo": null,
+     "index": 1,
+     "ip": "10.1.2.3",
+     "is_private": true,
+     "ptr": "relay1.recipient.example",
+     "raw": "from relay1.recipient.example (relay1.recipient.example [10.1.2.3]) by mx.recipient.example with SMTP id 12345?x=1; Tue, 22 Sep 2026 23:50:18 +0000",
+     "role": "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-22 23:50:18 UTC",
+     "tls": null,
+     "with": "SMTP"
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "relay1.recipient.example",
+     "dkim_domain": null,
+     "flags": [
+      "`for <` bez adresu (placeholder?)",
+      "strefa +0000 nie zgadza się z (PST)",
+      "czas najstarszego Received identyczny co do sekundy z Date"
+     ],
+     "from_host": "localhost",
+     "helo": null,
+     "index": 2,
+     "ip": "127.0.0.1",
+     "is_private": true,
+     "ptr": "localhost",
+     "raw": "from localhost (localhost [127.0.0.1]) by relay1.recipient.example for <>; Tue, 22 Sep 2026 23:50:16 +0000 (PST)",
+     "role": "poniżej granicy zaufania - niezweryfikowany bez zaufania do jego autora",
+     "smtp_auth_account": null,
+     "time_utc": "2026-09-22 23:50:16 UTC",
+     "tls": null,
+     "with": null
+    }
+   ],
+   "single_operator": null,
+   "timeline": [
+    {
+     "delta_s": null,
+     "event": "Date (deklaracja nadawcy)",
+     "raw": "Tue, 22 Sep 2026 23:50:16 +0000",
+     "utc": "2026-09-22 23:50:16 UTC"
+    },
+    {
+     "delta_s": 0,
+     "event": "Received #2 (relay1.recipient.example)",
+     "raw": "2026-09-22 23:50:16 UTC",
+     "utc": "2026-09-22 23:50:16 UTC"
+    },
+    {
+     "delta_s": 2,
+     "event": "Received #1 (mx.recipient.example)",
+     "raw": "2026-09-22 23:50:18 UTC",
+     "utc": "2026-09-22 23:50:18 UTC"
+    },
+    {
+     "delta_s": 13,
+     "event": "Received #0 (mx.recipient.example)",
+     "raw": "2026-09-22 23:50:31 UTC",
+     "utc": "2026-09-22 23:50:31 UTC"
+    }
+   ],
+   "trust_index": 0,
+   "trust_note": null,
+   "urls_plain": []
+  },
+  "parse_email": {
+   "age_days": 22,
+   "age_ok": true,
+   "attachments": [
+    {
+     "apparent_extension": "pdf",
+     "content_type": "application/octet-stream",
+     "declared_extension": "exe",
+     "filename": "invoice.pdf.exe",
+     "size_bytes": 12
+    }
+   ],
+   "boundary_auth_corroboration": null,
+   "btc_addresses_found": [],
+   "date": "Tue, 22 Sep 2026 23:50:16 +0000",
+   "date_parsed": "2026-09-22T23:50:16+00:00",
+   "dkim": "none",
+   "dmarc": "fail",
+   "from": "\"Example Bank\" <service@bank.example>",
+   "ip_confidence": "high",
+   "ip_from_relay_lines": false,
+   "ip_ok": false,
+   "ip_reasoning": "Hop graniczny: 'from mail-out.example.net' nie należy już do zaufanej domeny 'recipient.example' (wyznaczonej z nagłówka 'by' najnowszego hopu) - to pierwsze miejsce w łańcuchu, gdzie własna infrastruktura odbiorcy zapisuje adres faktycznie łączącego się nadawcy.",
+   "ip_reject_reason": "adres prywatny/zarezerwowany",
+   "message_id": "<1790000000123@mail-out.example.net>",
+   "ransom_keywords_found": false,
+   "received_chain": [
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "from_host": "mail-out.example.net",
+     "ip": "203.0.113.45",
+     "is_boundary": true,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "mx.recipient.example",
+     "dkim_domain": null,
+     "from_host": "relay1.recipient.example",
+     "ip": "10.1.2.3",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    },
+    {
+     "auth_consistent": null,
+     "by_host": "relay1.recipient.example",
+     "dkim_domain": null,
+     "from_host": "localhost",
+     "ip": "127.0.0.1",
+     "is_boundary": false,
+     "is_private": true,
+     "smtp_auth_account": null
+    }
+   ],
+   "spf": "fail",
+   "spoofing_suspected": true,
+   "subject": "=?utf-8?q?Pilne:_zweryfikuj_konto?=",
+   "to": "victim@recipient.example",
+   "trusted_source_ip": "203.0.113.45"
+  },
+  "prepared_notes": [
+   "pominięto binarną treść base64 application/octet-stream (12 B)"
+  ]
+ }
+}

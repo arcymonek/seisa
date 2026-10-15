@@ -19,3 +19,8 @@ tests/private/*
 !tests/private/.gitkeep
 # directory name used before 2.0.27 (until it is renamed by hand)
 logi/
+# test tooling output (hypothesis example database, coverage data)
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/

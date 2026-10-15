@@ -2,3 +2,11 @@
 pytest>=8
 # pinned to one minor series: a new ruff minor adds rules and shows new findings in unchanged code
 ruff>=0.16,<0.17
+# property-based (random input) tests of the e-mail parsers: tests/test_fuzz_parsers.py
+hypothesis>=6.169,<7
+# coverage report in CI (informational, no threshold)
+coverage>=7.16,<8
+# known-vulnerability scan of requirements.lock (CI job `dependencies`)
+pip-audit>=2.10,<3
+# licence check of requirements.lock (CI job `dependencies`)
+pip-licenses>=5.5,<6

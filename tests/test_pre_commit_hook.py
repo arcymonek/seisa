@@ -575,6 +575,46 @@ def test_commit_message_rules(base_repo, tmp_path, message, expected):
         assert expected in r.stdout
 
 
+# Values are built at run time: the test file itself is scanned by the hook when it is committed.
+_SECRET = "a1" * 16            # 32 characters with digits, like a real key
+_UUID = "-".join(["12345678", "1234", "1234", "1234", "123456789abc"])    # the shape of a urlscan key
+
+@pytest.mark.parametrize("line", [
+    "OTX_API_KEY=" + _SECRET,                                     # a .env line
+    "VIRUSTOTAL_API_KEY = " + _SECRET,
+    'api_key = "' + _SECRET + '"',
+    '"apiKey": "' + _SECRET + '"',                                # JSON
+    "x-apikey: " + _SECRET,                                       # VirusTotal header
+    "X-OTX-API-KEY: " + _SECRET,
+    "API-Key: " + _SECRET,                                        # AbuseIPDB / urlscan style
+    "Key: " + _SECRET,
+    "Authorization: Bearer " + _SECRET,
+    "client_secret=" + _SECRET,
+    "GREYNOISE_TOKEN: " + _SECRET,
+    "API-Key: " + _UUID,
+    "api_key: " + "c3" * 32,                                      # 64 hex (VirusTotal, OTX, Cloudflare)
+])
+def test_secret_assignments_are_blocked_and_the_value_is_never_printed(base_repo, tmp_path, line):
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, "Fix a thing\n\n" + line))
+    assert r.returncode == 1, line
+    assert "looks like a real API key" in r.stdout
+    assert _SECRET not in r.stdout and "c3" * 32 not in r.stdout and _UUID not in r.stdout
+
+
+@pytest.mark.parametrize("line", [
+    "OTX_API_KEY=",                                               # .env.example: an empty value
+    "ABUSEIPDB_API_KEY=your-key-here",                            # a placeholder has no digit
+    "api_key = settings.get_virustotal_api_key_value",            # an identifier
+    "sha256 of the file: " + "ab" * 32,                           # a bare hash is not a key
+    "The key: a plain sentence about something",
+    "max_tokens=4096",
+    "token = next_token_from_the_stream",
+])
+def test_harmless_lines_with_key_words_pass(base_repo, tmp_path, line):
+    r = run_hook(base_repo, "--commit-msg", _message(tmp_path, "Fix a thing\n\n" + line))
+    assert r.returncode == 0, line + "\n" + r.stdout + r.stderr
+
+
 def test_privacy_markers_come_from_a_file_outside_the_repository(base_repo, tmp_path):
     markers = tmp_path / "markers.txt"
     markers.write_text("# my private names\nhost.leak.example\n!docs.host.leak.example\n", encoding="utf-8")

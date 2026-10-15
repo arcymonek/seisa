@@ -72,7 +72,19 @@ PROGRAM_FILES = {
 BASE_CANDIDATES = ("main", "origin/main", "github/main")
 
 # Privacy scan. Strings that look like a real key, and a home directory path other than an obvious placeholder.
-KEY_PATTERNS = (r"[0-9a-fA-F]{80}", r"sk-or-v1-[0-9a-fA-F]{20,}")
+# A secret value: 20+ characters of a key alphabet that contain at least one digit. The digit rule keeps identifiers
+# such as `settings.get_virustotal_api_key_value` out, and a real key (hex, base62, UUID) practically always has one.
+_SECRET_VALUE = r"""["']?(?=[A-Za-z0-9_\-]*\d)[A-Za-z0-9_\-]{20,}"""
+KEY_PATTERNS = (
+    r"[0-9a-fA-F]{80}",                    # AbuseIPDB key
+    r"sk-or-v1-[0-9a-fA-F]{20,}",          # OpenRouter key
+    # Context patterns (a bare 64-hex string would also catch every sha256 in the tests): a value assigned to a name
+    # that says key, token or secret. This covers .env lines (`VIRUSTOTAL_API_KEY=...`), JSON/YAML, and request headers
+    # (`x-apikey:`, `API-Key:`, `X-OTX-API-KEY:`); a name followed by an empty value (.env.example) does not match.
+    r"(?i)\b\w*(?:api[_-]?key|token|secret)\w*[\"']?[ \t]*[:=][ \t]*" + _SECRET_VALUE,
+    r"(?i)\bkey[\"']?[ \t]*:[ \t]*" + _SECRET_VALUE,                  # a bare `Key: value` header
+    r"(?i)\bbearer[ \t]+" + _SECRET_VALUE,                              # `Authorization: Bearer value`
+)
 HOME_PATH = re.compile(r"/(?:Users|home)/(?!(?:you|user|username|name|example|me)/)[A-Za-z0-9._-]+/")
 
 

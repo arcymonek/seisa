@@ -19,8 +19,13 @@ ignore = ["E501", "UP017", "PERF401", "PERF402", "SIM117"]
 "scripts/dump_facts.py" = ["E402"]
 
 [tool.pytest.ini_options]
-# `slow`: the tests that build throw-away git repositories (tests/test_pre_commit_hook.py); `pytest -m "not slow"` skips them.
-markers = ["slow: builds throw-away git repositories, about a minute in total"]
+# `slow`: the tests that build throw-away git repositories (tests/test_pre_commit_hook.py) or start child processes
+# (tests/test_parser_limits.py); `pytest -m "not slow"` skips them.
+markers = ["slow: builds throw-away git repositories or child processes (hook tests, parser time limits), about two minutes in total"]
 # pythonpath makes `import backend...` work without sys.path tricks in the tests.
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+# Used by the informational coverage report in CI (`coverage run -p ...`); the frontend has no coverage tooling.
+source = ["backend"]
