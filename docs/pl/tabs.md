@@ -129,7 +129,7 @@ Co dostajesz:
 
 - **Analiza deterministyczna, od razu i lokalnie** (bez LLM): anomalie, trasa Received z rolą każdego hopu w łańcuchu zaufania, uwierzytelnianie, zgodność domen, oś czasu w UTC, drzewo MIME, załączniki, linki, ukryta treść i filtry antyspamowe odbiorcy.
 - **Szczegółowa analiza LLM**, streamowana na żywo (OpenRouter, ten sam klucz i model co w AbuseIPDB), według przewodnika `docs/email-analysis-guide.md`; pierwsza linia to werdykt z poziomem pewności.
-- **Trzy panele ze spisem treści:** Przegląd (diagram trasy, ostrzeżenia, lista kontrolna, co robić, kontrola cytatów), Fakty (analiza deterministyczna jako zwijane karty, z przyciskami "Rozwiń wszystko" / "Zwiń wszystko"; tabela Received przewija się poziomo, gdy potrzebuje miejsca) i Lekcja (cała analiza LLM).
+- **Trzy panele ze spisem treści:** Przegląd (diagram trasy, ostrzeżenia, lista kontrolna, co robić, kontrola cytatów), Fakty (analiza deterministyczna jako zwijane karty; tabela Received przewija się poziomo, gdy potrzebuje miejsca) i Lekcja (cała analiza LLM).
 - **Karty dowodowe i szuflada źródła:** cytaty z wiadomości pokazują numery linii i przycisk "Pokaż w źródle".
 - **Zapisane analizy** z wykrywaniem duplikatów, porównaniem dwóch analiz i eksportami (`.md`, `.html`).
 - **"Wyczyść"** w linii przycisków (ukryty, dopóki pole ze źródłem jest puste i nie ma wyniku; nieaktywny w trakcie analizy - najpierw Anuluj) opróżnia pole ze źródłem, usuwa wynik, linię stanu i czas oraz znów pokazuje pole ze źródłem, jak tuż po uruchomieniu. Zapisane analizy zostają.
@@ -149,7 +149,7 @@ Jak w zakładkach IP, DMARC i URLScan:
 
 - **Baner werdyktu** na górze: werdykt, pewność, streszczenie analizy, stan kontroli cytatów i akcje (zgłoszenie, zapis/kopia, dokończenie ściętej analizy).
 - **Rząd kafelków:** ostrzeżenia, SPF/DKIM/DMARC zapisane przez serwer odbiorcy, zgodność tożsamości nadawcy, IP na granicy zaufania (z przyciskiem wstawiającym je do zakładki IP), linki/załączniki/ukryta treść, filtr odbiorcy, czas doręczenia.
-- **Trzy panele ze spisem treści po lewej:** **Przegląd** (trasa wiadomości jako diagram z granicą zaufania, ostrzeżenia, lista kontrolna i część "co robić" z analizy, kontrola cytatów; każda z nich to zwijana karta, na starcie zwinięta, a nad pierwszą są przyciski "Rozwiń wszystko" / "Zwiń wszystko"), **Fakty** (analiza deterministyczna jako zwijane karty; każda karta startuje zwinięta i pokazuje jednoliniowy stan w nagłówku) i **Lekcja** (cała analiza LLM). Rząd trzech przycisków paneli zostaje na górze ekranu podczas przewijania, a na jego prawym końcu jest przycisk ze strzałką, który przewija stronę z powrotem na górę.
+- **Trzy panele ze spisem treści po lewej:** **Przegląd** (trasa wiadomości jako diagram z granicą zaufania, ostrzeżenia, lista kontrolna i część "co robić" z analizy, kontrola cytatów; każda z nich to zwijana karta, na starcie zwinięta), **Fakty** (analiza deterministyczna jako zwijane karty; każda karta startuje zwinięta i pokazuje jednoliniowy stan w nagłówku) i **Lekcja** (cała analiza LLM). Rząd trzech przycisków paneli zostaje na górze ekranu podczas przewijania, a na jego prawym końcu są kolejno: pole szukania ze strzałkami (przeszukuje otwarty panel), "Rozwiń wszystko" / "Zwiń wszystko" (działają na otwartym panelu) i przycisk ze strzałką, który przewija stronę z powrotem na górę.
 - Po analizie źródło zwija się do jednolinijkowego paska ("Edytuj źródło" przywraca pole). Zakładka pamięta wybrany panel.
 
 </details>
@@ -158,7 +158,7 @@ Jak w zakładkach IP, DMARC i URLScan:
 <summary>Szczegóły: lekcja LLM</summary>
 
 - Analizę prowadzi przewodnik `docs/email-analysis-guide.md`: model mentalny, analiza linijka po linijce zarówno elementów dobrych, jak i złych, lista kontrolna, pułapki, ocena, pytania kontrolne z odpowiedziami w zwijanych sekcjach.
-- Tekst jest dzielony po nagłówkach `##` na zwijane karty. Wszystkie karty startują zwinięte; wybrany przez Ciebie stan jest zapamiętywany; "Rozwiń wszystko" / "Zwiń wszystko"; podbloki części linia po linii też się zwijają. Jeśli model zepsuje strukturę, tekst pokazuje się jako jeden blok. Lekcję można przeszukiwać (trafienia otwierają zwinięte karty).
+- Tekst jest dzielony po nagłówkach `##` na zwijane karty. Wszystkie karty startują zwinięte; wybrany przez Ciebie stan jest zapamiętywany; rozwijane i zwijane naraz przyciskami w pasku zakładek; podbloki części linia po linii też się zwijają. Jeśli model zepsuje strukturę, tekst pokazuje się jako jeden blok. Trafienia szukania otwierają zwinięte karty.
 - Cytaty z wiadomości stają się **kartami dowodowymi** z numerami linii i przyciskiem "Pokaż w źródle", który otwiera **szufladę źródła** (wiadomość z numerami linii, cytowane linie podświetlone, po kilku trafieniach można przechodzić). Cytat, którego nie ma dosłownie w źródle, jest oznaczony jako schemat lub przykład. Kod w tekście, który występuje w źródle, jest klikalny tak samo.
 - Terminy techniczne (SPF, DKIM, DMARC, ARC, PTR, SCL, HELO...) mają kropkowane podkreślenie i krótkie wyjaśnienie po najechaniu, raz w całej analizie.
 - Analiza LLM nie odtwarza tabel widocznych w analizie deterministycznej (oś czasu, linki, Received itd.), tylko je interpretuje, żeby nie płacić za powtórki; komplet jest w eksporcie.

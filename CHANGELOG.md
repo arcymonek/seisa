@@ -22,6 +22,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.21 - 2026-10-15
+- **Email:** the "Expand all" / "Collapse all" buttons and the search field with its arrows moved into the sticky tab bar, left of the back-to-top arrow, all in one row (from 700 px wide; on narrower screens the bar wraps). The buttons act on the open pane (Overview, Facts or Lesson), and the search now covers whichever pane is open, not only the Lesson (hits open collapsed cards; switching panes repeats the search in the new one). The buttons inside the panes are gone.
+
 ## 2.4.20 - 2026-10-15
 - **Explanations are easier to read (IP, URLScan, DMARC, AbuseIPDB):** every term shows one plain sentence, and the rest sits under a small "Details" toggle with one sentence per line (the catalogs got `legend_more` keys next to the existing texts; a term with a single sentence has no toggle). `legendHtml` in `ui.js` builds it and `fold-state.js` remembers each toggle separately.
 - **Email:** the row of the three pane buttons (Overview, Facts, Lesson) stays at the top while you scroll, with an arrow button at its right end that scrolls the page to the top. Jumps from the table of contents stop below that row.
