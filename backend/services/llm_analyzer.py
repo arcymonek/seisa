@@ -1,5 +1,6 @@
 """OpenRouter client for the optional LLM layer: the AbuseIPDB assessment (one JSON reply) and the streamed Email
-analysis. Builds the prompts, reports readable errors and token cost, and removes the long dash from replies.
+analysis. Builds the AbuseIPDB prompt (the Email analysis prompt is built in routers/email_analysis.py and only sent and
+streamed here), reports readable errors and token cost, and removes the long dash from replies.
 The LLM only assists; security facts come from deterministic code. Nothing is sent without the user's request.
 """
 from __future__ import annotations

@@ -1,5 +1,6 @@
-"""WHOIS, reverse DNS and RDAP lookups, built on IntelService. Needs no API key. Used by the Lookup tab for the
-owner, network and domain-age facts; the WHOIS query has its own time limit because the library does not enforce one.
+"""WHOIS, reverse DNS and RDAP lookups, built on IntelService. Needs no API key. Used by the IP tab (lookup) for
+the owner, network and domain-age facts and by the DMARC tab for the registration data of a sending address.
+The WHOIS query has its own time limit because the library does not enforce one.
 """
 from __future__ import annotations
 

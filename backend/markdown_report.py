@@ -1,5 +1,5 @@
 """Builds the Markdown report of an IP or domain lookup (score, components, per-service sections) shown in the
-Lookup tab and exported from it. Called by aggregator.py. All text comes from the i18n catalogs and every value
+IP tab (lookup) and exported from it. Called by aggregator.py. All text comes from the i18n catalogs and every value
 from a service is escaped for Markdown.
 """
 from __future__ import annotations

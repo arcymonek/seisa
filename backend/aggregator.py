@@ -1,5 +1,6 @@
 """Runs one IP or domain lookup: normalizes and validates the indicator, queries the selected intelligence services in
-parallel and assembles the LookupResult (score, identity, Markdown). Used by routers/lookup.py. It does not cache
+parallel and assembles the LookupResult (score, identity, Markdown). Used by routers/lookup.py;
+routers/dmarc.py reuses its service registry. It does not cache
 results and does not call the LLM.
 """
 from __future__ import annotations
