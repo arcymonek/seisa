@@ -23,6 +23,12 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.29 - 2026-10-16
+- **IP tab, every service switched off:** clicking "Check" with no service selected now says "Select at least one service." and asks nobody. Before, the empty list reached the backend, which read it as "all services" and queried all six. The backend now refuses a list with no known service (HTTP 400) on its own, so a frontend fault cannot bring the old behaviour back; a request without a service list still asks every service.
+- **No empty API pages:** FastAPI's `/docs` and `/redoc` are switched off (404). Their pages load scripts from a CDN that the Content-Security-Policy blocks, so they only ever showed an empty page. `/openapi.json` stays.
+- **Neutral DNS probe:** the wildcard check of a domain in the IP tab asks for a random name without `seisa-` in it, because that name shows up in the logs of the checked domain's name servers.
+- New tests: `tests/test_lookup_services.py`, `tests/test_docs_pages.py`, a probe-name test in `tests/test_dns_records.py`, and harness checks for the empty service list and the three pages (all mutation-checked).
+
 ## 2.4.28 - 2026-10-16
 - **Prompt files moved:** the two English files the LLM reads as context (`abuseipdb-reporting-policy.md` for the AbuseIPDB tab, `email-analysis-guide.md` for the Email tab) moved from `docs/` to `backend/prompts/`, because they are part of the program, not documentation. Their text is unchanged and the app behaves the same; the pre-commit hook counts them as program files through the `backend/` prefix. New: `tests/test_prompt_files.py` and a harness check that both files really reach the prompts (a wrong path would silently send an empty guide).
 
