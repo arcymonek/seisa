@@ -222,6 +222,7 @@
   "lookup.services": "Services",
   "lookup.submit": "Check",
   "lookup.clear": "Clear",
+  "lookup.no_services": "Select at least one service.",
   "lookup.report_abuseipdb": "Report to AbuseIPDB",
   "urlscan.seconds": "{time} s",
   "urlscan.subtitle": "Submit a live scan of a suspicious URL to urlscan.io - you get a detailed report on the page content, network traffic, detected technologies and verdict without opening the link yourself.",

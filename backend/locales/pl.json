@@ -108,6 +108,7 @@
   "report.rejected": "AbuseIPDB odrzuciło dane zgłoszenia: {message}",
   "report.key_rejected": "AbuseIPDB odrzuciło klucz API (brak, błędny lub bez prawa zgłaszania) - sprawdź ABUSEIPDB_API_KEY w .env",
   "lookup.invalid_indicator": "to nie jest poprawny adres IP ani nazwa domeny: {indicator}",
+  "lookup.no_services": "nie wybrano żadnej usługi: włącz co najmniej jedną",
   "parser.relay_note": "Pierwszy hop spoza domeny odbiorcy to przekaźnik operatora '{relay}', a nie nadawca, więc przeszedłem dalej łańcuchem ({chain}) do hopu, w którym operator zapisał adres faktycznie łączącego się nadawcy.",
   "parser.relay_walk_warning": "Uwaga: ten adres jest mniej pewny. Pochodzi ze starszych linii Received zapisanych przez sam przekaźnik, a nie przez Twój serwer pocztowy, a nadawca może takie linie sfałszować. Twój serwer zapisał połączenie z {ip} (przekaźnik). Sprawdź adres przed zgłoszeniem.",
   "parser.relay_declined": "Uwaga: niżej są starsze linie Received zapisane przez '{relay}', ale '{relay}' nie jest znanym dostawcą poczty, więc ich nie użyłem (nadawca mógł je sfałszować). Nadal widać je w trasie, jeśli chcesz je obejrzeć.",

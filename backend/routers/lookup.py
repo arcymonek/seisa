@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from backend.aggregator import detect_indicator_type, is_public_ip, is_valid_indicator, normalize_indicator, run_lookup
+from backend.aggregator import SERVICE_REGISTRY, detect_indicator_type, is_public_ip, is_valid_indicator, normalize_indicator, run_lookup
 from backend.history_store import append_history, list_history_rows
 from backend.i18n import current_lang, t
 from backend.models import Comparison, HistoryEntry, IndicatorType, ScorePoint, SourceChange
@@ -18,8 +18,11 @@ class LookupRequest(BaseModel):
     services: list[str] | None = None
 
 
-def _rejection(indicator: str, indicator_type: IndicatorType) -> str | None:
-    """Why the indicator cannot be checked (message for the user), or None when it can."""
+def _rejection(indicator: str, indicator_type: IndicatorType, services: list[str] | None) -> str | None:
+    """Why the lookup cannot run (message for the user), or None when it can. A list of services with no known one
+    (every chip switched off) is refused here, so a frontend fault can never turn it into a query to all of them."""
+    if services is not None and not any(s in SERVICE_REGISTRY for s in services):
+        return t("lookup.no_services")
     if not is_valid_indicator(indicator, indicator_type):
         return t("lookup.invalid_indicator", indicator=indicator[:80])
     if indicator_type == "ip" and not is_public_ip(indicator):
@@ -77,7 +80,7 @@ def _save_to_history(result) -> None:
 async def lookup(req: LookupRequest):
     indicator = normalize_indicator(req.indicator)
     indicator_type = _resolve_type(indicator, req.type)
-    reason = _rejection(indicator, indicator_type)
+    reason = _rejection(indicator, indicator_type, req.services)
     if reason:
         raise HTTPException(status_code=400, detail=reason)
     result = await run_lookup(indicator, indicator_type, req.services)

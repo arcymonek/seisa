@@ -96,11 +96,12 @@ async def run_lookup(
     indicator_type: IndicatorType,
     services: list[str] | None,
 ) -> LookupResult:
-    """Queries the selected services in parallel (all of them when `services` is empty) and builds the report.
+    """Queries the selected services in parallel (all of them when `services` is None) and builds the report.
 
-    Every call queries the services again (there is no result cache), so the report is always fresh.
+    An empty list asks nobody: switching every service off must never mean "ask them all". Every call queries the
+    services again (there is no result cache), so the report is always fresh.
     """
-    selected = services or list(SERVICE_REGISTRY.keys())
+    selected = list(SERVICE_REGISTRY.keys()) if services is None else services
     results: dict[str, ServiceResult] = {}
 
     async def run_one(name: str) -> None:

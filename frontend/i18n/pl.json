@@ -226,6 +226,7 @@
   "lookup.services": "Usługi",
   "lookup.submit": "Sprawdź",
   "lookup.clear": "Wyczyść",
+  "lookup.no_services": "Wybierz co najmniej jedną usługę.",
   "lookup.report_abuseipdb": "Zgłoś AbuseIPDB",
   "urlscan.seconds": "{time} s",
   "urlscan.subtitle": "Zleć żywy skan podejrzanego adresu URL usłudze urlscan.io - zobaczysz szczegółowy raport z zawartości strony, ruchu sieciowego, wykrytych technologii i werdyktu, bez otwierania linku samodzielnie.",

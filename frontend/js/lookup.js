@@ -113,6 +113,11 @@ async function onSubmit() {
 
   const indicator = root.querySelector("#lk-indicator").value.trim();
   if (!indicator) return; // nothing to check: no timer either
+  if (!services.length) {
+    // every chip is off: say so instead of asking anybody (the backend refuses an empty list as well)
+    statusEl.textContent = t("lookup.no_services");
+    return;
+  }
   timer.start();
   try {
     const result = await api.lookup({ indicator, type: "auto", services });

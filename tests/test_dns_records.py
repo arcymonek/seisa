@@ -28,9 +28,16 @@ class FakeResolver:
         self.zone = zone
         self.wildcard = wildcard or {}
         self.names = {name for name, _ in zone}
+        self.asked = []
+
+    def is_probe(self, name):
+        """The random name of the wildcard check: an unknown label right under a name of the zone (not _dmarc)."""
+        label, _, parent = name.partition(".")
+        return name not in self.names and parent in self.names and not label.startswith("_")
 
     async def resolve(self, name, rdtype):
-        if name.startswith("seisa-"):  # the random probe label of the wildcard check
+        self.asked.append(name)
+        if self.is_probe(name):
             if self.wildcard.get(rdtype):
                 return [SimpleNamespace(to_text=lambda v=v: v) for v in self.wildcard[rdtype]]
             raise dns.resolver.NXDOMAIN()
@@ -49,6 +56,7 @@ def resolver(monkeypatch):
     def install(zone, wildcard=None):
         fake = FakeResolver(zone, wildcard)
         monkeypatch.setattr(dns_records, "_resolver", lambda: fake)
+        return fake
 
     return install
 
@@ -120,6 +128,19 @@ def test_null_mx_means_the_domain_takes_no_mail(resolver):
 def test_wildcard_is_detected_by_a_random_name_that_resolves(resolver):
     resolver(ZONE, wildcard={"A": ["93.184.216.34"]})
     assert run(dns_records.resolve_domain("example.org"))["wildcard"] is True
+
+
+def test_the_wildcard_probe_name_is_random_and_does_not_name_seisa(resolver):
+    """The probe name lands in the logs of the checked domain's name servers (audit A2-B7): it must not tell the owner,
+    possibly the phisher, which tool asked."""
+    probes = []
+    for _ in range(2):
+        fake = resolver(ZONE)
+        run(dns_records.resolve_domain("example.org"))
+        probes += [name for name in fake.asked if fake.is_probe(name)]
+    assert len(probes) == 2 and probes[0] != probes[1]
+    assert all("seisa" not in name.lower() for name in probes)
+    assert all(len(name.split(".")[0]) >= 12 for name in probes)  # long enough not to hit a real name by chance
 
 
 def test_dns_failures_are_empty_answers_not_errors(resolver):

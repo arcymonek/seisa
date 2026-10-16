@@ -536,6 +536,11 @@ probes["guard preflight foreign Origin"] = client.options("/api/history", header
 probes["CSP header on /"] = client.get("/").headers.get("content-security-policy")
 probes["urlscan uuid path injection"] = client.get("/api/urlscan/result/..%2F..%2Fuser%2Fquotas").status_code
 probes["urlscan screenshot"] = SHOT_PROBE
+_calls_before = len(CALLS)
+probes["lookup with every service switched off"] = client.post("/api/lookup", json={"indicator": PUBLIC_IP, "services": []}).status_code
+probes["calls made by a lookup with no service"] = len(CALLS) - _calls_before
+for _path in ("/docs", "/redoc", "/openapi.json"):
+    probes[f"page {_path}"] = client.get(_path).status_code
 
 # --- checks ---
 EXPECTED_STATUS = {
@@ -726,6 +731,12 @@ if probes["foreign Host header accepted (DNS rebinding)"] != 400:
     failures.append("a foreign Host header is not rejected")
 if not (probes["CSP header on /"] or "").startswith("default-src 'self'"):
     failures.append("the Content-Security-Policy header is missing")
+if probes["lookup with every service switched off"] != 400 or probes["calls made by a lookup with no service"]:
+    failures.append("a lookup with every service switched off was not refused, or it still asked a service")
+if probes["page /docs"] != 404 or probes["page /redoc"] != 404:
+    failures.append("the /docs or /redoc page is served (switched off on purpose: the CSP leaves it empty)")
+if probes["page /openapi.json"] != 200:
+    failures.append("/openapi.json is no longer served")
 if probes["urlscan uuid path injection"] not in (400, 404):
     failures.append("urlscan result accepts a path-traversal identifier")
 if probes["urlscan screenshot"] != (200, "image/png", b"\x89PNG"):

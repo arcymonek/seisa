@@ -52,7 +52,8 @@ def _txt(values: list[str]) -> list[str]:
 
 async def resolve_domain(domain: str) -> dict:
     host = domain.rstrip(".")
-    probe = f"seisa-{secrets.token_hex(6)}.{host}"
+    # A random label with no name of ours in it: the probe shows up in the logs of the domain's name servers.
+    probe = f"{secrets.token_hex(8)}.{host}"
     (a, nx), (aaaa, _), (ns, _), (mx, _), (caa, _), (txt, _), (dmarc, _), (wild, _) = await asyncio.gather(
         _query(host, "A"), _query(host, "AAAA"), _query(host, "NS"), _query(host, "MX"), _query(host, "CAA"),
         _query(host, "TXT"), _query(f"_dmarc.{host}", "TXT"), _query(probe, "A"),

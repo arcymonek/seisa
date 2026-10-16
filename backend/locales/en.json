@@ -108,6 +108,7 @@
   "report.rejected": "AbuseIPDB rejected the report data: {message}",
   "report.key_rejected": "AbuseIPDB rejected the API key (missing, wrong or without the right to report) - check ABUSEIPDB_API_KEY in .env",
   "lookup.invalid_indicator": "not a valid IP address or domain name: {indicator}",
+  "lookup.no_services": "no service selected: switch on at least one service",
   "parser.relay_note": "The first hop outside the recipient's domain is the operator relay '{relay}', not the sender, so I walked further along the chain ({chain}) to the hop where the operator recorded the address of the actually connecting sender.",
   "parser.relay_walk_warning": "Be careful: this address is less certain. It comes from older Received lines written by the relay itself, not by your own mail server, and a sender can forge such lines. Your server recorded the connection from {ip} (the relay). Check the address before you report it.",
   "parser.relay_declined": "Note: older Received lines written by '{relay}' exist below this hop, but '{relay}' is not a known mail provider, so they were not used (a sender could have forged them). They are still listed in the route if you want to look at them.",

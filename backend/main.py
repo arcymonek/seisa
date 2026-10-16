@@ -22,7 +22,9 @@ from backend.routers import about, abuseipdb_report, dmarc, email_analysis, hist
 setup_logging()
 app_logger = logging.getLogger("app")
 
-app = FastAPI(title="Seisa")
+# No /docs or /redoc: their pages load scripts from a CDN that the CSP below blocks, so they would stay empty.
+# /openapi.json stays (a plain description of the routes, guarded like every other path).
+app = FastAPI(title="Seisa", docs_url=None, redoc_url=None)
 
 
 # Second line of defence next to the HTML sanitising in the frontend: scripts only from our own origin, no plugins,
