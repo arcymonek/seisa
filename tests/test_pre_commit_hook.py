@@ -223,7 +223,7 @@ def test_program_file(path, program):
     assert hook_mod.is_program_file(path) is program
 
 
-@pytest.mark.parametrize("path", ["CLAUDE.md", ".env", "data/history.json", "logs/seisa.log", "tests/private/a.eml", "reports/audits/x.md"])
+@pytest.mark.parametrize("path", [".env", "data/history.json", "logs/seisa.log", "tests/private/a.eml", "reports/audits/x.md"])
 def test_forbidden_paths(path):
     assert hook_mod.forbidden_reason(path)
 
@@ -246,7 +246,7 @@ def test_a_clean_two_language_change_passes(repo):
 
 
 def test_forbidden_files_are_rejected_but_gitkeep_is_not(repo):
-    forbidden = ["CLAUDE.md", ".env", "data/history.json", "logs/seisa.log", "tests/private/a.eml", "reports/audits/x.md"]
+    forbidden = [".env", "data/history.json", "logs/seisa.log", "tests/private/a.eml", "reports/audits/x.md"]
     for rel in forbidden:
         write(repo, rel, "x\n")
     append(repo, "data/.gitkeep", "\n")
@@ -287,11 +287,11 @@ def test_one_lang_variable_skips_only_the_pair_rule(repo):
     stage(repo, "README.md")
     r = run_hook(repo, env={"SEISA_ONE_LANG": "1"})
     assert r.returncode == 0, r.stdout + r.stderr
-    write(repo, "CLAUDE.md", "x\n")
-    stage(repo, "CLAUDE.md", force=True)
+    write(repo, ".env", "x\n")
+    stage(repo, ".env", force=True)
     r = run_hook(repo, env={"SEISA_ONE_LANG": "1"})
     assert r.returncode == 1
-    assert "FORBIDDEN FILE: CLAUDE.md" in r.stdout
+    assert "FORBIDDEN FILE: .env" in r.stdout
     assert "LANGUAGE PAIR" not in r.stdout
 
 
@@ -378,13 +378,40 @@ def test_deleting_only_one_language_of_a_document_is_rejected(repo):
     assert "docs/pl/CODE_OF_CONDUCT.md is missing" in r.stdout
 
 
-def test_hook_messages_do_not_point_to_private_files(repo):
-    write(repo, "CLAUDE.md", "x\n")
-    stage(repo, "CLAUDE.md", force=True)
+def test_hook_messages_point_to_the_public_developer_guide(repo):
+    write(repo, ".env", "x\n")
+    stage(repo, ".env", force=True)
     r = run_hook(repo)
     assert r.returncode == 1
     assert "docs/DEVELOPMENT.md" in r.stdout
-    assert "(CLAUDE.md)" not in r.stdout
+
+
+def test_a_file_ignored_only_by_the_local_exclude_file_is_rejected(repo):
+    # private notes are kept out by the clone's own .git/info/exclude, so the repository never has to name them
+    with open(repo / ".git" / "info" / "exclude", "a", encoding="utf-8") as f:
+        f.write("\nNOTES.local.md\n")
+    write(repo, "NOTES.local.md", "private\n")
+    stage(repo, "NOTES.local.md", force=True)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "IGNORED FILE: NOTES.local.md" in r.stdout
+
+
+def test_a_file_ignored_by_gitignore_is_rejected(repo):
+    write(repo, "frontend/debug.log", "x\n")    # *.log in .gitignore
+    stage(repo, "frontend/debug.log", force=True)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "IGNORED FILE: frontend/debug.log" in r.stdout
+
+
+def test_files_tracked_on_purpose_are_not_ignored_files(repo):
+    # data/* is ignored, data/.gitkeep is taken back with a `!` line; the README is not ignored at all
+    append(repo, "data/.gitkeep", "\n")
+    _both_languages(repo, "readme")
+    stage(repo, "data/.gitkeep")
+    r = run_hook(repo)
+    assert r.returncode == 0, r.stdout + r.stderr
 
 
 def test_a_bump_of_one_allowed_step_passes(repo):

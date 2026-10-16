@@ -64,9 +64,8 @@ DOC_PAIRS: tuple[tuple[str, str], ...] = (
     ("CODE_OF_CONDUCT.md", "docs/pl/CODE_OF_CONDUCT.md"),
     *((f"docs/{name}.md", f"docs/pl/{name}.md") for name in _DOCS_DIR_FILES),
 )
-# Markdown files in the root, docs/ and docs/pl/ that have no twin on purpose. CLAUDE.md is the maintainer's private,
-# gitignored notes file; it is listed so that a local run does not report it.
-UNPAIRED = ("AGENTS.md", "CHANGELOG.md", "CLAUDE.md")
+# Markdown files in the root, docs/ and docs/pl/ that have no twin on purpose.
+UNPAIRED = ("AGENTS.md", "CHANGELOG.md")
 REQUIRED_DOCS: tuple[str, ...] = (*(f for pair in DOC_PAIRS for f in pair), "AGENTS.md", "CHANGELOG.md")
 
 # Files still being written (the documentation rewrite). A missing PENDING file is not an error, and the rules that
@@ -238,10 +237,10 @@ def anchors(text: str) -> set[str]:
 
 
 def markdown_files(root: Path) -> list[str]:
-    """Every Markdown file of the repository: tracked plus new untracked ones when git is there, else a directory walk
-    (the hook runs on an export of the index, which holds exactly the tracked files)."""
+    """Every Markdown file git tracks (a new document counts once it is added with `git add`; local, untracked notes
+    never do). Without git, a directory walk: the hook runs on an export of the index, which holds exactly those files."""
     if (root / ".git").exists():
-        p = subprocess.run(["git", "-c", "core.quotepath=off", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.md"],
+        p = subprocess.run(["git", "-c", "core.quotepath=off", "ls-files", "-z", "--cached", "--", "*.md"],
                            cwd=root, capture_output=True, text=True)
         if p.returncode == 0:
             return sorted({f for f in p.stdout.split("\0") if f and (root / f).is_file()})

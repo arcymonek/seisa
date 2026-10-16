@@ -7,8 +7,6 @@ __pycache__/
 .DS_Store
 *.log
 .claude/
-# local agent instructions (private working rules, not part of the repository)
-CLAUDE.md
 reports/
 data/*
 !data/.gitkeep

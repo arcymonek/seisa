@@ -14,6 +14,7 @@ import importlib.util
 import json
 import os
 import re
+import subprocess
 import urllib.error
 from pathlib import Path
 
@@ -184,8 +185,17 @@ def test_rule02_a_document_outside_the_pairs(proj, rel):
 def test_rule02_files_elsewhere_and_the_exceptions_are_fine(proj):
     w(proj, ".github/pull_request_template.md", "## What\n")
     w(proj, "backend/prompts/guide.md", "# Guide\n")
-    w(proj, "CLAUDE.md", "# private\n")
     assert errors(proj) == []
+
+
+def test_rule02_only_files_git_tracks_count(proj):
+    subprocess.run(["git", "init", "-q"], cwd=proj, check=True)
+    subprocess.run(["git", "add", "-A"], cwd=proj, check=True)
+    w(proj, "NOTES.local.md", "# local, never added\n\nSee [x](nowhere.md).\n")
+    assert errors(proj) == []
+    subprocess.run(["git", "add", "NOTES.local.md"], cwd=proj, check=True)
+    errs = errors(proj)
+    assert any("NOTES.local.md is not in DOC_PAIRS" in e for e in errs), errs
 
 
 # --- rule 3: links -----------------------------------------------------------------------------------------------------

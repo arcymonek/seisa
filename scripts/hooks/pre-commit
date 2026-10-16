@@ -5,8 +5,10 @@
 
 What it checks, always on what is STAGED (the index), not on the working tree:
 
-  1. Forbidden files: CLAUDE.md, .env, data/, logs/, tests/private/, reports/ (except .gitkeep). They are gitignored,
-     so this only catches `git add -f`.
+  1. Forbidden files: .env, data/, logs/, tests/private/, reports/ (except .gitkeep), and every other file git ignores,
+     through .gitignore or the clone's own .git/info/exclude (private notes stay out that way without being named in
+     the repository). They can only be staged with `git add -f`; a file that is tracked on purpose is not ignored
+     (.gitignore excludes it with a `!` line, like data/.gitkeep).
   2. No long dash (U+2014) in added lines (all files except frontend/vendor/, which is third-party code).
   3. Language pairs: a document and its twin (DOC_PAIRS in scripts/check_docs.py, for example README.md <->
      README.pl.md or docs/X.md <-> docs/pl/X.md) must be staged together. `SEISA_ONE_LANG=1 git commit ...` skips ONLY
@@ -53,7 +55,7 @@ from pathlib import Path
 EM_DASH = "\u2014"
 
 # Files that stay gitignored on purpose; `git add -f` is the only way they could reach a commit.
-FORBIDDEN_NAMES = {"CLAUDE.md": "private working rules", ".env": "API keys"}
+FORBIDDEN_NAMES = {".env": "API keys"}
 FORBIDDEN_PREFIXES = {
     "data/": "local data (raw e-mails)",
     "logs/": "local logs",
@@ -185,8 +187,24 @@ def added_lines(*revs: str) -> list[tuple[str, int, str]]:
     return out
 
 
+def ignored_files(paths: list[str]) -> set[str]:
+    """The paths git would ignore (.gitignore, .git/info/exclude, the global excludes file), even when they are staged."""
+    if not paths:
+        return set()
+    p = subprocess.run(["git", "check-ignore", "--no-index", "--stdin", "-z"], input="\0".join(paths).encode(), capture_output=True)
+    if p.returncode not in (0, 1):  # 1 = nothing ignored; anything else must not let the commit through
+        raise GitError(f"git check-ignore: {p.stderr.decode(errors='replace').strip()}")
+    return {f for f in p.stdout.decode("utf-8", errors="replace").split("\0") if f}
+
+
 def check_forbidden(staged: list[str]) -> list[str]:
-    return [f"FORBIDDEN FILE: {f} ({why}); it is gitignored, never force-add it" for f in staged if (why := forbidden_reason(f))]
+    named = {f: why for f in staged if (why := forbidden_reason(f))}
+    problems = [f"FORBIDDEN FILE: {f} ({why}); it is gitignored, never force-add it" for f, why in named.items()]
+    problems += [
+        f"IGNORED FILE: {f} is ignored by git (.gitignore or .git/info/exclude), so it stays local; never force-add it"
+        for f in sorted(ignored_files(staged)) if f not in named and Path(f).name != ".gitkeep"
+    ]
+    return problems
 
 
 def check_long_dash(added: list[tuple[str, int, str]]) -> list[str]:
