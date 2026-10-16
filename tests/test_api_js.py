@@ -32,10 +32,11 @@ def test_a_text_detail_is_shown_for_plain_and_streamed_requests(call):
     assert run(failing(call, 400, {"detail": "Source too large"}))[0]["error"] == "Source too large"
 
 
-def test_a_list_detail_of_a_validation_error_is_shown_as_json():
-    detail = [{"type": "string_too_long", "msg": "String should have at most 6000000 characters"}]
+def test_a_validation_error_shows_the_field_and_the_message_but_not_the_echoed_input():
+    detail = [{"type": "string_too_long", "loc": ["body", "raw_email"], "msg": "String should have at most 6000000 characters", "input": "a" * 100000}]
     error = run(failing("emailAnalyzeStream", 422, {"detail": detail}))[0]["error"]
-    assert json.loads(error) == detail
+    assert error == "raw_email: String should have at most 6000000 characters"
+    assert run(failing("emailFind", 422, {"detail": [{"foo": 1}]}))[0]["error"] == '{"foo":1}'
 
 
 @pytest.mark.parametrize("call", ["emailFind", "emailAnalyzeStream"])

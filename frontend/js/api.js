@@ -22,6 +22,11 @@ async function errorDetail(res) {
   } catch {
     detail = res.statusText || `HTTP ${res.status}`;
   }
+  if (Array.isArray(detail)) {
+    // FastAPI validation errors: [{loc, msg, input}, ...]. `input` echoes the whole refused body (megabytes), so only
+    // the field and the message are shown.
+    return detail.map((d) => (d && d.msg ? `${(d.loc || []).filter((x) => x !== "body").join(".")}${d.loc ? ": " : ""}${d.msg}` : JSON.stringify(d).slice(0, 200))).join("; ");
+  }
   return typeof detail === "string" ? detail : JSON.stringify(detail);
 }
 
