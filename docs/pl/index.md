@@ -16,4 +16,4 @@ To pełna dokumentacja Seisy; [README](../../README.pl.md) to krótki punkt wej�
 
 ## Pliki kontekstu promptów
 
-Dwa pliki bezpośrednio w `docs/` **nie są dokumentacją**: [abuseipdb-reporting-policy.md](../abuseipdb-reporting-policy.md) i [email-analysis-guide.md](../email-analysis-guide.md) to angielski kontekst promptów wczytywany do LLM po nazwie (`backend/config.py`). Nie przenoś ich i nie zmieniaj ich nazw.
+Dwa pliki w `backend/prompts/` **nie są dokumentacją**: [abuseipdb-reporting-policy.md](../../backend/prompts/abuseipdb-reporting-policy.md) i [email-analysis-guide.md](../../backend/prompts/email-analysis-guide.md) to angielski kontekst promptów wczytywany do LLM po nazwie (`backend/config.py`), więc są częścią programu.

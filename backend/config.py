@@ -1,4 +1,4 @@
-"""Central configuration: filesystem locations (data/, logs/, docs/, frontend/), size and retention limits, and the
+"""Central configuration: filesystem locations (data/, logs/, LLM prompts, frontend/), size and retention limits, and the
 `settings` object that reads API keys from the gitignored .env file. Imported by almost every other module; it has
 no logic beyond defining these values.
 """
@@ -8,8 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-DOCS_DIR = BASE_DIR / "docs"
 FRONTEND_DIR = BASE_DIR / "frontend"
+PROMPTS_DIR = BASE_DIR / "backend" / "prompts"  # LLM prompt context in English: part of the program, not documentation
 LOGS_DIR = BASE_DIR / "logs"
 ANALYSES_DIR = DATA_DIR / "analyses"
 
@@ -20,8 +20,8 @@ HISTORY_ENTRIES_DIR = HISTORY_DIR / "entries"
 VT_USAGE_FILE = DATA_DIR / "vt_usage.json"
 REPORT_LOG_FILE = DATA_DIR / "report_log.json"
 API_USAGE_FILE = DATA_DIR / "api_usage.json"
-ABUSEIPDB_POLICY_FILE = DOCS_DIR / "abuseipdb-reporting-policy.md"
-EMAIL_GUIDE_FILE = DOCS_DIR / "email-analysis-guide.md"
+ABUSEIPDB_POLICY_FILE = PROMPTS_DIR / "abuseipdb-reporting-policy.md"
+EMAIL_GUIDE_FILE = PROMPTS_DIR / "email-analysis-guide.md"
 
 HISTORY_MAX_ENTRIES = 100
 LOG_RETENTION_DAYS = 30  # daily log files older than this are deleted (today counts as day 1)

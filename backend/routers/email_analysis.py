@@ -43,7 +43,7 @@ logger = logging.getLogger("app")
 
 # The prompts are input for the model, not UI text: they are written once, in English. The language of the
 # answer is set by an explicit directive (see _language_directive) at the start of the system prompt and again at
-# the end of the user message; the guide (docs/email-analysis-guide.md) lists the literal headings per language.
+# the end of the user message; the guide (backend/prompts/email-analysis-guide.md) lists the literal headings per language.
 
 SYSTEM_PREAMBLE = """You are a teacher of e-mail analysis. You analyse the e-mail source pasted by the user so that \
 they learn to read it. Below is the guide: role, rules of reliability and the REQUIRED structure of the answer. \

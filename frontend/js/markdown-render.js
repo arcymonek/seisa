@@ -46,7 +46,7 @@ export function renderMarkdownSafe(container, markdownText) {
 }
 
 // The analysis prompt makes the model label statements with [Fact] / [Interpretation] / [To verify] (or the Polish
-// forms, see docs/email-analysis-guide.md). They become small coloured labels; the tag text itself stays as the model wrote it.
+// forms, see backend/prompts/email-analysis-guide.md). They become small coloured labels; the tag text itself stays as the model wrote it.
 const STATUS_TAGS = { // i18n-ok: protocol constants of the analysis format, not UI text
   fakt: "fact", fact: "fact",
   interpretacja: "interp", interpretation: "interp",

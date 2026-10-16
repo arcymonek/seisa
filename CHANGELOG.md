@@ -23,6 +23,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.28 - 2026-10-16
+- **Prompt files moved:** the two English files the LLM reads as context (`abuseipdb-reporting-policy.md` for the AbuseIPDB tab, `email-analysis-guide.md` for the Email tab) moved from `docs/` to `backend/prompts/`, because they are part of the program, not documentation. Their text is unchanged and the app behaves the same; the pre-commit hook counts them as program files through the `backend/` prefix. New: `tests/test_prompt_files.py` and a harness check that both files really reach the prompts (a wrong path would silently send an empty guide).
+
 ## 2.4.27 - 2026-10-16
 - **Citation check:** an IP address at the end of a sentence ("The sender is 9.9.9.9.") is now checked against the source; before, the full stop hid it and an invented address could pass. `1.2.3.4.5` and `a1.2.3.4` are still not treated as addresses.
 - **Saved analyses:** a file in `data/analyses/` that holds valid JSON which is not an object (or is not UTF-8 text) is skipped like an unreadable file instead of breaking the list.

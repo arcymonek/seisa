@@ -66,8 +66,6 @@ PROGRAM_FILES = {
     "requirements.lock",
     "seisa.sh",
     "seisa-launcher.sh",
-    "docs/abuseipdb-reporting-policy.md",
-    "docs/email-analysis-guide.md",
 }
 BASE_CANDIDATES = ("main", "origin/main", "github/main")
 

@@ -7,7 +7,7 @@ import { copyText } from "./util.js";
 import { applyGlossary, releaseTerms } from "./email-glossary.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
 
-// The structure of the answer is fixed by docs/email-analysis-guide.md: after the title and summary come six parts and
+// The structure of the answer is fixed by backend/prompts/email-analysis-guide.md: after the title and summary come six parts and
 // the control questions. Sections are recognised by their position (the headings are translated), never by their text.
 const ROLES = ["model", "lines", "checklist", "compare", "traps", "advice", "questions"];
 const OPEN_BY_DEFAULT = new Set(); // every card starts collapsed; a card the reader opened or closed is remembered

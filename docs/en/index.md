@@ -16,4 +16,4 @@ This is the full documentation of Seisa; the [README](../../README.md) is the sh
 
 ## Prompt context files
 
-The two files directly in `docs/` are **not documentation**: [abuseipdb-reporting-policy.md](../abuseipdb-reporting-policy.md) and [email-analysis-guide.md](../email-analysis-guide.md) are English prompt context loaded into the LLM by name (`backend/config.py`). Do not move or rename them.
+The two files in `backend/prompts/` are **not documentation**: [abuseipdb-reporting-policy.md](../../backend/prompts/abuseipdb-reporting-policy.md) and [email-analysis-guide.md](../../backend/prompts/email-analysis-guide.md) are English prompt context loaded into the LLM by name (`backend/config.py`), so they are part of the program.

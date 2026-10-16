@@ -190,12 +190,23 @@ def test_disallowed_version_steps(old, new):
     ("README.pl.md", "README.md"),
     ("docs/en/architecture.md", "docs/pl/architecture.md"),
     ("docs/pl/tabs.md", "docs/en/tabs.md"),
-    ("docs/email-analysis-guide.md", None),    # prompt context, not documentation
+    ("backend/prompts/email-analysis-guide.md", None),    # prompt context, not documentation
     ("CHANGELOG.md", None),
     ("backend/main.py", None),
 ])
 def test_language_twin(path, twin):
     assert hook_mod.twin_of(path) == twin
+
+
+@pytest.mark.parametrize(("path", "program"), [
+    ("backend/prompts/abuseipdb-reporting-policy.md", True),    # prompt context: a change alters the app
+    ("backend/prompts/email-analysis-guide.md", True),
+    ("seisa.sh", True),
+    ("docs/abuseipdb-reporting-policy.md", False),              # the old place is documentation now
+    ("README.md", False),
+])
+def test_program_file(path, program):
+    assert hook_mod.is_program_file(path) is program
 
 
 @pytest.mark.parametrize("path", ["CLAUDE.md", ".env", "data/history.json", "logs/seisa.log", "tests/private/a.eml", "reports/audits/x.md"])

@@ -111,6 +111,7 @@ def _sse(chunks, finish, usage):
 
 
 STREAM_COUNT = {"n": 0}
+LLM_PROMPTS: list[tuple[bool, str]] = []  # (streamed?, the text of all messages) of every OpenRouter call
 
 
 def handler(request: httpx.Request) -> httpx.Response:
@@ -210,6 +211,7 @@ def handler(request: httpx.Request) -> httpx.Response:
                                                   "links": [{"href": "https://x.example/", "text": "click " + XSS}]}})
     if host == "openrouter.ai":
         payload = json.loads(request.content)
+        LLM_PROMPTS.append((bool(payload.get("stream")), "\n".join(m["content"] for m in payload["messages"])))
         usage = {"prompt_tokens": 1000, "completion_tokens": 200, "total_tokens": 1200, "cost": 0.0123}
         if payload.get("stream"):
             STREAM_COUNT["n"] += 1
@@ -799,6 +801,15 @@ for _k in _allowed:
         failures.append(f"the origin guard blocked a legitimate request: {_k} -> {probes[_k]}")
 if probes["CORS allow-origin header"]:
     failures.append("a cross-origin preflight is allowed")
+
+# The two prompt files (backend/prompts/) must reach the model: a wrong path is not an error in the app, it only sends an
+# empty guide or policy. Every Email analysis carries the guide, every AbuseIPDB assessment the policy excerpt.
+_streams = [text for streamed, text in LLM_PROMPTS if streamed]
+_assessments = [text for streamed, text in LLM_PROMPTS if not streamed and "Excerpt of the AbuseIPDB policy" in text]
+if not _streams or not all("# E-mail source analysis guide" in text for text in _streams):
+    failures.append(f"the Email analysis prompt lacks the guide from backend/prompts/ ({len(_streams)} streamed call(s))")
+if not _assessments or not all("# AbuseIPDB reporting rules" in text for text in _assessments):
+    failures.append(f"the AbuseIPDB prompt lacks the policy from backend/prompts/ ({len(_assessments)} assessment call(s))")
 
 # Markdown reports (IP and URLScan tabs) hold hostile third-party text (the XSS payload sits in OTX pulses, the page title,
 # link texts ...): outside code it must never be live markup. The raw API response in the collapsible block is code.
