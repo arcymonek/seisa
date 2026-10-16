@@ -5,8 +5,7 @@ Each test runs under the common umask 022 (the default on macOS and most Linux s
 created file at 0644, so a writer that forgets to restrict the mode is caught. Paths are redirected into a temporary
 directory (the writers copy the `backend.config` paths at import time, hence the monkeypatching of each module).
 
-The daily logs (logs/*.jsonl) are written with the default mode (0644) today: audit 2026-10-15 B17, `xfail(strict=True)`
-until stage 5 fixes it.
+The daily logs (logs/*.jsonl) are covered too (audit 2026-10-15 B17).
 """
 from __future__ import annotations
 
@@ -84,13 +83,44 @@ def _log_one(tmp_path):
     return logs, next(logs.glob("*.jsonl"))
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B17: daily log files are created with mode 0644")
 def test_daily_log_file_is_private(data_dir, tmp_path):
     _logs, log_file = _log_one(tmp_path)
     assert mode(log_file) == 0o600
 
 
-@pytest.mark.xfail(strict=True, reason="audit 2026-10-15 B17: the logs directory is created with mode 0755")
 def test_logs_directory_is_closed(data_dir, tmp_path):
     logs, _log_file = _log_one(tmp_path)
+    assert mode(logs) == 0o700
+
+
+def test_existing_log_file_and_directory_are_tightened_at_startup(data_dir, tmp_path):
+    from backend.logging_config import restrict_modes
+
+    logs = tmp_path / "logs"
+    logs.mkdir(mode=0o755)
+    old = logs / "2026-10-01.jsonl"
+    old.write_text("{}\n")
+    old.chmod(0o644)
+    restrict_modes(logs)
+    assert mode(old) == 0o600
+    assert mode(logs) == 0o700
+
+
+def test_log_file_made_by_an_older_version_is_not_loosened_or_replaced(data_dir, tmp_path):
+    logs = tmp_path / "logs"
+    logs.mkdir(mode=0o700)
+    handler = DailyJsonlHandler(logs)
+    handler.handle(logging.LogRecord("test", logging.ERROR, __file__, 1, "first", None, None))
+    handler.handle(logging.LogRecord("test", logging.ERROR, __file__, 1, "second", None, None))
+    (log_file,) = logs.glob("*.jsonl")
+    assert len(log_file.read_text().splitlines()) == 2  # appended, not overwritten
+    assert mode(log_file) == 0o600
+
+
+def test_logs_directory_that_already_exists_open_is_closed_by_the_next_log_line(data_dir, tmp_path):
+    logs = tmp_path / "logs"
+    logs.mkdir(mode=0o755)
+    logs.chmod(0o755)
+    handler = DailyJsonlHandler(logs)
+    handler.handle(logging.LogRecord("test", logging.ERROR, __file__, 1, "x", None, None))
     assert mode(logs) == 0o700

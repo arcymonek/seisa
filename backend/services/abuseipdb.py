@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import httpx
 
-from backend.api_limits import observe
+from backend.api_limits import int_header, observe
 from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
@@ -95,20 +95,13 @@ class AbuseIpdbError(Exception):
         self.rate_limit = rate_limit or {}
 
 
-def _int_header(headers, name: str) -> int | None:
-    try:
-        return int(headers.get(name))
-    except (TypeError, ValueError):
-        return None
-
-
 def parse_rate_limit(headers) -> dict:
     """X-RateLimit-Limit / -Remaining / -Reset (epoch seconds) and Retry-After (seconds) of an API answer."""
     info = {
-        "limit": _int_header(headers, "X-RateLimit-Limit"),
-        "remaining": _int_header(headers, "X-RateLimit-Remaining"),
-        "reset": _int_header(headers, "X-RateLimit-Reset"),
-        "retry_after": _int_header(headers, "Retry-After"),
+        "limit": int_header(headers, "X-RateLimit-Limit"),
+        "remaining": int_header(headers, "X-RateLimit-Remaining"),
+        "reset": int_header(headers, "X-RateLimit-Reset"),
+        "retry_after": int_header(headers, "Retry-After"),
     }
     return {k: v for k, v in info.items() if v is not None}
 

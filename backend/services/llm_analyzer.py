@@ -7,7 +7,7 @@ import httpx
 
 from backend.config import ABUSEIPDB_POLICY_FILE, settings
 from backend.email_forensics import EMAIL_END, EMAIL_START
-from backend.i18n import t
+from backend.i18n import LANGUAGE_NAMES, t
 from backend.services.base import describe_exception
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -18,6 +18,12 @@ OPENROUTER_APP_HEADERS = {
     "X-Title": "Seisa",
 }
 
+# One timeout for every OpenRouter call: 30 s to connect/write, up to 120 s of silence while the model answers (models
+# with hidden reasoning can think for a long time before the first byte).
+OPENROUTER_TIMEOUT = httpx.Timeout(30.0, read=120.0)
+
+EM_DASH = "\u2014"  # the project does not use the long dash in UI text (see docs/en/extending.md)
+
 # All OpenRouter API errors (Email and AbuseIPDB tabs) go to a single log service.
 logger = logging.getLogger("open_router")
 
@@ -27,6 +33,35 @@ logger = logging.getLogger("open_router")
 STREAM_MAX_TOKENS = 64000
 
 _OR_HTTP_HINT_CODES = (400, 401, 402, 403, 408, 429, 502, 503)  # texts: or.hint.<code> in backend/locales
+
+
+def openrouter_headers() -> dict:
+    """Headers of every OpenRouter request (the key, JSON, and the attribution headers above)."""
+    return {
+        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "Content-Type": "application/json",
+        **OPENROUTER_APP_HEADERS,
+    }
+
+
+def no_em_dash(text: str) -> str:
+    """The long dash replaced with a plain hyphen - models like it, the project's UI does not."""
+    return text.replace(EM_DASH, "-")
+
+
+def _no_em_dash_in_fields(result: dict) -> dict:
+    """no_em_dash() on every text of a JSON answer except `report_comment`: that one is shown only after
+    sanitize_comment() (ASCII only), which has its own rule for such characters and must see the original."""
+    def clean(value):
+        if isinstance(value, str):
+            return no_em_dash(value)
+        if isinstance(value, list):
+            return [clean(v) for v in value]
+        if isinstance(value, dict):
+            return {k: clean(v) for k, v in value.items()}
+        return value
+
+    return {k: (v if k == "report_comment" else clean(v)) for k, v in result.items()}
 
 
 def _openrouter_error_text(status: int | None, body: object, lang: str | None = None) -> str:
@@ -56,9 +91,8 @@ def _report_error(status: int | None, body: object) -> str:
     return _openrouter_error_text(status, body)
 
 # Prompts are input for the model (not UI text): written once, in English. The language of the descriptive fields
-# of the JSON answer is set through {language}; keys and machine values stay as they are, and the report comment
-# is ALWAYS English (an AbuseIPDB requirement), whatever the UI language is.
-LANGUAGE_NAMES = {"pl": "Polish", "en": "English"}
+# of the JSON answer is set through {language} (names in backend/i18n.LANGUAGE_NAMES); keys and machine values stay
+# as they are, and the report comment is ALWAYS English (an AbuseIPDB requirement), whatever the UI language is.
 
 SYSTEM_PROMPT = """You are an assistant that assesses whether an e-mail qualifies for a report to AbuseIPDB, \
 according to the attached policy. Your assessment is ADVISORY ONLY - the hard checks (age of the report, whether \
@@ -150,11 +184,7 @@ class LlmAnalyzer:
         return result
 
     async def _chat_json_once(self, system_prompt: str, user_content: str) -> dict | None:
-        headers = {
-            "Authorization": f"Bearer {settings.openrouter_api_key}",
-            "Content-Type": "application/json",
-            **OPENROUTER_APP_HEADERS,
-        }
+        headers = openrouter_headers()
         payload = {
             "model": settings.openrouter_model,
             "messages": [
@@ -165,7 +195,7 @@ class LlmAnalyzer:
             "usage": {"include": True},
         }
         try:
-            async with httpx.AsyncClient(timeout=60) as client:
+            async with httpx.AsyncClient(timeout=OPENROUTER_TIMEOUT) as client:
                 resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
         except httpx.HTTPError as exc:
             text = describe_exception(exc)
@@ -215,6 +245,8 @@ class LlmAnalyzer:
                     f"provider={body.get('provider')!r} completion_tokens={usage.get('completion_tokens')}"
                 )
                 return {"error": text, "_retryable": True}
+            if isinstance(result, dict):
+                result = _no_em_dash_in_fields(result)
             if isinstance(result, dict) and isinstance(body.get("usage"), dict):
                 result["_usage"] = body["usage"]
             return result
@@ -236,11 +268,7 @@ class LlmAnalyzer:
         Event generator (kind, data): ("delta", text) | ("usage", dict) | ("warning", text) |
         ("finish", finish_reason) | ("error", text). Errors are logged to the OpenRouter service like in _chat_json.
         `partial` + `continue_instruction` finish a previously truncated text (an extra assistant + user turn)."""
-        headers = {
-            "Authorization": f"Bearer {settings.openrouter_api_key}",
-            "Content-Type": "application/json",
-            **OPENROUTER_APP_HEADERS,
-        }
+        headers = openrouter_headers()
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
@@ -255,9 +283,8 @@ class LlmAnalyzer:
             "max_tokens": max_tokens,
             "usage": {"include": True},
         }
-        timeout = httpx.Timeout(30.0, read=120.0)
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
+            async with httpx.AsyncClient(timeout=OPENROUTER_TIMEOUT) as client:
                 async with client.stream("POST", OPENROUTER_URL, headers=headers, json=payload) as resp:
                     if resp.status_code >= 400:
                         raw = await resp.aread()
@@ -294,7 +321,7 @@ class LlmAnalyzer:
                             return
                         delta = (choice.get("delta") or {}).get("content")
                         if delta:
-                            yield "delta", delta
+                            yield "delta", no_em_dash(delta)
                         finish = choice.get("finish_reason")
                         if finish == "length":
                             logger.warning("OpenRouter: model response truncated (finish_reason=length)")

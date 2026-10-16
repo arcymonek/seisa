@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import re
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
@@ -64,17 +65,22 @@ class EmailAnalyzeRequest(BaseModel):
     use_llm: bool = True
 
 
+# One identifier of the reporter (a recipient address or its domain): an e-mail address is at most 254 characters
+# long (RFC 5321), so a longer item cannot be real.
+OwnTerm = Annotated[str, Field(max_length=254)]
+
+
 class ReportFields(BaseModel):
     ip: str
     categories: list[int]
     attack_timestamp: str | None = None
-    comment: str = ""
-    own_terms: list[str] = Field(default_factory=list, max_length=20)  # the reporter's identifiers, for the PII scan
+    comment: str = Field(default="", max_length=5000)  # same ceiling as RedactRequest; the sent text is cut to 1024
+    own_terms: list[OwnTerm] = Field(default_factory=list, max_length=20)  # the reporter's identifiers, for the PII scan
 
 
 class RedactRequest(BaseModel):
     comment: str = Field(max_length=5000)
-    own_terms: list[str] = Field(default_factory=list, max_length=20)
+    own_terms: list[OwnTerm] = Field(default_factory=list, max_length=20)
 
 
 def _reported_ips() -> set[str]:

@@ -16,7 +16,9 @@ class OtxService(IntelService):
         return bool(settings.otx_api_key)
 
     async def query_ip(self, ip: str) -> ServiceResult:
-        return await self._fetch(f"{BASE_URL}/IPv4/{ip}/general")
+        # the OTX documentation names the path by address family: IPv4 or IPv6
+        family = "IPv6" if ":" in ip else "IPv4"
+        return await self._fetch(f"{BASE_URL}/{family}/{ip}/general")
 
     async def query_domain(self, domain: str) -> ServiceResult:
         return await self._fetch(f"{BASE_URL}/domain/{domain}/general")

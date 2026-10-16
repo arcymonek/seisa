@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import re
-
 import httpx
 
-from backend.api_limits import observe
+from backend.api_limits import RESET_DATE_RE
 from backend.config import settings
 from backend.i18n import t
 from backend.models import ServiceResult
-from backend.services.base import IntelService, describe_exception, http_error_text
+from backend.services.base import IntelService
 
 IP_URL = "https://api.greynoise.io/v3/ip"
 COMMUNITY_URL = "https://api.greynoise.io/v3/community"
@@ -29,54 +27,29 @@ class GreyNoiseService(IntelService):
         if not self.is_configured():
             return self.not_configured_result()
         headers = {"key": settings.greynoise_api_key, "Accept": "application/json"}
-        try:
-            async with httpx.AsyncClient(timeout=20) as client:
-                resp = await client.get(f"{IP_URL}/{ip}", headers=headers)
-            observe(self.name, resp)
-            if resp.status_code == 429:
-                return self._limit_result(resp)
-            if resp.status_code == 403:
-                # The key has no access to the full IP Lookup (a higher plan level) - fall back to the free
-                # community endpoint instead of returning an error.
-                return await self._query_community(ip, headers)
-            if resp.status_code == 404:
-                # In practice /v3/ip/{ip} returns 404 (not found=false in a 200) when GreyNoise has no data
-                # about the address.
-                return ServiceResult(
-                    service=self.name,
-                    status="ok",
-                    summary={"has_data": False, "message": _no_data_message()},
-                )
-            resp.raise_for_status()
-            data = resp.json()
-        except httpx.HTTPError as exc:
-            return self.error_result(http_error_text(exc))
-        except ValueError as exc:
-            return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
 
+        async def community_fallback(_resp: httpx.Response) -> ServiceResult:
+            # 403: the key has no access to the full IP Lookup (a higher plan level) - fall back to the free
+            # community endpoint instead of returning an error.
+            return await self._query_community(ip, headers)
+
+        # In practice /v3/ip/{ip} returns 404 (not found=false in a 200) when GreyNoise has no data about the address.
+        data, err = await self.fetch_json(
+            "GET", f"{IP_URL}/{ip}", headers=headers,
+            special={429: self._limit_result, 403: community_fallback, 404: self._no_data_result},
+        )
+        if err:
+            return err
         summary = _ip_lookup_summary(data)
         return ServiceResult(service=self.name, status="ok", summary=summary, raw=data)
 
     async def _query_community(self, ip: str, headers: dict) -> ServiceResult:
-        try:
-            async with httpx.AsyncClient(timeout=20) as client:
-                resp = await client.get(f"{COMMUNITY_URL}/{ip}", headers=headers)
-            observe(self.name, resp)
-            if resp.status_code == 429:
-                return self._limit_result(resp)
-            if resp.status_code == 404:
-                return ServiceResult(
-                    service=self.name,
-                    status="ok",
-                    summary={"has_data": False, "message": _no_data_message()},
-                )
-            resp.raise_for_status()
-            data = resp.json()
-        except httpx.HTTPError as exc:
-            return self.error_result(http_error_text(exc))
-        except ValueError as exc:
-            return self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
-
+        data, err = await self.fetch_json(
+            "GET", f"{COMMUNITY_URL}/{ip}", headers=headers,
+            special={429: self._limit_result, 404: self._no_data_result},
+        )
+        if err:
+            return err
         summary = {
             "has_data": True,
             "source": t("svc.greynoise_community"),
@@ -89,11 +62,14 @@ class GreyNoiseService(IntelService):
         }
         return ServiceResult(service=self.name, status="ok", summary=summary, raw=data)
 
+    def _no_data_result(self, _resp: httpx.Response) -> ServiceResult:
+        return ServiceResult(service=self.name, status="ok", summary={"has_data": False, "message": _no_data_message()})
+
     def _limit_result(self, resp: httpx.Response) -> ServiceResult:
         """HTTP 429: the search quota of the plan is used up. The full answer goes to the log; the user gets a plain
         message (with the reset date when GreyNoise names one) instead of the raw JSON."""
         self.logger.error(f"HTTP 429: {resp.text[:300]}")
-        match = re.search(r"reset on ([A-Za-z]+ \d{1,2})", resp.text)
+        match = RESET_DATE_RE.search(resp.text)
         message = t("svc.greynoise_limit_reset", date=match.group(1)) if match else t("svc.greynoise_limit")
         return ServiceResult(service=self.name, status="rate_limited_daily", error_message=message)
 

@@ -64,7 +64,16 @@ def _no_connect(*a, **kw):
 
 socket.socket.connect = _no_connect
 socket.create_connection = _no_connect
-socket.gethostbyaddr = lambda ip: (f"rdns-{ip.replace('.', '-')}.example", [], [ip])
+NO_PTR_IP = "185.220.101.99"  # the address without a PTR record
+
+
+def _gethostbyaddr(ip):
+    if ip == NO_PTR_IP:
+        raise socket.herror(1, "Unknown host")
+    return (f"rdns-{ip.replace('.', '-')}.example", [], [ip])
+
+
+socket.gethostbyaddr = _gethostbyaddr  # checkouts before 2.4.26 look the name up this way
 
 import urllib.parse  # noqa: E402
 
@@ -220,10 +229,10 @@ def handler(request: httpx.Request) -> httpx.Response:
                 "length", usage), headers={"content-type": "text/event-stream"})
         content = json.dumps({"qualifies": True, "reasoning": "r " + XSS, "suggested_categories": [7, 11],
                               "report_comment": "Phishing from 203.0.113.45 \u2014 test", "alternatives": "",
-                              "source_ip_check": {"agrees": False, "suggested_ip": "198.51.100.7", "reasoning": "x"},
+                              "source_ip_check": {"agrees": False, "suggested_ip": "198.51.100.7", "reasoning": "x \u2014 y"},
                               "received_verified": {"status": "pass", "note": "n"},
                               "not_spoofed_source": {"status": "pass", "note": "n"},
-                              "category_matches": {"status": "pass", "note": "n"},
+                              "category_matches": {"status": "pass", "note": "n \u2014 ok"},
                               "pii_redacted": {"status": "pass", "note": "n"}})
         return httpx.Response(200, json={"choices": [{"message": {"content": "```json\n" + content + "\n```"}, "finish_reason": "stop"}], "usage": usage})
     UNHANDLED.append(f"{request.method} {request.url}")
@@ -280,6 +289,11 @@ try:
                 **({"ns_missing": ["ns9.gone.example"]} if domain == "dangling.example" else {})}
 
     _whois_dns.resolve_domain = _fake_dns
+
+    async def _fake_ptr(ip):  # reverse DNS goes through dnspython since 2.4.26; older checkouts use socket.gethostbyaddr above
+        return None if ip == NO_PTR_IP else f"rdns-{ip.replace('.', '-')}.example"
+
+    _whois_dns.reverse_lookup = _fake_ptr
 except ImportError:  # `--root` points at a checkout from before the DNS records existed
     pass
 
@@ -363,6 +377,7 @@ for lang in ("pl", "en"):
     rec(p + "lookup private ip", client.post("/api/lookup", json={"indicator": "192.168.1.10"}, headers=H))
     rec(p + "lookup domain dangling", client.post("/api/lookup", json={"indicator": "dangling.example"}, headers=H))
     rec(p + "lookup greynoise limit", client.post("/api/lookup", json={"indicator": "185.220.101.77"}, headers=H))
+    rec(p + "lookup no ptr", client.post("/api/lookup", json={"indicator": NO_PTR_IP, "type": "ip"}, headers=H))
     rec(p + "lookup invalid", client.post("/api/lookup", json={"indicator": "a/../../x", "type": "domain"}, headers=H))
     rec(p + "lookup invalid ip", client.post("/api/lookup", json={"indicator": "not-an-ip", "type": "ip"}, headers=H))
     rec(p + "urlscan scan", client.post("/api/urlscan/scan", json={"url": "https://phish.example/login"}, headers=H))
@@ -388,6 +403,7 @@ for lang in ("pl", "en"):
     rec(p + "report preview", client.post("/api/abuseipdb/report/preview", json=fields, headers=H))
     rec(p + "report preview private ip", client.post("/api/abuseipdb/report/preview", json={**fields, "ip": "10.0.0.1"}, headers=H))
     rec(p + "dmarc geo", client.get(f"/api/dmarc/geo?ip={PUBLIC_IP}", headers=H))
+    rec(p + "dmarc geo no ptr", client.get(f"/api/dmarc/geo?ip={NO_PTR_IP}", headers=H))
     rec(p + "dmarc geo private", client.get("/api/dmarc/geo?ip=10.0.0.1", headers=H))
     rec(p + "dmarc geo invalid", client.get("/api/dmarc/geo?ip=x/../y", headers=H))
     rec(p + "ip-info", client.get(f"/api/abuseipdb/ip-info?ip={PUBLIC_IP}", headers=H))
@@ -521,12 +537,12 @@ probes["urlscan screenshot"] = SHOT_PROBE
 
 # --- checks ---
 EXPECTED_STATUS = {
-    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup greynoise limit": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400,
+    "lookup ip": 200, "lookup domain url": 200, "lookup defanged ip": 200, "lookup private ip": 400, "lookup domain": 200, "lookup greynoise limit": 200, "lookup no ptr": 200, "lookup domain dangling": 200, "lookup domain auto": 200, "lookup invalid": 400, "lookup invalid ip": 400,
     "urlscan scan": 200, "urlscan result": 200, "urlscan result bad uuid": 400,
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
-    "report preview": 200, "dmarc geo": 200, "dmarc geo private": 400, "dmarc geo invalid": 400, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
+    "report preview": 200, "dmarc geo": 200, "dmarc geo no ptr": 200, "dmarc geo private": 400, "dmarc geo invalid": 400, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
     "report submit cooldown": 409, "report submit 422": 422, "report submit daily limit": 429, "report submit repeat at api": 409,
     "report submit bad key": 401, "report submit outage": 502, "report submit wire": 200, "report submit old": 400,
     "report submit future": 400, "report submit no timestamp": 400, "report submit unknown category": 400,
@@ -562,6 +578,23 @@ if isinstance(_gn, dict) and "services" in _gn:
     _g = _gn["services"]["greynoise"]
     if _g["status"] != "rate_limited_daily" or "HTTP 429" in (_g.get("error_message") or "") or "September 29" not in (_g.get("error_message") or ""):
         failures.append(f"greynoise 429: not turned into a friendly limit message: {_g}")
+# no PTR record: stored as null (not as translated text), no "rdns" row in the identity, and the DMARC geo answer says null too
+_nop = next((r["body"] for r in RESULTS if r["name"] == "[en] lookup no ptr"), None)
+if isinstance(_nop, dict) and "services" in _nop and "identity" in _nop:
+    if _nop["services"]["whois_rdns"]["summary"].get("reverse_dns") not in (None, "no PTR record"):
+        failures.append(f"lookup no ptr: unexpected reverse_dns {_nop['services']['whois_rdns']['summary'].get('reverse_dns')!r}")
+    if any(f["key"] == "rdns" for f in _nop["identity"]["fields"]):
+        failures.append("lookup no ptr: the missing PTR record leaked into the identity as a host name")
+_geo = next((r["body"] for r in RESULTS if r["name"] == "[en] dmarc geo no ptr"), None)
+if isinstance(_geo, dict) and _geo.get("reverse_dns") is not None:
+    failures.append(f"dmarc geo no ptr: expected no reverse DNS name, got {_geo.get('reverse_dns')!r}")
+# the long dash never reaches the screen from the model's JSON answer (the report comment is cleaned by its own sanitizer)
+for _r in RESULTS:
+    if "abuseipdb analyze" in _r["name"] and _r["name"].endswith(" llm") and isinstance(_r["body"], dict):
+        _llm = dict(_r["body"].get("llm_analysis") or {})
+        _llm.pop("report_comment", None)
+        if "\u2014" in json.dumps(_llm, ensure_ascii=False):
+            failures.append(f"{_r['name']}: a long dash is left in the descriptive fields of the model answer")
 _ip = next((r["body"] for r in RESULTS if r["name"].endswith("lookup defanged ip")), None)
 if isinstance(_ip, dict) and _ip.get("indicator") != PUBLIC_IP:
     failures.append(f"lookup defanged ip: not normalised: {_ip.get('indicator')}")

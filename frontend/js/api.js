@@ -10,16 +10,19 @@ async function request(path, options = {}) {
     headers: { "Content-Type": "application/json", ...langHeader() },
     ...options,
   });
-  if (!res.ok) {
-    let detail;
-    try {
-      detail = (await res.json()).detail;
-    } catch {
-      detail = res.statusText;
-    }
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
-  }
+  if (!res.ok) throw new Error(await errorDetail(res));
   return res.json();
+}
+
+// The message of a failed request: the `detail` of the backend's JSON error, else the status text.
+async function errorDetail(res) {
+  let detail;
+  try {
+    detail = (await res.json()).detail ?? (res.statusText || `HTTP ${res.status}`);
+  } catch {
+    detail = res.statusText || `HTTP ${res.status}`;
+  }
+  return typeof detail === "string" ? detail : JSON.stringify(detail);
 }
 
 export const api = {
@@ -28,10 +31,10 @@ export const api = {
   dmarcGeo: (ip) => request(`/dmarc/geo?ip=${encodeURIComponent(ip)}`),
 
   history: () => request("/history"),
-  historyEntry: (id) => request(`/history/${id}`),
+  historyEntry: (id) => request(`/history/${encodeURIComponent(id)}`),
   historyCreate: (body) => request("/history", { method: "POST", body: JSON.stringify(body) }),
-  historyPin: (id, pinned) => request(`/history/${id}`, { method: "PATCH", body: JSON.stringify({ pinned }) }),
-  historyDelete: (id) => request(`/history/${id}`, { method: "DELETE" }),
+  historyPin: (id, pinned) => request(`/history/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ pinned }) }),
+  historyDelete: (id) => request(`/history/${encodeURIComponent(id)}`, { method: "DELETE" }),
   historyClear: () => request("/history", { method: "DELETE" }),
 
   analyzeEmail: (body) => request("/abuseipdb/email/analyze", { method: "POST", body: JSON.stringify(body) }),
@@ -71,7 +74,7 @@ async function streamSSE(url, body, onEvent, signal) {
     body: JSON.stringify(body),
     signal,
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(await errorDetail(res));
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

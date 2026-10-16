@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 from abc import ABC, abstractmethod
 
@@ -58,19 +59,30 @@ class IntelService(ABC):
         self.logger.error(message)
         return ServiceResult(service=self.name, status="error", error_message=message)
 
-    async def fetch_json(self, method: str, url: str, **kwargs) -> tuple[dict | None, ServiceResult | None]:
+    async def fetch_json(self, method: str, url: str, *, special: dict | None = None, **kwargs) -> tuple[dict | None, ServiceResult | None]:
         """Common fetch+parse with a rich error message (HTTP code + the server response body, not only a generic
-        exception) - so that e.g. a 401 can be diagnosed without guessing."""
+        exception) - so that e.g. a 401 can be diagnosed without guessing.
+
+        `special` maps an HTTP status to a handler `handler(response) -> ServiceResult` (plain or async function) for
+        the statuses a service treats as a normal answer (GreyNoise: 404 = no data, 429 = quota). When the status is
+        in the map the handler decides and the usual error handling is skipped."""
+        handler = None
         try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.request(method, url, **kwargs)
             observe(self.name, resp)
-            resp.raise_for_status()
-            return resp.json(), None
+            handler = (special or {}).get(resp.status_code)
+            if handler is None:
+                resp.raise_for_status()
+                return resp.json(), None
         except httpx.HTTPError as exc:
             return None, self.error_result(http_error_text(exc))
         except ValueError as exc:
             return None, self.error_result(f"invalid response (not JSON): {describe_exception(exc)}")
+        result = handler(resp)
+        if inspect.isawaitable(result):
+            result = await result
+        return None, result
 
     @abstractmethod
     async def query_ip(self, ip: str) -> ServiceResult: ...

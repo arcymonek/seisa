@@ -15,6 +15,9 @@ from pathlib import Path
 SUPPORTED = ("pl", "en")
 DEFAULT_LANG = "en"
 
+# Names of the UI languages as the LLM prompts spell them (the prompts are English; they say which language to answer in).
+LANGUAGE_NAMES = {"pl": "Polish", "en": "English"}
+
 _LOCALES_DIR = Path(__file__).resolve().parent / "locales"
 _catalogs: dict[str, dict[str, str]] = {
     lang: json.loads((_LOCALES_DIR / f"{lang}.json").read_text(encoding="utf-8"))

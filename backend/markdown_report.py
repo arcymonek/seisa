@@ -145,6 +145,8 @@ def build_markdown(
             lines.append("")
         elif result.summary:
             for key, value in result.summary.items():
+                if name == "whois_rdns" and key == "reverse_dns" and value is None:
+                    value = t("svc.no_ptr")  # no PTR record: said in the language of the reader, not stored as text
                 if value in (None, "", [], {}):
                     continue
                 if isinstance(value, (dict, list)):

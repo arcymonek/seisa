@@ -9,6 +9,7 @@ import secrets
 import dns.asyncresolver
 import dns.exception
 import dns.resolver
+import dns.reversename
 
 logger = logging.getLogger("dns_records")
 QUERY_TIMEOUT = 5.0
@@ -31,6 +32,17 @@ async def _query(name: str, rdtype: str) -> tuple[list[str], bool]:
         logger.debug("%s %s: %s", rdtype, name, exc)
         return [], False
     return [r.to_text() for r in answer], False
+
+
+async def reverse_lookup(ip: str) -> str | None:
+    """The PTR name of an address without the trailing dot, or None when it has no PTR record (or the lookup times
+    out - the same limit as every other query here). The first answer is used, like gethostbyaddr() did."""
+    try:
+        name = dns.reversename.from_address(ip)
+    except (dns.exception.DNSException, ValueError):
+        return None
+    answers, _gone = await _query(str(name), "PTR")
+    return answers[0].rstrip(".") if answers else None
 
 
 def _txt(values: list[str]) -> list[str]:

@@ -8,6 +8,8 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 
+from backend.mail_trust import domains_consistent
+
 MAX_FORMS = 20
 MAX_FIELDS = 12
 MAX_DOM_CHARS = 2_000_000
@@ -59,7 +61,7 @@ def extract_forms(dom: str, page_url: str, page_domain: str | None) -> list[dict
         action_url = urljoin(page_url, raw["action"]) if raw["action"] else page_url
         scheme = urlsplit(action_url).scheme.lower() if action_url else ""
         target = _host(action_url)
-        external = bool(target) and bool(page_host) and target != page_host and not target.endswith("." + page_host) and not page_host.endswith("." + target)
+        external = bool(target) and bool(page_host) and not domains_consistent(target, page_host)
         forms.append({
             "action": action_url if scheme in ("http", "https") else (raw["action"] or "")[:200],
             "method": raw["method"],

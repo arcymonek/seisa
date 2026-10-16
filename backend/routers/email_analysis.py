@@ -12,7 +12,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.analyses import (
     delete_analysis,
@@ -32,7 +32,7 @@ from backend.email_forensics import (
     decoded_text_parts,
     prepare_for_llm,
 )
-from backend.i18n import current_lang, t
+from backend.i18n import LANGUAGE_NAMES, current_lang, t
 from backend.mail_source import normalize_source
 from backend.services.llm_analyzer import llm_analyzer
 from backend.sse import sse
@@ -44,7 +44,6 @@ logger = logging.getLogger("app")
 # The prompts are input for the model, not UI text: they are written once, in English. The language of the
 # answer is set by an explicit directive (see _language_directive) at the start of the system prompt and again at
 # the end of the user message; the guide (docs/email-analysis-guide.md) lists the literal headings per language.
-LANGUAGE_NAMES = {"pl": "Polish", "en": "English"}
 
 SYSTEM_PREAMBLE = """You are a teacher of e-mail analysis. You analyse the e-mail source pasted by the user so that \
 they learn to read it. Below is the guide: role, rules of reliability and the REQUIRED structure of the answer. \
@@ -82,7 +81,6 @@ async def _relay(stream, run: _LlmRun):
     """Forwards the LLM events to the browser as SSE (deltas, warnings, errors) and records the rest in `run`."""
     async for kind, payload in stream:
         if kind == "delta":
-            payload = payload.replace(EM_DASH, "-")
             run.chunks.append(payload)
             yield sse({"type": "delta", "text": payload})
         elif kind == "usage":
@@ -98,7 +96,9 @@ async def _relay(stream, run: _LlmRun):
 
 
 class EmailAnalysisRequest(BaseModel):
-    raw_email: str
+    # A safety net only: normalize_source() may shrink the text, and the friendly "too large" message below still
+    # applies to MAX_SOURCE_CHARS - this ceiling just refuses absurd bodies before they are parsed.
+    raw_email: str = Field(max_length=2 * MAX_SOURCE_CHARS)
     use_llm: bool = True  # False = deterministic facts only, nothing leaves this computer
 
 
@@ -116,8 +116,6 @@ CONTINUE_INSTRUCTION = (
     "more concisely than before (Parts 3, 4, 5, 6 and the Control questions are mandatory). "
     "Keep writing in {language}."
 )
-
-EM_DASH = "\u2014"  # the project does not use the long dash (see docs/en/extending.md, "Workflow, tests and conventions")
 
 
 def _citation_check(markdown: str, src: str, prepared: str, facts: dict) -> dict:

@@ -27,9 +27,7 @@ async def geo(ip: str):
         raise HTTPException(status_code=400, detail=t("lookup.invalid_indicator", indicator=ip[:80]))
     result = await SERVICE_REGISTRY["whois_rdns"].query_ip(str(address))
     s = result.summary or {}
-    rdns = s.get("reverse_dns")
-    if rdns == t("svc.no_ptr"):
-        rdns = None
+    rdns = s.get("reverse_dns")  # None = no PTR record
     rdap_ok = "rdap_error" not in s and any(s.get(k) for k in ("country", "organization", "network_name"))
     if result.status != "ok" or not (rdap_ok or rdns):
         return {"status": "unavailable"}

@@ -22,6 +22,10 @@ from backend.storage import load_api_usage, save_api_usage
 
 logger = logging.getLogger("app")
 
+# "Your searches will reset on September 29" - the date GreyNoise names in the body of its HTTP 429 answer
+# (also used by services/greynoise.py for the message shown to the user).
+RESET_DATE_RE = re.compile(r"reset on ([A-Za-z]+ \d{1,2})")
+
 # Assumed limits of the free plans for the services that do not report them (AbuseIPDB: the account's own 5 000/day).
 ABUSEIPDB_DAILY = 5000
 GREYNOISE_WEEKLY = 50
@@ -73,7 +77,8 @@ def _count(usage: dict, service: str) -> None:
         del counts[old]
 
 
-def _int(headers, name: str) -> int | None:
+def int_header(headers, name: str) -> int | None:
+    """An integer HTTP header (rate-limit counters, Retry-After), or None when it is absent or not a number."""
     try:
         return int(headers.get(name))
     except (TypeError, ValueError):
@@ -96,13 +101,13 @@ def _exceeded_entry(resp: httpx.Response, now: datetime) -> dict:
     """What an HTTP 429 says about the reset: Retry-After / X-RateLimit-Reset when present, else a date named in the
     body (GreyNoise: "Your searches will reset on September 29")."""
     reset_at = None
-    retry = _int(resp.headers, "Retry-After")
-    epoch = _int(resp.headers, "X-RateLimit-Reset")
+    retry = int_header(resp.headers, "Retry-After")
+    epoch = int_header(resp.headers, "X-RateLimit-Reset")
     if retry is not None:
         reset_at = _iso(now + timedelta(seconds=retry))
     elif epoch is not None and epoch > now.timestamp():
         reset_at = _iso(datetime.fromtimestamp(epoch, timezone.utc))
-    match = re.search(r"reset on ([A-Za-z]+ \d{1,2})", resp.text[:2000])
+    match = RESET_DATE_RE.search(resp.text[:2000])
     return {"seen": _iso(now), "reset_at": reset_at, "reset_text": match.group(1) if match else None}
 
 
@@ -124,7 +129,7 @@ def _observe(service: str, resp: httpx.Response) -> None:
     elif service == "otx":
         _count(usage, service)
     elif service == "abuseipdb":
-        limit, remaining, reset = _int(resp.headers, "X-RateLimit-Limit"), _int(resp.headers, "X-RateLimit-Remaining"), _int(resp.headers, "X-RateLimit-Reset")
+        limit, remaining, reset = int_header(resp.headers, "X-RateLimit-Limit"), int_header(resp.headers, "X-RateLimit-Remaining"), int_header(resp.headers, "X-RateLimit-Reset")
         if limit is None or remaining is None:
             return
         scope = resp.request.url.path.rstrip("/").rsplit("/", 1)[-1]

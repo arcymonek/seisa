@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import asyncio
-import socket
 from datetime import datetime, timezone
 
 import whois
 
-from backend.i18n import t
 from backend.models import ServiceResult
-from backend.services.base import IntelService
-from backend.services.dns_records import resolve_domain
+from backend.services.base import IntelService, describe_exception
+from backend.services.dns_records import resolve_domain, reverse_lookup
 
 RDAP_BOOTSTRAP = "https://rdap.org/ip/{ip}"
+WHOIS_TIMEOUT = 15  # seconds; the whois library has no timeout of its own that covers a silent server
+
+
+def _first_line(text: str, limit: int = 200) -> str:
+    """The first line of a long message, cut to `limit` characters. A failed WHOIS query often carries the whole
+    notice of the registry (kilobytes of terms of use) - one line says what happened."""
+    return (text.strip().splitlines() or [""])[0][:limit]
 
 
 class WhoisDnsService(IntelService):
@@ -23,14 +28,16 @@ class WhoisDnsService(IntelService):
     async def query_ip(self, ip: str) -> ServiceResult:
         rdns = None
         try:
-            rdns = await asyncio.to_thread(self._reverse_dns, ip)
+            rdns = await reverse_lookup(ip)
         except Exception as exc:
             self.logger.error(f"reverse DNS failed: {exc}")
 
         # rdap.org is a bootstrap - it always redirects (302) to the right RIR
         # (RIPE/ARIN/APNIC/LACNIC/AFRINIC), so the redirect has to be followed explicitly.
         rdap_data, err = await self.fetch_json("GET", RDAP_BOOTSTRAP.format(ip=ip), follow_redirects=True)
-        summary = {"reverse_dns": rdns or t("svc.no_ptr")}
+        # None = no PTR record; the reports say so in the language of the reader (a stored text would stay in the
+        # language of the request that made it)
+        summary = {"reverse_dns": rdns}
         if rdap_data:
             summary.update(_rdap_summary(rdap_data))
         elif err:
@@ -46,15 +53,19 @@ class WhoisDnsService(IntelService):
     async def query_domain(self, domain: str) -> ServiceResult:
         """WHOIS (registration data) and DNS records side by side; a failure of one still gives the other."""
         whois_data, dns_data = await asyncio.gather(
-            asyncio.to_thread(whois.whois, domain), resolve_domain(domain), return_exceptions=True
+            # a thread cannot be cancelled: after the timeout it runs on in the background and its answer is dropped
+            asyncio.wait_for(asyncio.to_thread(whois.whois, domain), timeout=WHOIS_TIMEOUT),
+            resolve_domain(domain),
+            return_exceptions=True,
         )
         if isinstance(dns_data, BaseException):
             self.logger.error(f"DNS resolution failed: {dns_data}")
             dns_data = None
         if isinstance(whois_data, BaseException):
             if not dns_data:
-                return self.error_result(str(whois_data))
-            self.logger.error(f"WHOIS failed: {whois_data}")
+                return self.error_result(str(whois_data) or describe_exception(whois_data))
+            # DNS works, so this is a partial result, not a failure; the registry's notice goes to the log in one line
+            self.logger.warning(f"WHOIS failed: {_first_line(str(whois_data) or describe_exception(whois_data))}")
             whois_data = {}
         created = _stringify(_first(whois_data.get("creation_date")))
         summary = {
@@ -68,13 +79,6 @@ class WhoisDnsService(IntelService):
             "dns": dns_data,
         }
         return ServiceResult(service=self.name, status="ok", summary=summary, raw=dict(whois_data) | {"dns": dns_data})
-
-    @staticmethod
-    def _reverse_dns(ip: str) -> str | None:
-        try:
-            return socket.gethostbyaddr(ip)[0]
-        except (socket.herror, socket.gaierror):
-            return None
 
 
 def _vcard_value(vcard_array, key: str) -> str | None:
