@@ -28,6 +28,7 @@ import socket
 import sys
 import tempfile
 import time
+from datetime import timedelta, timezone
 from pathlib import Path
 
 _ap = argparse.ArgumentParser()
@@ -256,6 +257,9 @@ import backend.config as cfg  # noqa: E402
 
 cfg.DATA_DIR = TMP / "data"
 cfg.HISTORY_FILE = cfg.DATA_DIR / "history.json"
+cfg.HISTORY_DIR = cfg.DATA_DIR / "history"
+cfg.HISTORY_INDEX_FILE = cfg.HISTORY_DIR / "index.json"
+cfg.HISTORY_ENTRIES_DIR = cfg.HISTORY_DIR / "entries"
 cfg.VT_USAGE_FILE = cfg.DATA_DIR / "vt_usage.json"
 cfg.REPORT_LOG_FILE = cfg.DATA_DIR / "report_log.json"
 cfg.API_USAGE_FILE = cfg.DATA_DIR / "api_usage.json"
@@ -310,6 +314,12 @@ RESULTS: list[dict] = []
 
 VOLATILE_KEYS = {"id", "queried_at", "created_at", "submitted_at", "last_submitted_at", "analysis_id", "time",
                  "age_days", "age_ok", "age_reason", "all_passed", "cooldown_left_minutes", "delta_s"}
+# The attack time of the test reports is computed from the clock, never written down: the age check (60 days) of the
+# hard checks would otherwise start rejecting them as time passes. Two days back, a full hour, UTC. The clock is the one
+# of the code under test (backend.report_utils), so a test can move that clock and the harness follows it.
+from backend import report_utils  # noqa: E402
+
+ATTACK_UTC = (report_utils.datetime.now(timezone.utc) - timedelta(days=2)).replace(minute=0, second=0, microsecond=0)
 ISO_RE = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?([+-]\d\d:\d\d|Z)?")
 VERSION_RE = re.compile(r"Seisa \d+\.\d+\.\d+")
 ID_RE = re.compile(r"\b\d{8}-\d{6}-[0-9a-f]{8}\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b")
@@ -374,7 +384,7 @@ for lang in ("pl", "en"):
     for name, src in FIX.items():
         rec(p + f"abuseipdb analyze {name} no-llm", client.post("/api/abuseipdb/email/analyze", json={"raw_email": src, "use_llm": False}, headers=H))
         rec(p + f"abuseipdb analyze {name} llm", client.post("/api/abuseipdb/email/analyze", json={"raw_email": src, "use_llm": True}, headers=H))
-    fields = {"ip": PUBLIC_IP, "categories": [11], "attack_timestamp": "2026-09-24T10:00:00Z", "comment": "=test \u2014 comment"}
+    fields = {"ip": PUBLIC_IP, "categories": [11], "attack_timestamp": ATTACK_UTC.strftime("%Y-%m-%dT%H:%M:%SZ"), "comment": "=test \u2014 comment"}
     rec(p + "report preview", client.post("/api/abuseipdb/report/preview", json=fields, headers=H))
     rec(p + "report preview private ip", client.post("/api/abuseipdb/report/preview", json={**fields, "ip": "10.0.0.1"}, headers=H))
     rec(p + "dmarc geo", client.get(f"/api/dmarc/geo?ip={PUBLIC_IP}", headers=H))
@@ -394,7 +404,7 @@ for lang in ("pl", "en"):
     rec(p + "report submit outage", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.24"}, headers=H))
     # what goes over the wire: duplicated categories collapse, the comment is ASCII and at most 1024 characters
     rec(p + "report submit wire", client.post("/api/abuseipdb/report/submit", json={
-        "ip": "185.220.101.3" + ("0" if lang == "pl" else "1"), "categories": [11, 11, 7], "attack_timestamp": "2026-09-24T10:00:00+02:00",
+        "ip": "185.220.101.3" + ("0" if lang == "pl" else "1"), "categories": [11, 11, 7], "attack_timestamp": (ATTACK_UTC + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S+02:00"),
         "comment": "za\u017c\u00f3\u0142\u0107 " + "x" * 2000}, headers=H))
     rec(p + "report submit old", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.40", "attack_timestamp": "2020-01-01T00:00:00Z"}, headers=H))
     rec(p + "report submit future", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.41", "attack_timestamp": "2099-01-01T00:00:00Z"}, headers=H))
@@ -611,7 +621,7 @@ for post in _wire:
         failures.append(f"report wire: categories must be a comma-separated list without duplicates, got {form['categories']!r}")
     if len(form["comment"]) > 1024 or not form["comment"].isascii():
         failures.append("report wire: the comment is over 1024 characters or not ASCII")
-    if not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", form["timestamp"]) or form["timestamp"] != "2026-09-24T08:00:00+00:00":
+    if not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\+00:00", form["timestamp"]) or form["timestamp"] != ATTACK_UTC.strftime("%Y-%m-%dT%H:%M:%S+00:00"):
         failures.append(f"report wire: timestamp is not ISO 8601 in UTC of the attack: {form['timestamp']!r}")
     if not post["key"] or post["accept"] != "application/json" or "x-www-form-urlencoded" not in post["content_type"]:
         failures.append(f"report wire: headers wrong (Key set: {bool(post['key'])}, Accept: {post['accept']}, {post['content_type']})")

@@ -6,8 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from backend.config import API_USAGE_FILE, HISTORY_FILE, HISTORY_MAX_ENTRIES, REPORT_LOG_FILE, VT_USAGE_FILE
-from backend.models import HistoryEntry
+from backend.config import API_USAGE_FILE, REPORT_LOG_FILE, VT_USAGE_FILE
 
 
 def atomic_write_json(path: Path, data: dict[str, Any], dir_mode: int | None = None) -> None:
@@ -36,60 +35,6 @@ def _read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
             return json.load(f)
     except (json.JSONDecodeError, OSError):
         return default
-
-
-def load_history() -> list[HistoryEntry]:
-    data = _read_json(HISTORY_FILE, {"entries": []})
-    return [HistoryEntry.model_validate(e) for e in data.get("entries", [])]
-
-
-def save_history(entries: list[HistoryEntry]) -> None:
-    atomic_write_json(HISTORY_FILE, {"entries": [e.model_dump() for e in entries]})
-
-
-def append_history(entry: HistoryEntry) -> None:
-    entries = load_history()
-    entries.insert(0, entry)
-    kept: list[HistoryEntry] = []
-    unpinned = 0
-    for e in entries:  # newest first; the limit counts only the entries that are not pinned
-        if e.pinned:
-            kept.append(e)
-        elif unpinned < HISTORY_MAX_ENTRIES:
-            kept.append(e)
-            unpinned += 1
-    save_history(kept)
-
-
-def delete_history_entry(entry_id: str) -> bool:
-    entries = load_history()
-    remaining = [e for e in entries if e.id != entry_id]
-    if len(remaining) == len(entries):
-        return False
-    save_history(remaining)
-    return True
-
-
-def clear_history() -> None:
-    """Removes every entry except the pinned ones."""
-    save_history([e for e in load_history() if e.pinned])
-
-
-def set_history_pinned(entry_id: str, pinned: bool) -> bool:
-    entries = load_history()
-    for e in entries:
-        if e.id == entry_id:
-            e.pinned = pinned
-            save_history(entries)
-            return True
-    return False
-
-
-def get_history_entry(entry_id: str) -> HistoryEntry | None:
-    for e in load_history():
-        if e.id == entry_id:
-            return e
-    return None
 
 
 def load_vt_usage() -> dict[str, Any]:

@@ -9,7 +9,10 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 LOGS_DIR = BASE_DIR / "logs"
 ANALYSES_DIR = DATA_DIR / "analyses"
 
-HISTORY_FILE = DATA_DIR / "history.json"
+HISTORY_FILE = DATA_DIR / "history.json"  # the single-file history of versions before 2.4.25, read only to migrate it
+HISTORY_DIR = DATA_DIR / "history"
+HISTORY_INDEX_FILE = HISTORY_DIR / "index.json"
+HISTORY_ENTRIES_DIR = HISTORY_DIR / "entries"
 VT_USAGE_FILE = DATA_DIR / "vt_usage.json"
 REPORT_LOG_FILE = DATA_DIR / "report_log.json"
 API_USAGE_FILE = DATA_DIR / "api_usage.json"

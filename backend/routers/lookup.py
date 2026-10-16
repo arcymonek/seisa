@@ -5,9 +5,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.aggregator import detect_indicator_type, is_public_ip, is_valid_indicator, normalize_indicator, run_lookup
+from backend.history_store import append_history, list_history_rows
 from backend.i18n import current_lang, t
 from backend.models import Comparison, HistoryEntry, IndicatorType, ScorePoint, SourceChange
-from backend.storage import append_history, load_history
 
 router = APIRouter()
 
@@ -40,17 +40,17 @@ CHANGE_MIN = 10.0  # a source risk that moved by less is noise, not a change
 def _compare_with_history(result) -> Comparison | None:
     """Earlier scans of the same indicator (newest first in the History): the score difference, the sources whose risk
     moved and the trend. Called before the current scan is saved."""
-    earlier = [e for e in load_history() if e.type == "lookup" and e.label == result.indicator]
+    earlier = [r["trend"] for r in list_history_rows() if r["type"] == "lookup" and r["label"] == result.indicator and "trend" in r]
     if not earlier:
         return None
-    points = []
-    for e in earlier[:TREND_POINTS]:
-        score = (e.data.get("risk_score") or {})
-        if "score" in score and "level" in score:
-            points.append(ScorePoint(queried_at=e.data.get("queried_at") or e.created_at, score=score["score"], level=score["level"]))
+    points = [
+        ScorePoint(queried_at=tr["queried_at"], score=tr["score"], level=tr["level"])
+        for tr in earlier[:TREND_POINTS]
+        if "score" in tr and "level" in tr
+    ]
     if not points:
         return None
-    before = {c["source"]: c.get("risk") for c in (earlier[0].data.get("risk_score") or {}).get("components", [])}
+    before = earlier[0]["risks"]
     after = {c.source: c.risk for c in result.risk_score.components}
     changes = [
         SourceChange(source=src, before=before.get(src), after=after.get(src))

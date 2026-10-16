@@ -16,7 +16,7 @@ import stat
 
 import pytest
 
-from backend import analyses, storage
+from backend import analyses, history_store, storage
 from backend.logging_config import DailyJsonlHandler
 from backend.models import HistoryEntry
 
@@ -25,7 +25,10 @@ from backend.models import HistoryEntry
 def data_dir(tmp_path, monkeypatch):
     old = os.umask(0o022)
     root = tmp_path / "data"
-    monkeypatch.setattr(storage, "HISTORY_FILE", root / "history.json")
+    monkeypatch.setattr(history_store, "HISTORY_FILE", root / "history.json")
+    monkeypatch.setattr(history_store, "HISTORY_DIR", root / "history")
+    monkeypatch.setattr(history_store, "HISTORY_INDEX_FILE", root / "history" / "index.json")
+    monkeypatch.setattr(history_store, "HISTORY_ENTRIES_DIR", root / "history" / "entries")
     monkeypatch.setattr(storage, "REPORT_LOG_FILE", root / "report_log.json")
     monkeypatch.setattr(storage, "VT_USAGE_FILE", root / "vt_usage.json")
     monkeypatch.setattr(storage, "API_USAGE_FILE", root / "api_usage.json")
@@ -38,9 +41,13 @@ def mode(path) -> int:
     return stat.S_IMODE(path.stat().st_mode)
 
 
-def test_history_file_is_private(data_dir):
-    storage.append_history(HistoryEntry(type="lookup", label="x", data={}))
-    assert mode(data_dir / "history.json") == 0o600
+def test_history_files_are_private(data_dir):
+    entry = HistoryEntry(type="lookup", label="x", data={})
+    history_store.append_history(entry)
+    assert mode(data_dir / "history" / "index.json") == 0o600
+    assert mode(data_dir / "history" / "entries" / f"{entry.id}.json") == 0o600
+    assert mode(data_dir / "history") == 0o700
+    assert mode(data_dir / "history" / "entries") == 0o700
 
 
 def test_report_log_is_private(data_dir):

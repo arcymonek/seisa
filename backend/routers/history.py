@@ -1,4 +1,4 @@
-"""History tab: the last lookups, DMARC imports and URL scans (history.json, entries can be pinned) together with the saved
+"""History tab: the last lookups, DMARC imports and URL scans (data/history/, entries can be pinned) together with the saved
 e-mail analyses and the accepted AbuseIPDB reports."""
 from __future__ import annotations
 
@@ -9,18 +9,18 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from backend.analyses import list_analyses
-from backend.config import HISTORY_MAX_ENTRIES, MAX_HISTORY_DATA_CHARS
-from backend.i18n import current_lang, t
-from backend.models import HistoryEntry
-from backend.storage import (
+from backend.config import MAX_HISTORY_DATA_CHARS
+from backend.history_store import (
     append_history,
     clear_history,
     delete_history_entry,
     get_history_entry,
-    load_history,
-    load_report_log,
+    list_history_rows,
     set_history_pinned,
 )
+from backend.i18n import current_lang, t
+from backend.models import HistoryEntry
+from backend.storage import load_report_log
 
 router = APIRouter()
 
@@ -90,30 +90,11 @@ def _check_urlscan_data(data: dict) -> None:
 
 @router.get("/history")
 def list_history():
-    items = [
-        {
-            "id": e.id,
-            "type": e.type,
-            "created_at": e.created_at,
-            "label": e.label,
-            "risk_summary": e.risk_summary,
-            "lang": e.lang,
-            "pinned": e.pinned,
-        }
-        for e in load_history()
-    ]
+    items = [{k: row[k] for k in ("id", "type", "created_at", "label", "risk_summary", "lang", "pinned")} for row in list_history_rows()]
     items += [_email_entry(a) for a in list_analyses() if a.get("id") and a.get("created_at")]
     items += [_report_entry(r) for r in load_report_log() if r.get("success") and r.get("id") and r.get("submitted_at")]
     items.sort(key=lambda i: i["created_at"], reverse=True)
-    shown: list[dict] = []
-    unpinned = 0
-    for item in items:  # the size limit counts only the entries that are not pinned
-        if item["pinned"]:
-            shown.append(item)
-        elif unpinned < HISTORY_MAX_ENTRIES:
-            shown.append(item)
-            unpinned += 1
-    return shown
+    return items  # the size limit is applied when an entry is stored; the list shows everything that exists
 
 
 @router.get("/history/{entry_id}")

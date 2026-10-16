@@ -41,6 +41,9 @@ REAL_DATA_DIR = cfg.DATA_DIR
 
 cfg.DATA_DIR = _TMP / "data"
 cfg.HISTORY_FILE = cfg.DATA_DIR / "history.json"
+cfg.HISTORY_DIR = cfg.DATA_DIR / "history"
+cfg.HISTORY_INDEX_FILE = cfg.HISTORY_DIR / "index.json"
+cfg.HISTORY_ENTRIES_DIR = cfg.HISTORY_DIR / "entries"
 cfg.VT_USAGE_FILE = cfg.DATA_DIR / "vt_usage.json"
 cfg.REPORT_LOG_FILE = cfg.DATA_DIR / "report_log.json"
 cfg.API_USAGE_FILE = cfg.DATA_DIR / "api_usage.json"
