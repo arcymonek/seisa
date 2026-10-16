@@ -1,3 +1,7 @@
+"""Pydantic models shared across the backend and returned by the API: service results, risk score, identity,
+lookup result, comparison and history entry. Data definitions only; no behaviour beyond small helpers that strip
+large fields before saving.
+"""
 from __future__ import annotations
 
 from datetime import datetime, timezone

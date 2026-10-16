@@ -1,3 +1,6 @@
+"""VirusTotal client (IP and domain reputation), built on IntelService. Every call waits for the free-tier limiter
+in ratelimit.py and fails with a readable message when the daily quota is used up. Needs VIRUSTOTAL_API_KEY.
+"""
 from __future__ import annotations
 
 from backend.config import settings

@@ -1,3 +1,7 @@
+"""Small JSON storage in data/: atomic writes (temporary file, then rename) with owner-only permissions, plus
+loaders and savers for the VirusTotal usage counter, the API usage counters and the log of sent reports. Used by
+ratelimit.py, api_limits.py and the AbuseIPDB code.
+"""
 from __future__ import annotations
 
 import json

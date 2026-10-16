@@ -1,3 +1,6 @@
+"""Tests for prune_old_logs: which daily log files are kept, which are deleted, and that other files and a missing
+directory are left alone.
+"""
 from datetime import date
 
 from backend.logging_config import prune_old_logs

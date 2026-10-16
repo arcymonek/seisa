@@ -1,3 +1,7 @@
+"""FastAPI application entry point: builds the app, installs the security middleware (Host check against DNS
+rebinding, Origin/Sec-Fetch-Site guard, Content-Security-Policy, no-cache for static files, language header),
+mounts the routers under /api and serves the static frontend. Seisa listens on 127.0.0.1 only and has no login.
+"""
 from __future__ import annotations
 
 import logging

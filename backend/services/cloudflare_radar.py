@@ -1,3 +1,6 @@
+"""Cloudflare Radar client (IP and domain intelligence), built on IntelService. Registered in aggregator.py and
+used by the Lookup tab; needs CLOUDFLARE_RADAR_API_KEY.
+"""
 from __future__ import annotations
 
 from backend.config import settings

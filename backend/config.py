@@ -1,3 +1,7 @@
+"""Central configuration: filesystem locations (data/, logs/, docs/, frontend/), size and retention limits, and the
+`settings` object that reads API keys from the gitignored .env file. Imported by almost every other module; it has
+no logic beyond defining these values.
+"""
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict

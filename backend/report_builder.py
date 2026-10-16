@@ -1,3 +1,7 @@
+"""Helpers for the AbuseIPDB tab: builds the English report comment from deterministic facts, makes the cheap
+local pre-assessment that works without the LLM, and runs the hard checks (IP, age, categories) that the backend
+always enforces before a report can be sent. Used by routers/abuseipdb_report.py.
+"""
 from __future__ import annotations
 
 from datetime import datetime, timezone

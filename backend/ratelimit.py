@@ -1,3 +1,7 @@
+"""Rate limiting for VirusTotal's free tier: a sliding-window limiter (calls per minute) and a daily counter kept
+in data/vt_usage.json that resets at 00:00 UTC. Used by services/virustotal.py. It only delays or refuses calls
+made by Seisa itself.
+"""
 from __future__ import annotations
 
 import asyncio

@@ -1,3 +1,7 @@
+"""GreyNoise client for IPs: says whether an address is internet background noise. Uses the IP-context endpoint and
+falls back to the free community endpoint when the key's plan has no access. Needs GREYNOISE_API_KEY; domains are
+not supported. Registered in aggregator.py.
+"""
 from __future__ import annotations
 
 import httpx

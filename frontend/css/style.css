@@ -209,7 +209,7 @@ a:hover { color: var(--accent); }
 
 .checklist-item.auto-pending::before { content: "?"; color: var(--muted); font-weight: 700; }
 
-/* --- zakładka Email --- */
+/* --- Email tab --- */
 [hidden] { display: none !important; }
 .fact-flag { display: flex; gap: 8px; padding: 3px 0; font-size: 15px; }
 .fact-flag::before { flex: none; width: 1.2em; }
@@ -346,7 +346,7 @@ mark.em-hit.cur { background: var(--warn); color: var(--on-warn); }
   .em-toc button.on { border-color: var(--accent); }
 }
 
-/* --- zakładka DMARC --- */
+/* --- DMARC tab --- */
 .dropzone.compact { padding: 8px 16px; margin-bottom: 12px; text-align: left; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 16px; }
 .dropzone.compact p { margin: 0; }
 .dropzone.compact .dz-main { font-size: 15.5px; }
@@ -393,7 +393,7 @@ tr.src-row:hover { background: var(--bg-raised); }
 .src-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 8px; }
 .src-actions button { margin: 0; }
 
-/* --- zakładka IP: raport --- */
+/* --- IP tab: report --- */
 .lookup-result + .lookup-result { border-top: 1px solid var(--hair); margin-top: 28px; padding-top: 12px; }
 .report-title { font-family: var(--mono); font-size: 20px; margin: 12px 0 8px; }
 .report-title code { font-family: var(--mono); background: var(--bg-inset); padding: 1px 6px; border-radius: 3px; }
@@ -430,7 +430,7 @@ td.mono { font-family: var(--mono); font-size: 13px; }
 .src-body { padding: 2px 0 8px 18px; }
 .raw-json { background: var(--bg-inset); border-radius: 4px; padding: 12px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; font-family: var(--mono); font-size: 13px; max-height: 600px; overflow: auto; }
 
-/* --- zakładka URLScan --- */
+/* --- URLScan tab --- */
 #us-url { min-height: 0; height: auto; resize: none; overflow-y: auto; }
 button.secondary.on { border-color: var(--accent); color: var(--accent); }
 .us-adv-grid { display: grid; grid-template-columns: max-content minmax(0, 320px); gap: 8px 12px; align-items: center; margin-top: 10px; }
@@ -459,7 +459,7 @@ button.mini.inline, .src-body button.mini.inline { display: inline-block; margin
 .lookup-result [data-sec], .lookup-result details.src { scroll-margin-top: 90px; }
 details.legend { margin-top: 24px; }
 
-/* --- zakładka Email: pytania, porównanie --- */
+/* --- Email tab: questions, comparison --- */
 .em-cmp-bar { margin: 8px 0; }
 .em-cmp-bar button { margin: 0 8px 0 0; }
 .em-cmp tr.em-same td:first-child { border-left: 3px solid var(--pass); }

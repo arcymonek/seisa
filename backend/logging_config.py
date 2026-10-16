@@ -1,3 +1,7 @@
+"""Log setup: warnings and errors go to one JSON-lines file per day in logs/, with owner-only permissions and
+automatic deletion of files older than the retention period. Called once at start-up from main.py. Normal
+operation writes nothing to disk.
+"""
 from __future__ import annotations
 
 import contextlib

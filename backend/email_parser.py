@@ -1,3 +1,7 @@
+"""Deterministic e-mail parser: reads headers and body, walks the Received chain to find the first relay outside the
+recipient's own infrastructure (with a confidence level and reasoning), and extracts attachments, Bitcoin addresses
+and ransom wording. Used by the Email and AbuseIPDB tabs. It is plain Python by design and never calls an LLM.
+"""
 from __future__ import annotations
 
 import hashlib

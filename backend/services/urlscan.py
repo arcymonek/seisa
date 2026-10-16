@@ -1,3 +1,7 @@
+"""urlscan.io client for the URL scan tab: submits a scan, fetches the result, the screenshot and the DOM, and
+searches earlier scans. Functions rather than an IntelService, because a scan is asynchronous and returns files.
+Nothing from a scanned page is opened by Seisa.
+"""
 from __future__ import annotations
 
 import logging

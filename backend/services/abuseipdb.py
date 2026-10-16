@@ -1,3 +1,6 @@
+"""AbuseIPDB client: reputation lookup for an IP and submission of an abuse report. Reads the quota headers of every
+response. Submission is only reached from the AbuseIPDB tab after the hard checks and the user's manual Send.
+"""
 from __future__ import annotations
 
 import httpx

@@ -1,3 +1,7 @@
+"""Runs one IP or domain lookup: normalizes and validates the indicator, queries the selected intelligence services in
+parallel and assembles the LookupResult (score, identity, Markdown). Used by routers/lookup.py. It does not cache
+results and does not call the LLM.
+"""
 from __future__ import annotations
 
 import asyncio

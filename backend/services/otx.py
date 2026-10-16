@@ -1,3 +1,6 @@
+"""AlienVault OTX client (IP and domain pulses), built on IntelService. Registered in aggregator.py and used by the
+Lookup tab; needs OTX_API_KEY.
+"""
 from __future__ import annotations
 
 from datetime import datetime, timezone

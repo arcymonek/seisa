@@ -1,3 +1,7 @@
+"""Common base for the IP/domain intelligence services: IntelService with the standard not-configured,
+not-applicable and error results and a shared JSON fetch with uniform error handling, plus helpers that turn
+exceptions into short readable messages. Concrete clients in this package subclass it.
+"""
 from __future__ import annotations
 
 import inspect
