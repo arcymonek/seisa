@@ -27,7 +27,7 @@ OPENROUTER_APP_HEADERS = {
 # with hidden reasoning can think for a long time before the first byte).
 OPENROUTER_TIMEOUT = httpx.Timeout(30.0, read=120.0)
 
-EM_DASH = "\u2014"  # the project does not use the long dash in UI text (see docs/en/extending.md)
+EM_DASH = "\u2014"  # the project does not use the long dash in UI text (see docs/DEVELOPMENT.md)
 
 # All OpenRouter API errors (Email and AbuseIPDB tabs) go to a single log service.
 logger = logging.getLogger("open_router")

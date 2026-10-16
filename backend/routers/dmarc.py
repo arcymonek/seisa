@@ -13,6 +13,7 @@ from backend.i18n import t
 from backend.known_senders import match_known_sender, resolve_host_ips
 
 router = APIRouter()
+FORWARD_LOOKUP_TIMEOUT = 5.0  # seconds, as the other DNS queries (backend/services/dns_records.py)
 
 
 @router.get("/geo")
@@ -33,7 +34,11 @@ async def geo(ip: str):
         return {"status": "unavailable"}
     known_sender = None
     if rdns and match_known_sender(rdns):
-        ips = await asyncio.to_thread(resolve_host_ips, rdns)
+        try:
+            # a thread cannot be cancelled: after the timeout it runs on in the background and its answer is dropped
+            ips = await asyncio.wait_for(asyncio.to_thread(resolve_host_ips, rdns), timeout=FORWARD_LOOKUP_TIMEOUT)
+        except TimeoutError:
+            ips = set()
         if str(address) in {str(ipaddress.ip_address(x)) for x in ips if _is_ip(x)}:
             known_sender = match_known_sender(rdns)
     return {

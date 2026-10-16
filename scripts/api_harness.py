@@ -65,12 +65,33 @@ def _no_connect(*a, **kw):
 socket.socket.connect = _no_connect
 socket.create_connection = _no_connect
 NO_PTR_IP = "185.220.101.99"  # the address without a PTR record
+# DMARC "geo": a PTR name of a well-known sender that resolves back to the address, and the same name on an address it
+# does not resolve to (anyone can set such a PTR on a rented server)
+KNOWN_SENDER_IP, FORGED_SENDER_IP = "185.220.101.41", "185.220.101.42"
+KNOWN_SENDER_PTR = "mail-sor-f41.google.com"
+FORWARD_LOOKUPS: list[str] = []
+
+
+def _ptr_name(ip):
+    if ip in (KNOWN_SENDER_IP, FORGED_SENDER_IP):
+        return KNOWN_SENDER_PTR
+    return None if ip == NO_PTR_IP else f"rdns-{ip.replace('.', '-')}.example"
 
 
 def _gethostbyaddr(ip):
-    if ip == NO_PTR_IP:
+    if _ptr_name(ip) is None:
         raise socket.herror(1, "Unknown host")
-    return (f"rdns-{ip.replace('.', '-')}.example", [], [ip])
+    return (_ptr_name(ip), [], [ip])
+
+
+def _getaddrinfo(host, *a, **kw):  # the forward check of a known sender's PTR name; never the real resolver
+    FORWARD_LOOKUPS.append(host)
+    if host == KNOWN_SENDER_PTR:
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (KNOWN_SENDER_IP, 0))]
+    raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+
+
+socket.getaddrinfo = _getaddrinfo
 
 
 socket.gethostbyaddr = _gethostbyaddr  # checkouts before 2.4.26 look the name up this way
@@ -293,7 +314,7 @@ try:
     _whois_dns.resolve_domain = _fake_dns
 
     async def _fake_ptr(ip):  # reverse DNS goes through dnspython since 2.4.26; older checkouts use socket.gethostbyaddr above
-        return None if ip == NO_PTR_IP else f"rdns-{ip.replace('.', '-')}.example"
+        return _ptr_name(ip)
 
     _whois_dns.reverse_lookup = _fake_ptr
 except ImportError:  # `--root` points at a checkout from before the DNS records existed
@@ -406,6 +427,8 @@ for lang in ("pl", "en"):
     rec(p + "report preview private ip", client.post("/api/abuseipdb/report/preview", json={**fields, "ip": "10.0.0.1"}, headers=H))
     rec(p + "dmarc geo", client.get(f"/api/dmarc/geo?ip={PUBLIC_IP}", headers=H))
     rec(p + "dmarc geo no ptr", client.get(f"/api/dmarc/geo?ip={NO_PTR_IP}", headers=H))
+    rec(p + "dmarc geo known sender", client.get(f"/api/dmarc/geo?ip={KNOWN_SENDER_IP}", headers=H))
+    rec(p + "dmarc geo forged sender", client.get(f"/api/dmarc/geo?ip={FORGED_SENDER_IP}", headers=H))
     rec(p + "dmarc geo private", client.get("/api/dmarc/geo?ip=10.0.0.1", headers=H))
     rec(p + "dmarc geo invalid", client.get("/api/dmarc/geo?ip=x/../y", headers=H))
     rec(p + "ip-info", client.get(f"/api/abuseipdb/ip-info?ip={PUBLIC_IP}", headers=H))
@@ -429,6 +452,7 @@ for lang in ("pl", "en"):
     rec(p + "report submit no timestamp", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.42", "attack_timestamp": None}, headers=H))
     rec(p + "report submit unknown category", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "185.220.101.43", "categories": [11, 99]}, headers=H))
     rec(p + "report submit private ip", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "10.0.0.1"}, headers=H))
+    rec(p + "report submit shared address", client.post("/api/abuseipdb/report/submit", json={**fields, "ip": "100.64.1.1"}, headers=H))
     pii_comment = "Mail to victim@corp.example from spam@bad.example via 10.1.2.3 and 185.220.101.1 corp.example"
     rec(p + "report preview pii", client.post("/api/abuseipdb/report/preview", json={**fields, "comment": pii_comment, "own_terms": ["victim@corp.example", "corp.example"]}, headers=H))
     rec(p + "report redact", client.post("/api/abuseipdb/report/redact", json={"comment": pii_comment, "own_terms": ["victim@corp.example", "corp.example"]}, headers=H))
@@ -511,7 +535,10 @@ for _name, _hdr in {
     "Origin null": {"Origin": "null"},
     "Sec-Fetch-Site same-origin": {"Sec-Fetch-Site": "same-origin"},
     "Sec-Fetch-Site none": {"Sec-Fetch-Site": "none"},
-    "loopback Origin": {"Origin": "http://localhost:54321"},
+    "loopback Origin": {"Origin": "http://localhost"},  # the client talks to http://127.0.0.1, i.e. port 80
+    "own Origin": {"Origin": "http://127.0.0.1"},
+    "loopback Origin other port": {"Origin": "http://localhost:54321"},
+    "loopback Origin other scheme": {"Origin": "https://127.0.0.1:80"},  # same port, another scheme
     "no fetch metadata": {},
 }.items():
     probes[f"guard GET {_name}"] = client.get(_XSITE_GET, headers=_hdr).status_code
@@ -549,11 +576,11 @@ EXPECTED_STATUS = {
     "urlscan scan defanged": 200, "urlscan scan private host": 400, "urlscan scan bad scheme": 400, "urlscan scan bad visibility": 400,
     "urlscan screenshot bad uuid": 400, "urlscan search": 200, "urlscan search bad url": 400, "urlscan search injection": 400, "history create urlscan": 200, "history create urlscan bad thumbnail": 400,
     "history create urlscan no summary": 400,
-    "report preview": 200, "dmarc geo": 200, "dmarc geo no ptr": 200, "dmarc geo private": 400, "dmarc geo invalid": 400, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
+    "report preview": 200, "dmarc geo": 200, "dmarc geo no ptr": 200, "dmarc geo known sender": 200, "dmarc geo forged sender": 200, "dmarc geo private": 400, "dmarc geo invalid": 400, "ip-info": 200, "report submit bad": 400, "report submit ok": 200,
     "report submit cooldown": 409, "report submit 422": 422, "report submit daily limit": 429, "report submit repeat at api": 409,
     "report submit bad key": 401, "report submit outage": 502, "report submit wire": 200, "report submit old": 400,
     "report submit future": 400, "report submit no timestamp": 400, "report submit unknown category": 400,
-    "report submit private ip": 400, "report preview pii": 200, "report redact": 200, "report history": 200,
+    "report submit private ip": 400, "report submit shared address": 400, "report preview pii": 200, "report redact": 200, "report history": 200,
     "email analyze phishing": 200, "email bad id": 404, "email bad id2": 400,
     "email continue again (not truncated)": 400, "history create dmarc": 200, "history create bad": 400,
     "history entry missing": 404, "static index": 200, "themes list": 200, "themes css": 200,
@@ -592,6 +619,13 @@ if isinstance(_nop, dict) and "services" in _nop and "identity" in _nop:
         failures.append(f"lookup no ptr: unexpected reverse_dns {_nop['services']['whois_rdns']['summary'].get('reverse_dns')!r}")
     if any(f["key"] == "rdns" for f in _nop["identity"]["fields"]):
         failures.append("lookup no ptr: the missing PTR record leaked into the identity as a host name")
+# a well-known sender only when its PTR name resolves back to the address; the forward check never left the harness
+for _name, _want in (("known sender", "Google (Gmail / Workspace)"), ("forged sender", None)):
+    _ks = next((r["body"] for r in RESULTS if r["name"] == f"[en] dmarc geo {_name}"), None)
+    if not isinstance(_ks, dict) or _ks.get("known_sender") != _want:
+        failures.append(f"dmarc geo {_name}: expected known_sender {_want!r}, got {_ks!r}")
+if KNOWN_SENDER_PTR not in FORWARD_LOOKUPS:
+    failures.append("dmarc geo known sender: the forward check of the PTR name did not run")
 _geo = next((r["body"] for r in RESULTS if r["name"] == "[en] dmarc geo no ptr"), None)
 if isinstance(_geo, dict) and _geo.get("reverse_dns") is not None:
     failures.append(f"dmarc geo no ptr: expected no reverse DNS name, got {_geo.get('reverse_dns')!r}")
@@ -793,9 +827,10 @@ finally:
 if [th["id"] for th in _hostile_list] != ["okcopy", "okmask"] or "attacker" in _hostile_css or "body{" in _hostile_css or "extra" in _hostile_css:
     failures.append(f"a hostile theme file got through the theme validator: {[th['id'] for th in _hostile_list]}")
 _blocked = ["guard GET Sec-Fetch-Site cross-site", "guard themes.css cross-site", "guard GET Sec-Fetch-Site same-site", "guard GET foreign Origin", "guard GET Origin null",
+            "guard GET loopback Origin other port", "guard GET loopback Origin other scheme",
             "guard GET dmarc geo cross-site", "guard body-less POST cross-site", "guard preflight foreign Origin",
             "guard icon POST cross-site", "guard icon DELETE cross-site", "guard shutdown POST cross-site"]
-_allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET no fetch metadata",
+_allowed = ["guard GET Sec-Fetch-Site same-origin", "guard GET Sec-Fetch-Site none", "guard GET loopback Origin", "guard GET own Origin", "guard GET no fetch metadata",
             "guard static index cross-site"]
 for _k in _blocked:
     if probes[_k] != 403:

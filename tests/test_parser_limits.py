@@ -8,7 +8,7 @@ generous on purpose (a slow CI runner must not flake), a quadratic regex misses 
 The child process is also what makes the known-slow cases safe to keep in the suite: it is killed after
 KILL_AFTER seconds instead of blocking the run for minutes (there is no `timeout` command on macOS to rely on).
 
-The slow cases found by the 2026-10-15 audit (B03) are fixed; this file keeps them from coming back.
+The slow cases found earlier are fixed; this file keeps them from coming back.
 """
 from __future__ import annotations
 

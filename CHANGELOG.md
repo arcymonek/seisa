@@ -23,6 +23,16 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.30 - 2026-10-16
+- **Origin check with the port:** an `/api/` request whose `Origin` names another port or scheme on this machine (another local application) is now refused (HTTP 403) even when the browser sends no `Sec-Fetch-Site`. Before, only the host name of the Origin was compared, so `http://localhost:9999` passed in browsers without fetch metadata.
+- **Carrier-grade NAT addresses:** `100.64.0.0/10` (RFC 6598 shared address space) counts as a special address everywhere: the AbuseIPDB tab no longer offers or accepts it for a report, and the e-mail analysis treats such a Received hop as internal. Before, the IP tab refused it but the AbuseIPDB tab accepted it.
+- **DMARC "geo" time limit:** the check that a well-known sender's reverse DNS name points back to the address now gives up after 5 s, like the other DNS queries.
+- **AbuseIPDB tab, too large e-mail:** a source over 3 000 000 characters gets the same readable, translated message as in the Email tab instead of a raw validation error.
+- **AbuseIPDB form label:** the address field says "IP address" ("Adres IP"), not "IP address or domain": the tab reports addresses only.
+- **Desktop icon log:** `logs/launcher.log` is overwritten on every start instead of growing for ever; it lies outside the log retention and "Clear logs", and the server's request lines in it name the looked-up addresses.
+- `seisa.sh` prints the quotes around "Install and run" in its "not installed" message; comments no longer point at removed or private files.
+- New tests: `tests/test_origin_guard.py`, shared-address cases in `tests/test_mail_trust.py`, the AbuseIPDB size answer in `tests/test_request_limits.py`, the known-sender check in `tests/test_service_helpers.py`; harness checks for an Origin with another port or scheme, a report of a shared address, and a known and a forged sender in DMARC "geo" (all mutation-checked). Test docstrings no longer refer to a private audit report.
+
 ## 2.4.29 - 2026-10-16
 - **IP tab, every service switched off:** clicking "Check" with no service selected now says "Select at least one service." and asks nobody. Before, the empty list reached the backend, which read it as "all services" and queried all six. The backend now refuses a list with no known service (HTTP 400) on its own, so a frontend fault cannot bring the old behaviour back; a request without a service list still asks every service.
 - **No empty API pages:** FastAPI's `/docs` and `/redoc` are switched off (404). Their pages load scripts from a CDN that the Content-Security-Policy blocks, so they only ever showed an empty page. `/openapi.json` stays.

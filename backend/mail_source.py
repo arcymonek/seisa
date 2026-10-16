@@ -1,7 +1,7 @@
 """One place that turns pasted text into a parsed message and describes its parts; shared by the Email and
 AbuseIPDB tabs.
 
-The two tabs stay separate tools (see CLAUDE.md), but they used to carry their own copies of these small building
+The two tabs stay separate tools, but they used to carry their own copies of these small building
 blocks, and the copies drifted apart: one tab repaired headers that lost their indentation, the other did not; one
 decoded an encoded attachment name, the other did not. Everything here is a pure function of the message text, with
 no network access and no dependence on a tab's wording. This module imports nothing from the rest of the project, so

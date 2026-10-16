@@ -542,6 +542,7 @@
   "common.none": "brak",
   "rb.analysis_time": "Analiza: {time} s",
   "rb.subtitle": "Wklej surowy kod źródłowy podejrzanego e-maila, żeby przygotować i wysłać zgłoszenie nadużycia do AbuseIPDB - z automatyczną ekstrakcją faktów, opcjonalną analizą AI i pełną kontrolą nad treścią przed wysyłką.",
+  "rb.ip_label": "Adres IP",
   "rb.email_source": "Kod źródłowy e-maila (z nagłówkami)",
   "rb.llm_note": "Treść zostanie wysłana do agenta LLM w celu analizy tylko po kliknięciu \"Analizuj\".\n\"Analizuj bez LLM\" nic nie wysyła poza Twój komputer.",
   "rb.llm_note_warn": "UWAGA!",

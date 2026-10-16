@@ -1,6 +1,6 @@
-"""Stage 2 of the 2026-10-15 audit: the building blocks both mail tabs share (loading a message, describing an
+"""The building blocks both mail tabs share (loading a message, describing an
 attachment, reading the receiver's authentication verdicts, the SMTP-AUTH correlation) and the parsing bugs that came
-from keeping two copies of them (B04-B09, B26).
+from keeping two copies of them.
 
 Expected values come from RFCs, BIPs and hand-built messages, never from the output of the code under test. The
 Bitcoin vectors are the published examples of BIP-173, BIP-350 and the Bitcoin Wiki "Address" page.

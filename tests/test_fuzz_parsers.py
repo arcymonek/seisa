@@ -9,8 +9,8 @@ plain ASCII within 1024 characters, and so on.
 Profiles (env `HYPOTHESIS_PROFILE`): `ci` = 300 examples, derandomized (the same inputs on every run, so CI never
 flakes); the default for local runs is 200 random examples. `.hypothesis/` keeps failing examples between runs.
 
-Known bugs from the 2026-10-15 audit are pinned with `xfail(strict=True)` and ONE fixed input (`@example`), so they
-fail every time and flip to red as soon as the bug is fixed (then remove the xfail in the fixing stage).
+Known bugs are pinned with `xfail(strict=True)` and ONE fixed input (`@example`), so they fail every time and flip
+to red as soon as the bug is fixed (then remove the xfail in the fixing change).
 """
 from __future__ import annotations
 
@@ -218,7 +218,7 @@ def test_verdict_parts_come_together(raw):
     assert (v is None) == (c is None)
 
 
-# --- audit 2026-10-15 stage 1 (B01, B02, B03): fixed, kept as properties ------------------------------------------
+# --- fixed parsing bugs (B01, B02, B03), kept as properties -------------------------------------------------------
 
 B01_SRC = (
     "Received: by 2002:a05:6638:4e2f::1 with SMTP id x1; Mon, 5 Oct 2026 10:00:05 -0700\n"
@@ -243,7 +243,7 @@ def test_tabs_agree_on_sender_ip(src):
     a = parse_email(src)
     facts = compute_facts(normalize_source(src))
     # Only when both tabs read the same Received lines: the Email tab does not yet repair a header whose folding was
-    # lost in the middle (audit B06, stage 2), so for such an input the tabs read different text, not different rules.
+    # lost in the middle, so for such an input the tabs read different text, not different rules.
     same_lines = [h["raw"] for h in facts["received"]] == [
         re.sub(r"\s+", " ", v).strip()[:400] for v in parse_message(src).get_all("Received") or []
     ]

@@ -225,7 +225,7 @@ def test_email_tab_has_no_relay_warning_for_a_direct_boundary(name):
     assert not [f for f in flags if f["level"] == "warn" and "relay" in f["text"].lower() and "Received" in f["text"]]
 
 
-# ---- audit 2026-10-15, stage 1 (B01, B02) ----
+# ---- fixed parsing bugs, kept from coming back ----
 
 # The bottom line is forged (it claims the same operator, mx.google.com, wrote it); the line above it is the one the
 # recipient's own infrastructure wrote for the real connecting machine.

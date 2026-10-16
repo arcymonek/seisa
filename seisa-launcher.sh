@@ -28,4 +28,6 @@ fi
 
 umask 077
 mkdir -p logs
-nohup /bin/bash ./seisa.sh >> logs/launcher.log 2>&1 &
+# overwritten on each start: the file lies outside the log retention and "Clear logs", and the server's request lines
+# name the looked-up addresses
+nohup /bin/bash ./seisa.sh > logs/launcher.log 2>&1 &

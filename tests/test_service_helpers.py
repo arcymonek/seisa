@@ -1,7 +1,7 @@
-"""Stage 5 of the 2026-10-15 audit: the shared HTTP helper of the services (`fetch_json` with a status map), GreyNoise on
-top of it, `int_header`, the form check of urlscan, the OTX address-family path, and the WHOIS / reverse-DNS service
-(no PTR, one-line log, time limits). No network: every request goes to an httpx.MockTransport, DNS and WHOIS are
-replaced by functions.
+"""The shared HTTP helper of the services (`fetch_json` with a status map), GreyNoise on top of it, `int_header`, the
+form check of urlscan, the OTX address-family path, the WHOIS / reverse-DNS service (no PTR, one-line log, time limits)
+and the known-sender check of the DMARC "geo" answer. No network: every request goes to an httpx.MockTransport, DNS and
+WHOIS are replaced by functions.
 
 Expected values come from the documentation of the services: GreyNoise answers 404 for an address it has no data about
 and 429 for an exhausted quota (https://docs.greynoise.io), OTX names the path by address family
@@ -16,6 +16,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+import backend.routers.dmarc as dmarc_router
 import backend.services.dns_records as dns_records
 import backend.services.whois_dns as whois_dns
 from backend.aggregator import SERVICE_REGISTRY
@@ -395,3 +396,49 @@ def test_whois_timeout_without_dns_gives_a_readable_error(monkeypatch):
 def test_first_line_cuts_to_the_limit():
     assert whois_dns._first_line("a" * 500 + "\nsecond") == "a" * 200
     assert whois_dns._first_line("   \n") == ""
+
+
+# ---- DMARC "geo": a well-known sender only when its reverse DNS name resolves back to the same address ----
+
+GOOGLE_PTR = "mail-sor-f41.google.com"
+
+
+def _geo_with_ptr(monkeypatch, ptr):
+    async def fake(ip):
+        return ServiceResult(service="whois_rdns", status="ok", summary={"reverse_dns": ptr, "country": "US", "organization": "Example Org", "network_name": "EX-NET"})
+
+    monkeypatch.setattr(SERVICE_REGISTRY["whois_rdns"], "query_ip", fake)
+
+
+def test_dmarc_geo_names_a_forward_confirmed_known_sender(monkeypatch):
+    _geo_with_ptr(monkeypatch, GOOGLE_PTR)
+    monkeypatch.setattr(dmarc_router, "resolve_host_ips", lambda host: {"8.8.4.4"} if host == GOOGLE_PTR else set())
+    body = client.get("/api/dmarc/geo?ip=8.8.4.4", headers={"X-Seisa-Lang": "en"}).json()
+    assert body["known_sender"] == "Google (Gmail / Workspace)"
+
+
+def test_dmarc_geo_ignores_a_ptr_that_does_not_resolve_back(monkeypatch):
+    """Anyone can point the PTR of a rented server at google.com; without the forward match it proves nothing."""
+    _geo_with_ptr(monkeypatch, GOOGLE_PTR)
+    monkeypatch.setattr(dmarc_router, "resolve_host_ips", lambda host: {"142.250.0.1"})
+    body = client.get("/api/dmarc/geo?ip=8.8.4.4", headers={"X-Seisa-Lang": "en"}).json()
+    assert body["status"] == "ok" and body["reverse_dns"] == GOOGLE_PTR and body["known_sender"] is None
+
+
+def test_dmarc_geo_does_not_wait_for_a_silent_resolver(monkeypatch):
+    _geo_with_ptr(monkeypatch, GOOGLE_PTR)
+    monkeypatch.setattr(dmarc_router, "FORWARD_LOOKUP_TIMEOUT", 0.2)
+
+    def stuck(host):
+        time.sleep(2)
+        return {"8.8.4.4"}
+
+    monkeypatch.setattr(dmarc_router, "resolve_host_ips", stuck)
+    # one event loop for the whole block, as in the real server: a client per request would close its loop after the
+    # answer and wait there for the abandoned thread
+    with TestClient(app, base_url="http://127.0.0.1") as live:
+        started = time.monotonic()
+        body = live.get("/api/dmarc/geo?ip=8.8.4.4", headers={"X-Seisa-Lang": "en"}).json()
+        elapsed = time.monotonic() - started
+    assert elapsed < 1.5
+    assert body["status"] == "ok" and body["known_sender"] is None

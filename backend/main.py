@@ -66,13 +66,28 @@ SAME_ORIGIN_FETCH_SITES = {"same-origin", "none"}
 _last_block_log = 0.0
 
 
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _is_own_origin(origin: str, request: Request) -> bool:
+    """True when the Origin is the page this server itself serves: the same scheme and port as the request and a
+    loopback name. The port is part of the origin, so a page of another local application does not pass."""
+    try:
+        parts = urlsplit(origin)
+        port = parts.port or _DEFAULT_PORTS.get(parts.scheme)
+    except ValueError:  # a malformed port
+        return False
+    own_port = request.url.port or _DEFAULT_PORTS.get(request.url.scheme)
+    return parts.hostname in LOOPBACK_HOSTS and parts.scheme == request.url.scheme and port == own_port
+
+
 class OriginGuardMiddleware(BaseHTTPMiddleware):
     """Refuses /api/ requests that another web page makes through the user's browser.
 
     The Host check stops DNS rebinding, but a page in another tab can still fire a plain GET (an <img> tag) or a
     body-less POST at 127.0.0.1 without a preflight and burn the API quotas. Browsers label such requests with
     Sec-Fetch-Site (anything but same-origin/none, so same-site too: another port on this host is another application)
-    and Origin. Requests without either header (curl, scripts, older browsers) pass: this is not authentication, a
+    and Origin (it must name this server: scheme, loopback name and port). Requests without either header (curl, scripts, older browsers) pass: this is not authentication, a
     local process can send any header. Static files stay open so that a link to the tool does not give a 403.
     """
 
@@ -82,7 +97,7 @@ class OriginGuardMiddleware(BaseHTTPMiddleware):
             site = request.headers.get("sec-fetch-site")
             origin = request.headers.get("origin")
             foreign = (site is not None and site not in SAME_ORIGIN_FETCH_SITES) or (
-                origin is not None and urlsplit(origin).hostname not in LOOPBACK_HOSTS
+                origin is not None and not _is_own_origin(origin, request)
             )
             if foreign:
                 now = time.monotonic()

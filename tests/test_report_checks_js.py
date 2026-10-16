@@ -1,7 +1,7 @@
 """The "Received verified" check of the AbuseIPDB tab (frontend/js/report-checks.js), run through Node.
 
 It used to be green whenever the code had found an address, whatever address the form held and however unsure the code
-was (audit 2026-10-15, B12). Skipped when Node is missing."""
+was. Skipped when Node is missing."""
 from __future__ import annotations
 
 import json

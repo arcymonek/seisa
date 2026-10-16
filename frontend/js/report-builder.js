@@ -81,7 +81,7 @@ export function initReportBuilder(container) {
 
     <div class="card" id="rb-form" hidden>
       <h3>${e(t("rb.form_title"))}</h3>
-      <label for="rb-ip">${e(t("lookup.ip_address"))}</label>
+      <label for="rb-ip">${e(t("rb.ip_label"))}</label>
       <input type="text" id="rb-ip" autocomplete="off" spellcheck="false">
       <div id="rb-ip-info"></div>
       <div id="rb-previous"></div>

@@ -1,5 +1,5 @@
 """frontend/js/api.js through Node: the message of a failed request is the backend's `detail` for plain requests AND for
-the streamed ones (audit 2026-10-15, B20: a refused stream used to show only "HTTP 422"), and history ids are encoded in
+the streamed ones (a refused stream used to show only "HTTP 422"), and history ids are encoded in
 every URL. Skipped when Node is missing."""
 from __future__ import annotations
 

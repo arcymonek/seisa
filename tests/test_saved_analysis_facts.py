@@ -2,7 +2,7 @@
 
 An analysis saved by an older version carries the facts of that day. Later versions fixed how some facts are read (the
 sender address, attachment names, the receiver's verdicts), so the saved ones can be wrong. The file is never changed:
-the answer only gains `facts_current` and `facts_changed` (audit 2026-10-15, B14)."""
+the answer only gains `facts_current` and `facts_changed`."""
 from __future__ import annotations
 
 import copy

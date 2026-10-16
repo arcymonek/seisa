@@ -74,7 +74,14 @@ def test_is_special_ip_true(ip):
     assert is_special_ip(ip) is True
 
 
-@pytest.mark.parametrize("ip", ["8.8.8.8", "1.1.1.1", "176.9.44.107", "2606:4700:4700::1111"])
+@pytest.mark.parametrize("ip", ["100.64.0.1", "100.100.5.5", "100.127.255.254"])
+def test_shared_address_space_is_special(ip):
+    """RFC 6598 shared address space (carrier-grade NAT, 100.64.0.0/10) is inside a provider's network, never a sender
+    on the internet; listed explicitly because the stdlib's is_private for it differs between Python releases."""
+    assert is_special_ip(ip) is True
+
+
+@pytest.mark.parametrize("ip", ["8.8.8.8", "1.1.1.1", "176.9.44.107", "2606:4700:4700::1111", "100.63.255.255", "100.128.0.1"])
 def test_is_special_ip_false_for_public(ip):
     assert is_special_ip(ip) is False
 
@@ -212,3 +219,9 @@ def test_hop_specific_auth_ignores_a_forged_header_planted_elsewhere():
         ("Subject", "x"),
     ]
     assert hop_specific_auth(headers, hop_count=1) == {}
+
+
+def test_the_abuseipdb_tab_does_not_report_a_shared_address():
+    from backend.report_utils import is_reportable_ip
+
+    assert is_reportable_ip("100.64.1.1")[0] is False

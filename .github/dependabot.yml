@@ -1,5 +1,5 @@
 # Keeps the pinned GitHub Actions in .github/workflows/ up to date. Python dependencies are updated by hand on purpose:
-# a change to requirements.txt / requirements.lock is a change to the program and needs a version bump (see docs/en/extending.md, Versioning).
+# a change to requirements.txt / requirements.lock is a change to the program and needs a version bump (see docs/DEVELOPMENT.md).
 version: 2
 updates:
   - package-ecosystem: "github-actions"

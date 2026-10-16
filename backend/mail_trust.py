@@ -27,11 +27,17 @@ def parse_ip(candidate: str | None) -> str | None:
         return None
 
 
+# RFC 6598 shared address space (carrier-grade NAT): listed explicitly, the stdlib's is_private for it differs
+# between Python releases
+SHARED_ADDRESS_SPACE = ipaddress.ip_network("100.64.0.0/10")
+
+
 def is_special_ip(ip_str: str) -> bool:
     ip = ipaddress.ip_address(ip_str)
     return (
         ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved
         or ip.is_multicast or ip.is_unspecified
+        or (ip.version == 4 and ip in SHARED_ADDRESS_SPACE)
     )
 
 

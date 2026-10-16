@@ -27,7 +27,7 @@ def run(records):
 
 
 def test_every_message_passes_one_method_is_not_high():
-    # SPF aligned but DKIM not, and the other way round: all 20 messages pass DMARC (audit 2026-10-15, B11)
+    # SPF aligned but DKIM not, and the other way round: all 20 messages pass DMARC
     out = run([rec("8.8.8.8", 10, "pass", "fail"), rec("8.8.8.8", 10, "fail", "pass")])
     assert out["rows"] == [{"sourceIp": "8.8.8.8", "count": 20, "dmarcFail": 0, "risk": "medium"}]
     assert out["byIp"] == {"8.8.8.8": "medium"}

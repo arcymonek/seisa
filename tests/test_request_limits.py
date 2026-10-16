@@ -1,5 +1,5 @@
-"""Size limits on request bodies (audit 2026-10-15 B19): absurd bodies are refused by the model before any parsing, while
-the friendly "source too large" answer of the Email tab keeps working for sources between the two ceilings."""
+"""Size limits on request bodies: absurd bodies are refused by the model before any parsing, while the friendly
+"source too large" answer of the Email and AbuseIPDB tabs keeps working for sources between the two ceilings."""
 from __future__ import annotations
 
 import json
@@ -27,7 +27,7 @@ def test_email_request_refuses_more_than_twice_the_source_limit():
 def test_email_endpoints_answer_422_for_an_absurd_body(path):
     res = client.post(path, json={"raw_email": "a" * (2 * MAX_SOURCE_CHARS + 1), "use_llm": False}, headers=H)
     assert res.status_code == 422
-    assert isinstance(res.json()["detail"], list)  # the frontend shows it as text since stage 5
+    assert isinstance(res.json()["detail"], list)  # the frontend shows it as text (field: message)
 
 
 def test_a_source_over_the_limit_still_gets_the_friendly_message():
@@ -53,3 +53,18 @@ def test_own_terms_items_are_limited_to_the_length_of_an_address(model):
         model(**base, own_terms=["a" * 243 + "@example.org"])
     with pytest.raises(ValidationError):
         model(**base, own_terms=["x"] * 21)
+
+
+def test_abuseipdb_source_over_the_limit_gets_the_friendly_message():
+    """The AbuseIPDB tab answers like the Email tab: a readable, translated message instead of a raw validation error."""
+    res = client.post("/api/abuseipdb/email/analyze", json={"raw_email": "a" * (MAX_SOURCE_CHARS + 1), "use_llm": False}, headers=H)
+    assert res.status_code == 413
+    detail = res.json()["detail"]
+    assert isinstance(detail, str) and str(MAX_SOURCE_CHARS) in detail and "raw_email" not in detail
+    pl = client.post("/api/abuseipdb/email/analyze", json={"raw_email": "a" * (MAX_SOURCE_CHARS + 1), "use_llm": False}, headers={"X-Seisa-Lang": "pl"})
+    assert "Źródło jest za duże" in pl.json()["detail"]
+
+
+def test_abuseipdb_absurd_body_is_still_refused_by_the_model():
+    res = client.post("/api/abuseipdb/email/analyze", json={"raw_email": "a" * (2 * MAX_SOURCE_CHARS + 1), "use_llm": False}, headers=H)
+    assert res.status_code == 422

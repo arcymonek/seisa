@@ -61,7 +61,9 @@ def _previous_reports(ip: str) -> dict:
 
 
 class EmailAnalyzeRequest(BaseModel):
-    raw_email: str = Field(max_length=MAX_SOURCE_CHARS)
+    # A safety net only: absurd bodies are refused before they are parsed; the friendly "too large" message below
+    # applies to MAX_SOURCE_CHARS (as in the Email tab).
+    raw_email: str = Field(max_length=2 * MAX_SOURCE_CHARS)
     use_llm: bool = True
 
 
@@ -146,6 +148,8 @@ def _api_timestamp(value: str | None) -> str:
 
 @router.post("/email/analyze")
 async def analyze_email(req: EmailAnalyzeRequest):
+    if len(req.raw_email) > MAX_SOURCE_CHARS:
+        raise HTTPException(status_code=413, detail=t("email.source_too_large", size=len(req.raw_email), limit=MAX_SOURCE_CHARS))
     # the parsing runs off the event loop: a hostile message must not freeze the other tabs while it is analysed
     msg = await asyncio.to_thread(parse_message, req.raw_email)
     facts = await asyncio.to_thread(parse_email, msg)

@@ -5,7 +5,7 @@ Each test runs under the common umask 022 (the default on macOS and most Linux s
 created file at 0644, so a writer that forgets to restrict the mode is caught. Paths are redirected into a temporary
 directory (the writers copy the `backend.config` paths at import time, hence the monkeypatching of each module).
 
-The daily logs (logs/*.jsonl) are covered too (audit 2026-10-15 B17).
+The daily logs (logs/*.jsonl) are covered too.
 """
 from __future__ import annotations
 
