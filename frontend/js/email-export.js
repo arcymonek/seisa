@@ -1,7 +1,8 @@
 // Email tab: the protocol of the verdict line, labels shared by the tab modules and the .md export of an analysis
 // (metadata + deterministic analysis + LLM analysis; labels follow the UI language at export time).
 import { t, fmtDateTime } from "./i18n.js";
-import { factsToMarkdown, mdCode } from "./email-facts.js";
+import { factsToMarkdown } from "./email-facts.js";
+import { mdCode, mdText, safeMarkdownText } from "./markdown-export.js";
 
 // First line of the analysis: machine protocol with canonical English codes (see backend/verdict.py). The Polish
 // tokens of analyses saved earlier are still accepted and mapped to the canonical codes.
@@ -35,11 +36,11 @@ export const citationKind = (kind) => (CITATION_KIND[kind] ? t(CITATION_KIND[kin
 
 export function buildExport(S) {
   const created = S.createdAt ? new Date(S.createdAt) : new Date();
-  const L = [`# ${t("em.x.title", { subject: S.subject || t("em.no_subject") })}`, ""];
+  const L = [`# ${t("em.x.title", { subject: mdText(S.subject) || t("em.no_subject") })}`, ""];
   L.push(`- ${t("em.x.date", { date: fmtDateTime(created) })}`);
   if (S.lang) L.push(`- ${t("em.x.lang", { lang: langName(S.lang) })}`);
   if (S.verdict) L.push(`- ${t("em.x.verdict", { verdict: verdictLabel(S.verdict) })}`);
-  if (S.model) L.push(`- ${t("em.x.model", { model: S.model })}`);
+  if (S.model) L.push(`- ${t("em.x.model", { model: mdCode(S.model) })}`);
   const u = S.usage;
   if (u && u.prompt_tokens != null) {
     L.push(`- ${t("em.x.tokens", { input: u.prompt_tokens, output: u.completion_tokens })}` + (u.total_tokens ? ` (${t("em.x.total", { n: u.total_tokens })})` : ""));
@@ -48,7 +49,7 @@ export function buildExport(S) {
   if (S.truncated) L.push(`- ${t("em.x.truncated")}`);
   L.push("");
   if (S.facts) L.push("---", "", ...factsToMarkdown(S.facts));
-  L.push("---", "", parseStream(S.stream).body, "");
+  L.push("---", "", safeMarkdownText(parseStream(S.stream).body), "");
   const cc = S.citations;
   if (cc && !cc.error) {
     L.push("---", "", `## ${t("em.x.citations")}`, "");
@@ -56,7 +57,7 @@ export function buildExport(S) {
       L.push(t("em.x.citations_ok", { n: cc.checked }), "");
     } else {
       L.push(t("em.x.citations_bad", { bad: cc.issues.length, n: cc.checked }), "");
-      cc.issues.forEach((i) => L.push(`- ${citationKind(i.kind)}: ${mdCode(i.text)} - ${i.note}`));
+      cc.issues.forEach((i) => L.push(`- ${citationKind(i.kind)}: ${mdCode(i.text)} - ${mdText(i.note)}`));
       L.push("");
     }
   }

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import html
 import json
+import re
 
 from backend.i18n import t
+from backend.markdown_utils import fence, flat, md_cell, md_code, md_text
 from backend.models import Identity, RiskScore, ServiceResult
 
 SERVICE_TITLES = {
@@ -32,11 +35,16 @@ def status_label(status: str) -> str:
     return t(STATUS_KEYS[status]) if status in STATUS_KEYS else status
 
 
+# Addresses that Seisa builds itself from an identifier (the shape is checked, the identifier came from a service) stay
+# clickable; every other address in a service answer is untrusted and is shown defanged.
+_TRUSTED_LINK = re.compile(r"^https://www\.abuseipdb\.com/user/\d+$")
+
+
 def _format_scalar(value) -> str:
-    """URLs as clickable autolinks (CommonMark <url> syntax), everything else unchanged."""
-    if isinstance(value, str) and (value.startswith(("http://", "https://"))):
+    """A value from a service: a clickable autolink for an address Seisa built itself, inert text for everything else."""
+    if isinstance(value, str) and _TRUSTED_LINK.fullmatch(value):
         return f"<{value}>"
-    return str(value)
+    return md_text(value)
 
 
 def _render_value_lines(value, indent: int = 0) -> list[str]:
@@ -48,10 +56,10 @@ def _render_value_lines(value, indent: int = 0) -> list[str]:
             if v in (None, "", [], {}):
                 continue
             if isinstance(v, (dict, list)):
-                lines.append(f"{pad}- {k}:")
+                lines.append(f"{pad}- {md_text(k)}:")
                 lines.extend(_render_value_lines(v, indent + 1))
             else:
-                lines.append(f"{pad}- {k}: {_format_scalar(v)}")
+                lines.append(f"{pad}- {md_text(k)}: {_format_scalar(v)}")
     elif isinstance(value, list):
         for item in value:
             if isinstance(item, (dict, list)):
@@ -68,7 +76,8 @@ def numbered_code_block(text: str, lang: str = "json") -> list[str]:
     src_lines = text.split("\n")
     width = len(str(len(src_lines)))
     numbered = [f"{str(i + 1).rjust(width)} | {line}" for i, line in enumerate(src_lines)]
-    return [f"```{lang}", *numbered, "```"]
+    marker = fence(text)
+    return [f"{marker}{lang}", *numbered, marker]
 
 
 def _identity_lines(identity: Identity, indicator_type: str = "ip") -> list[str]:
@@ -83,10 +92,10 @@ def _identity_lines(identity: Identity, indicator_type: str = "ip") -> list[str]
             others = "; ".join(f"{v.value} ({', '.join(SERVICE_TITLES.get(s, s) for s in v.sources)})" for v in f.variants[1:])
             agreement = f"{agreement} - {t('identity.other_values')}: {others}"
         cells = (t(f"identity.f.{f.key}"), f.value, agreement)
-        lines.append("| " + " | ".join(c.replace("|", "\\|") for c in cells) + " |")
+        lines.append("| " + " | ".join(md_cell(c) for c in cells) + " |")
     lines.append("")
     for note in identity.notes:
-        lines.append(f"> {note}")
+        lines.append(f"> {md_text(note)}")
         lines.append("")
     return lines
 
@@ -99,7 +108,7 @@ def build_markdown(
     indicator_type: str = "ip",
 ) -> str:
     lines: list[str] = []
-    lines.append(f"# {t('md.report_title')} - `{indicator}`")
+    lines.append(f"# {t('md.report_title')} - {md_code(indicator)}")
     lines.append("")
     lines.append(f"## {t('md.aggregate_score')}: {risk_score.level.upper()} ({risk_score.score}/100)")
     lines.append("")
@@ -107,7 +116,7 @@ def build_markdown(
         lines.append(t("md.score_based_on", used=risk_score.sources_used, possible=risk_score.sources_possible))
         lines.append("")
     for note in risk_score.notes:
-        lines.append(f"> {note}")
+        lines.append(f"> {md_text(note)}")
         lines.append("")
     if risk_score.components:
         lines.append(f"### {t('md.components')}")
@@ -115,10 +124,10 @@ def build_markdown(
         lines.append(f"| {t('md.col_source')} | {t('md.col_signal')} | {t('md.col_value')} | {t('md.col_risk')} | {t('md.col_credibility')} |")
         lines.append("|---|---|---|---|---|")
         for c in risk_score.components:
-            lines.append(f"| {c.source} | {c.signal} | {c.value} | {c.risk} | {c.weight} |")
+            lines.append("| " + " | ".join(md_cell(x) for x in (c.source, c.signal, c.value, c.risk, c.weight)) + " |")
         lines.append("")
     if risk_score.excluded_sources:
-        lines.append(f'<div class="excluded-sources">{t("md.excluded")}: {"; ".join(risk_score.excluded_sources)}</div>')
+        lines.append(f'<div class="excluded-sources">{t("md.excluded")}: {html.escape(flat("; ".join(risk_score.excluded_sources)))}</div>')
         lines.append("")
 
     if identity and identity.fields:
@@ -132,30 +141,30 @@ def build_markdown(
         lines.append(f"{t('md.status')}: **{status_label(result.status)}**")
         lines.append("")
         if result.error_message:
-            lines.append(f"> {result.error_message}")
+            lines.append(f"> {md_text(result.error_message)}")
             lines.append("")
         elif result.summary:
             for key, value in result.summary.items():
                 if value in (None, "", [], {}):
                     continue
                 if isinstance(value, (dict, list)):
-                    lines.append(f"- **{key}**:")
+                    lines.append(f"- **{md_text(key)}**:")
                     lines.extend(_render_value_lines(value, indent=1))
                 elif isinstance(value, str) and "\n" in value:
                     # multi-line text (e.g. a raw WHOIS record) - one source line = one list item, so that plain
                     # content neither merges into one paragraph nor looks like a code block
-                    lines.append(f"- **{key}**:")
+                    lines.append(f"- **{md_text(key)}**:")
                     for raw_line in value.strip().split("\n"):
                         entry = raw_line.strip()
                         if not entry:
                             continue
                         if ":" in entry:
                             sub_key, sub_val = entry.split(":", 1)
-                            lines.append(f"  - **{sub_key.strip()}**: {_format_scalar(sub_val.strip())}")
+                            lines.append(f"  - **{md_text(sub_key)}**: {_format_scalar(sub_val)}")
                         else:
                             lines.append(f"  - {_format_scalar(entry)}")
                 else:
-                    lines.append(f"- **{key}**: {_format_scalar(value)}")
+                    lines.append(f"- **{md_text(key)}**: {_format_scalar(value)}")
             lines.append("")
         if result.raw:
             lines.append(f"<details><summary>{t('md.full_api_response')}</summary>")

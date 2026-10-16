@@ -8,6 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, registerDirtyCheck } from "./i18n.js";
 import { abuseTileHtml, checkLabel, checksCardHtml, ipCardHtml, legendHtml, tilesHtml, verdictBannerHtml } from "./report-result.js";
+import { receivedCheck } from "./report-checks.js";
 import { reportMarkdown } from "./report-export.js";
 import { findReport, initReportHistory, refreshReportHistory } from "./report-history.js";
 import { bindEmlInput, copyText, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
@@ -493,11 +494,7 @@ function checksModel() {
     ["cooldown", S.cooldownLeft ? "fail" : "pass", S.cooldownLeft ? t("rb.cooldown_note", { minutes: S.cooldownLeft }) : ""],
     ["verdict", { yes: "pass", no: "fail", unknown: "unknown" }[S.verdict], t("rb.verdict." + S.verdict)],
   ];
-  const received = S.llm && S.llm.received_verified
-    ? llmItem("received_verified")
-    : facts && facts.trusted_source_ip
-      ? ["received_verified", "pass", t("rb.note.received_ok")]
-      : ["received_verified", "unknown", t("rb.note.no_email_manual")];
+  const received = receivedCheck({ facts, llmItem: S.llm && S.llm.received_verified, formIp: $("#rb-ip") ? $("#rb-ip").value : "" });
   const notSpoofed = llmItem("not_spoofed_source", facts ? needsLlm : t("rb.note.no_email_auto"));
   const blocking = [received, notSpoofed];
   const spoof = facts ? spoofingCheck(facts) : [noEmail, "unknown"];

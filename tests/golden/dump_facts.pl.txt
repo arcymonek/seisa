@@ -186,8 +186,8 @@
    "urls_plain": []
   },
   "parse_email": {
-   "age_days": 24,
-   "age_ok": true,
+   "age_days": "<depends on today>",
+   "age_ok": "<depends on today>",
    "attachments": [],
    "boundary_auth_corroboration": null,
    "btc_addresses_found": [],
@@ -475,8 +475,8 @@
    ]
   },
   "parse_email": {
-   "age_days": 24,
-   "age_ok": true,
+   "age_days": "<depends on today>",
+   "age_ok": "<depends on today>",
    "attachments": [],
    "boundary_auth_corroboration": null,
    "btc_addresses_found": [],
@@ -771,8 +771,8 @@
    "urls_plain": []
   },
   "parse_email": {
-   "age_days": 22,
-   "age_ok": true,
+   "age_days": "<depends on today>",
+   "age_ok": "<depends on today>",
    "attachments": [],
    "boundary_auth_corroboration": {
     "consistent": true,
@@ -1406,8 +1406,8 @@
    "urls_plain": []
   },
   "parse_email": {
-   "age_days": 22,
-   "age_ok": true,
+   "age_days": "<depends on today>",
+   "age_ok": "<depends on today>",
    "attachments": [
     {
      "apparent_extension": "pdf",

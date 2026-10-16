@@ -2,6 +2,7 @@
 // Markdown export of the whole analysis. Every value that came from the XML goes into a code span in Markdown.
 import { t, tn } from "./i18n.js";
 import { escapeHtml as e } from "./util.js";
+import { mdCell, mdCode } from "./markdown-export.js";
 import { dailyStats, fmtDate, fmtDateTime, fmtPct, isPass, providerStats, riskLevel, sumBy } from "./dmarc-data.js";
 
 function alignWord(v) {
@@ -61,10 +62,8 @@ export function reportFields(m, records) {
   return fields;
 }
 
-// Every value that came from the XML goes into a code span, so nothing in it can act as Markdown or HTML.
-const mdCode = (v) => "`" + String(v ?? "-").replace(/`/g, "'").replace(/\s+/g, " ").trim() + "`";
-
-const mdCell = (v) => mdCode(v).replace(/\|/g, "\\|");
+// Every value that came from the XML goes into a code span (mdCode), so nothing in it can act as Markdown or HTML.
+const codeCell = (v) => mdCell(mdCode(v));
 
 function authText(list, extraKey, kind) {
   if (!list.length) return t("dmarc.no_auth_data", { section: kind });
@@ -84,7 +83,7 @@ export function buildMarkdown({ reportMeta, records, sources }) {
   if (reportMeta.length > 1) {
     out.push(`## ${t("dmarc.h_providers")}`, "");
     out.push(`| ${t("dmarc.f_provider")} | ${t("dmarc.col_reports")} | ${t("dmarc.col_messages")} | ${t("dmarc.kpi_pass")} | ${t("dmarc.col_failed")} |`, "|---|---|---|---|---|");
-    providerStats(records, reportMeta).forEach((g) => out.push(`| ${mdCell(g.org)} | ${g.reports} | ${g.messages} | ${fmtPct(g.messages - g.failed, g.messages)} | ${g.failed} |`));
+    providerStats(records, reportMeta).forEach((g) => out.push(`| ${codeCell(g.org)} | ${g.reports} | ${g.messages} | ${fmtPct(g.messages - g.failed, g.messages)} | ${g.failed} |`));
     out.push("");
   }
 
@@ -107,7 +106,7 @@ export function buildMarkdown({ reportMeta, records, sources }) {
   out.push(`| IP | ${t("dmarc.col_messages")} | SPF | DKIM | ${t("dmarc.col_decision")} | ${t("dmarc.col_risk")} |`, "|---|---|---|---|---|---|");
   sources.forEach((s) => {
     const decision = [s.reject && `reject ${s.reject}`, s.quarantine && `quarantine ${s.quarantine}`, s.none && `none ${s.none}`].filter(Boolean).join(", ") || "-";
-    out.push(`| ${mdCell(s.sourceIp)} | ${s.count} | pass ${s.spfPass} / fail ${s.spfFail} | pass ${s.dkimPass} / fail ${s.dkimFail} | ${decision} | ${t("risk." + riskLevel(s))} |`);
+    out.push(`| ${codeCell(s.sourceIp)} | ${s.count} | pass ${s.spfPass} / fail ${s.spfFail} | pass ${s.dkimPass} / fail ${s.dkimFail} | ${decision} | ${t("risk." + riskLevel(s))} |`);
   });
   out.push("");
 

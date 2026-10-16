@@ -10,3 +10,6 @@ coverage>=7.16,<8
 pip-audit>=2.10,<3
 # licence check of requirements.lock (CI job `dependencies`)
 pip-licenses>=5.5,<6
+# CommonMark parser used by the Markdown-export tests (tests/test_markdown_safety.py, tests/test_markdown_export_js.py) to check
+# that exported files hold no live image, link or HTML. Not a requirement of the program.
+markdown-it-py>=4,<5

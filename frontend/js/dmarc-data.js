@@ -16,6 +16,12 @@ function txt(el, sel) {
   return node ? node.textContent.trim() : null;
 }
 
+// A message count from the XML. A negative or unreadable number counts as 0: it must never subtract from a total.
+export const countOf = (n) => (Number.isFinite(n) && n > 0 ? n : 0);
+
+// Records saved in the History by an older version may carry a count that countOf would now reject.
+export const withSafeCounts = (records) => records.map((r) => (countOf(r.count) === r.count ? r : { ...r, count: countOf(r.count) }));
+
 function epoch(value) {
   const n = parseInt(value, 10);
   return Number.isFinite(n) ? new Date(n * 1000) : null;
@@ -69,11 +75,10 @@ export function parseReport(xmlString, filename, reportIdx) {
   };
 
   const records = Array.from(doc.querySelectorAll("record"), (rec) => {
-    const count = parseInt(txt(rec, "row > count") || "1", 10);
     return {
       reportIdx,
       sourceIp: txt(rec, "row > source_ip") || "?",
-      count: Number.isFinite(count) ? count : 1,
+      count: countOf(parseInt(txt(rec, "row > count") || "1", 10)),
       disposition: lower(txt(rec, "row > policy_evaluated > disposition"), "unknown"),
       dkimEval: lower(txt(rec, "row > policy_evaluated > dkim"), "fail"),
       spfEval: lower(txt(rec, "row > policy_evaluated > spf"), "fail"),
@@ -120,6 +125,7 @@ export function aggregate(records, reportMeta) {
         spfFail: 0,
         dkimPass: 0,
         dkimFail: 0,
+        dmarcFail: 0, // messages where neither SPF nor DKIM was aligned (the only ones that fail DMARC)
         none: 0,
         quarantine: 0,
         reject: 0,
@@ -129,14 +135,16 @@ export function aggregate(records, reportMeta) {
       };
     }
     const b = byIp[r.sourceIp];
-    b.count += r.count;
-    if (r.spfEval === "pass") b.spfPass += r.count;
-    else b.spfFail += r.count;
-    if (r.dkimEval === "pass") b.dkimPass += r.count;
-    else b.dkimFail += r.count;
-    if (r.disposition === "none") b.none += r.count;
-    else if (r.disposition === "quarantine") b.quarantine += r.count;
-    else if (r.disposition === "reject") b.reject += r.count;
+    const n = countOf(r.count);
+    b.count += n;
+    if (r.spfEval === "pass") b.spfPass += n;
+    else b.spfFail += n;
+    if (r.dkimEval === "pass") b.dkimPass += n;
+    else b.dkimFail += n;
+    if (!isPass(r)) b.dmarcFail += n;
+    if (r.disposition === "none") b.none += n;
+    else if (r.disposition === "quarantine") b.quarantine += n;
+    else if (r.disposition === "reject") b.reject += n;
     if (m.begin && (!b.earliestSeen || m.begin < b.earliestSeen)) b.earliestSeen = m.begin;
     if (m.end && (!b.latestSeen || m.end > b.latestSeen)) b.latestSeen = m.end;
     b.records.push(r);
@@ -144,10 +152,26 @@ export function aggregate(records, reportMeta) {
   return Object.values(byIp);
 }
 
+// high: some message of this source failed DMARC (neither SPF nor DKIM aligned, counted per message, not per source);
+// medium: no message failed DMARC, but some failed SPF or DKIM; low: every message passed both.
 export function riskLevel(row) {
-  if (row.spfFail > 0 && row.dkimFail > 0) return "high";
+  if (row.dmarcFail > 0) return "high";
   if (row.spfFail > 0 || row.dkimFail > 0) return "medium";
   return "low";
+}
+
+// The risk of every source IP in a set of records (the comparison with the previous import has no report metadata).
+export function riskByIp(records) {
+  const rows = new Map();
+  records.forEach((r) => {
+    if (!rows.has(r.sourceIp)) rows.set(r.sourceIp, { spfFail: 0, dkimFail: 0, dmarcFail: 0 });
+    const row = rows.get(r.sourceIp);
+    const n = countOf(r.count);
+    if (r.spfEval !== "pass") row.spfFail += n;
+    if (r.dkimEval !== "pass") row.dkimFail += n;
+    if (!isPass(r)) row.dmarcFail += n;
+  });
+  return new Map([...rows].map(([ip, row]) => [ip, riskLevel(row)]));
 }
 
 export const isPass = (r) => r.spfEval === "pass" || r.dkimEval === "pass"; // DMARC passes when SPF or DKIM is aligned

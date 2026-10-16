@@ -8,7 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, readEmlFile } from "./util.js";
+import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, makeButton, readEmlFile } from "./util.js";
 import { buildExport, buildHtmlExport, citationKind, downloadHtml, exportFilename, langName, parseStream, VERDICT_LEVEL, verdictLabel } from "./email-export.js";
 import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
@@ -794,6 +794,25 @@ function showLangNotice(rec) {
   box.appendChild(btn);
 }
 
+// The facts of an analysis saved by an older version can differ from what this version computes (the backend sends the
+// recomputed ones as facts_current): show the current ones, say why, and let the reader look at the saved ones.
+function showFactsNotice(rec) {
+  if (!rec.facts_changed || !rec.facts_current) return;
+  const box = $("#em-dup");
+  const banner = document.createElement("div");
+  banner.className = "banner info";
+  banner.textContent = t("em.facts_changed");
+  box.appendChild(banner);
+  let current = true;
+  const btn = makeButton(t("em.facts_show_saved"), () => {
+    current = !current;
+    S.facts = current ? rec.facts_current : rec.facts;
+    showFacts(S.facts);
+    btn.textContent = t(current ? "em.facts_show_saved" : "em.facts_show_current");
+  });
+  box.appendChild(btn);
+}
+
 async function openSaved(id) {
   const statusEl = $("#em-status");
   let rec;
@@ -807,7 +826,7 @@ async function openSaved(id) {
   $("#em-privacy").hidden = true;
   S.raw = rec.raw_email;
   $("#em-source").value = rec.raw_email;
-  S.facts = rec.facts;
+  S.facts = rec.facts_changed && rec.facts_current ? rec.facts_current : rec.facts;
   S.stream = rec.markdown;
   S.usage = rec.usage || null;
   S.model = rec.model || null;
@@ -819,8 +838,9 @@ async function openSaved(id) {
   S.verdict = rec.verdict || null;
   S.confidence = rec.confidence || null;
   S.phase = "done";
-  showFacts(rec.facts);
+  showFacts(S.facts);
   showLangNotice(rec);
+  showFactsNotice(rec);
   renderAnalysis({ final: true });
   renderBanner();
   showCitations();

@@ -414,6 +414,14 @@ for lang in ("pl", "en"):
     rec(p + "email analyses", client.get("/api/email/analyses", headers=H))
     if aid:
         rec(p + "email analysis get", client.get(f"/api/email/analyses/{aid}", headers=H))
+        # an analysis saved by an older version: the saved sender hop differs from the one computed today
+        saved_file = (getattr(cfg, "ANALYSES_DIR", None) or cfg.ANALIZY_DIR) / f"{aid}.json"
+        original = saved_file.read_text(encoding="utf-8")
+        saved = json.loads(original)
+        saved["facts"]["trust_index"] = 2
+        saved_file.write_text(json.dumps(saved), encoding="utf-8")
+        rec(p + "email analysis get (older facts)", client.get(f"/api/email/analyses/{aid}", headers=H))
+        saved_file.write_text(original, encoding="utf-8")
         rec(p + "email continue", client.post(f"/api/email/analyses/{aid}/continue", headers=H), sse=True)
         rec(p + "email continue again (not truncated)", client.post(f"/api/email/analyses/{aid}/continue", headers=H))
     rec(p + "email bad id", client.get("/api/email/analyses/..%2F..%2Fetc", headers=H))
@@ -748,6 +756,18 @@ for _k in _allowed:
         failures.append(f"the origin guard blocked a legitimate request: {_k} -> {probes[_k]}")
 if probes["CORS allow-origin header"]:
     failures.append("a cross-origin preflight is allowed")
+
+# Markdown reports (IP and URLScan tabs) hold hostile third-party text (the XSS payload sits in OTX pulses, the page title,
+# link texts ...): outside code it must never be live markup. The raw API response in the collapsible block is code.
+for _r in RESULTS:
+    _body = _r["body"] if isinstance(_r["body"], dict) else {}
+    _md = _body.get("markdown") if ("indicator_type" in _body or "summary" in _body) else None  # not the LLM text of an analysis
+    if isinstance(_md, str):
+        _md = re.sub(r"<details>.*?</details>", "", _md, flags=re.S)
+        _md = re.sub(r"`[^`\n]*`", "", _md)
+        _md = _md.replace("](<https://urlscan.io/result/", "")  # the one link Seisa builds itself
+        if re.search(r"(?<!\\)<img|\]\(\s*<?https?:", _md, re.I):
+            failures.append(f"{_r['name']}: the Markdown report holds live markup from a remote source")
 
 if OUT:
     OUT.write_text(json.dumps({"results": RESULTS}, ensure_ascii=False, indent=1, sort_keys=True))

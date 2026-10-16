@@ -270,14 +270,44 @@ def analyses():
     return list_analyses()
 
 
+def _facts_signature(facts: dict) -> dict:
+    """The facts that decide how a message is read, without any wording (so the language it was saved in does not
+    matter): which hop is the sender, attachments, the receiver's verdicts and how many warnings there are."""
+    received = facts.get("received") or []
+    index = facts.get("trust_index")
+    hop = received[index] if isinstance(index, int) and 0 <= index < len(received) else {}
+    return {
+        "trust_index": index,
+        "sender_ip": hop.get("ip"),
+        "attachments": [
+            (a.get("filename"), a.get("extension"), a.get("double_extension_as"), bool(a.get("risky_extension")))
+            for a in facts.get("attachments") or []
+        ],
+        "auth": [
+            (a.get("header"), sorted((a.get("results") or {}).items()), a.get("matches_receiver")) for a in facts.get("auth") or []
+        ],
+        "warnings": sum(1 for f in facts.get("flags") or [] if f.get("level") == "warn"),
+    }
+
+
 @router.get("/analyses/{analysis_id}")
 def analysis(analysis_id: str):
+    """A saved analysis. The facts in it are those of the day it was saved; later versions read some facts differently
+    (the sender address, attachment names, the receiver's verdicts), so they are recomputed here (free, deterministic) and,
+    when they differ in what matters, sent along as `facts_current`. The saved file is never changed."""
     try:
         record = load_analysis(analysis_id)
     except ValueError:
         raise HTTPException(status_code=400, detail=t("email.invalid_id")) from None
     if record is None:
         raise HTTPException(status_code=404, detail=t("email.not_found"))
+    try:
+        current = compute_facts(record["raw_email"])
+        if _facts_signature(current) != _facts_signature(record.get("facts") or {}):
+            record["facts_current"] = current
+            record["facts_changed"] = True
+    except Exception as exc:  # the saved analysis must open even when the message can no longer be read
+        logger.warning(f"email: recomputing the facts of a saved analysis failed: {exc}")
     return record
 
 

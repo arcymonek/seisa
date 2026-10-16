@@ -3,6 +3,7 @@
 // it is available without an LLM; all values that came from the message go through escapeHtml.
 import { t, tn } from "./i18n.js";
 import { defangUrl } from "./markdown-render.js";
+import { mdCell, mdCode, mdText } from "./markdown-export.js";
 import { escapeHtml as e } from "./util.js";
 import { DASH, kpiTile, mono, textBanner } from "./ui.js";
 
@@ -358,9 +359,6 @@ export function factCardsHtml(f) {
 // Markdown export of the facts
 // ---------------------------------------------------------------------------
 
-const mdCell = (v) => String(v ?? "").replace(/\|/g, "\\|").replace(/\n/g, " ");
-export const mdCode = (v) => (v ? "`" + String(v).replace(/`/g, "'") + "`" : "-");
-
 function mdTable(headers, rows) {
   if (!rows.length) return [t("common.none"), ""];
   return [
@@ -376,7 +374,7 @@ export function factsToMarkdown(f) {
   L.push("## " + t("em.f.title"), "", t("em.f.md_intro"), "");
 
   L.push(`### ${t("em.f.flags", { n: f.flags.length })}`, "");
-  if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? t("em.f.flag_warn") : t("em.f.flag_info")}: ${x.text}`));
+  if (f.flags.length) f.flags.forEach((x) => L.push(`- ${x.level === "warn" ? t("em.f.flag_warn") : t("em.f.flag_info")}: ${mdText(x.text)}`));
   else L.push(t("em.f.no_flags"));
   L.push("");
 
@@ -391,7 +389,7 @@ export function factsToMarkdown(f) {
       f.received.map((r) => [r.index, mdCode(r.from_host), mdCode(r.ptr), mdCode(r.ip), mdCode(r.by_host),
         `${r.with || ""} ${r.tls || ""}`.trim(), r.time_utc || "", [r.role, ...r.flags].filter(Boolean).join("; ")])));
 
-  if (f.trust_note) L.push(`> ${f.trust_note}`, "");
+  if (f.trust_note) L.push(`> ${mdText(f.trust_note)}`, "");
 
   L.push("### " + t("em.f.auth"), "",
     ...mdTable([t("em.f.header"), "authserv-id", t("em.f.matches_receiver"), t("em.f.results"), t("em.f.details")],

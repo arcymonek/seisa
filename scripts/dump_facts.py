@@ -34,5 +34,10 @@ out = {}
 for f in fixtures:
     src = normalize_source(f.read_text(encoding="utf-8"))
     parsed = parse_email(src)
+    # The age of the message depends on today's date (it would change the dump every day, and flip age_ok after the limit),
+    # so it is replaced by a placeholder; its calculation is covered by the unit tests.
+    for key in ("age_days", "age_ok"):
+        if key in parsed:
+            parsed[key] = "<depends on today>"
     out[f.name] = {"facts": compute_facts(src), "prepared_notes": prepare_for_llm(src)[1], "parse_email": parsed}
 print(json.dumps(out, ensure_ascii=False, indent=1, sort_keys=True, default=str))

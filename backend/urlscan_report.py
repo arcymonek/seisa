@@ -3,10 +3,12 @@ stores) and the Markdown export built from that summary."""
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from backend.i18n import t
 from backend.markdown_report import numbered_code_block
+from backend.markdown_utils import md_code, md_text
 from backend.scoring import HIGH_FROM, MEDIUM_FROM
 from backend.urlscan_input import defang
 
@@ -192,10 +194,21 @@ def build_urlscan_summary(submitted_url: str, uuid: str, data: dict, forms: list
     }
 
 
-def _bullet(label: str, value) -> str | None:
+def _bullet(label: str, value, code: bool = False) -> str | None:
+    """One list line of the export. Everything here comes from the scanned page or from urlscan.io, so it is escaped
+    (text) or put into a code span (addresses, names)."""
     if value in (None, "", [], {}):
         return None
-    return f"- **{label}**: {value}"
+    return f"- **{label}**: {md_code(value) if code else md_text(value)}"
+
+
+# The link to the scan on urlscan.io is built from the scan id, which the service returned; it stays clickable only
+# when it has exactly the shape Seisa builds.
+_RESULT_URL = re.compile(r"^https://urlscan\.io/result/[0-9a-fA-F-]{8,40}/$")
+
+
+def _result_link(url: str) -> str:
+    return f"[{t('us.open')}](<{url}>)" if _RESULT_URL.fullmatch(url) else md_code(defang(url))
 
 
 def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
@@ -207,20 +220,20 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
     stats = summary["stats"]
     submitted = summary["submitted_url"]
 
-    lines: list[str] = [f"# {t('us.title')} - `{defang(submitted)}`", "", f"[{t('us.open')}](<{summary['result_url']}>)", ""]
+    lines: list[str] = [f"# {t('us.title')} - {md_code(defang(submitted))}", "", _result_link(summary["result_url"]), ""]
 
     lines += [f"## {t('us.summary')}", ""]
     lines += filter(None, [
-        _bullet(t("us.submitted_url"), f"`{defang(submitted)}`"),
-        _bullet(t("us.final_url"), f"`{defang(page['final_url'])}`" if page.get("final_url") else None),
+        _bullet(t("us.submitted_url"), defang(submitted), code=True),
+        _bullet(t("us.final_url"), defang(page["final_url"]) if page.get("final_url") else None, code=True),
         _bullet(t("us.redirected"), t("common.yes") if page.get("redirected") else t("common.no")),
         _bullet(t("us.page_title"), page.get("title")),
-        _bullet(t("us.domain"), page.get("domain")),
-        _bullet(t("us.apex_domain"), page.get("apex_domain")),
-        _bullet(t("us.main_ip"), page.get("ip")),
+        _bullet(t("us.domain"), page.get("domain"), code=True),
+        _bullet(t("us.apex_domain"), page.get("apex_domain"), code=True),
+        _bullet(t("us.main_ip"), page.get("ip"), code=True),
         _bullet("ASN", f"{page.get('asn') or '?'} ({page.get('asn_name') or '?'})"),
         _bullet(t("us.ip_location"), ", ".join(filter(None, [page.get("city"), page.get("country")])) or None),
-        _bullet("PTR", page.get("ptr")),
+        _bullet("PTR", page.get("ptr"), code=True),
         _bullet(t("us.http_server"), page.get("server")),
         _bullet(t("us.http_status"), page.get("status")),
         _bullet(t("us.mime_type"), page.get("mime_type")),
@@ -230,7 +243,7 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
 
     if summary["redirects"]:
         lines += [f"## {t('us.redirect_chain')}", ""]
-        lines += [f"{i}. `{defang(h['url'])}`" + (f" ({h['status']})" if h.get("status") else "") for i, h in enumerate(summary["redirects"], 1)]
+        lines += [f"{i}. {md_code(defang(h['url']))}" + (f" ({md_text(h['status'])})" if h.get("status") else "") for i, h in enumerate(summary["redirects"], 1)]
         lines.append("")
 
     tls = summary.get("tls")
@@ -248,7 +261,7 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
     score = verdict.get("score")
     lines.append(f"- **{t('us.malice_score')}**: {score if score is not None else t('common.none')} ({t('us.malice_scale')})")
     if verdict["categories"]:
-        lines.append(f"- **{t('us.categories')}**: {', '.join(verdict['categories'])}")
+        lines.append(f"- **{t('us.categories')}**: {', '.join(md_text(c) for c in verdict['categories'])}")
     if verdict.get("form_signal"):
         lines.append(f"- **{t('us.form_signal')}**")
     if verdict["engines"]:
@@ -258,11 +271,11 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
     if verdict["brands"]:
         lines.append(f"- **{t('us.brands')}**:")
         for b in verdict["brands"]:
-            parts = [b["name"]]
+            parts = [md_text(b["name"])]
             if b["vertical"]:
-                parts.append(f"{t('us.vertical')}: {', '.join(b['vertical'])}")
+                parts.append(f"{t('us.vertical')}: {', '.join(md_text(v) for v in b['vertical'])}")
             if b["country"]:
-                parts.append(f"{t('us.country')}: {', '.join(b['country'])}")
+                parts.append(f"{t('us.country')}: {', '.join(md_text(c) for c in b['country'])}")
             lines.append(f"  - {' - '.join(parts)}")
     lines.append("")
 
@@ -285,28 +298,28 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
         for form in forms:
             flags = [x for x in (t("us.form_password") if form["password"] else "", t("us.form_external") if form["external"] else "",
                                  t("us.form_insecure") if form["insecure"] else "") if x]
-            fields = f" [{', '.join(form['fields'])}]" if form["fields"] else ""
-            lines.append(f"- `{defang(form['action'] or '-')}` ({form['method'].upper()}){fields}" + (f" - {'; '.join(flags)}" if flags else ""))
+            fields = f" {md_code(', '.join(form['fields']))}" if form["fields"] else ""
+            lines.append(f"- {md_code(defang(form['action'] or '-'))} ({md_text(form['method'].upper())}){fields}" + (f" - {'; '.join(flags)}" if flags else ""))
         lines.append("")
 
     if summary["technologies"]:
         lines += [f"## {t('us.technologies')}", ""]
         for tech in summary["technologies"]:
-            version = f" {tech['version']}" if tech.get("version") else ""
-            cats = f" ({', '.join(tech['categories'])})" if tech["categories"] else ""
-            lines.append(f"- {tech['name']}{version}{cats}")
+            version = f" {md_text(tech['version'])}" if tech.get("version") else ""
+            cats = f" ({', '.join(md_text(c) for c in tech['categories'])})" if tech["categories"] else ""
+            lines.append(f"- {md_text(tech['name'])}{version}{cats}")
         lines.append("")
 
     if summary["ips"]:
         lines += [f"## {t('us.contacted_ips', n=len(summary['ips']))}", ""]
         for entry in summary["ips"]:
-            extra = ", ".join(filter(None, [entry.get("country"), entry.get("asn_name")]))
-            lines.append(f"- {entry['ip']}" + (f" ({extra})" if extra else ""))
+            extra = ", ".join(md_text(x) for x in filter(None, [entry.get("country"), entry.get("asn_name")]))
+            lines.append(f"- {md_code(entry['ip'])}" + (f" ({extra})" if extra else ""))
         lines.append("")
 
     if summary["domains"]:
         lines += [f"## {t('us.contacted_domains', n=len(summary['domains']))}", ""]
-        lines += [f"- {defang(d)}" for d in summary["domains"]]
+        lines += [f"- {md_code(defang(d))}" for d in summary["domains"]]
         lines.append("")
 
     if summary["links"]:
@@ -314,7 +327,7 @@ def build_urlscan_markdown(summary: dict, raw: dict | None = None) -> str:
         heading = t("us.links", n=total) + (f" {t('us.links_first50')}" if total > MD_LINKS else "")
         lines += [f"## {heading}", ""]
         for link in summary["links"][:MD_LINKS]:
-            lines.append(f"- `{defang(link['href'] or '?')}`" + (f" - {link['text']}" if link["text"] else ""))
+            lines.append(f"- {md_code(defang(link['href'] or '?'))}" + (f" - {md_text(link['text'])}" if link["text"] else ""))
         lines.append("")
 
     if raw is not None:

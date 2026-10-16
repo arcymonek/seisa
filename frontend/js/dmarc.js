@@ -10,7 +10,7 @@ import { readReports } from "./archive.js";
 import { t, tn, fmtSeconds } from "./i18n.js";
 import { copyText, downloadMarkdown, escapeHtml as e } from "./util.js";
 import { kpiTile, kvHtml, legendHtml, textBanner } from "./ui.js";
-import { aggregate, dailyStats, fmtDate, fmtDateTime, fmtPct, isPass, parseReport, providerStats, riskLevel, sumBy } from "./dmarc-data.js";
+import { aggregate, dailyStats, fmtDate, fmtDateTime, fmtPct, isPass, parseReport, providerStats, riskByIp, riskLevel, sumBy, withSafeCounts } from "./dmarc-data.js";
 import { buildMarkdown, reportFields } from "./dmarc-export.js";
 
 const BANNER_IP_LIMIT = 500; // addresses listed in the expanded banner
@@ -154,8 +154,11 @@ async function handleFiles(files) {
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.parsed", { time: fmtSeconds(performance.now() - started) });
   const id = ++importId;
-  await showComparison(id);
-  saveSummaryToHistory();
+  // nothing readable was imported (every file failed or was skipped): there is nothing to compare or to save
+  if (reportMeta.length) {
+    await showComparison(id);
+    saveSummaryToHistory();
+  }
 }
 
 // Re-opens a report set saved in the history (see saveSummaryToHistory).
@@ -174,7 +177,7 @@ export function loadDmarcData(data) {
   resetState();
   const day = (v) => (v ? new Date(v) : null);
   reportMeta = data.reportMeta.map((m) => ({ ...m, begin: day(m.begin), end: day(m.end) }));
-  allRecords = data.records;
+  allRecords = withSafeCounts(data.records);
   showFiles(reportMeta.map((m) => ({ kind: "ok", text: "✓ " + m.filename })));
   showResults();
   root.querySelector("#dm-info").textContent = t("dmarc.restored");
@@ -233,7 +236,7 @@ function bannersHtml() {
       quarantine: sumBy(high, "quarantine"),
       none: sumBy(high, "none"),
     });
-    const head = tn("dmarc.banner_bad", high.length, { messages: tn("dmarc.messages", sumBy(high, "count")) });
+    const head = tn("dmarc.banner_bad", high.length, { messages: tn("dmarc.messages", sumBy(high, "dmarcFail")) });
     html += `<div class="banner bad"><strong>${e(head)}</strong>${ipsHtml}<div>${e(actions)}</div><div>${e(t("dmarc.banner_bad_hint"))}</div></div>`;
   } else if (medium.length) {
     html += textBanner("warn", tn("dmarc.banner_warn", medium.length));
@@ -338,17 +341,6 @@ let importId = 0; // a slow History request must not paint over a newer import
 
 const worse = (a, b) => RISK_RANK[b] < RISK_RANK[a]; // b is riskier than a
 
-function ipRisks(records) {
-  const by = new Map();
-  records.forEach((r) => {
-    if (!by.has(r.sourceIp)) by.set(r.sourceIp, { spfFail: 0, dkimFail: 0 });
-    const b = by.get(r.sourceIp);
-    if (r.spfEval !== "pass") b.spfFail += r.count;
-    if (r.dkimEval !== "pass") b.dkimFail += r.count;
-  });
-  return new Map([...by].map(([ip, b]) => [ip, riskLevel(b)]));
-}
-
 // The newest History entry of type dmarc whose label starts with the same domains; called before the current import
 // is saved, so it never finds itself.
 async function findPreviousImport() {
@@ -358,14 +350,14 @@ async function findPreviousImport() {
     const prev = list.find((h) => h.type === "dmarc" && String(h.label).startsWith(domains + " - "));
     if (!prev) return null;
     const full = await api.historyEntry(prev.id);
-    return Array.isArray(full.data?.records) ? { createdAt: prev.created_at, records: full.data.records } : null;
+    return Array.isArray(full.data?.records) ? { createdAt: prev.created_at, records: withSafeCounts(full.data.records) } : null;
   } catch {
     return null;
   }
 }
 
 function compareHtml(prev) {
-  const before = ipRisks(prev.records);
+  const before = riskByIp(prev.records);
   const now = new Map(sources.map((s) => [s.sourceIp, riskLevel(s)]));
   const added = [...now].filter(([ip]) => !before.has(ip));
   const gone = [...before.keys()].filter((ip) => !now.has(ip));
