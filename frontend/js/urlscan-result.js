@@ -4,7 +4,7 @@
 // shown as plain, non-clickable text (the Markdown export and the copy button keep them defanged).
 import { t, tn, fmtDateTime } from "./i18n.js";
 import { chips, countryName, numberedJson, toggleMoreChips } from "./lookup-result.js";
-import { kpiTile, kvHtml, legendHtml } from "./ui.js";
+import { kpiTile, kvHtml, legendHtml, mono } from "./ui.js";
 import { defangUrl } from "./markdown-render.js";
 import { copyText, escapeHtml as e, handleToggleAll, isSet, toggleAllHtml } from "./util.js";
 
@@ -13,7 +13,6 @@ const NEW_CERT_DAYS = 7;
 const PILL_LIMIT = 30;
 const SHOT_RETRIES = 3;
 const SHOT_RETRY_MS = 4000;
-const mono = (value) => `<span class="mono">${e(value)}</span>`;
 const monoUrl = (url) => mono(url);
 
 function fmtBytes(n) {

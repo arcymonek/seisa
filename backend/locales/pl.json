@@ -234,6 +234,7 @@
   "or.unknown_error": "nieznany błąd OpenRouter",
   "or.refusal": "model odmówił analizy tej wiadomości (jego filtr bezpieczeństwa zablokował odpowiedź, finish_reason={reason}). To nie jest błąd Seisy, a ponowienie nie pomoże - spróbuj innego modelu w OPENROUTER_MODEL",
   "or.invalid_response": "nieprawidłowa odpowiedź OpenRouter ({detail})",
+  "or.timeout": "OpenRouter nic nie odpowiedział przez {seconds} s, więc Seisa przestała czekać (model może bardzo długo \"myśleć\" albo usługa jest przeciążona). Spróbuj ponownie lub wybierz szybszy model w OPENROUTER_MODEL",
   "email.empty_source": "Puste źródło e-maila.",
   "email.source_too_large": "Źródło jest za duże ({size} znaków, limit {limit}).",
   "email.deterministic_failed": "Analiza deterministyczna nie powiodła się: {message}",

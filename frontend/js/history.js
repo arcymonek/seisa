@@ -80,7 +80,12 @@ export function initHistory(container) {
   armedConfirm(root.querySelector("#hi-clear"), t("history.clear_confirm"), async () => {
     await api.historyClear();
     load();
-  });
+  }, undefined, showActionError);
+}
+
+// A failed button action (pin, delete, clear) is reported next to the buttons instead of being lost.
+function showActionError(err) {
+  root.querySelector("#hi-info").textContent = t("common.error", { message: err.message });
 }
 
 export function refreshHistory() {
@@ -226,7 +231,12 @@ function bindCard(card) {
   const pin = card.querySelector(".hi-pin");
   if (pin)
     pin.addEventListener("click", async () => {
-      await api.historyPin(entry.id, !entry.pinned);
+      try {
+        await api.historyPin(entry.id, !entry.pinned);
+      } catch (err) {
+        showActionError(err);
+        return;
+      }
       load();
     });
   const box = card.querySelector(".hi-cmp-box");
@@ -248,7 +258,7 @@ function bindCard(card) {
       if (entry.type === "email") await api.emailAnalysisDelete(entry.id);
       else await api.historyDelete(entry.id);
       load();
-    });
+    }, undefined, showActionError);
 }
 
 // ---- open / repeat ----
@@ -321,9 +331,10 @@ function exportList(format) {
   if (format === "json") {
     return downloadText(`seisa-history-${day}.json`, JSON.stringify(rows, null, 2), { native: true, mime: "application/json", ext: ".json", description: "JSON" });
   }
-  // a leading = + - @ would be run as a formula by spreadsheet programs
+  // a leading = + - @ (or a tab / carriage return, which some programs skip before reading a formula) would be run as a
+  // formula by spreadsheet programs (OWASP "CSV injection")
   const cell = (v) => {
-    const s = String(v).replace(/^[=+\-@]/, "'$&");
+    const s = String(v).replace(/^[=+\-@\t\r]/, "'$&");
     return `"${s.replace(/"/g, '""')}"`;
   };
   const header = Object.keys(rows[0] || { id: 0, type: 0, created_at: 0, label: 0, risk: 0, pinned: 0 });

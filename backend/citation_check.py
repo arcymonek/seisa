@@ -23,8 +23,10 @@ from backend.i18n import t
 
 MAX_ISSUES = 40
 
-_IPV4_RE = re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])")
-_IPV6_RE = re.compile(r"(?<![\w:.])[0-9A-Fa-f:]{3,39}(?![\w:.])")
+# A full stop right after an address is allowed when it ends the sentence (nothing alphanumeric follows it); "1.2.3.4.5"
+# and "1.2.3.4.example" still do not count as an address.
+_IPV4_RE = re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?!\w|\.\w)")
+_IPV6_RE = re.compile(r"(?<![\w:.])[0-9A-Fa-f:]{3,39}(?!\w|:|\.\w)")
 _FENCE_RE = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
 _CODE_SPAN_RE = re.compile(r"`([^`\n]{3,300})`")
 _HEADER_LINE_RE = re.compile(r"^([A-Za-z][A-Za-z0-9-]*):\s*(\S.*)$")

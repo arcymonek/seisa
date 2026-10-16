@@ -181,7 +181,6 @@
   "history.shown": "Widoczne: {shown} z {total}",
   "history.no_match": "Żaden wpis nie pasuje do filtrów.",
   "history.col_date": "Data",
-  "history.confirm_delete_email": "Usunąć tę analizę razem z zapisanym e-mailem?",
   "history.cmp.title": "Porównanie dwóch sprawdzeń IP",
   "history.cmp.level": "Poziom ryzyka",
   "history.cmp.score": "Wynik",

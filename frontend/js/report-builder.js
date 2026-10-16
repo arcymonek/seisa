@@ -15,6 +15,7 @@ import { bindEmlInput, copyText, createTimer, downloadMarkdown, elapsedSeconds, 
 import { errorBanner } from "./ui.js";
 
 const SOLO_WEAK = [20, 22]; // categories that only make sense next to a more specific one (policy: "often combined")
+const MAX_COMMENT_CHARS = 1024; // the backend cuts the comment here (report_utils.MAX_COMMENT_CHARS); tests/test_frontend_mirrors.py
 const VPN_CATEGORY = 13;
 const IOT_CATEGORY = 23;
 const SPOOFING_CATEGORY = 17;
@@ -327,7 +328,7 @@ function updateCharCount() {
   const len = $("#rb-comment").value.length;
   const el = $("#rb-char-count");
   el.textContent = t("rb.char_count", { len });
-  el.style.color = len >= 1024 ? "var(--warn)" : "var(--muted)";
+  el.style.color = len >= MAX_COMMENT_CHARS ? "var(--warn)" : "var(--muted)";
 }
 
 function buildFields() {

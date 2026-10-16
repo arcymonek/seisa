@@ -179,7 +179,6 @@
   "history.shown": "Showing {shown} of {total}",
   "history.no_match": "No entries match the filters.",
   "history.col_date": "Date",
-  "history.confirm_delete_email": "Delete this analysis together with the saved e-mail?",
   "history.cmp.title": "Comparison of two IP checks",
   "history.cmp.level": "Risk level",
   "history.cmp.score": "Score",

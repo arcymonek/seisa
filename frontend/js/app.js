@@ -1,3 +1,5 @@
+// Entry point of the page: builds the eight tabs, switches between them and exposes `window.seisaApp`, through which a tab
+// hands data to another one (for example an address from the Email tab to the IP tab). Nothing is sent anywhere from here.
 import { applyStatic } from "./i18n.js";
 import { mountShutdown } from "./shutdown.js";
 import { initTheme } from "./theme.js";

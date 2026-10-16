@@ -2,6 +2,7 @@
 // The colours come from /api/themes.css; the stored choice is applied before the first paint by /theme-init.js.
 import { getLang, t } from "./i18n.js";
 
+// Keep in sync with /theme-init.js (a classic script that cannot import this module): tests/test_frontend_mirrors.py.
 const STORAGE_KEY = "seisa.theme";
 const SYSTEM = "system";
 const DEFAULT = "light";

@@ -1,3 +1,5 @@
+// Thin client for the Seisa backend (/api): one function per endpoint, the interface language sent in a header, and one
+// place that turns a failed response into a readable message. It talks only to our own backend, never to third-party hosts.
 import { getLang } from "./i18n.js";
 
 const BASE = "/api";

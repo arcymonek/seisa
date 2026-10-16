@@ -1,3 +1,5 @@
+// IP tab: the form (indicator, services to ask, Check button) and the run itself; the result is drawn by lookup-result.js.
+// An IP or domain is sent to the chosen services only after the user clicks Check.
 import { api } from "./api.js";
 import { renderLookupResult } from "./lookup-result.js";
 import { serviceTitle } from "./services.js";

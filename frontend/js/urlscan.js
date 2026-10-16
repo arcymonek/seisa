@@ -1,3 +1,5 @@
+// URLScan tab: the scan form, submitting and polling a scan, and saving it to History; the report is drawn by
+// urlscan-result.js. Nothing is submitted until the user clicks Scan; the scanned page is never opened.
 import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { fmtDateTime, registerDirtyCheck, t } from "./i18n.js";

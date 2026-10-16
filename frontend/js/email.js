@@ -8,7 +8,7 @@ import { api } from "./api.js";
 import { bindClear } from "./clear-button.js";
 import { t, fmtDateTime, getLang, registerDirtyCheck } from "./i18n.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
-import { createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, makeButton, readEmlFile } from "./util.js";
+import { armedConfirm, createTimer, downloadMarkdown, elapsedSeconds, escapeHtml as e, bindEmlInput, copyText, fileLoadedText, formatUsage, makeButton, readEmlFile } from "./util.js";
 import { buildExport, buildHtmlExport, citationKind, downloadHtml, exportFilename, langName, parseStream, VERDICT_LEVEL, verdictLabel } from "./email-export.js";
 import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
@@ -734,11 +734,16 @@ async function refreshSaved() {
     delBtn.className = "secondary";
     delBtn.style.margin = "0";
     delBtn.textContent = t("common.delete");
-    delBtn.onclick = async () => {
-      if (!confirm(t("history.confirm_delete_email"))) return;
-      await api.emailAnalysisDelete(it.id);
-      refreshSaved();
-    };
+    armedConfirm(
+      delBtn,
+      t("history.delete_confirm_email"),
+      async () => {
+        await api.emailAnalysisDelete(it.id);
+        refreshSaved();
+      },
+      undefined,
+      (err) => list.insertAdjacentHTML("afterbegin", errorBanner(err)),
+    );
     row.querySelector(".em-cmp-check").addEventListener("change", (ev) => {
       if (ev.target.checked) compareSel.add(it.id);
       else compareSel.delete(it.id);

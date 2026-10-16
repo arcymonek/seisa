@@ -234,6 +234,7 @@
   "or.unknown_error": "unknown OpenRouter error",
   "or.refusal": "the model refused to analyse this message (its safety filter blocked the answer, finish_reason={reason}). This is not a Seisa error and retrying does not help - try another model in OPENROUTER_MODEL",
   "or.invalid_response": "invalid OpenRouter response ({detail})",
+  "or.timeout": "OpenRouter sent nothing for {seconds} s, so Seisa stopped waiting (the model may be thinking for a very long time, or the service is overloaded). Try again, or choose a faster model in OPENROUTER_MODEL",
   "email.empty_source": "The e-mail source is empty.",
   "email.source_too_large": "The source is too large ({size} characters, limit {limit}).",
   "email.deterministic_failed": "The deterministic analysis failed: {message}",

@@ -76,8 +76,6 @@ def test_a_damaged_file_reads_as_missing_and_does_not_break_the_list(store):
     assert analyses.find_by_source(analyses.source_hash(RAW))[0]["id"] == good
 
 
-@pytest.mark.xfail(strict=True, reason="found in audit stage 5 (T5.11): _canonical() assumes an object, so a file holding any other "
-                   "JSON value raises (AttributeError/TypeError) instead of being skipped like an unreadable file")
 @pytest.mark.parametrize("content", ["[]", '"text"', "42", "null"])
 def test_a_file_with_valid_json_that_is_not_an_object_does_not_break_anything(store, content):
     good = analyses.save_analysis({"raw_email": RAW, "verdict": "spam"})
@@ -85,6 +83,13 @@ def test_a_file_with_valid_json_that_is_not_an_object_does_not_break_anything(st
     assert analyses.load_analysis("20261016-100000-deadbeef") is None
     assert [item["id"] for item in analyses.list_analyses()] == [good]
     assert [m["id"] for m in analyses.find_by_source(analyses.source_hash(RAW))] == [good]
+
+
+def test_a_file_that_is_not_utf8_text_is_skipped_too(store):
+    good = analyses.save_analysis({"raw_email": RAW, "verdict": "spam"})
+    (store / "20261016-100000-deadbeef.json").write_bytes(b"\xff\xfe\x00 not utf-8")
+    assert analyses.load_analysis("20261016-100000-deadbeef") is None
+    assert [item["id"] for item in analyses.list_analyses()] == [good]
 
 
 def test_older_records_read_with_the_current_codes_and_a_language(store):

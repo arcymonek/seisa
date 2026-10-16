@@ -143,6 +143,32 @@ def test_connection_error_is_returned_as_an_error(router):
     assert "no route" in chat()["error"]
 
 
+def test_a_silent_model_gives_a_plain_message_not_an_empty_exception_text(router):
+    # httpx.ReadTimeout has no text of its own: the user must still be told what happened and what to do
+    def silent(request):
+        raise httpx.ReadTimeout("")
+
+    router["answers"] = [silent]
+    for lang in ("en", "pl"):
+        token = i18n.set_lang(lang)
+        try:
+            expected = t("or.timeout", seconds=120)
+            assert chat()["error"] == expected
+            events = run(_collect(analyzer.stream_chat("system", "user")))
+            assert events == [("error", expected)]
+        finally:
+            i18n.reset_lang(token)
+    assert "120" in t("or.timeout", seconds=120) and "OPENROUTER_MODEL" in t("or.timeout", seconds=120)
+
+
+def test_other_connection_errors_keep_their_technical_text(router):
+    def refuse(request):
+        raise httpx.ConnectError("no route")
+
+    router["answers"] = [refuse]
+    assert chat()["error"] == "ConnectError: no route"
+
+
 # ---- what both call paths share ----
 
 def test_one_set_of_headers_for_json_and_stream(router):

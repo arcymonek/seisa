@@ -24,9 +24,6 @@ function table(headers, rows, cls = "") {
 const tick = (v) => (v === true ? '<span class="ok">✓</span>' : v === false ? '<span class="bad">✗</span>' : DASH);
 const resultClass = (r) => (r === "pass" ? "ok" : AUTH_BAD.includes(r) ? "bad" : "warnc");
 
-const isPrivateIp = (ip) =>
-  /^(10\.|127\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.)/.test(ip) || /^(::1$|fe80:|f[cd][0-9a-f]{2}:)/i.test(ip);
-
 // Puts the address into the URLScan tab (nothing is opened or scanned until the user clicks Scan there); the address
 // stays displayed defanged.
 const scanBtn = (url) =>
@@ -34,9 +31,10 @@ const scanBtn = (url) =>
     ? ` <button type="button" class="secondary mini inline" data-scan-url="${e(url)}" title="${e(t("em.f.scan_title"))}">${e(t("em.f.scan_url"))}</button>`
     : "";
 
-// Puts the IP into the IP tab (nothing is sent until the user runs the lookup there).
-const ipBtn = (ip) =>
-  ip && !isPrivateIp(ip)
+// Puts the IP into the IP tab (nothing is sent until the user runs the lookup there). `isPrivate` is the backend's own
+// verdict (`is_private`, from is_special_ip): no button for a private, reserved or otherwise non-public address.
+const ipBtn = (ip, isPrivate) =>
+  ip && isPrivate !== true
     ? ` <button type="button" class="secondary mini inline" data-lookup-ip="${e(ip)}" title="${e(t("em.f.lookup_title"))}">${e(t("em.f.lookup_ip"))}</button>`
     : "";
 
@@ -164,7 +162,7 @@ export function kpiHtml(f) {
 
   const hop = senderHop(f);
   if (hop && hop.ip) {
-    tiles.push(kpiTile(t("em.kpi.sender_ip"), null, { tone: "neutral", valueHtml: `<span class="mono">${e(hop.ip)}</span>${ipBtn(hop.ip)}`, sub: [hop.ptr || hop.from_host || "", t("em.kpi.boundary", { idx: hop.index })].filter(Boolean).join(" · ") }));
+    tiles.push(kpiTile(t("em.kpi.sender_ip"), null, { tone: "neutral", valueHtml: `<span class="mono">${e(hop.ip)}</span>${ipBtn(hop.ip, hop.is_private)}`, sub: [hop.ptr || hop.from_host || "", t("em.kpi.boundary", { idx: hop.index })].filter(Boolean).join(" · ") }));
   }
 
   if (f.html || f.attachments.length) {
@@ -263,7 +261,7 @@ export function factCardsHtml(f) {
         `${e(r.with || "")} ${r.tls ? `<span class="muted">${e(r.tls)}</span>` : ""}<div class="muted">${e(r.time_utc || "")}</div>`,
         `<span class="muted">${e(r.role || "")}</span>` + (r.auth_consistent === true ? ` <span class="badge sm agree">${e(t("em.f.smtp_auth_verified"))}</span>` : "") +
           r.flags.map((x) => `<div class="fact-flag warn"><span>${e(x)}</span></div>`).join("") +
-          `<div class="em-row-actions">${ipBtn(r.ip)}${srcBtn(r.raw)}</div>`,
+          `<div class="em-row-actions">${ipBtn(r.ip, r.is_private)}${srcBtn(r.raw)}</div>`,
       ]), "em-recv")));
 
   const a = authSummary(f);
@@ -349,7 +347,7 @@ export function factCardsHtml(f) {
   if (f.placeholders.length) other.push([t("em.f.placeholders"), f.placeholders.map((p) => `<code>${e(p)}</code>`).join(" ")]);
   if (f.list_unsubscribe.urls.length) other.push(["List-Unsubscribe", f.list_unsubscribe.urls.map((u) => mono(defangUrl(u)) + scanBtn(u)).join("<br>") + (f.list_unsubscribe.one_click ? " (one-click)" : "")]);
   if (f.urls_plain.length) other.push([t("em.f.urls_plain"), f.urls_plain.map((u) => mono(defangUrl(u)) + scanBtn(u)).join("<br>")]);
-  if (f.ips.length) other.push([t("em.f.ips"), f.ips.map((i) => `${mono(i.ip)}${ipBtn(i.ip)} <span class="muted">(${e(i.where)})</span>`).join("<br>")]);
+  if (f.ips.length) other.push([t("em.f.ips"), f.ips.map((i) => `${mono(i.ip)}${ipBtn(i.ip, i.is_private)} <span class="muted">(${e(i.where)})</span>`).join("<br>")]);
   if (other.length) cards.push(card("other", t("em.f.other"), "neutral", "", table([t("em.f.what"), t("common.value")], other)));
 
   return cards.join("");

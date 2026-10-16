@@ -9,6 +9,7 @@ import hashlib
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from backend.config import ANALYSES_DIR
@@ -56,9 +57,8 @@ def find_by_source(sha256: str) -> list[dict[str, Any]]:
         return []
     matches = []
     for path in sorted(ANALYSES_DIR.glob("*.json"), reverse=True):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        data = _read(path)
+        if data is None:
             continue
         if (data.get("source_sha256") or source_hash(data.get("raw_email", ""))) != sha256:
             continue
@@ -77,13 +77,22 @@ def list_analyses() -> list[dict[str, Any]]:
         return []
     items = []
     for path in sorted(ANALYSES_DIR.glob("*.json"), reverse=True):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        data = _read(path)
+        if data is None:
             continue
         _canonical(data)
         items.append({k: data.get(k) for k in ("id", "created_at", "subject", "from", "verdict", "confidence", "truncated", "lang")})
     return items
+
+
+def _read(path: Path) -> dict[str, Any] | None:
+    """The record in one file, or None when the file is unreadable, not valid JSON (or not UTF-8 text) or holds
+    valid JSON that is not an object (a list, a string, null): such a file is skipped, never an error."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):  # json.JSONDecodeError and UnicodeDecodeError are both ValueError
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _canonical(data: dict[str, Any]) -> dict[str, Any]:
@@ -98,10 +107,8 @@ def load_analysis(analysis_id: str) -> dict[str, Any] | None:
     path = _path(analysis_id)
     if not path.exists():
         return None
-    try:
-        return _canonical(json.loads(path.read_text(encoding="utf-8")))
-    except (OSError, json.JSONDecodeError):
-        return None
+    data = _read(path)
+    return _canonical(data) if data is not None else None
 
 
 def delete_analysis(analysis_id: str) -> bool:

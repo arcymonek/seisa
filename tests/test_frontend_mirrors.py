@@ -60,8 +60,24 @@ def test_thumbnail_the_frontend_makes_fits_the_backend_limit():
 
 def test_comment_counter_warns_at_the_backend_limit():
     # report-builder.js turns the character counter to the warning colour at the same length at which the backend
-    # (report_utils.truncate_chars) starts cutting the comment; the number is still a literal there
+    # (report_utils.truncate_chars) starts cutting the comment
+    assert js_const("report-builder.js", "MAX_COMMENT_CHARS") == report_utils.MAX_COMMENT_CHARS
     text = (JS / "report-builder.js").read_text(encoding="utf-8")
-    match = re.search(r"const len = \$\(\"#rb-comment\"\)\.value\.length;.*?len >= (\d+)", text, re.S)
-    assert match, "comment length check not found in frontend/js/report-builder.js"
-    assert int(match.group(1)) == report_utils.MAX_COMMENT_CHARS
+    # the counter must use the constant, not a second copy of the number
+    assert re.search(r"len >= MAX_COMMENT_CHARS\b", text), "the counter no longer compares with MAX_COMMENT_CHARS"
+
+
+def test_theme_defaults_match_between_theme_init_and_theme_module():
+    # /theme-init.js is a classic script (it must run before the first paint, so it cannot import js/theme.js) and
+    # repeats the module's defaults; a difference would flash the wrong colours on every load
+    init = (JS.parent / "theme-init.js").read_text(encoding="utf-8")
+    module = (JS / "theme.js").read_text(encoding="utf-8")
+    assert re.search(r'^const DEFAULT = "light";', module, re.M)
+    assert re.search(r'^const RENAMED = \{ dark: "blue" \};', module, re.M)
+    assert 'var mode = "light"' in init
+    assert 'localStorage.getItem("seisa.theme") || "light"' in init
+    assert 'if (mode === "dark") mode = "blue";' in init
+    # the dark default of "system" is the same theme on both sides (and the light one is "light")
+    assert 'first = base === "dark" ? "sumi-brown" : "light"' in module
+    assert '(light ? "light" : "sumi-brown")' in init
+    assert 'const STORAGE_KEY = "seisa.theme"' in module

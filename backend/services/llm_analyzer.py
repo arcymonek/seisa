@@ -35,6 +35,14 @@ STREAM_MAX_TOKENS = 64000
 _OR_HTTP_HINT_CODES = (400, 401, 402, 403, 408, 429, 502, 503)  # texts: or.hint.<code> in backend/locales
 
 
+def _connection_error_text(exc: httpx.HTTPError) -> str:
+    """What the user sees for a failed request. A timeout gets a plain explanation (httpx gives it no text of its own);
+    the log keeps the technical description."""
+    if isinstance(exc, httpx.TimeoutException):
+        return t("or.timeout", seconds=int(OPENROUTER_TIMEOUT.read))
+    return describe_exception(exc)
+
+
 def openrouter_headers() -> dict:
     """Headers of every OpenRouter request (the key, JSON, and the attribution headers above)."""
     return {
@@ -198,9 +206,8 @@ class LlmAnalyzer:
             async with httpx.AsyncClient(timeout=OPENROUTER_TIMEOUT) as client:
                 resp = await client.post(OPENROUTER_URL, headers=headers, json=payload)
         except httpx.HTTPError as exc:
-            text = describe_exception(exc)
-            logger.error(f"OpenRouter: connection error: {text}")
-            return {"error": text}
+            logger.error(f"OpenRouter: connection error: {describe_exception(exc)}")
+            return {"error": _connection_error_text(exc)}
 
         try:
             body = resp.json()
@@ -328,9 +335,8 @@ class LlmAnalyzer:
                         if finish:
                             yield "finish", finish
         except httpx.HTTPError as exc:
-            text = describe_exception(exc)
-            logger.error(f"OpenRouter: connection error: {text}")
-            yield "error", text
+            logger.error(f"OpenRouter: connection error: {describe_exception(exc)}")
+            yield "error", _connection_error_text(exc)
 
     async def analyze_email(self, facts: dict, raw_email: str, lang: str = "en") -> dict | None:
         if not self.is_configured():

@@ -126,8 +126,21 @@ def test_long_quotes_are_cut_in_the_issue_text():
     assert len(result["issues"][0]["text"]) == 200
 
 
-@pytest.mark.xfail(strict=True, reason="found in audit stage 5 (T5.11): an address followed by a sentence-final full stop is not extracted, "
-                   "so an invented address at the end of a sentence escapes the check (lookahead (?![\\w.]) in _IPV4_RE / _IPV6_RE)")
 @pytest.mark.parametrize("text", ["The sender is 9.9.9.9.", "Connecting address 2001:4860:4860::8888.", "Seen at 9.9.9.9. Next sentence."])
 def test_an_address_at_the_end_of_a_sentence_is_checked(text):
     assert [i["kind"] for i in check(text)["issues"]] == ["ip"]
+
+
+@pytest.mark.parametrize("text", [
+    "The sender is 1.2.3.4.5.",        # five groups: not an address
+    "Host a1.2.3.4 replied.",           # glued to a letter
+    "Name 9.9.9.9.example.org here.",   # the dot continues into a host name
+    "Sent at 23:50:16. Next.",          # a time, not IPv6
+    "Version 2001:4860:4860::8888x ok.",
+])
+def test_text_that_only_looks_like_an_address_is_still_not_checked(text):
+    assert check(text)["issues"] == []
+
+
+def test_an_address_followed_by_a_comma_or_a_closing_bracket_is_checked():
+    assert [i["kind"] for i in check("Seen (9.9.9.9), then 9.9.9.10; done")["issues"]] == ["ip", "ip"]

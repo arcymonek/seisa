@@ -165,8 +165,9 @@ export function fmtRelative(value) {
 }
 
 // Two-click confirmation instead of a blocking confirm(): the first click arms the button (its text becomes
-// `confirmText` for `ms`), the second one within that time runs `onConfirm`.
-export function armedConfirm(btn, confirmText, onConfirm, ms = 4000) {
+// `confirmText` for `ms`), the second one within that time runs `onConfirm`. A failure of `onConfirm` (a rejected
+// promise or a throw) goes to `onError`; without it the error is only logged, never swallowed silently.
+export function armedConfirm(btn, confirmText, onConfirm, ms = 4000, onError = (err) => console.error(err)) {
   const label = btn.textContent;
   let timer = null;
   const disarm = () => {
@@ -183,7 +184,7 @@ export function armedConfirm(btn, confirmText, onConfirm, ms = 4000) {
       return;
     }
     disarm();
-    onConfirm();
+    Promise.resolve().then(onConfirm).catch(onError);
   });
 }
 
