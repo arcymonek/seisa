@@ -8,12 +8,14 @@ What it checks, always on what is STAGED (the index), not on the working tree:
   1. Forbidden files: CLAUDE.md, .env, data/, logs/, tests/private/, reports/ (except .gitkeep). They are gitignored,
      so this only catches `git add -f`.
   2. No long dash (U+2014) in added lines (all files except frontend/vendor/, which is third-party code).
-  3. Language pairs: README.md <-> README.pl.md and docs/en/X.md <-> docs/pl/X.md must be staged together.
-     `SEISA_ONE_LANG=1 git commit ...` skips ONLY this rule (a typo fixed in one language); everything else still runs.
-  4. scripts/check_i18n.py --strict, run on an export of the index: catalogs, heading parity, dead links, the same
-     version in all four places.
-  5. Version step: if the version differs from the one on `main` (merge-base), the difference must be exactly one
-     allowed step: Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice. A bump must come
+  3. Language pairs: a document and its twin (DOC_PAIRS in scripts/check_docs.py, for example README.md <->
+     README.pl.md or docs/X.md <-> docs/pl/X.md) must be staged together. `SEISA_ONE_LANG=1 git commit ...` skips ONLY
+     this rule (a typo fixed in one language); everything else still runs, scripts/check_docs.py included.
+  4. scripts/check_i18n.py --strict and scripts/check_docs.py, run on an export of the index: catalogs, the same
+     version in all four places, and the documentation (pairs, headings, links, agreement with the code).
+  5. Version step: if the version differs from the one on `main`, the difference must be exactly one allowed step:
+     Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice. `main` is the newest of the
+     merge-bases with main, origin/main and github/main, so a local `main` that was not updated does not count. A bump must come
      together with its release notes: a `## X.Y.Z - YYYY-MM-DD` entry in CHANGELOG.md whose date is the one in
      <meta name="seisa-release-date"> of frontend/index.html.
   6. Privacy scan of added lines: no API-key-looking strings, no home directory paths (/Users/name/, /home/name/) and none
@@ -23,7 +25,7 @@ What it checks, always on what is STAGED (the index), not on the working tree:
      the file only the generic checks run and a note says so. The offending value is never printed.
 
 `pre-commit --commit-msg FILE` (called by the commit-msg hook next to this file) checks the commit message: no long
-dash, no Co-Authored-By trailer and no "Generated with Claude Code" footer (CLAUDE.md forbids them), and the same
+dash, no Co-Authored-By trailer and no "Generated with Claude Code" footer (docs/DEVELOPMENT.md), and the same
 privacy scan.
 
 `pre-commit --range BASE` (used by CI on pull requests, also runnable by hand) checks the whole branch instead of
@@ -35,8 +37,8 @@ message rules are ours, a contributor's messages (and Co-Authored-By trailers) s
 `--range BASE --no-version-rule` checks only the added lines: CI uses it for pull requests from forks, where the
 maintainer adds the bump after review (see .github/workflows/ci.yml); the maintainer then runs the full `--range`.
 
-There is deliberately no switch that turns everything off. `git commit --no-verify` does, and CLAUDE.md allows it
-only after the risk has been discussed.
+There is deliberately no switch that turns everything off. `git commit --no-verify` does; do not use it (see
+docs/DEVELOPMENT.md).
 """
 from __future__ import annotations
 
@@ -59,7 +61,7 @@ FORBIDDEN_PREFIXES = {
     "reports/": "private working notes",
 }
 
-# The PROGRAM, as defined in CLAUDE.md ("Wersjonowanie"): a change here needs a version bump.
+# The PROGRAM (docs/DEVELOPMENT.md, versioning): a change here needs a version bump.
 PROGRAM_PREFIXES = ("backend/", "frontend/")
 PROGRAM_FILES = {
     "requirements.txt",
@@ -137,14 +139,13 @@ def forbidden_reason(path: str) -> str | None:
     return None
 
 
-def twin_of(path: str) -> str | None:
-    if path == "README.md":
-        return "README.pl.md"
-    if path == "README.pl.md":
-        return "README.md"
-    m = re.fullmatch(r"docs/(en|pl)/(.+\.md)", path)
-    if m:
-        return f"docs/{'pl' if m[1] == 'en' else 'en'}/{m[2]}"
+def twin_of(path: str, pairs) -> str | None:
+    """The other language of a document, from DOC_PAIRS of scripts/check_docs.py (None for a file without a twin)."""
+    for en, pl in pairs:
+        if path == en:
+            return pl
+        if path == pl:
+            return en
     return None
 
 
@@ -196,13 +197,13 @@ def check_long_dash(added: list[tuple[str, int, str]]) -> list[str]:
     ]
 
 
-def check_pairs(staged: list[str]) -> list[str]:
+def check_pairs(staged: list[str], pairs) -> list[str]:
     if os.environ.get("SEISA_ONE_LANG") == "1":
         return []
     have = set(staged)
     problems = []
     for f in staged:
-        twin = twin_of(f)
+        twin = twin_of(f, pairs)
         if twin and twin not in have:
             problems.append(f"LANGUAGE PAIR: {f} is staged but {twin} is not (change both, or SEISA_ONE_LANG=1 for a one-language fix)")
     return problems
@@ -255,9 +256,9 @@ def check_commit_message(text: str) -> list[str]:
     if EM_DASH in body:
         problems.append("LONG DASH (U+2014) in the commit message, use '-'")
     if re.search(r"^\s*co-authored-by:", body, re.IGNORECASE | re.MULTILINE):
-        problems.append("CO-AUTHORED-BY: Claude is not a co-author in this project (CLAUDE.md); remove the trailer")
+        problems.append("CO-AUTHORED-BY: Claude is not a co-author in this project (docs/DEVELOPMENT.md); remove the trailer")
     if re.search(r"generated with .{0,40}claude", body, re.IGNORECASE):
-        problems.append("ATTRIBUTION: remove the 'Generated with Claude Code' footer (CLAUDE.md)")
+        problems.append("ATTRIBUTION: remove the 'Generated with Claude Code' footer (docs/DEVELOPMENT.md)")
     markers, allowed, _ = load_privacy_markers()
     return problems + privacy_problems([("the commit message", body)], markers, allowed)
 
@@ -273,27 +274,51 @@ def release_notes_problems(version: str, changelog: str | None, html: str | None
     return []
 
 
-def load_check_i18n(root: Path):
-    spec = importlib.util.spec_from_file_location("seisa_check_i18n", root / "scripts" / "check_i18n.py")
+def _load_script(root: Path, name: str, needs: tuple[str, ...]):
+    """Imports scripts/<name> from `root` (an export of the index): the hook takes tables from the staged copy."""
+    path = root / "scripts" / name
+    spec = importlib.util.spec_from_file_location(f"seisa_{path.stem}", path)
     if spec is None or spec.loader is None:
-        raise GitError(f"cannot load {root / 'scripts' / 'check_i18n.py'}")
+        raise GitError(f"cannot load {path}")
     mod = importlib.util.module_from_spec(spec)
     try:
         spec.loader.exec_module(mod)
-    except (Exception, SystemExit) as e:  # a broken staged check_i18n.py must stop the commit with a message; SystemExit would end the hook with the module's exit code, maybe 0
-        raise GitError(f"cannot import scripts/check_i18n.py: {e!r}") from e
-    if not (hasattr(mod, "VERSION_PLACES") and hasattr(mod, "read_versions")):
-        raise GitError("scripts/check_i18n.py lacks VERSION_PLACES/read_versions (the hook reads the version places from it): stage the matching check_i18n.py too")
+    except (Exception, SystemExit) as e:  # a broken staged script must stop the commit with a message; SystemExit would end the hook with the module's exit code, maybe 0
+        raise GitError(f"cannot import scripts/{name}: {e!r}") from e
+    if not all(hasattr(mod, attr) for attr in needs):
+        raise GitError(f"scripts/{name} lacks {'/'.join(needs)} (the hook reads them from it): stage the matching {name} too")
     return mod
 
 
+def load_check_i18n(root: Path):
+    return _load_script(root, "check_i18n.py", ("VERSION_PLACES", "read_versions"))
+
+
+def load_check_docs(root: Path):
+    return _load_script(root, "check_docs.py", ("DOC_PAIRS",))
+
+
+def _is_ancestor(older: str, newer: str) -> bool:
+    return subprocess.run(["git", "merge-base", "--is-ancestor", older, newer], capture_output=True).returncode == 0
+
+
 def base_commit() -> str | None:
-    """Where the branch left `main` (HEAD itself on main); None before the first commit."""
+    """Where the branch left `main` (HEAD itself on main); None before the first commit.
+
+    The newest of the merge-bases with main, origin/main and github/main: a local `main` that was not fast-forwarded
+    after a merge on the server would otherwise make the version on `main` look older than it is. When the candidates
+    diverged, the one with the longest history wins."""
+    bases: list[str] = []
     for cand in BASE_CANDIDATES:
         mb = git("merge-base", "HEAD", cand, check=False).strip()
-        if mb:
+        if mb and mb not in bases:
+            bases.append(mb)
+    if not bases:
+        return git("rev-parse", "--verify", "-q", "HEAD", check=False).strip() or None
+    for mb in bases:
+        if all(other == mb or _is_ancestor(other, mb) for other in bases):
             return mb
-    return git("rev-parse", "--verify", "-q", "HEAD", check=False).strip() or None
+    return max(bases, key=lambda mb: int(git("rev-list", "--count", mb).strip() or 0))
 
 
 def versions_at(ci, revs: list[str]) -> list[dict[str, str]]:
@@ -329,11 +354,12 @@ def check_version_step(ci, base: str | None) -> list[str]:
     return problems
 
 
-def run_check_i18n(root: Path) -> list[str]:
-    p = subprocess.run([sys.executable, str(root / "scripts" / "check_i18n.py"), "--strict"], cwd=root, capture_output=True, text=True)
+def run_check(root: Path, script: str, *args: str) -> list[str]:
+    p = subprocess.run([sys.executable, str(root / "scripts" / script), *args], cwd=root, capture_output=True, text=True)
     if p.returncode == 0:
         return []
-    return ["CHECK_I18N failed:", *("    " + ln for ln in (p.stdout + p.stderr).splitlines() if ln.strip())]
+    label = Path(script).stem.upper()
+    return [f"{label} failed:", *("    " + ln for ln in (p.stdout + p.stderr).splitlines() if ln.strip() and not ln.startswith("warning:"))]
 
 
 def pre_commit() -> int:
@@ -341,18 +367,24 @@ def pre_commit() -> int:
         return 0
     staged = [f for f in git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0") if f]
     added = added_lines()
-    problems = check_forbidden(staged) + check_pairs(staged) + added_line_problems(added)
+    problems = check_forbidden(staged) + added_line_problems(added)
     with tempfile.TemporaryDirectory(prefix="seisa-precommit-") as tmp:
         git("checkout-index", "-a", f"--prefix={tmp}/")
         root = Path(tmp)
+        # failing open here would let a commit that deletes a check switch the check off
+        if (root / "scripts" / "check_docs.py").exists():
+            problems += check_pairs(staged, load_check_docs(root).DOC_PAIRS)
+            problems += run_check(root, "check_docs.py")
+        else:
+            problems.append("MISSING CHECK: scripts/check_docs.py is not in the index (the documentation and language-pair checks need it)")
         if (root / "scripts" / "check_i18n.py").exists():
-            problems += run_check_i18n(root)
+            problems += run_check(root, "check_i18n.py", "--strict")
             problems += check_version_step(load_check_i18n(root), base_commit())
-        else:  # failing open here would let a commit that deletes the check switch the check off
+        else:
             problems.append("MISSING CHECK: scripts/check_i18n.py is not in the index (the i18n and version checks need it)")
     if problems:
         print("\n".join(problems))
-        print("Commit aborted. Fix the problems; --no-verify only after the risk has been discussed (CLAUDE.md).")
+        print("Commit aborted. Fix the problems; do not bypass the hook with --no-verify (docs/DEVELOPMENT.md).")
         return 1
     return 0
 
@@ -423,7 +455,7 @@ def main(argv: list[str]) -> int:
             problems = check_commit_message(msg_file.read_text(encoding="utf-8", errors="replace"))
             if problems:
                 print("\n".join(problems))
-                print("Commit aborted. Fix the message; --no-verify only after the risk has been discussed (CLAUDE.md).")
+                print("Commit aborted. Fix the message; do not bypass the hook with --no-verify (docs/DEVELOPMENT.md).")
                 return 1
             return 0
         if argv[:1] == ["--range"]:

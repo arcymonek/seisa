@@ -1,10 +1,13 @@
 """Tests for scripts/hooks/pre-commit (the git hook) and its `--range` mode used by CI.
 
-The expected values come from the rules in CLAUDE.md ("Wersjonowanie", "Commit i push"), not from the hook's own
+The expected values come from the project rules (docs/DEVELOPMENT.md: versioning, commits), not from the hook's own
 output. The end-to-end tests build a throw-away git repository from a copy of this project (the working tree, so
 an uncommitted hook is tested too), stage a change, run the hook and check the exit code and the message. Every
-rule of the hook has at least one test that fails when the rule is removed: that is the mutation test CLAUDE.md
+rule of the hook has at least one test that fails when the rule is removed: that is the mutation test the project
 asks for, kept permanently.
+
+Documentation pairs used here exist from the start of the documentation rewrite on: CODE_OF_CONDUCT.md with
+docs/pl/CODE_OF_CONDUCT.md, and README.md with README.pl.md.
 
 `SEISA_HOOK_UNDER_TEST=/path/to/mutated-copy` (and `SEISA_COMMITMSG_UNDER_TEST` for the commit-msg wrapper) runs the
 same tests against another copy of the hook; it is how a mutated hook is shown to turn the matching test red.
@@ -37,6 +40,13 @@ GIT_ENV = {
 }
 
 
+def _load_check_docs():
+    spec = importlib.util.spec_from_file_location("seisa_check_docs_for_hook_tests", ROOT / "scripts" / "check_docs.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _load_hook():
     loader = SourceFileLoader("seisa_pre_commit_hook", str(HOOK_SRC))
     spec = importlib.util.spec_from_loader(loader.name, loader)
@@ -46,6 +56,7 @@ def _load_hook():
 
 
 hook_mod = _load_hook()
+DOC_PAIRS = _load_check_docs().DOC_PAIRS
 
 
 # --- helpers ----------------------------------------------------------------------------------------------------
@@ -77,7 +88,7 @@ def current_version(repo: Path) -> str:
     return re.search(r"<title>Seisa ([\d.]+)</title>", html)[1]
 
 
-# The four places, written out here on purpose (CLAUDE.md "Wersjonowanie"), not taken from the hook's own table.
+# The four places, written out here on purpose (docs/DEVELOPMENT.md, versioning), not taken from the hook's own table.
 _PLACES = {
     "frontend/index.html": (r"<title>Seisa [\d.]+</title>", r"<footer>Seisa [\d.]+"),
     "README.md": (r"<b>Seisa [\d.]+</b>",),
@@ -159,7 +170,7 @@ def repo(base_repo, tmp_path) -> Path:
     return dest
 
 
-# --- pure functions (the rules written down in CLAUDE.md) -------------------------------------------------------
+# --- pure functions (the project rules) -------------------------------------------------------------------------
 
 @pytest.mark.parametrize(("old", "new"), [
     ("2.1.30", "2.1.31"),    # Z+1
@@ -188,14 +199,17 @@ def test_disallowed_version_steps(old, new):
 @pytest.mark.parametrize(("path", "twin"), [
     ("README.md", "README.pl.md"),
     ("README.pl.md", "README.md"),
-    ("docs/en/architecture.md", "docs/pl/architecture.md"),
-    ("docs/pl/tabs.md", "docs/en/tabs.md"),
+    ("docs/ARCHITECTURE.md", "docs/pl/ARCHITECTURE.md"),
+    ("docs/pl/USER_GUIDE.md", "docs/USER_GUIDE.md"),
+    ("CONTRIBUTING.md", "docs/pl/CONTRIBUTING.md"),
+    ("docs/pl/CODE_OF_CONDUCT.md", "CODE_OF_CONDUCT.md"),
     ("backend/prompts/email-analysis-guide.md", None),    # prompt context, not documentation
     ("CHANGELOG.md", None),
+    ("AGENTS.md", None),
     ("backend/main.py", None),
 ])
 def test_language_twin(path, twin):
-    assert hook_mod.twin_of(path) == twin
+    assert hook_mod.twin_of(path, DOC_PAIRS) == twin
 
 
 @pytest.mark.parametrize(("path", "program"), [
@@ -214,7 +228,7 @@ def test_forbidden_paths(path):
     assert hook_mod.forbidden_reason(path)
 
 
-@pytest.mark.parametrize("path", [".env.example", "data/.gitkeep", "logs/.gitkeep", "tests/private/.gitkeep", "backend/main.py", "docs/en/tabs.md"])
+@pytest.mark.parametrize("path", [".env.example", "data/.gitkeep", "logs/.gitkeep", "tests/private/.gitkeep", "backend/main.py", "docs/USER_GUIDE.md"])
 def test_allowed_paths(path):
     assert hook_mod.forbidden_reason(path) is None
 
@@ -226,9 +240,7 @@ def test_nothing_staged_passes(repo):
 
 
 def test_a_clean_two_language_change_passes(repo):
-    append(repo, "docs/en/architecture.md", "\nAn extra sentence.\n")
-    append(repo, "docs/pl/architecture.md", "\nDodatkowe zdanie.\n")
-    stage(repo, "docs/en/architecture.md", "docs/pl/architecture.md")
+    _both_languages(repo)
     r = run_hook(repo)
     assert r.returncode == 0, r.stdout + r.stderr
 
@@ -262,12 +274,12 @@ def test_long_dash_in_an_added_line_is_rejected_but_not_in_vendor_code(repo):
 
 def test_a_language_pair_must_be_staged_together(repo):
     append(repo, "README.md", "\nAn extra sentence.\n")
-    append(repo, "docs/pl/extending.md", "\nDodatkowe zdanie.\n")
-    stage(repo, "README.md", "docs/pl/extending.md")
+    append(repo, "docs/pl/CODE_OF_CONDUCT.md", "\nDodatkowe zdanie.\n")
+    stage(repo, "README.md", "docs/pl/CODE_OF_CONDUCT.md")
     r = run_hook(repo)
     assert r.returncode == 1
     assert "LANGUAGE PAIR: README.md is staged but README.pl.md is not" in r.stdout
-    assert "LANGUAGE PAIR: docs/pl/extending.md is staged but docs/en/extending.md is not" in r.stdout
+    assert "LANGUAGE PAIR: docs/pl/CODE_OF_CONDUCT.md is staged but CODE_OF_CONDUCT.md is not" in r.stdout
 
 
 def test_one_lang_variable_skips_only_the_pair_rule(repo):
@@ -283,17 +295,34 @@ def test_one_lang_variable_skips_only_the_pair_rule(repo):
     assert "LANGUAGE PAIR" not in r.stdout
 
 
-def test_check_i18n_runs_on_the_index_not_on_the_working_tree(repo):
-    original = (repo / "docs" / "en" / "architecture.md").read_text(encoding="utf-8")
-    append(repo, "docs/en/architecture.md", "\n## A heading only in English\n")
-    append(repo, "docs/pl/architecture.md", "\nDodatkowe zdanie.\n")
-    stage(repo, "docs/en/architecture.md", "docs/pl/architecture.md")
+def test_the_checks_run_on_the_index_not_on_the_working_tree(repo):
+    original = (repo / "CODE_OF_CONDUCT.md").read_text(encoding="utf-8")
+    append(repo, "CODE_OF_CONDUCT.md", "\n## A heading only in English\n")
+    append(repo, "docs/pl/CODE_OF_CONDUCT.md", "\nDodatkowe zdanie.\n")
+    stage(repo, "CODE_OF_CONDUCT.md", "docs/pl/CODE_OF_CONDUCT.md")
     assert run_hook(repo).returncode == 1
     # fix the file on disk without staging the fix: what will be committed is still wrong
-    write(repo, "docs/en/architecture.md", original)
+    write(repo, "CODE_OF_CONDUCT.md", original)
     r = run_hook(repo)
     assert r.returncode == 1
-    assert "CHECK_I18N failed" in r.stdout and "heading structure" in r.stdout
+    assert "CHECK_DOCS failed" in r.stdout and "heading structure" in r.stdout
+
+
+def test_check_i18n_runs_on_the_index(repo):
+    cat = repo / "frontend" / "i18n" / "en.json"
+    write(repo, "frontend/i18n/en.json", cat.read_text(encoding="utf-8").replace("{\n", '{\n  "zz.only_in_english": "x",\n', 1))
+    stage(repo, "frontend/i18n/en.json")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "CHECK_I18N failed" in r.stdout and "zz.only_in_english" in r.stdout
+
+
+def test_check_docs_rejects_a_document_without_a_twin(repo):
+    write(repo, "docs/NOTES.md", "# Notes\n")
+    stage(repo, "docs/NOTES.md")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "CHECK_DOCS failed" in r.stdout and "docs/NOTES.md is not in DOC_PAIRS" in r.stdout
 
 
 def test_a_broken_staged_check_i18n_stops_the_commit_with_a_message(repo):
@@ -319,11 +348,43 @@ def test_deleting_check_i18n_does_not_switch_the_checks_off(repo):
     assert "MISSING CHECK: scripts/check_i18n.py" in r.stdout
 
 
-def test_deleting_only_one_language_of_a_document_is_rejected(repo):
-    git(repo, "rm", "-q", "docs/pl/tabs.md")
+def test_deleting_check_docs_does_not_switch_the_checks_off(repo):
+    git(repo, "rm", "-q", "scripts/check_docs.py")
     r = run_hook(repo)
     assert r.returncode == 1
-    assert "docs/pl/tabs.md is missing" in r.stdout
+    assert "MISSING CHECK: scripts/check_docs.py" in r.stdout
+
+
+def test_a_broken_staged_check_docs_stops_the_commit_with_a_message(repo):
+    # the hook takes DOC_PAIRS from the check_docs.py in the INDEX; a copy without it, or one that exits on import, must
+    # stop the commit instead of switching the pair rule off
+    write(repo, "scripts/check_docs.py", "X = 1\n")
+    stage(repo, "scripts/check_docs.py")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "lacks DOC_PAIRS" in r.stdout and "Traceback" not in r.stdout + r.stderr
+
+    write(repo, "scripts/check_docs.py", "import sys\nsys.exit(0)\n")
+    stage(repo, "scripts/check_docs.py")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "cannot import scripts/check_docs.py" in r.stdout
+
+
+def test_deleting_only_one_language_of_a_document_is_rejected(repo):
+    git(repo, "rm", "-q", "docs/pl/CODE_OF_CONDUCT.md")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "docs/pl/CODE_OF_CONDUCT.md is missing" in r.stdout
+
+
+def test_hook_messages_do_not_point_to_private_files(repo):
+    write(repo, "CLAUDE.md", "x\n")
+    stage(repo, "CLAUDE.md", force=True)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "docs/DEVELOPMENT.md" in r.stdout
+    assert "(CLAUDE.md)" not in r.stdout
 
 
 def test_a_bump_of_one_allowed_step_passes(repo):
@@ -362,11 +423,42 @@ def test_a_branch_cannot_bump_twice(repo):
     assert "VERSION STEP" in r.stdout and "(one bump per branch)" in r.stdout
 
     git(repo, "reset", "-q", "--hard")    # back to the single bump: further commits on the branch are fine
-    append(repo, "docs/en/architecture.md", "\nAn extra sentence.\n")
-    append(repo, "docs/pl/architecture.md", "\nDodatkowe zdanie.\n")
-    stage(repo, "docs/en/architecture.md", "docs/pl/architecture.md")
+    _both_languages(repo)
     r = run_hook(repo)
     assert r.returncode == 0, r.stdout + r.stderr
+
+
+def _release_on_the_server(repo: Path, ref: str) -> str:
+    """`main` moved on on the server (a merged release, program change and bump) while the local `main` stayed behind;
+    returns the version of that release."""
+    git(repo, "switch", "-q", "-c", "release")
+    append(repo, "backend/config.py", "\n# a released change\n")
+    released = step(current_version(repo), "z")
+    bump(repo, released, date="2031-01-01")
+    commit_all(repo, "Release")
+    git(repo, "update-ref", f"refs/remotes/{ref}", "HEAD")
+    git(repo, "switch", "-q", "-c", "feat-next")    # a new branch cut from the server's main
+    git(repo, "branch", "-q", "-D", "release")
+    return released
+
+
+@pytest.mark.parametrize("ref", ["origin/main", "github/main"])
+def test_the_version_step_counts_from_the_newest_main(repo, ref):
+    # the local main is still on the old version: comparing with it made a correct bump look like two (F1, F2)
+    released = _release_on_the_server(repo, ref)
+    bump(repo, step(released, "z"))
+    stage(repo, *_PLACES, "CHANGELOG.md")
+    r = run_hook(repo)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_the_newest_main_still_allows_only_one_bump(repo):
+    released = _release_on_the_server(repo, "origin/main")
+    bump(repo, step(step(released, "z"), "z"))
+    stage(repo, *_PLACES, "CHANGELOG.md")
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert f"after {released} on main" in r.stdout
 
 
 # --- `--range main` (the whole branch, used by CI) --------------------------------------------------------------
@@ -378,7 +470,7 @@ def _branch_with(repo: Path, *, program: bool = False, bump_kind: str | None = N
     if bump_kind:
         bump(repo, step(current_version(repo), bump_kind))
     if not program and not bump_kind:
-        append(repo, "docs/en/tabs.md", "\nAn extra sentence.\n")
+        append(repo, "CODE_OF_CONDUCT.md", "\nAn extra sentence.\n")
     commit_all(repo, message)
 
 
@@ -486,8 +578,8 @@ def test_range_a_bump_needs_its_changelog_entry(repo):
 
 def _branch_adding(repo: Path, line: str, message: str = "work") -> None:
     git(repo, "switch", "-q", "-c", "feat-y")
-    for lang in ("en", "pl"):
-        append(repo, f"docs/{lang}/tabs.md", f"\n{line}\n")
+    for rel in PAIR_COC:
+        append(repo, rel, f"\n{line}\n")
     commit_all(repo, message)
 
 
@@ -495,7 +587,7 @@ def test_range_rejects_a_long_dash_the_branch_adds(repo):
     _branch_adding(repo, f"one {DASH} two")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 1
-    assert "LONG DASH" in r.stdout and "docs/en/tabs.md" in r.stdout
+    assert "LONG DASH" in r.stdout and "docs/pl/CODE_OF_CONDUCT.md" in r.stdout
 
 
 def test_range_runs_the_privacy_scan_on_the_lines_the_branch_adds(repo, tmp_path):
@@ -517,14 +609,14 @@ def test_range_runs_the_privacy_scan_on_the_lines_the_branch_adds(repo, tmp_path
 
 def test_range_does_not_judge_what_main_already_had(repo):
     git(repo, "switch", "-q", "-c", "feat-y")
-    append(repo, "docs/en/tabs.md", f"\nold {DASH} text\n")
-    append(repo, "docs/pl/tabs.md", f"\nold {DASH} text\n")
+    for rel in PAIR_COC:
+        append(repo, rel, f"\nold {DASH} text\n")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "--no-verify", "-m", "on main before the rule")    # the repo has no hooks enabled anyway
     git(repo, "switch", "-q", "main")
     git(repo, "merge", "-q", "--ff-only", "feat-y")
     git(repo, "switch", "-q", "-c", "feat-z")
-    _both_languages(repo, "configuration")
+    _both_languages(repo, "readme")
     git(repo, "commit", "-q", "-m", "A clean change")
     r = run_hook(repo, "--range", "main")
     assert r.returncode == 0, r.stdout + r.stderr
@@ -654,9 +746,9 @@ def test_privacy_scan_of_added_lines(repo, tmp_path):
     markers = tmp_path / "markers.txt"
     markers.write_text("host.leak.example\n", encoding="utf-8")
     key, home = "ab" * 40, "/home" + "/someone/x"
-    for rel in ("docs/en/tabs.md", "docs/pl/tabs.md"):
+    for rel in PAIR_COC:
         append(repo, rel, f"\nA key {key}, a path {home}, a host host.leak.example.\n")
-    stage(repo, "docs/en/tabs.md", "docs/pl/tabs.md")
+    stage(repo, *PAIR_COC)
     r = run_hook(repo, env={"SEISA_PRIVACY_MARKERS": str(markers)})
     assert r.returncode == 1
     assert "looks like a real API key" in r.stdout and "home directory path" in r.stdout
@@ -683,10 +775,14 @@ def _out(r: subprocess.CompletedProcess) -> str:
     return r.stdout + r.stderr
 
 
-def _both_languages(repo: Path, name: str = "tabs") -> list[str]:
-    for lang in ("en", "pl"):
-        append(repo, f"docs/{lang}/{name}.md", "\nAn extra sentence.\n")
-    paths = [f"docs/en/{name}.md", f"docs/pl/{name}.md"]
+PAIR_COC = ("CODE_OF_CONDUCT.md", "docs/pl/CODE_OF_CONDUCT.md")
+PAIR_README = ("README.md", "README.pl.md")
+
+
+def _both_languages(repo: Path, name: str = "coc") -> list[str]:
+    paths = list(PAIR_COC if name == "coc" else PAIR_README)
+    for rel in paths:
+        append(repo, rel, "\nAn extra sentence.\n")
     stage(repo, *paths)
     return paths
 
@@ -716,11 +812,11 @@ def test_git_runs_the_commit_msg_hook(hooked):
 def test_a_partial_commit_judges_only_the_listed_paths(hooked):
     append(hooked, "backend/config.py", f"\n# one {DASH} two\n")
     stage(hooked, "backend/config.py")    # staged, but NOT part of the partial commit below
-    for lang in ("en", "pl"):
-        append(hooked, f"docs/{lang}/tabs.md", "\nAn extra sentence.\n")
-    r = git(hooked, "commit", "-q", "-m", "Add a sentence", "--", "docs/en/tabs.md", "docs/pl/tabs.md", check=False)
+    for rel in PAIR_COC:
+        append(hooked, rel, "\nAn extra sentence.\n")
+    r = git(hooked, "commit", "-q", "-m", "Add a sentence", "--", *PAIR_COC, check=False)
     assert r.returncode == 0, _out(r)
-    assert git(hooked, "show", "--name-only", "--format=", "HEAD").stdout.split() == ["docs/en/tabs.md", "docs/pl/tabs.md"]
+    assert git(hooked, "show", "--name-only", "--format=", "HEAD").stdout.split() == list(PAIR_COC)
     assert git(hooked, "diff", "--cached", "--name-only").stdout.split() == ["backend/config.py"]
     r = git(hooked, "commit", "-q", "-m", "Edit a comment", "--", "backend/config.py", check=False)
     assert r.returncode != 0
@@ -770,11 +866,11 @@ def test_amending_a_bump_cannot_make_it_a_second_bump(hooked):
 
 def test_rebase_and_merge_work_with_the_hooks_enabled(hooked):
     git(hooked, "switch", "-q", "-c", "feat-x")
-    _both_languages(hooked, "tabs")
-    git(hooked, "commit", "-q", "-m", "Edit the tabs page")
+    _both_languages(hooked, "coc")
+    git(hooked, "commit", "-q", "-m", "Edit the code of conduct")
     git(hooked, "switch", "-q", "main")
-    _both_languages(hooked, "configuration")
-    git(hooked, "commit", "-q", "-m", "Edit the configuration page")
+    _both_languages(hooked, "readme")
+    git(hooked, "commit", "-q", "-m", "Edit the README")
     git(hooked, "switch", "-q", "feat-x")
     r = git(hooked, "rebase", "main", check=False)
     assert r.returncode == 0, _out(r)
@@ -792,7 +888,7 @@ def _pull_request_merge(repo: Path, bump_kind: str | None = None) -> None:
         bump(repo, step(current_version(repo), bump_kind))
     commit_all(repo, "The feature")
     git(repo, "switch", "-q", "main")
-    _both_languages(repo, "configuration")
+    _both_languages(repo, "readme")
     git(repo, "commit", "-q", "-m", "Main moves on")
     git(repo, "update-ref", "refs/remotes/origin/main", "main")    # what `actions/checkout` with fetch-depth 0 provides
     git(repo, "switch", "-q", "-c", "pr-merge")
@@ -814,8 +910,8 @@ def test_range_on_a_pull_request_merge_commit_accepts_a_program_change_with_one_
 
 def test_range_judges_the_branch_not_what_main_gained_since_it_was_cut(repo):
     git(repo, "switch", "-q", "-c", "feat-y")
-    _both_languages(repo, "tabs")
-    git(repo, "commit", "-q", "-m", "Edit the tabs page")    # the branch: documentation only
+    _both_languages(repo, "coc")
+    git(repo, "commit", "-q", "-m", "Edit the code of conduct")    # the branch: documentation only
     git(repo, "switch", "-q", "main")
     append(repo, "backend/config.py", "\n# another release\n")
     bump(repo, step(current_version(repo), "z"))

@@ -4,7 +4,8 @@
 Usage: python3 scripts/check_all.py [--fast]
 
 Steps: ruff, pytest (everything, including the slow hook and time-limit tests; `--fast` skips those), the end-to-end
-harness, the i18n check in strict mode, the facts dump, and the syntax check of every frontend module. The same steps
+harness, the i18n check in strict mode, the documentation check, the facts dump, and the syntax check of every frontend
+module. The same steps
 run in CI (.github/workflows/ci.yml). Exit code 0 = all passed, 1 = a step failed (its output is shown above the summary).
 
 What it does NOT replace: the manual try in the browser after UI changes (`/?lang=qa`, XSS payloads), and the one test
@@ -53,6 +54,7 @@ def main() -> int:
         ("pytest" + (" (fast)" if args.fast else ""), lambda: run(pytest_cmd)),
         ("api_harness", lambda: run([PY, "scripts/api_harness.py"])),
         ("check_i18n --strict", lambda: run([PY, "scripts/check_i18n.py", "--strict"])),
+        ("check_docs", lambda: run([PY, "scripts/check_docs.py"])),
         ("dump_facts", lambda: run([PY, "scripts/dump_facts.py", "--lang", "pl"], stdout=subprocess.DEVNULL)),
         ("frontend syntax (node --check)", check_js_syntax),
     ]
