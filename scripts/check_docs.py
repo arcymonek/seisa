@@ -73,10 +73,9 @@ REQUIRED_DOCS: tuple[str, ...] = (*(f for pair in DOC_PAIRS for f in pair), "AGE
 PENDING: frozenset[str] = frozenset({
     "README.md", "README.pl.md",                       # placeholders until the final README is written
     "CONTRIBUTING.md", "docs/pl/CONTRIBUTING.md",
-    "SECURITY.md", "docs/pl/SECURITY.md",
     "AGENTS.md",
-    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API")),
-    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API")),
+    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE")),
+    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE")),
 })
 
 API_DOC = "docs/API.md"
