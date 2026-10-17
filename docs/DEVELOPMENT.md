@@ -208,7 +208,7 @@ A new source of information is a subclass of `IntelService` in `backend/services
 - `frontend/js/services.js`, `frontend/js/lookup.js` (`ALL_SERVICES`) and `frontend/js/lookup-result.js` (the link to the service);
 - both language catalogs and the mock handler in `scripts/api_harness.py`.
 
-A new `.env` key raises the middle number of the version and has to appear in the README key table and in the full table of [PRIVACY.md](PRIVACY.md).
+A new `.env` key raises the middle number of the version and has to appear in the [README](../README.md) key table and in the full table of [PRIVACY.md](PRIVACY.md).
 
 ### Add a language
 
@@ -232,7 +232,7 @@ A tab touches both ends:
 - `frontend/js/app.js` (`panels` and the start-up) and a new module `frontend/js/<tab>.js`; larger tabs use `<tab>-<role>.js` for extra modules;
 - catalog keys `tab.*` in both languages;
 - a router in `backend/routers/`, mounted in `backend/main.py`;
-- the harness, the README tab table and [USER_GUIDE.md](USER_GUIDE.md). `check_docs.py` turns red until the last two exist.
+- the harness, the [README](../README.md) tab table and [USER_GUIDE.md](USER_GUIDE.md). `check_docs.py` turns red until the last two exist.
 
 ### Change a prompt
 
@@ -255,9 +255,9 @@ Documentation that is out of date is worse than none, so a change and its docume
 | When you change... | Update |
 |---|---|
 | An endpoint (path, input, output, error) | [API.md](API.md) and its Polish twin (checked), and the harness |
-| Anything that sends data out (a new service, key, endpoint or kind of request) | The full table in [PRIVACY.md](PRIVACY.md), the short table and the key table in README, the tab in [USER_GUIDE.md](USER_GUIDE.md), [API.md](API.md), `.env.example` |
-| A `.env` key | `backend/config.py`, `.env.example` and the README key table (checked), and raise the middle number of the version |
-| A tab, a button or a visible name | Both catalogs, [USER_GUIDE.md](USER_GUIDE.md) and the README tab table (checked), and the screenshots if the look changed |
+| Anything that sends data out (a new service, key, endpoint or kind of request) | The full table in [PRIVACY.md](PRIVACY.md), the short table and the key table in [README](../README.md), the tab in [USER_GUIDE.md](USER_GUIDE.md), [API.md](API.md), `.env.example` |
+| A `.env` key | `backend/config.py`, `.env.example` and the [README](../README.md) key table (checked), and raise the middle number of the version |
+| A tab, a button or a visible name | Both catalogs, [USER_GUIDE.md](USER_GUIDE.md) and the [README](../README.md) tab table (checked), and the screenshots if the look changed |
 | A limit or a number shown to users (history size, log retention, comment length, timeouts) | The document that owns the number: [OPERATIONS.md](OPERATIONS.md), [PRIVACY.md](PRIVACY.md) or [COMPLIANCE.md](COMPLIANCE.md); `check_docs.py` checks the numbers listed in its `FACTS` table |
 | A data file or its permissions | The data section of [PRIVACY.md](PRIVACY.md), the deleting section of [OPERATIONS.md](OPERATIONS.md), and [ARCHITECTURE.md](ARCHITECTURE.md) |
 | A safeguard | The safeguards in [PRIVACY.md](PRIVACY.md), and a mutation check (see [Tests](#tests)) |
@@ -269,7 +269,7 @@ Documentation that is out of date is worse than none, so a change and its docume
 | The version | The four places, the release date and `CHANGELOG.md` (see [Versioning and changelog](#versioning-and-changelog)) |
 | A file in `frontend/vendor/` | The licences in [COMPLIANCE.md](COMPLIANCE.md) |
 | A language or a theme | The recipes in [How to extend Seisa](#how-to-extend-seisa), and the settings in [USER_GUIDE.md](USER_GUIDE.md) |
-| The start-up messages in `seisa.sh` | The "Install and run" heading in the README, which `seisa.sh` points to |
+| The start-up messages in `seisa.sh` | The "Install and run" heading in the [README](../README.md), which `seisa.sh` points to |
 
 Every documentation change is made in both languages, in the same commit.
 
@@ -283,7 +283,7 @@ This section is for everyone who writes or edits the documents of the project. T
 2. **No walls of text.** A paragraph has at most about four lines (60 words). Three or more parallel items become a list or a table. A file longer than about 150 lines has a table of contents. Every section starts with a sentence that says what it is about.
 3. **Interface names literally.** Use the names exactly as the catalogs spell them (`frontend/i18n/en.json` and `pl.json`).
 4. **Only true claims.** Every claim must be true in the code. A number comes from one place in the code. When in doubt, look it up in the code or ask; do not guess.
-5. **One home per fact.** Each fact has one document where it is explained in full; other documents link to it. Two deliberate exceptions: the short "what leaves your computer" table and the tab table in README.
+5. **One home per fact.** Each fact has one document where it is explained in full; other documents link to it. Two deliberate exceptions: the short "what leaves your computer" table and the tab table in [README](../README.md).
 6. **Keep private things out.** No version numbers in `docs/`, no long dash (U+2014), no real host names, IP addresses or home folder paths. Examples use `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` and `.example`. The only e-mail address is `contact@seisa.eu`.
 7. **The top of a file with a twin:** the language switch line, the title, and one or two sentences saying for whom the file is and why it exists.
 8. **Natural Polish.** Translate the meaning, not the words; use the terms of the Polish catalog. Headings, tables, code blocks and images are the same in both languages.
@@ -300,8 +300,8 @@ This section is for everyone who writes or edits the documents of the project. T
 | Links | Every relative link, `#anchor` and image `src=` in a tracked Markdown file works | Error |
 | Images | Every image has a non-empty `alt` text and every image in `docs/images/` is used | Error |
 | Routes | The endpoints of the application are exactly the `METHOD /path` entries of `docs/API.md` | Error |
-| Keys | The fields of `Settings`, the keys of `.env.example` and the README key table agree | Error |
-| Tabs | Every tab has a section in `docs/USER_GUIDE.md` and a row in the README tab table | Error |
+| Keys | The fields of `Settings`, the keys of `.env.example` and the [README](../README.md) key table agree | Error |
+| Tabs | Every tab has a section in `docs/USER_GUIDE.md` and a row in the [README](../README.md) tab table | Error |
 | Modules | Every file of `backend/`, `frontend/js/` and `scripts/` is named in `docs/ARCHITECTURE.md` or in this file | Error |
 | Numbers | Limits from the code (listed in `FACTS` in `check_docs.py`) appear in the document that owns them, in both languages | Error |
 | Form | No version number in `docs/`, no U+2014, the language switch line on top of every file with a twin | Error |

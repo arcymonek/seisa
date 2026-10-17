@@ -70,10 +70,11 @@ You do the installation once. Run each command in the terminal, one at a time, a
    .venv/bin/pip install -r requirements.txt
    ```
 
-5. Create your settings file from the template. The copy is named `.env`, and you fill it with your API keys later:
+5. Create your settings file from the template. The copy is named `.env`, and you fill it with your API keys later. The second command makes the file readable only by your user account, because it will hold your keys:
 
    ```bash
    cp .env.example .env
+   chmod 600 .env
    ```
 
 6. Start Seisa (see [3. Starting Seisa](#3-starting-seisa)):
@@ -98,7 +99,7 @@ The `.env` file, the `data/` folder and the `logs/` folder are excluded from git
 
 ### API keys
 
-An API key is a long password that a service gives you so it knows who is asking. Seisa works without any key, but each key switches on one more source. The full table of keys (name, where to get it, what it enables) is in the README; what works without which key is in [USER_GUIDE.md](USER_GUIDE.md#4-api-keys-what-works-without-them).
+An API key is a long password that a service gives you so it knows who is asking. Seisa works without any key, but each key switches on one more source. The full table of keys (name, where to get it, what it enables) is in the [README](../README.md); what works without which key is in [USER_GUIDE.md](USER_GUIDE.md#4-api-keys-what-works-without-them).
 
 - Open the `.env` file in any text editor and paste each value after the `=` sign. Leave a key empty if you do not use that service.
 - Seisa reads `.env` once, when it starts. After you change a key, stop Seisa and start it again.
@@ -349,7 +350,7 @@ Each table below follows the same order: what you see, why it happens, what to d
 | Old History entries are missing after an update | The migration of `history.json` failed. | Look in the Logs tab for "history.json could not be read". The old file `data/history.json` stays untouched. |
 | Entries from "OpenRouter", "WHOIS" or "DNS" in Logs | A service failed. | Usually temporary; try again later. |
 | "request from another web page blocked" | Another web page tried to call Seisa; Seisa's protection stopped it. | Use Seisa only from its own tab. |
-| "internal Seisa error" | An unexpected error inside Seisa. | Look in the Logs tab and report it as described in CONTRIBUTING.md. |
+| "internal Seisa error" | An unexpected error inside Seisa. | Look in the Logs tab and report it as described in [CONTRIBUTING.md](../CONTRIBUTING.md). |
 
 ### Common questions
 
@@ -360,4 +361,4 @@ Each table below follows the same order: what you see, why it happens, what to d
 | What leaves my computer? | Only what you trigger by a click. The full list is in [PRIVACY.md](PRIVACY.md). |
 | Can I move Seisa to another computer? | Install it there, then copy your `data/` folder and `.env` file into the new Seisa folder. |
 | Can I change the port? | Not by a setting. The port is written in `seisa.sh` and `seisa-launcher.sh`; changing it means editing both scripts. |
-| I think I found a bug. | Look in the Logs tab and see CONTRIBUTING.md. For a security problem use [SECURITY.md](../SECURITY.md). |
+| I think I found a bug. | Look in the Logs tab and see [CONTRIBUTING.md](../CONTRIBUTING.md). For a security problem use [SECURITY.md](../SECURITY.md). |

@@ -71,7 +71,6 @@ REQUIRED_DOCS: tuple[str, ...] = (*(f for pair in DOC_PAIRS for f in pair), "AGE
 # Files still being written (the documentation rewrite). A missing PENDING file is not an error, and the rules that
 # read a document's content skip it. The session that writes a file removes it here in the same commit.
 PENDING: frozenset[str] = frozenset({
-    "README.md", "README.pl.md",                       # placeholders until the final README is written
     *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE", "OPERATIONS", "DEVELOPMENT")),
     *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE", "OPERATIONS", "DEVELOPMENT")),
 })

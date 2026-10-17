@@ -187,7 +187,7 @@ Frontend leży w `frontend/js/`. Większe zakładki są podzielone na moduły `<
 
 ## Pliki danych
 
-Seisa trzyma dane w dwóch lokalnych katalogach, `data/` i `logs/`. Ta sekcja pokazuje układ i format; uprawnienia i retencję opisuje dokument o prywatności (PRIVACY.md).
+Seisa trzyma dane w dwóch lokalnych katalogach, `data/` i `logs/`. Ta sekcja pokazuje układ i format; uprawnienia i retencję opisuje dokument o prywatności ([PRIVACY.md](PRIVACY.md)).
 
 - **Historia:** `data/history/index.json` zawiera jeden mały wiersz na wpis (to, czego potrzebują lista i porównanie). `data/history/entries/<uuid>.json` zawiera cały wpis. Indeks to pamięć podręczna, odbudowywana z plików wpisów, jeśli się uszkodzi. Zapis idzie najpierw do wpisu, potem do indeksu; kasowanie najpierw z indeksu, potem wpis.
 - **Stara Historia:** jednoplikowa historia z wersji sprzed 2.4.25 (`data/history.json`) jest przenoszona przy pierwszym użyciu i zmienia nazwę na `history.json.migrated`.
@@ -230,7 +230,7 @@ Odpowiedź Email musi zaczynać się od `VERDICT: <kod> | CONFIDENCE: <poziom>`.
 
 ## Skrypty i testy
 
-Katalogi `scripts/` i `tests/` pilnują projektu. Codzienną pracę z nimi opisuje przewodnik dewelopera (DEVELOPMENT.md); tu jest tylko mapa.
+Katalogi `scripts/` i `tests/` pilnują projektu. Codzienną pracę z nimi opisuje przewodnik dewelopera ([DEVELOPMENT.md](DEVELOPMENT.md)); tu jest tylko mapa.
 
 | Ścieżka | Co to jest |
 |---|---|

@@ -127,4 +127,4 @@ This section lists the licences of Seisa and the things it contains.
 - **Python dependencies.** The runtime dependencies are pinned in `requirements.lock`. CI allows only MIT, BSD, Apache, ISC, MPL-2.0 and PSF licences there, so a GPL package cannot get in by accident, and it runs `pip-audit` to look for known vulnerabilities.
 - **Graphics.** The logo and icons (`frontend/logo.png`, `logo-mask.png`, `app-icon.png`, `favicon.ico`) are the author's own work under the project licence.
 - **Development tools.** pytest, ruff, hypothesis, coverage, pip-audit, pip-licenses and markdown-it-py are not shipped and are not part of the program.
-- **Contributions.** They are accepted under the project licence ("inbound equals outbound"), without a DCO or a CLA. CONTRIBUTING.md has the details.
+- **Contributions.** They are accepted under the project licence ("inbound equals outbound"), without a DCO or a CLA. [CONTRIBUTING.md](../CONTRIBUTING.md) has the details.

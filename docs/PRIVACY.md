@@ -123,7 +123,7 @@ Some details about this table:
 
 ## How to delete your data
 
-Everything above can be removed by hand, and the buttons that do it are described in OPERATIONS.md. In short: deleting the `data/` and `logs/` folders removes what Seisa stored, and "Remove icon" in Info removes the desktop icon.
+Everything above can be removed by hand, and the buttons that do it are described in [OPERATIONS.md](OPERATIONS.md). In short: deleting the `data/` and `logs/` folders removes what Seisa stored, and "Remove icon" in Info removes the desktop icon.
 
 ## Language model (OpenRouter)
 

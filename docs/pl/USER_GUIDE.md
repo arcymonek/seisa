@@ -36,7 +36,7 @@ Seisa to narzędzie, które działa na Twoim komputerze i otwiera się w przegl�
 
 Czego Seisa nie robi: nie decyduje za Ciebie. Fakty ważne dla bezpieczeństwa (adres IP nadawcy, kolejność serwerów pocztowych, wyniki SPF/DKIM/DMARC, kontrole zgłoszenia, wynik dla IP) wylicza własny kod programu. Model językowy (LLM, usługa AI, którą włączasz kluczem OpenRouter) tylko je wyjaśnia i dodatkowo sprawdza. Za zgłoszenie do AbuseIPDB zawsze odpowiadasz Ty, i zakładka mówi Ci o tym przed wysłaniem. Powody opisuje [COMPLIANCE.md](COMPLIANCE.md).
 
-Do korzystania z podręcznika potrzebujesz działającej Seisy. Jak ją zainstalować, uruchomić i zaktualizować, opisuje OPERATIONS.md. Pełną listę tego, co opuszcza Twój komputer, znajdziesz w [PRIVACY.md](PRIVACY.md).
+Do korzystania z podręcznika potrzebujesz działającej Seisy. Jak ją zainstalować, uruchomić i zaktualizować, opisuje [OPERATIONS.md](OPERATIONS.md). Pełną listę tego, co opuszcza Twój komputer, znajdziesz w [PRIVACY.md](PRIVACY.md).
 
 ## 2. Ekran w skrócie
 
@@ -98,7 +98,7 @@ Zacznij od tego, co masz w ręku:
 
 ## 4. Klucze API: co działa bez nich
 
-Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto pyta, żeby mogła liczyć Twoje zapytania. Klucze wpisujesz do pliku `.env`. Tabela wszystkich kluczy i sposób ich zdobycia są w README. Ta tabela mówi tylko, co się dzieje, gdy klucza brakuje.
+Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto pyta, żeby mogła liczyć Twoje zapytania. Klucze wpisujesz do pliku `.env`. Tabela wszystkich kluczy i sposób ich zdobycia są w [README](../../README.pl.md). Ta tabela mówi tylko, co się dzieje, gdy klucza brakuje.
 
 | Zakładka lub funkcja | Potrzebny klucz | Bez klucza |
 |---|---|---|
@@ -592,7 +592,7 @@ Otwarcie zakładki nic nie wysyła. „Odśwież limity" to jedyna akcja, która
 
 ### Jak czytać wynik
 
-**Ustawienia.** Język, skórka kolorystyczna, „Ikona aplikacji" (z „Dodaj ikonę" i „Usuń ikonę") oraz „Serwer": „Zamknij Seisę" i „Pytaj przed zamknięciem". Ikonę wyjaśnia OPERATIONS.md.
+**Ustawienia.** Język, skórka kolorystyczna, „Ikona aplikacji" (z „Dodaj ikonę" i „Usuń ikonę") oraz „Serwer": „Zamknij Seisę" i „Pytaj przed zamknięciem". Ikonę wyjaśnia [OPERATIONS.md](OPERATIONS.md).
 
 **Status i limity API.** „Środowisko" (adres, czy „Plik .env" jest, system, wersje Pythona i FastAPI) oraz jedna karta na usługę ze statusem klucza i zużyciem względem limitów darmowego planu. Gdy usługa odpowie „limit wyczerpany" (HTTP 429), jej karta dostaje taką odznakę aż do następnej udanej odpowiedzi.
 
@@ -655,4 +655,4 @@ Jeśli zakładka mówi, że e-mail się nie kwalifikuje (na przykład jest stars
 
 Gdy skończysz, kliknij „Zamknij Seisę" w stopce albo w zakładce Info, w „Ustawienia". Serwer się zatrzyma, a strona zostanie zastąpiona napisem „Seisa została zatrzymana". Przeglądarka może poprosić, żebyś sam zamknął kartę.
 
-Seisa najpierw prosi o potwierdzenie. Zaznacz „Nie pytaj ponownie", żeby przestała pytać, a włączysz pytanie z powrotem przez „Pytaj przed zamknięciem" w Info, w „Ustawienia". Zawsze pyta, gdy praca mogłaby przepaść, na przykład trwająca analiza albo wklejony tekst. Jak uruchomić Seisę ponownie, opisuje OPERATIONS.md.
+Seisa najpierw prosi o potwierdzenie. Zaznacz „Nie pytaj ponownie", żeby przestała pytać, a włączysz pytanie z powrotem przez „Pytaj przed zamknięciem" w Info, w „Ustawienia". Zawsze pyta, gdy praca mogłaby przepaść, na przykład trwająca analiza albo wklejony tekst. Jak uruchomić Seisę ponownie, opisuje [OPERATIONS.md](OPERATIONS.md).

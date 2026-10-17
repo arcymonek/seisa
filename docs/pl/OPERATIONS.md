@@ -70,10 +70,11 @@ Instalację robisz raz. Każde polecenie wpisz w terminalu, po jednym, i poczeka
    .venv/bin/pip install -r requirements.txt
    ```
 
-5. Utwórz plik ustawień z szablonu. Kopia nazywa się `.env`, a klucze API wpiszesz do niej później:
+5. Utwórz plik ustawień z szablonu. Kopia nazywa się `.env`, a klucze API wpiszesz do niej później. Druga komenda sprawia, że plik może czytać tylko Twoje konto, bo będą w nim Twoje klucze:
 
    ```bash
    cp .env.example .env
+   chmod 600 .env
    ```
 
 6. Uruchom Seisę (patrz [3. Uruchamianie Seisy](#3-uruchamianie-seisy)):
@@ -98,7 +99,7 @@ Plik `.env` oraz foldery `data/` i `logs/` są wyłączone z gita, więc Twoje k
 
 ### Klucze API
 
-Klucz API to długie hasło, które usługa wydaje Ci po to, żeby wiedzieć, kto pyta. Seisa działa bez żadnego klucza, ale każdy klucz włącza jedno dodatkowe źródło. Pełna tabela kluczy (nazwa, skąd go wziąć, co włącza) jest w README, a to, co działa bez którego klucza, w [USER_GUIDE.md](USER_GUIDE.md#4-klucze-api-co-działa-bez-nich).
+Klucz API to długie hasło, które usługa wydaje Ci po to, żeby wiedzieć, kto pyta. Seisa działa bez żadnego klucza, ale każdy klucz włącza jedno dodatkowe źródło. Pełna tabela kluczy (nazwa, skąd go wziąć, co włącza) jest w [README](../../README.pl.md), a to, co działa bez którego klucza, w [USER_GUIDE.md](USER_GUIDE.md#4-klucze-api-co-działa-bez-nich).
 
 - Otwórz plik `.env` w dowolnym edytorze tekstu i wklej każdą wartość po znaku `=`. Klucz usługi, której nie używasz, zostaw pusty.
 - Seisa czyta `.env` raz, przy starcie. Po zmianie klucza zatrzymaj Seisę i uruchom ją ponownie.
@@ -349,7 +350,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Po aktualizacji brakuje starych wpisów Historii | Migracja `history.json` się nie udała. | Zajrzyj do zakładki Logi, szukaj wpisu „history.json could not be read" (wpisy w Logach są po angielsku). Stary plik `data/history.json` zostaje nietknięty. |
 | Wpisy „OpenRouter", „WHOIS" lub „DNS" w Logach | Usługa zawiodła. | Zwykle przejściowo; spróbuj później. |
 | „zablokowano żądanie z innej strony WWW" | Inna strona próbowała wywołać Seisę; jej ochrona to zatrzymała. | Korzystaj z Seisy tylko z jej własnej karty. |
-| „wewnętrzny błąd Seisy" | Nieoczekiwany błąd wewnątrz Seisy. | Zajrzyj do zakładki Logi i zgłoś go, jak opisuje CONTRIBUTING.md. |
+| „wewnętrzny błąd Seisy" | Nieoczekiwany błąd wewnątrz Seisy. | Zajrzyj do zakładki Logi i zgłoś go, jak opisuje [CONTRIBUTING.md](CONTRIBUTING.md). |
 
 ### Częste pytania
 
@@ -360,4 +361,4 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Co opuszcza mój komputer? | Tylko to, co wywołasz kliknięciem. Pełna lista jest w [PRIVACY.md](PRIVACY.md). |
 | Czy mogę przenieść Seisę na inny komputer? | Zainstaluj ją tam, a potem skopiuj folder `data/` i plik `.env` do nowego folderu Seisy. |
 | Czy mogę zmienić port? | Nie ustawieniem. Port jest wpisany w `seisa.sh` i `seisa-launcher.sh`; zmiana wymaga edycji obu skryptów. |
-| Chyba znalazłem błąd. | Zajrzyj do zakładki Logi i zobacz CONTRIBUTING.md. W sprawie bezpieczeństwa użyj [SECURITY.md](SECURITY.md). |
+| Chyba znalazłem błąd. | Zajrzyj do zakładki Logi i zobacz [CONTRIBUTING.md](CONTRIBUTING.md). W sprawie bezpieczeństwa użyj [SECURITY.md](SECURITY.md). |

@@ -187,7 +187,7 @@ The frontend lives in `frontend/js/`. Larger tabs are split into `<tab>-<role>.j
 
 ## Data files
 
-Seisa keeps its data in two local folders, `data/` and `logs/`. This section shows the layout and format; permissions and retention are covered in the privacy document (PRIVACY.md).
+Seisa keeps its data in two local folders, `data/` and `logs/`. This section shows the layout and format; permissions and retention are covered in the privacy document ([PRIVACY.md](PRIVACY.md)).
 
 - **History:** `data/history/index.json` holds one small row per entry (what the list and the comparison need). `data/history/entries/<uuid>.json` holds the full entry. The index is a cache that is rebuilt from the entry files if it is damaged. Writes go entry first, then index; deletes go index first, then entry.
 - **Old History:** the single-file history of versions before 2.4.25 (`data/history.json`) is migrated on first use and renamed to `history.json.migrated`.
@@ -230,7 +230,7 @@ The Email answer must start with `VERDICT: <code> | CONFIDENCE: <level>`. The in
 
 ## Scripts and tests
 
-The folders `scripts/` and `tests/` guard the project. Day-to-day use is explained in the development guide (DEVELOPMENT.md); this is only the map.
+The folders `scripts/` and `tests/` guard the project. Day-to-day use is explained in the development guide ([DEVELOPMENT.md](DEVELOPMENT.md)); this is only the map.
 
 | Path | What it is |
 |---|---|

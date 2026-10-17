@@ -36,7 +36,7 @@ Seisa is a tool that runs on your own computer and opens in your web browser. It
 
 What Seisa does not do: it does not decide for you. The facts that matter for security (the sender's IP address, the order of the mail servers, the SPF/DKIM/DMARC results, the report checks, the IP score) are worked out by Seisa's own program code. A language model (LLM, the AI service you can switch on with an OpenRouter key) only explains them and double-checks them. An AbuseIPDB report is always your responsibility, and the tab tells you so before sending. The reasons are in [COMPLIANCE.md](COMPLIANCE.md).
 
-You need a running Seisa to follow this guide. How to install, start and update it is in OPERATIONS.md. For the full list of what leaves your computer, see [PRIVACY.md](PRIVACY.md).
+You need a running Seisa to follow this guide. How to install, start and update it is in [OPERATIONS.md](OPERATIONS.md). For the full list of what leaves your computer, see [PRIVACY.md](PRIVACY.md).
 
 ## 2. The screen at a glance
 
@@ -98,7 +98,7 @@ Start from what you have in your hand:
 
 ## 4. API keys: what works without them
 
-An API key is a long code from a service, like a membership card: it tells the service who is asking, so it can count your requests. You put your keys in the `.env` file. The table of all keys and how to get them is in the README. This table only says what happens when a key is missing.
+An API key is a long code from a service, like a membership card: it tells the service who is asking, so it can count your requests. You put your keys in the `.env` file. The table of all keys and how to get them is in the [README](../README.md). This table only says what happens when a key is missing.
 
 | Tab or function | Key it needs | Without the key |
 |---|---|---|
@@ -592,7 +592,7 @@ Opening the tab sends nothing. "Refresh limits" is the only action that contacts
 
 ### Reading the result
 
-**Settings.** The language, the colour theme, the "Application icon" (with "Add icon" and "Remove icon"), and the "Server": "Shut down Seisa" and "Ask before shutting down". The icon is explained in OPERATIONS.md.
+**Settings.** The language, the colour theme, the "Application icon" (with "Add icon" and "Remove icon"), and the "Server": "Shut down Seisa" and "Ask before shutting down". The icon is explained in [OPERATIONS.md](OPERATIONS.md).
 
 **Status and API limits.** The "Environment" (address, whether the ".env file" is present, system, Python and FastAPI versions), and one card per service with the key status and usage against the free-plan limits. When a service answers "limit exceeded" (HTTP 429), its card gets that badge until the next successful answer.
 
@@ -655,4 +655,4 @@ If the tab says the e-mail does not qualify (for example, it is older than 60 da
 
 When you are done, click "Shut down Seisa" in the footer, or in the Info tab under "Settings". The server stops and the page is replaced by "Seisa has been stopped". Your browser may ask you to close the tab yourself.
 
-Seisa asks for confirmation first. Tick "Do not ask again" to stop the question, and switch it back on with "Ask before shutting down" in Info, under "Settings". It always asks when work would be lost, for example a running analysis or pasted text. To start Seisa again, see OPERATIONS.md.
+Seisa asks for confirmation first. Tick "Do not ask again" to stop the question, and switch it back on with "Ask before shutting down" in Info, under "Settings". It always asks when work would be lost, for example a running analysis or pasted text. To start Seisa again, see [OPERATIONS.md](OPERATIONS.md).

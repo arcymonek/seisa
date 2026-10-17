@@ -79,7 +79,7 @@ One endpoint checks an IP address or a domain with the selected services.
 | Input | JSON `{indicator, type, services}`. `indicator` is text up to 253 characters. `type` is `auto` (default), `ip` or `domain`. `services` is a list of service names, or `null` for all |
 | Output | `LookupResult`: `indicator`, `indicator_type`, `risk_score`, `services` (a result per service), `markdown`, `identity`, `comparison` |
 | Limits and errors | 400 for an invalid indicator, a non-public IP, or a `services` list with no known service (`null` means all services, an empty list is refused). The result is saved to History |
-| Sends to the internet | Yes, to the selected services (see PRIVACY.md) |
+| Sends to the internet | Yes, to the selected services (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/lookup.js` |
 
 ## History
@@ -175,7 +175,7 @@ The events are:
 | Input | JSON `{raw_email, use_llm}`. `use_llm` defaults to `true` |
 | Output | A stream of events: `facts`, then `delta` (many), then optionally `warning`, then `done`; or `error` |
 | Limits and errors | An empty source, a source above 3 000 000 characters after normalisation, or a parser failure arrive as `error` events. 422 above 6 000 000 characters |
-| Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see PRIVACY.md) |
+| Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/email.js` |
 
 ### `POST /api/email/analyses/{analysis_id}/continue`
@@ -185,7 +185,7 @@ The events are:
 | Input | `analysis_id` in the path (`YYYYMMDD-HHMMSS-xxxxxxxx`), body `{}` |
 | Output | A stream of `delta`, `warning`, `error` and `done` events, as above. It finishes an answer that was cut off |
 | Limits and errors | 400 for an invalid id, an analysis that was not truncated, or no key; 404 when not found |
-| Sends to the internet | Yes, to OpenRouter (see PRIVACY.md) |
+| Sends to the internet | Yes, to OpenRouter (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/email.js` |
 
 ### `GET /api/email/analyses`
@@ -229,7 +229,7 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 | Input | JSON `{raw_email, use_llm}`. `raw_email` is up to 6 000 000 characters, `use_llm` defaults to `true` |
 | Output | `{facts, ip_candidates, own_terms, local_assessment, categories, llm_configured, llm_analysis, usage, llm_input, report_comment}`. Each candidate is `{ip, role, host, reported}` with `role` one of `boundary`, `hop`, `llm` |
 | Limits and errors | 413 above 3 000 000 characters, with a translated message; 422 above 6 000 000 characters |
-| Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see PRIVACY.md) |
+| Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/report-builder.js` |
 
 ### `GET /api/abuseipdb/categories`
@@ -279,7 +279,7 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 | Input | Query `ip`, for example `?ip=203.0.113.7` |
 | Output | `{status: "ok", total_reports, num_distinct_users, abuse_confidence_score, last_reported_at, is_whitelisted, isp, usage_type, country_code, recent_reports, recent_days: 7}`, or `{status: "unavailable"}` |
 | Limits and errors | An IP that cannot be reported, or a missing key, gives `unavailable` without any network call |
-| Sends to the internet | Yes, to AbuseIPDB (see PRIVACY.md) |
+| Sends to the internet | Yes, to AbuseIPDB (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/report-builder.js` |
 
 ### `POST /api/abuseipdb/report/submit`
@@ -289,7 +289,7 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 | Input | `ReportFields`, as for the preview |
 | Output | `{success: true, result, rate_limit}` |
 | Limits and errors | 400 when a hard check fails (`detail` is `{message, checks}`) or no key is set; 409 for the 15-minute pause on the same IP or the service's own same-IP rule; 429 when the daily quota is used (the text names the reset time); 401 when the key is rejected; 422 when the service refuses the data; 502 for other service errors |
-| Sends to the internet | Yes, to AbuseIPDB (see PRIVACY.md) |
+| Sends to the internet | Yes, to AbuseIPDB (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/report-builder.js` |
 
 ## URL scans (URLScan tab)
@@ -303,7 +303,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 | Input | JSON `{url, visibility, country, useragent}`. `visibility` is `unlisted` (default), `private` or `public`. `country` is one of 12 or `null`. `useragent` is up to 250 printable characters or `null` |
 | Output | `{uuid, url, visibility, result_page_url}` |
 | Limits and errors | 400 for no key, an invalid visibility, country or user agent, or an invalid URL (empty, above 2 048 characters, with whitespace, a non-HTTP scheme, or a private or local host); 502 when urlscan.io refuses |
-| Sends to the internet | Yes, to urlscan.io (see PRIVACY.md) |
+| Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/result/{uuid}`
@@ -313,7 +313,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 | Input | `uuid` in the path (36 characters: hex digits and dashes) |
 | Output | `{status: "pending"}`, or `{status: "done", summary, markdown, raw}` |
 | Limits and errors | 400 for an invalid uuid; 502 when the fetch fails |
-| Sends to the internet | Yes, to urlscan.io (see PRIVACY.md) |
+| Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/screenshot/{uuid}`
@@ -323,7 +323,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 | Input | `uuid` in the path |
 | Output | A PNG image with `Cache-Control: private, max-age=3600` and `nosniff` |
 | Limits and errors | 400 for an invalid uuid; 404 when there is no screenshot yet; 502 on failure, also when the file is not a PNG or is larger than 6 000 000 bytes |
-| Sends to the internet | Yes, to urlscan.io (see PRIVACY.md) |
+| Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | An `<img>` element in `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/search`
@@ -333,7 +333,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 | Input | Query `url` |
 | Output | `{host, url, results}`: at most 10 earlier scans, each `{uuid, time, url, ip, country, visibility, level, exact}` |
 | Limits and errors | 400 for no key or an invalid URL; 502 when the search fails |
-| Sends to the internet | Yes, to urlscan.io (see PRIVACY.md) |
+| Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/urlscan.js` |
 
 ## DMARC
@@ -347,7 +347,7 @@ DMARC reports are read in the browser. The backend is asked only for the optiona
 | Input | Query `ip`, for example `?ip=198.51.100.4` |
 | Output | `{status: "ok", country, organization, network_name, reverse_dns, known_sender}`, or `{status: "unavailable"}` |
 | Limits and errors | 400 for an invalid or non-public IP (the message says "invalid") |
-| Sends to the internet | Yes, DNS and RDAP queries (see PRIVACY.md) |
+| Sends to the internet | Yes, DNS and RDAP queries (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/dmarc.js` |
 
 ## Logs
@@ -435,7 +435,7 @@ The Info tab shows what is configured, the API limits and the desktop icon, and 
 | Input | none |
 | Output | `{limits, errors}`. `errors` maps a service to a short text: only a status or an exception type |
 | Limits and errors | none |
-| Sends to the internet | Yes, to the services that report their usage (see PRIVACY.md) |
+| Sends to the internet | Yes, to the services that report their usage (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/about.js` |
 
 ## Themes

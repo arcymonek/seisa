@@ -79,7 +79,7 @@ Jeden endpoint sprawdza adres IP lub domenę w wybranych usługach.
 | Wejście | JSON `{indicator, type, services}`. `indicator` to tekst do 253 znaków. `type` to `auto` (domyślnie), `ip` lub `domain`. `services` to lista nazw usług albo `null` dla wszystkich |
 | Wyjście | `LookupResult`: `indicator`, `indicator_type`, `risk_score`, `services` (wynik dla każdej usługi), `markdown`, `identity`, `comparison` |
 | Limity i błędy | 400 dla nieprawidłowego wskaźnika, adresu IP spoza internetu albo listy `services` bez żadnej znanej usługi (`null` oznacza wszystkie usługi, pusta lista jest odrzucana). Wynik trafia do Historii |
-| Wysyła do internetu | Tak, do wybranych usług (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do wybranych usług (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/lookup.js` |
 
 ## Historia
@@ -175,7 +175,7 @@ Zdarzenia to:
 | Wejście | JSON `{raw_email, use_llm}`. `use_llm` domyślnie `true` |
 | Wyjście | Strumień zdarzeń: `facts`, potem `delta` (wiele), potem opcjonalnie `warning`, potem `done`; albo `error` |
 | Limity i błędy | Puste źródło, źródło powyżej 3 000 000 znaków po normalizacji albo porażka parsera przychodzą jako zdarzenia `error`. 422 powyżej 6 000 000 znaków |
-| Wysyła do internetu | Tak, do OpenRouter, tylko gdy `use_llm` jest prawdą i ustawiono klucz (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do OpenRouter, tylko gdy `use_llm` jest prawdą i ustawiono klucz (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/email.js` |
 
 ### `POST /api/email/analyses/{analysis_id}/continue`
@@ -185,7 +185,7 @@ Zdarzenia to:
 | Wejście | `analysis_id` w ścieżce (`YYYYMMDD-HHMMSS-xxxxxxxx`), treść `{}` |
 | Wyjście | Strumień zdarzeń `delta`, `warning`, `error` i `done`, jak wyżej. Kończy odpowiedź, która została ucięta |
 | Limity i błędy | 400 dla nieprawidłowego id, analizy, która nie była ucięta, albo braku klucza; 404, gdy nie znaleziono |
-| Wysyła do internetu | Tak, do OpenRouter (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do OpenRouter (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/email.js` |
 
 ### `GET /api/email/analyses`
@@ -229,7 +229,7 @@ Zakładka AbuseIPDB przygotowuje i wysyła jedno zgłoszenie nadużycia. Backend
 | Wejście | JSON `{raw_email, use_llm}`. `raw_email` ma do 6 000 000 znaków, `use_llm` domyślnie `true` |
 | Wyjście | `{facts, ip_candidates, own_terms, local_assessment, categories, llm_configured, llm_analysis, usage, llm_input, report_comment}`. Każdy kandydat to `{ip, role, host, reported}`, gdzie `role` to `boundary`, `hop` lub `llm` |
 | Limity i błędy | 413 powyżej 3 000 000 znaków, z przetłumaczonym komunikatem; 422 powyżej 6 000 000 znaków |
-| Wysyła do internetu | Tak, do OpenRouter, tylko gdy `use_llm` jest prawdą i ustawiono klucz (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do OpenRouter, tylko gdy `use_llm` jest prawdą i ustawiono klucz (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/report-builder.js` |
 
 ### `GET /api/abuseipdb/categories`
@@ -279,7 +279,7 @@ Zakładka AbuseIPDB przygotowuje i wysyła jedno zgłoszenie nadużycia. Backend
 | Wejście | Parametr `ip`, na przykład `?ip=203.0.113.7` |
 | Wyjście | `{status: "ok", total_reports, num_distinct_users, abuse_confidence_score, last_reported_at, is_whitelisted, isp, usage_type, country_code, recent_reports, recent_days: 7}` albo `{status: "unavailable"}` |
 | Limity i błędy | Adres IP, którego nie można zgłosić, lub brak klucza daje `unavailable` bez żadnego zapytania do sieci |
-| Wysyła do internetu | Tak, do AbuseIPDB (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do AbuseIPDB (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/report-builder.js` |
 
 ### `POST /api/abuseipdb/report/submit`
@@ -289,7 +289,7 @@ Zakładka AbuseIPDB przygotowuje i wysyła jedno zgłoszenie nadużycia. Backend
 | Wejście | `ReportFields`, jak w podglądzie |
 | Wyjście | `{success: true, result, rate_limit}` |
 | Limity i błędy | 400, gdy twarde sprawdzenie nie przejdzie (`detail` to `{message, checks}`) lub brak klucza; 409 dla 15-minutowej przerwy dla tego samego IP albo własnej reguły usługi dla tego samego IP; 429, gdy wyczerpano dzienny limit (tekst podaje czas odnowienia); 401, gdy klucz zostanie odrzucony; 422, gdy usługa odrzuci dane; 502 dla innych błędów usługi |
-| Wysyła do internetu | Tak, do AbuseIPDB (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do AbuseIPDB (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/report-builder.js` |
 
 ## Skany URL (zakładka URLScan)
@@ -303,7 +303,7 @@ Zakładka URLScan prosi urlscan.io o przeskanowanie strony. Seisa sama nigdy nie
 | Wejście | JSON `{url, visibility, country, useragent}`. `visibility` to `unlisted` (domyślnie), `private` lub `public`. `country` to jeden z 12 albo `null`. `useragent` to do 250 drukowalnych znaków albo `null` |
 | Wyjście | `{uuid, url, visibility, result_page_url}` |
 | Limity i błędy | 400 dla braku klucza, nieprawidłowej widoczności, kraju lub user agenta albo nieprawidłowego URL (pusty, powyżej 2 048 znaków, ze spacjami, schemat inny niż HTTP albo host prywatny lub lokalny); 502, gdy urlscan.io odmówi |
-| Wysyła do internetu | Tak, do urlscan.io (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do urlscan.io (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/result/{uuid}`
@@ -313,7 +313,7 @@ Zakładka URLScan prosi urlscan.io o przeskanowanie strony. Seisa sama nigdy nie
 | Wejście | `uuid` w ścieżce (36 znaków: cyfry szesnastkowe i myślniki) |
 | Wyjście | `{status: "pending"}` albo `{status: "done", summary, markdown, raw}` |
 | Limity i błędy | 400 dla nieprawidłowego uuid; 502, gdy pobranie się nie uda |
-| Wysyła do internetu | Tak, do urlscan.io (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do urlscan.io (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/screenshot/{uuid}`
@@ -323,7 +323,7 @@ Zakładka URLScan prosi urlscan.io o przeskanowanie strony. Seisa sama nigdy nie
 | Wejście | `uuid` w ścieżce |
 | Wyjście | Obraz PNG z `Cache-Control: private, max-age=3600` i `nosniff` |
 | Limity i błędy | 400 dla nieprawidłowego uuid; 404, gdy zrzutu jeszcze nie ma; 502 przy porażce, także gdy plik nie jest PNG albo ma ponad 6 000 000 bajtów |
-| Wysyła do internetu | Tak, do urlscan.io (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do urlscan.io (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | Element `<img>` w `frontend/js/urlscan.js` |
 
 ### `GET /api/urlscan/search`
@@ -333,7 +333,7 @@ Zakładka URLScan prosi urlscan.io o przeskanowanie strony. Seisa sama nigdy nie
 | Wejście | Parametr `url` |
 | Wyjście | `{host, url, results}`: najwyżej 10 wcześniejszych skanów, każdy `{uuid, time, url, ip, country, visibility, level, exact}` |
 | Limity i błędy | 400 dla braku klucza lub nieprawidłowego URL; 502, gdy wyszukiwanie się nie uda |
-| Wysyła do internetu | Tak, do urlscan.io (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do urlscan.io (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/urlscan.js` |
 
 ## DMARC
@@ -347,7 +347,7 @@ Raporty DMARC są czytane w przeglądarce. Backend pytamy tylko o opcjonalne spr
 | Wejście | Parametr `ip`, na przykład `?ip=198.51.100.4` |
 | Wyjście | `{status: "ok", country, organization, network_name, reverse_dns, known_sender}` albo `{status: "unavailable"}` |
 | Limity i błędy | 400 dla nieprawidłowego adresu IP lub adresu spoza internetu (komunikat mówi „invalid") |
-| Wysyła do internetu | Tak, zapytania RDAP i DNS (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, zapytania RDAP i DNS (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/dmarc.js` |
 
 ## Logi
@@ -435,7 +435,7 @@ Zakładka Info pokazuje, co jest skonfigurowane, limity API i ikonę na pulpicie
 | Wejście | brak |
 | Wyjście | `{limits, errors}`. `errors` przypisuje usłudze krótki tekst: tylko status albo typ wyjątku |
 | Limity i błędy | brak |
-| Wysyła do internetu | Tak, do usług, które podają swoje zużycie (patrz PRIVACY.md) |
+| Wysyła do internetu | Tak, do usług, które podają swoje zużycie (patrz [PRIVACY.md](PRIVACY.md)) |
 | Woła | `frontend/js/about.js` |
 
 ## Skórki kolorystyczne

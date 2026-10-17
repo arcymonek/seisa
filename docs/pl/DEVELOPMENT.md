@@ -113,7 +113,7 @@ Testy leżą w `tests/`. Uruchom je wszystkie poleceniem `python3 -m pytest -q`.
 - **Testy własności.** `tests/test_fuzz_parsers.py` podaje parserom e-maili losowe dane za pomocą hypothesis. Profil `dev` używa 200 losowych przykładów, profil `ci` 300 stałych; wybierasz go zmienną `HYPOTHESIS_PROFILE`.
 - **Testy frontendu.** Czyste funkcje frontendu (komunikaty błędów API, ryzyko DMARC, eksport Markdown, sprawdzenie „Received zweryfikowane") są testowane przez Node: skrypty leżą w `tests/js/`, a uruchamia je pytest.
 - **Ikona na pulpicie.** Testy ikony podstawiają folder domowy i na macOS potrzebują narzędzia `sips`; jeden test jest pomijany w piaskownicy.
-- **Lustrzane wartości.** Kilka wartości jest celowo powtórzonych we frontendzie (domyślne motywy, limit długości komentarza, kraje URLScan). `tests/test_frontend_mirrors.py` pilnuje, żeby były równe.
+- **Lustrzane wartości.** Kilka wartości jest celowo powtórzonych we frontendzie (domyślne skórki, limit długości komentarza, kraje URLScan). `tests/test_frontend_mirrors.py` pilnuje, żeby były równe.
 - **Prywatny korpus.** Jeśli trzymasz prawdziwe e-maile do własnych kontroli, połóż je w `tests/private/legit/` i `tests/private/phishing_spam/` (git je ignoruje), z opcjonalnym `<nazwa>.expected.json` obok każdego. Bez takich plików moduł jest pomijany.
 
 Dobre praktyki testów w tym projekcie:
@@ -208,7 +208,7 @@ Nowe źródło informacji to podklasa `IntelService` w `backend/services/base.py
 - `frontend/js/services.js`, `frontend/js/lookup.js` (`ALL_SERVICES`) i `frontend/js/lookup-result.js` (link do usługi);
 - oba katalogi językowe i obsługa atrapy w `scripts/api_harness.py`.
 
-Nowy klucz `.env` podnosi środkową liczbę wersji i musi się znaleźć w tabeli kluczy w README oraz w pełnej tabeli w [PRIVACY.md](PRIVACY.md).
+Nowy klucz `.env` podnosi środkową liczbę wersji i musi się znaleźć w tabeli kluczy w [README](../../README.pl.md) oraz w pełnej tabeli w [PRIVACY.md](PRIVACY.md).
 
 ### Dodanie języka
 
@@ -216,13 +216,13 @@ Listę języków zna wiele miejsc:
 
 - backend: `SUPPORTED` i `LANGUAGE_NAMES` z regułami liczby mnogiej w `backend/i18n.py` oraz `backend/locales/<język>.json`;
 - frontend: `SUPPORTED` w `frontend/js/i18n.js` i `frontend/i18n/<język>.json`;
-- nazwy motywów: `LANGS` w `backend/themes.py` i nazwy wewnątrz każdego pliku motywu;
+- nazwy skórek: `LANGS` w `backend/themes.py` i nazwy wewnątrz każdego pliku skórki;
 - `scripts/check_i18n.py` (`PLURALS_REQUIRED`);
 - tabela etykiet w sekcji 0 pliku `backend/prompts/email-analysis-guide.md` oraz `backend/verdict.py`, jeśli ma tokeny zależne od języka.
 
-### Dodanie motywu
+### Dodanie skórki
 
-Wrzuć `frontend/themes/<id>.json` z każdym kluczem koloru. `tests/test_themes.py` sprawdza dostarczone motywy i ich kontrast tekstu według reguły WCAG AA (standard dostępności dla czytelnych kolorów).
+Wrzuć `frontend/themes/<id>.json` z każdym kluczem koloru. `tests/test_themes.py` sprawdza dostarczone skórki i ich kontrast tekstu według reguły WCAG AA (standard dostępności dla czytelnych kolorów).
 
 ### Dodanie zakładki
 
@@ -232,7 +232,7 @@ Zakładka dotyka obu końców:
 - `frontend/js/app.js` (`panels` i start) oraz nowy moduł `frontend/js/<zakładka>.js`; większe zakładki nazywają dodatkowe moduły `<zakładka>-<rola>.js`;
 - klucze katalogu `tab.*` w obu językach;
 - router w `backend/routers/`, podłączony w `backend/main.py`;
-- test end-to-end, tabela zakładek w README i [USER_GUIDE.md](USER_GUIDE.md). `check_docs.py` jest czerwony, dopóki dwa ostatnie nie powstaną.
+- test end-to-end, tabela zakładek w [README](../../README.pl.md) i [USER_GUIDE.md](USER_GUIDE.md). `check_docs.py` jest czerwony, dopóki dwa ostatnie nie powstaną.
 
 ### Zmiana promptu
 
@@ -255,9 +255,9 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc zmiana i jej dokumentacj
 | Gdy zmieniasz... | Zaktualizuj |
 |---|---|
 | Endpoint (ścieżkę, wejście, wyjście, błąd) | [API.md](API.md) i jego polski bliźniak (sprawdzane) oraz test end-to-end |
-| Cokolwiek, co wysyła dane na zewnątrz (nową usługę, klucz, endpoint albo rodzaj żądania) | Pełną tabelę w [PRIVACY.md](PRIVACY.md), skróconą tabelę i tabelę kluczy w README, zakładkę w [USER_GUIDE.md](USER_GUIDE.md), [API.md](API.md), `.env.example` |
-| Klucz `.env` | `backend/config.py`, `.env.example` i tabelę kluczy w README (sprawdzane) oraz podnieś środkową liczbę wersji |
-| Zakładkę, przycisk albo widoczną nazwę | Oba katalogi, [USER_GUIDE.md](USER_GUIDE.md) i tabelę zakładek w README (sprawdzane) oraz zrzuty ekranu, jeśli zmienił się wygląd |
+| Cokolwiek, co wysyła dane na zewnątrz (nową usługę, klucz, endpoint albo rodzaj żądania) | Pełną tabelę w [PRIVACY.md](PRIVACY.md), skróconą tabelę i tabelę kluczy w [README](../../README.pl.md), zakładkę w [USER_GUIDE.md](USER_GUIDE.md), [API.md](API.md), `.env.example` |
+| Klucz `.env` | `backend/config.py`, `.env.example` i tabelę kluczy w [README](../../README.pl.md) (sprawdzane) oraz podnieś środkową liczbę wersji |
+| Zakładkę, przycisk albo widoczną nazwę | Oba katalogi, [USER_GUIDE.md](USER_GUIDE.md) i tabelę zakładek w [README](../../README.pl.md) (sprawdzane) oraz zrzuty ekranu, jeśli zmienił się wygląd |
 | Limit albo liczbę widoczną dla użytkownika (rozmiar Historii, retencję logów, długość komentarza, limity czasu) | Dokument, który tę liczbę posiada: [OPERATIONS.md](OPERATIONS.md), [PRIVACY.md](PRIVACY.md) albo [COMPLIANCE.md](COMPLIANCE.md); `check_docs.py` sprawdza liczby z tabeli `FACTS` |
 | Plik danych albo jego uprawnienia | Sekcję o danych w [PRIVACY.md](PRIVACY.md), sekcję o kasowaniu w [OPERATIONS.md](OPERATIONS.md) i [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Zabezpieczenie | Zabezpieczenia w [PRIVACY.md](PRIVACY.md) i test mutacyjny (patrz [Testy](#testy)) |
@@ -268,8 +268,8 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc zmiana i jej dokumentacj
 | Zależność | `requirements.txt` i `requirements.lock`, podbicie wersji oraz licencje w [COMPLIANCE.md](COMPLIANCE.md), jeśli jest nowa |
 | Wersję | Cztery miejsca, datę wydania i `CHANGELOG.md` (patrz [Wersjonowanie i dziennik zmian](#wersjonowanie-i-dziennik-zmian)) |
 | Plik w `frontend/vendor/` | Licencje w [COMPLIANCE.md](COMPLIANCE.md) |
-| Język albo motyw | Przepisy w [Jak rozszerzać Seisę](#jak-rozszerzać-seisę) i ustawienia w [USER_GUIDE.md](USER_GUIDE.md) |
-| Komunikaty startowe w `seisa.sh` | Nagłówek „Install and run" w README, do którego odsyła `seisa.sh` |
+| Język albo skórka | Przepisy w [Jak rozszerzać Seisę](#jak-rozszerzać-seisę) i ustawienia w [USER_GUIDE.md](USER_GUIDE.md) |
+| Komunikaty startowe w `seisa.sh` | Nagłówek „Install and run" w [README](../../README.pl.md), do którego odsyła `seisa.sh` |
 
 Każda zmiana dokumentacji jest robiona w obu językach, w tym samym commicie.
 
@@ -283,7 +283,7 @@ Ta sekcja jest dla każdego, kto pisze lub poprawia dokumenty projektu. Tekst an
 2. **Bez ścian tekstu.** Akapit ma najwyżej około czterech linii (60 słów). Trzy lub więcej równoległych rzeczy to lista albo tabela. Plik dłuższy niż około 150 linii ma spis treści. Każda sekcja zaczyna się zdaniem, o czym jest.
 3. **Nazwy z interfejsu dosłownie.** Używaj nazw dokładnie tak, jak zapisują je katalogi (`frontend/i18n/en.json` i `pl.json`).
 4. **Tylko prawdziwe twierdzenia.** Każde twierdzenie musi być prawdziwe w kodzie. Liczba pochodzi z jednego miejsca w kodzie. W razie wątpliwości sprawdź w kodzie albo zapytaj; nie zgaduj.
-5. **Jeden dom dla faktu.** Każdy fakt ma jeden dokument, w którym jest wyjaśniony w całości; inne dokumenty do niego linkują. Dwa celowe wyjątki: skrócona tabela „co opuszcza Twój komputer" i tabela zakładek w README.
+5. **Jeden dom dla faktu.** Każdy fakt ma jeden dokument, w którym jest wyjaśniony w całości; inne dokumenty do niego linkują. Dwa celowe wyjątki: skrócona tabela „co opuszcza Twój komputer" i tabela zakładek w [README](../../README.pl.md).
 6. **Prywatne rzeczy zostają poza dokumentacją.** Bez numerów wersji w `docs/`, bez długiej pauzy (U+2014), bez prawdziwych nazw hostów, adresów IP i ścieżek katalogu domowego. Przykłady używają `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` i `.example`. Jedyny adres e-mail to `contact@seisa.eu`.
 7. **Góra pliku z bliźniakiem:** linia przełącznika języka, tytuł i jedno lub dwa zdania mówiące, dla kogo jest plik i po co istnieje.
 8. **Naturalny polski.** Tłumacz sens, a nie słowa; używaj terminów z polskiego katalogu. Nagłówki, tabele, bloki kodu i obrazki są takie same w obu językach.
@@ -300,8 +300,8 @@ Ta sekcja jest dla każdego, kto pisze lub poprawia dokumenty projektu. Tekst an
 | Linki | Każdy link względny, `#kotwica` i `src=` obrazka w śledzonym pliku Markdown działa | Błąd |
 | Obrazki | Każdy obrazek ma niepusty tekst `alt`, a każdy obrazek z `docs/images/` jest użyty | Błąd |
 | Trasy | Endpointy aplikacji to dokładnie wpisy `METODA /ścieżka` z `docs/API.md` | Błąd |
-| Klucze | Pola `Settings`, klucze `.env.example` i tabela kluczy w README się zgadzają | Błąd |
-| Zakładki | Każda zakładka ma sekcję w `docs/USER_GUIDE.md` i wiersz w tabeli zakładek w README | Błąd |
+| Klucze | Pola `Settings`, klucze `.env.example` i tabela kluczy w [README](../../README.pl.md) się zgadzają | Błąd |
+| Zakładki | Każda zakładka ma sekcję w `docs/USER_GUIDE.md` i wiersz w tabeli zakładek w [README](../../README.pl.md) | Błąd |
 | Moduły | Każdy plik z `backend/`, `frontend/js/` i `scripts/` jest wymieniony w `docs/ARCHITECTURE.md` albo w tym pliku | Błąd |
 | Liczby | Limity z kodu (z listy `FACTS` w `check_docs.py`) występują w dokumencie, który je posiada, w obu językach | Błąd |
 | Forma | Bez numeru wersji w `docs/`, bez U+2014, linia przełącznika języka na górze każdego pliku z bliźniakiem | Błąd |

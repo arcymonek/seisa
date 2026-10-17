@@ -123,7 +123,7 @@ Kilka szczegółów do tej tabeli:
 
 ## Jak usunąć swoje dane
 
-Wszystko z powyższego można usunąć ręcznie, a przyciski, które to robią, opisuje OPERATIONS.md. W skrócie: usunięcie katalogów `data/` i `logs/` kasuje to, co Seisa zapisała, a „Usuń ikonę" w Info usuwa ikonę z pulpitu.
+Wszystko z powyższego można usunąć ręcznie, a przyciski, które to robią, opisuje [OPERATIONS.md](OPERATIONS.md). W skrócie: usunięcie katalogów `data/` i `logs/` kasuje to, co Seisa zapisała, a „Usuń ikonę" w Info usuwa ikonę z pulpitu.
 
 ## Model językowy (OpenRouter)
 

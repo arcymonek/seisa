@@ -127,4 +127,4 @@ Ta sekcja wylicza licencje Seisy i tego, co zawiera.
 - **Zależności Pythona.** Zależności uruchomieniowe są przypięte w `requirements.lock`. CI dopuszcza tam tylko licencje MIT, BSD, Apache, ISC, MPL-2.0 i PSF, więc pakiet na GPL nie wejdzie przypadkiem, i uruchamia `pip-audit`, który szuka znanych podatności.
 - **Grafiki.** Logo i ikony (`frontend/logo.png`, `logo-mask.png`, `app-icon.png`, `favicon.ico`) to własna praca autora na licencji projektu.
 - **Narzędzia deweloperskie.** pytest, ruff, hypothesis, coverage, pip-audit, pip-licenses i markdown-it-py nie są dostarczane i nie są częścią programu.
-- **Wkład.** Jest przyjmowany na licencji projektu („inbound równa się outbound"), bez DCO i bez CLA. Szczegóły są w CONTRIBUTING.md.
+- **Wkład.** Jest przyjmowany na licencji projektu („inbound równa się outbound"), bez DCO i bez CLA. Szczegóły są w [CONTRIBUTING.md](CONTRIBUTING.md).
