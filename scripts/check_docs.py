@@ -74,8 +74,8 @@ PENDING: frozenset[str] = frozenset({
     "README.md", "README.pl.md",                       # placeholders until the final README is written
     "CONTRIBUTING.md", "docs/pl/CONTRIBUTING.md",
     "AGENTS.md",
-    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE")),
-    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE")),
+    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE", "OPERATIONS")),
+    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API", "PRIVACY", "COMPLIANCE", "USER_GUIDE", "OPERATIONS")),
 })
 
 API_DOC = "docs/API.md"
