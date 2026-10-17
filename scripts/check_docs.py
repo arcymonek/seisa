@@ -75,8 +75,8 @@ PENDING: frozenset[str] = frozenset({
     "CONTRIBUTING.md", "docs/pl/CONTRIBUTING.md",
     "SECURITY.md", "docs/pl/SECURITY.md",
     "AGENTS.md",
-    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES),
-    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES),
+    *(f"docs/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API")),
+    *(f"docs/pl/{name}.md" for name in _DOCS_DIR_FILES if name not in ("ARCHITECTURE", "API")),
 })
 
 API_DOC = "docs/API.md"
