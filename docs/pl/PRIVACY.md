@@ -38,7 +38,7 @@ Dwie rzeczy dotyczą całej tabeli:
 
 | Zakładka i akcja | Co jest wysyłane | Do kogo | Kiedy | Klucz |
 |---|---|---|---|---|
-| IP, „Sprawdź": WHOIS / rDNS (adres) | Adres IP (`GET /ip/{ip}`) | rdap.org, który przekazuje dalej do rejestru regionalnego (RIPE, ARIN, APNIC, LACNIC lub AFRINIC) | Kliknięcie „Sprawdź". Także „Powtórz" przy zapisanym sprawdzeniu IP w Historii oraz przyciski IP w innych zakładkach, które otwierają zakładkę IP i uruchamiają sprawdzenie | brak |
+| IP, „Sprawdź": WHOIS / rDNS (adres) | Adres IP (`GET /ip/{ip}`) | rdap.org, który przekazuje dalej do rejestru regionalnego (RIPE, ARIN, APNIC, LACNIC lub AFRINIC) | Kliknięcie „Sprawdź". Także „Powtórz" przy zapisanym sprawdzeniu IP w Historii | brak |
 | IP, „Sprawdź": WHOIS / rDNS (adres) | Zapytanie o odwrotny DNS (PTR) dla tego IP | Systemowy resolver DNS i to, do kogo on przekazuje zapytania | Kliknięcie „Sprawdź" | brak |
 | IP, „Sprawdź": WHOIS / rDNS (domena) | Nazwa domeny | Serwery WHOIS na porcie TCP 43: serwer dla końcówki domeny, ewentualnie także serwer rejestratora | Kliknięcie „Sprawdź" | brak |
 | IP, „Sprawdź": DNS (domena) | Zapytania DNS o domenę: A, AAAA, NS, MX, CAA, TXT, TXT `_dmarc.<domena>`, zapytanie A o każdy serwer nazw oraz jedno zapytanie A o losową nazwę z 16 znaków szesnastkowych pod domeną (test wildcard) | Systemowy resolver DNS; losowa nazwa trafia do serwerów nazw samej domeny | Kliknięcie „Sprawdź" | brak |
@@ -68,7 +68,7 @@ Dwie rzeczy dotyczą całej tabeli:
 | Uruchomienie z ikony na pulpicie | Lokalne sprawdzenie `curl http://127.0.0.1:54321/api/about` | Twój własny komputer | Gdy uruchamiasz Seisę z ikony | brak |
 | Otwarcie Info, Historii lub Logów; parsowanie e-maila; wczytanie pliku DMARC | Nic nie opuszcza komputera. Parsowanie, ocena i lokalne `git log` dla Ostatnich zmian działają lokalnie | Nikt | - | brak |
 
-O automatycznym sprawdzeniu w AbuseIPDB: pyta ono AbuseIPDB, co już wie o tym adresie, żebyś mógł to zobaczyć, zanim zdecydujesz o zgłoszeniu. To jedyne połączenie, które nie wynika z osobnego kliknięcia. Bez klucza AbuseIPDB do niego nie dochodzi.
+O automatycznym sprawdzeniu w AbuseIPDB: pyta ono AbuseIPDB, co już wie o tym adresie, żeby można to było zobaczyć, zanim zapadnie decyzja o zgłoszeniu. To jedyne połączenie, które nie wynika z osobnego kliknięcia. Bez klucza AbuseIPDB do niego nie dochodzi.
 
 ## Identyfikacja
 
@@ -104,7 +104,7 @@ Ta tabela wylicza każde miejsce, w którym Seisa coś zapisuje. Pliki z danymi 
 | Plik | Co zawiera | Uprawnienia | Jak długo |
 |---|---|---|---|
 | `data/history/index.json` i `data/history/entries/<uuid>.json` | Sprawdzenia IP, importy DMARC i skany URL (podsumowanie i miniatura JPEG) | Katalogi 0700, pliki 0600 | Najnowsze 100 nieprzypiętych wpisów i wszystkie przypięte; starsze pliki są usuwane |
-| `data/history.json` i `data/history.json.migrated` | Historia z wersji sprzed 2.4.25, przeniesiona przy pierwszym użyciu i przemianowana | Jak zostawiła stara wersja | Zostaje, nigdy nie jest usuwana |
+| `data/history.json` i `data/history.json.migrated` | Historia z wersji sprzed 2.4.25, przeniesiona przy pierwszym użyciu i przemianowana | Jak zostawiła stara wersja | Po migracji przemianowany na `history.json.migrated` i zachowany; nigdy nie jest usuwany |
 | `data/analyses/<data-czas-skrót>.json` | Jedna analiza Email: **cały surowy e-mail**, fakty, tekst modelu, nazwa modelu, zużycie tokenów, koszt i język | Katalog 0700, plik 0600 | Dopóki jej nie usuniesz |
 | `data/report_log.json` | Każda próba wysłania do AbuseIPDB, przyjęta lub nie: IP, kategorie, komentarz, czas ataku, odpowiedź API, błąd | 0600 | Rośnie bez limitu; interfejs nie ma przycisku usuwania |
 | `data/vt_usage.json` | Dzisiejszy licznik wywołań VirusTotal | 0600 | Jedna doba |
@@ -166,7 +166,7 @@ Ta sekcja uczciwie mówi, przed czym Seisa chroni, a przed czym nie. Seisa to na
 
 Seisa chroni przed:
 
-- **Innymi komputerami w sieci.** Serwer jest związany z `127.0.0.1`.
+- **Innymi komputerami w sieci.** Serwer nasłuchuje tylko na `127.0.0.1`.
 - **Stronami w innych kartach.** Nie mogą czytać API (CORS nie jest włączony, a `Host` jest sprawdzany), a ich żądania w tle są odrzucane.
 - **Wrogą treścią.** Tekst z e-maili, zeskanowanych stron, plików DMARC i odpowiedzi usług jest pokazywany tylko jako tekst, linki są rozbrojone, a nic nie jest ładowane ani uruchamiane.
 - **Modelem nakłonionym do błędnego faktu.** Fakty pochodzą z kodu; jeśli model się nie zgadza, Seisa tylko pokazuje ostrzeżenie.
@@ -179,10 +179,10 @@ Seisa NIE chroni przed:
 - **Tym, co usługi widzą i zapamiętują.** IP, domeny, adresy URL, treść e-maili i zgłoszenia, które do nich wysyłasz, są już ich sprawą.
 - **Brakiem szyfrowania danych na dysku.** Pliki z danymi to zwykły JSON; ochroną są uprawnienia plików i szyfrowanie Twojego dysku.
 - **Błędnym lub zwiedzionym modelem.** Jego tekst jest edukacyjny, a opinia pomocnicza.
-- **Publicznym skanem urlscan.io.** Publikuje adres URL, razem z każdym sekretem w nim zawartym, wszystkim.
+- **Publicznym skanem urlscan.io.** Udostępnia wszystkim adres URL razem z każdym zawartym w nim sekretem.
 
 Uwaga o strażniku żądań z innych stron: nowoczesne przeglądarki wysyłają `Sec-Fetch-Site`. Bez niego `Origin` musi dokładnie wskazywać ten serwer (schemat, `127.0.0.1` lub `localhost` i port), więc strona innej lokalnej aplikacji na innym porcie jest odrzucana. Lokalny program, w odróżnieniu od strony internetowej, nadal może wysłać dowolny nagłówek.
 
 ## Zgłaszanie podatności
 
-Jeśli znajdziesz słabość w Seisie, zgłoś ją prywatnie. Jak to zrobić i co jest podatnością, opisuje [SECURITY.md](../../SECURITY.md).
+Jeśli znajdziesz słabość w Seisie, zgłoś ją prywatnie. Jak to zrobić i co jest podatnością, opisuje [SECURITY.md](SECURITY.md).

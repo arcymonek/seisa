@@ -26,17 +26,18 @@ These checks run in the backend on every send, whatever the page shows. If one f
 - **A known category.** At least one category is required, all from the AbuseIPDB list, at most 30.
 - **No repeat within 15 minutes.** The same IP cannot be sent again within 15 minutes of your last accepted report of it. Seisa checks its local log, and AbuseIPDB applies the same rule on its side.
 - **A key.** Without `ABUSEIPDB_API_KEY` the report can be prepared but not sent.
-- **A clean comment.** The comment is cleaned right before sending: only printable ASCII is kept, white space is collapsed, a leading `=`, `+`, `-` or `@` (which could be read as a spreadsheet formula) gets a `'` in front, and the text is cut to 1 024 characters.
+- **A clean comment.** The comment is cleaned right before sending: only printable ASCII is kept, white space is collapsed, a leading `=`, `+`, `-` or `@` (which could be read as a spreadsheet formula) gets a `'` in front, and the text is cut to 1,024 characters.
 - **Time sent separately.** The attack time goes as ISO 8601 UTC without fractions. It is not written into the comment.
-- **A log of every attempt.** Every attempt, accepted or refused, is written to the local report log `data/report_log.json`.
+- **A log of sends.** Every send that reaches AbuseIPDB, accepted or refused, is written to the local report log `data/report_log.json`; a send stopped by Seisa's own checks is not.
 
 ### What Seisa checks but you decide
 
 These checks help you, but the final decision is yours. Some of them live only in the page, because the model's opinion is advisory.
 
-- **The address.** Code picks the address to report from the Received chain: the first hop written by the recipient's own infrastructure. The other public addresses of the chain are offered as alternatives, marked "already reported" when your log has them.
+- **The address.** Code picks the address to report from the Received chain: the first hop written by the recipient's own infrastructure. The other public addresses of the chain are offered as alternatives, marked "reported by you" when your log has them.
 - **"Received verified".** This check is green only for the address that the code picked, with high confidence and not taken from lines a relay wrote, or when the model confirmed it. If you change the address, it becomes "unknown".
 - **A disputed check.** If the model marks a check as "fail", the "Send via AbuseIPDB API" button stays disabled. The backend does not know the model's opinion at send time.
+- **A negative verdict.** If the verdict says the e-mail does not qualify, the "Send via AbuseIPDB API" button stays disabled (in the page only).
 - **Personal data.** The comment is scanned for your own addresses and their domains (taken from the recipients, with free-mail domains skipped), any other e-mail address and private IPv4 addresses. If something is found, "Send via AbuseIPDB API" asks for confirmation, and one click replaces the findings with `[redacted]`, `[email removed]` and `[internal IP]`.
 - **A preview.** Before sending, you see exactly what goes to the API ("What will be sent to the API").
 - **What AbuseIPDB knows.** Before sending, Seisa shows what AbuseIPDB already knows about the address (last 90 days) and your own recent reports of it (7 days). This lookup is automatic; see [PRIVACY.md](PRIVACY.md).
@@ -67,11 +68,11 @@ This part is about quotas and what happens when AbuseIPDB refuses a report.
 
 - **Counters.** The AbuseIPDB tab shows how many reports you sent today (UTC) and the last quota that AbuseIPDB reported in its headers.
 - **Refusals.** A used-up daily quota gives HTTP 429 with the reset time. The same IP within 15 minutes gives 409. A rejected key gives 401. Rejected data gives 422 with AbuseIPDB's text.
-- **Assumed quota.** The Info limit table assumes 5 000 requests per day for each AbuseIPDB endpoint (the free-plan limit) until a header with the real value has been seen.
+- **Assumed quota.** The Info limit table assumes 5,000 requests per day for each AbuseIPDB endpoint (the free-plan limit) until a header with the real value has been seen.
 
 ### What the model is told
 
-The model receives the facts, the prepared e-mail source and the first 12 000 characters of `backend/prompts/abuseipdb-reporting-policy.md`. It is told that its assessment is advisory and that the hard checks are computed in code.
+The model receives the facts, the prepared e-mail source and the first 12,000 characters of `backend/prompts/abuseipdb-reporting-policy.md`. It is told that its assessment is advisory and that the hard checks are computed in code.
 
 - **What the policy file covers.** The reporting rules (a summary), how to find the real IP in the Received chain (multi-hop providers), the category list, the report fields, the comment and a checklist before sending.
 - **What the model answers.** A JSON with `qualifies`, `reasoning`, `suggested_categories`, `report_comment`, `alternatives` and `source_ip_check` (`agrees`, `suggested_ip`, `reasoning`), plus four checks (`received_verified`, `not_spoofed_source`, `category_matches`, `pii_redacted`) with pass, fail or unknown.
@@ -94,11 +95,11 @@ Seisa uses outside services only with your own keys, under your own accounts and
 
 | Service | Key in `.env` | What Seisa assumes about the free plan |
 |---|---|---|
-| AbuseIPDB | `ABUSEIPDB_API_KEY` | 5 000 requests per day for each endpoint, if no header has been seen yet |
+| AbuseIPDB | `ABUSEIPDB_API_KEY` | 5,000 requests per day for each endpoint, if no header has been seen yet |
 | VirusTotal | `VIRUSTOTAL_API_KEY` | Seisa itself throttles to 4 per minute and 500 per day |
 | GreyNoise | `GREYNOISE_API_KEY` | 50 searches per week |
-| AlienVault OTX | `OTX_API_KEY` | 10 000 per hour |
-| Cloudflare Radar | `CLOUDFLARE_RADAR_API_KEY` | 1 200 per 5 minutes |
+| AlienVault OTX | `OTX_API_KEY` | 10,000 per hour |
+| Cloudflare Radar | `CLOUDFLARE_RADAR_API_KEY` | 1,200 per 5 minutes |
 | URLScan | `URLSCAN_API_KEY` | Seisa asks the service for your quota ("Refresh limits" in Info) |
 | OpenRouter | `OPENROUTER_API_KEY` | Seisa asks the service for your key status ("Refresh limits" in Info) |
 

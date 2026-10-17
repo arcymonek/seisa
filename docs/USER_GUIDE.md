@@ -136,7 +136,7 @@ Seisa refuses private, loopback, reserved and documentation addresses (such as `
 
 ### What is sent and when
 
-Only when you click "Check" (or "Repeat" in History, or an IP button in another tab that opens this one and runs it). The address or domain goes to the sources you left selected. Seisa keeps no cache, so every Check asks again and uses the services' quotas each time. VirusTotal is limited by Seisa to 4 requests per minute (extra requests wait) and 500 per day, counted to 00:00 UTC. Over the daily limit, its card says "limit exceeded". The full table is in [PRIVACY.md](PRIVACY.md).
+Only when you click "Check" (or "Repeat" in History). An IP button in another tab only opens this tab with the address filled in. The address or domain goes to the sources you left selected. Seisa keeps no cache, so every Check asks again and uses the services' quotas each time. VirusTotal is limited by Seisa to 4 requests per minute (extra requests wait) and 500 per day, counted to 00:00 UTC. Over the daily limit, its card says "limit exceeded". The full table is in [PRIVACY.md](PRIVACY.md).
 
 ### Reading the result
 
@@ -185,7 +185,7 @@ A `URLSCAN_API_KEY`. Without it, "Scan" and "History" answer "no API key (URLSCA
 
 ### How to use it
 
-1. Paste the link into "URL to scan". Only `http://` and `https://` addresses of public sites are accepted, up to 2048 characters. To scan several, separate up to 5 addresses with a space or a new line.
+1. Paste the link into "URL to scan". Only `http://` and `https://` addresses of public sites are accepted, up to 2,048 characters. To scan several, separate up to 5 addresses with a space or a new line.
 2. Choose "Scan visibility" (see below).
 3. Optional: open "Advanced options (scan country, user agent)".
 4. Click "Scan". Seisa submits the scan, waits 12 seconds, then checks every 5 seconds. After 2 minutes it stops waiting and says to check manually (the scan goes on at urlscan.io). "Cancel" stops the waiting, not the scan.
@@ -466,14 +466,14 @@ The result starts with a verdict: "The e-mail looks eligible for a report." or "
 **The form.** "Report" holds the IP address, the categories, the attack timestamp and the comment:
 
 - Categories are chips. AbuseIPDB has 23, and "7. Phishing" and "11. Email Spam" are typical for e-mail.
-- The comment is in English, because it is public. You can edit it. It may have at most 1024 characters (a counter is shown), and before sending it is cleaned to plain ASCII (other characters become spaces).
+- The comment is in English, because it is public. You can edit it. It may have at most 1,024 characters (a counter is shown), and before sending it is cleaned to plain ASCII (other characters become spaces).
 - Seisa scans the comment for personal data: your own address from the message, other e-mail addresses and internal IP addresses. It offers "Mask them". Sending with such data left in asks for confirmation.
 
 **Checks before sending.** Three groups:
 
 | Group | What it holds |
 |---|---|
-| Required (API and backend) | Attack at most 60 days old, public IP, at least one category, the 15-minute rule for the same IP, and report eligibility. Seisa's server repeats these itself, so they cannot be bypassed in the browser |
+| Required (API and backend) | Attack at most 60 days old, public IP, at least one category, the 15-minute rule for the same IP, and report eligibility. Seisa's server repeats the first four itself; the eligibility verdict is checked in the page only, because it is advisory |
 | Blocking, judged by the AI | "Verified from the Received header" and "The source is trustworthy" |
 | Informational | Spoofing (forged sender), category matches the real mechanism, no personal data |
 
@@ -637,13 +637,13 @@ The choice is stored in this browser and applied before the page is drawn. The t
 
 ## 14. Example: from a suspicious e-mail to a report
 
-This walk-through follows one made-up case from the first doubt to a sent report. All addresses are fictional: the sender is `203.0.113.45` and its domain is `mail.example`. These are reserved example addresses, so the IP tab would refuse them in real life (see step 3). A real case has a real public address.
+This walk-through follows one made-up case from the first doubt to a sent report. All addresses are fictional: the sender is `203.0.113.45` and its domain is `mail.example`. These are reserved example addresses, so with them the "IP" button does not appear and the report cannot be sent. With a real public address every step works as described.
 
 You get a message that claims to be from your bank and asks you to "confirm your account". Something is off.
 
 1. **Get the source.** Copy the whole source of the message (see "How to get the source of an e-mail" in section 8). Do not click anything in the message itself.
 2. **Understand it in the Email tab.** Paste the source and click "Analyze" (or "Analyze without LLM" if you do not want to send it to OpenRouter). Read the verdict, for example "phishing" with a confidence, then the "Sender IP" tile (here `203.0.113.45`) and the "Authentication" tile. The "Lesson" pane explains what is wrong, step by step.
-3. **Optional: check the sender.** Click "IP" next to the sender IP. The IP tab opens with the address filled in. Nothing is sent yet: click "Check" to see the address's reputation. For a reserved example address like ours, Seisa answers that it is not a public address; a real one gets a score.
+3. **Optional: check the sender.** Click "IP" next to the sender IP. The IP tab opens with the address filled in. Nothing is sent yet: click "Check" to see the address's reputation. With a reserved example address like ours the "IP" button does not appear; a real public address gets a score.
 4. **Prepare the report.** Open the AbuseIPDB tab. There is no button that moves the e-mail across, so paste the source again and click "Analyze". Check the verdict, "Where the IP comes from", the categories (for this case "7. Phishing" and perhaps "11. Email Spam"), the time and the comment.
 5. **Check before you send.** Open "Checks before sending". Fix what fails. Click "Mask them" if the personal-data warning appears, then look at "What will be sent to the API". Remember that the comment is public.
 6. **Send.** Click "Send via AbuseIPDB API". Seisa shows the address's new score and the daily limit left.

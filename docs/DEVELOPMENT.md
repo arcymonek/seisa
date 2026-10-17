@@ -108,7 +108,7 @@ A golden pattern is a saved, correct answer that a test compares with the curren
 
 The tests live in `tests/`. Run them all with `python3 -m pytest -q`.
 
-- **Slow tests.** `python3 -m pytest -m "not slow"` skips the tests that build throw-away git repositories (the hook tests) or start child processes (the parser time limits). They take about two minutes.
+- **Slow tests.** `python3 -m pytest -m "not slow"` skips the tests that build throw-away git repositories (the hook tests) or start child processes (the parser time limits). They take a few minutes.
 - **Isolation.** `tests/conftest.py` redirects `data/` and `logs/` to a temporary folder, fixes the language to Polish, and fails the run if the real `data/` or `logs/` changed.
 - **Property tests.** `tests/test_fuzz_parsers.py` feeds random input to the e-mail parsers with hypothesis. The `dev` profile uses 200 random examples, the `ci` profile 300 fixed ones; choose with the `HYPOTHESIS_PROFILE` variable.
 - **Frontend tests.** Pure frontend functions (API error messages, DMARC risk, Markdown export, the "Received verified" check) are tested through Node: the scripts are in `tests/js/` and pytest runs them.

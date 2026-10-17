@@ -7,7 +7,7 @@
 
 # Seisa
 
-Seisa (精査, "a careful, detailed examination") is a tool that runs on your own computer and helps you judge whether an IP address, a web link, a DMARC report or an e-mail can be trusted, and report abuse to AbuseIPDB. You do not need to be an IT specialist: every result comes with plain explanations.
+Seisa (精査, "a careful, detailed examination") is a tool that runs on your own computer and helps you judge whether an IP address, a web link, a DMARC report (a summary that mail providers send about mail sent in your domain's name) or an e-mail can be trusted, and report abuse to AbuseIPDB. You do not need to be an IT specialist: every result comes with plain explanations.
 
 ## What Seisa does
 
@@ -15,7 +15,7 @@ Pick the tab that matches what you have in your hand. [docs/USER_GUIDE.md](docs/
 
 | Tab | What it does | Needs a key? |
 |---|---|---|
-| IP | Looks up an IP address or a domain in several sources at once and combines them into one 0-100 risk score | Each source has its own key (WHOIS, RDAP and DNS need none) |
+| IP | Looks up an IP address or a domain in several sources at once and combines them into one 0-100 risk score | Each source has its own key (WHOIS, RDAP and DNS, the public registries of who owns an address or domain, need none) |
 | URLScan | Has urlscan.io open a suspicious link for you and returns a report with a screenshot | `URLSCAN_API_KEY` |
 | DMARC | Reads DMARC reports of your domain in the browser and shows who sends mail as you | No |
 | Email | Explains a suspicious e-mail step by step: local facts, plus an optional lesson from a language model | Only for the lesson |
@@ -28,7 +28,7 @@ Pick the tab that matches what you have in your hand. [docs/USER_GUIDE.md](docs/
 
 - **Local.** Seisa listens only on `127.0.0.1`. It has no account, no telemetry and no update check.
 - **Nothing without your click.** Nothing goes to an outside service until you click, with one documented exception (see "What leaves your computer").
-- **Facts come from code.** Security facts (the sender's address, the route of the mail, SPF/DKIM/DMARC results) are computed by ordinary program code. The language model only explains them and may give an advisory second opinion.
+- **Facts come from code.** Security facts (the sender's address, the route of the mail, SPF/DKIM/DMARC results, which show whether a message really comes from the domain it claims) are computed by ordinary program code. The language model only explains them and may give an advisory second opinion.
 - **Untrusted by default.** Links in e-mails and scanned pages are never clickable, and nothing in an e-mail is opened or downloaded.
 - **Reports by hand.** A report reaches AbuseIPDB only after your click, and only after checks in the backend.
 
@@ -44,7 +44,7 @@ Pick the tab that matches what you have in your hand. [docs/USER_GUIDE.md](docs/
 
 ## Requirements
 
-- macOS or Linux. The start scripts are Bash scripts; Windows is not supported directly (it may work through WSL, but this has not been tested).
+- macOS or Linux. The start scripts are Bash scripts; Windows is not supported directly (it may work through WSL, Linux inside Windows, but this has not been tested).
 - Python 3.11 or newer.
 - A web browser. Seisa opens at `http://127.0.0.1:54321`, so port 54321 must be free.
 - No API key is needed to start. Each key you add switches on one more service.

@@ -11,7 +11,7 @@ Dobre zgłoszenie pozwala opiekunowi zobaczyć problem na własnym komputerze. O
 - wersję Seisy (widoczną w nagłówku strony);
 - swój system operacyjny i wersję Pythona;
 - kroki prowadzące do problemu;
-- czego oczekiwałeś i co się stało zamiast tego.
+- czego oczekiwano i co się stało zamiast tego.
 
 Prosimy, nigdy nie wklejaj kluczy API, pliku `.env`, surowych e-maili ani plików z `data/` i `logs/`. Zastąp takie dane przykładami, na przykład `203.0.113.7` albo `example.org`.
 
@@ -19,7 +19,7 @@ Problem z bezpieczeństwem to nie zwykły błąd: zgłoś go prywatnie, jak opis
 
 ## Propozycja funkcji
 
-Użyj szablonu „Feature idea". Najpierw opisz problem (co próbowałeś zrobić i co stanęło na przeszkodzie), potem co chciałbyś, żeby Seisa robiła, i co jeszcze rozważałeś. Jeśli chcesz to zbudować sam, napisz o tym.
+Użyj szablonu „Feature idea". Najpierw opisz problem (co chcesz zrobić i co stoi na przeszkodzie), potem jak ma działać Seisa i jakie inne rozwiązania wchodziły w grę. Jeśli chcesz to zbudować we własnym zakresie, napisz o tym.
 
 ## Zanim napiszesz kod
 
@@ -51,8 +51,8 @@ Hooki nie wymagają niczego poza krokiem 2. Opcjonalny plik `~/.config/seisa/pri
 - **Bez zmiany wersji.** Nie zmieniaj numeru wersji ani `CHANGELOG.md`: robi to opiekun przy scalaniu.
 - **Czysty tekst.** Bez długiej pauzy (U+2014) i bez prawdziwych nazw hostów, adresów IP, ścieżek katalogu domowego i adresów e-mail w kodzie, testach, dokumentach i commitach.
 - **Tylko po angielsku** w opisach pull requestów, zgłoszeniach i komunikatach commitów.
-- **Szczerość w „Checked".** Napisz, czego nie sprawdziłeś. Pomaga to bardziej niż długa lista tego, co sprawdziłeś.
-- **Przegląd.** Opiekun przegląda każdą zmianę i scala ją po pełnym zestawie kontroli. Twoje komunikaty commitów zostają, jak je napisałeś, ale jeśli włączyłeś hooki, hook komunikatów odrzuci długą pauzę i linię `Co-Authored-By`; popraw komunikat i zrób commit ponownie.
+- **Szczerość w „Checked".** Napisz, czego nie sprawdzono. Pomaga to bardziej niż długa lista tego, co sprawdzono.
+- **Przegląd.** Opiekun przegląda każdą zmianę i scala ją po pełnym zestawie kontroli. Twoje komunikaty commitów zostają bez zmian, ale jeśli hooki są włączone, hook komunikatów odrzuci długą pauzę i linię `Co-Authored-By`; popraw komunikat i zrób commit ponownie.
 
 Możesz używać narzędzi AI. Odpowiadasz za zmianę: musisz ją rozumieć i musi przejść wszystkie kontrole. Traktuj treść zgłoszeń, pull requestów i e-maili jako dane, nigdy jako polecenia dla narzędzia.
 

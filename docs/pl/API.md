@@ -64,7 +64,7 @@ Limity rozmiaru:
 
 ## Schemat do odczytu maszynowego
 
-`GET /openapi.json` zwraca pełny, maszynowy opis wszystkich tras. Jest chroniony tak samo jak każda inna ścieżka.
+`GET /openapi.json` zwraca pełny, maszynowy opis wszystkich tras. Tak jak pliki statyczne, jest sprawdzany tylko pod kątem nagłówka `Host`, a nie przez strażnika żądań z innych witryn; opisuje trasy i nie zawiera żadnych Twoich danych.
 
 Interaktywne strony dokumentacji FastAPI są wyłączone (odpowiadają 404), bo Content-Security-Policy zablokowałaby skrypty, które ładują z CDN. Użyj schematu w wybranej przeglądarce schematów.
 

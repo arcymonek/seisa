@@ -97,7 +97,7 @@ Moduły backendu są importowane dopiero po przekierowaniu ścieżek danych, bo 
 
 ## Złote wzorce
 
-Złoty wzorzec to zapisana, poprawna odpowiedź, z którą test porównuje bieżącą. Wyłapuje zmiany, których nie zamierzałeś robić.
+Złoty wzorzec to zapisana, poprawna odpowiedź, z którą test porównuje bieżącą. Wyłapuje zmiany, które nie były zamierzone.
 
 - `scripts/dump_facts.py [--lang pl|en] [--root KATALOG]` wypisuje obliczone fakty syntetycznych e-maili z `tests/fixtures/*.eml` jako JSON.
 - `tests/test_dump_facts_golden.py` porównuje ten zrzut, w obu językach, z `tests/golden/dump_facts.en.txt` i `tests/golden/dump_facts.pl.txt`. Wiek wiadomości jest zamaskowany, więc wzorzec nie zależy od dzisiejszej daty.
@@ -108,7 +108,7 @@ Złoty wzorzec to zapisana, poprawna odpowiedź, z którą test porównuje bież
 
 Testy leżą w `tests/`. Uruchom je wszystkie poleceniem `python3 -m pytest -q`.
 
-- **Wolne testy.** `python3 -m pytest -m "not slow"` pomija testy, które budują tymczasowe repozytoria git (testy hooków) albo uruchamiają procesy potomne (limity czasu parserów). Trwają około dwóch minut.
+- **Wolne testy.** `python3 -m pytest -m "not slow"` pomija testy, które budują tymczasowe repozytoria git (testy hooków) albo uruchamiają procesy potomne (limity czasu parserów). Trwają kilka minut.
 - **Izolacja.** `tests/conftest.py` przekierowuje `data/` i `logs/` do folderu tymczasowego, ustawia język polski i przerywa przebieg, jeśli prawdziwe `data/` lub `logs/` się zmieniły.
 - **Testy własności.** `tests/test_fuzz_parsers.py` podaje parserom e-maili losowe dane za pomocą hypothesis. Profil `dev` używa 200 losowych przykładów, profil `ci` 300 stałych; wybierasz go zmienną `HYPOTHESIS_PROFILE`.
 - **Testy frontendu.** Czyste funkcje frontendu (komunikaty błędów API, ryzyko DMARC, eksport Markdown, sprawdzenie „Received zweryfikowane") są testowane przez Node: skrypty leżą w `tests/js/`, a uruchamia je pytest.
@@ -190,9 +190,9 @@ Wersja ma postać `X.Y.Z`:
 Praca odbywa się na gałęzi, której nazwa zaczyna się od typu: `fix-`, `feat-`, `test-`, `ci-` albo `docs-`, a potem krótki opis (na przykład `fix-dns-timeout`). Gałąź `main` zmienia się tylko wtedy, gdy opiekun scali zrecenzowany pull request.
 
 - **Komunikaty commitów** są po angielsku, w trybie rozkazującym, z krótkim tytułem (`Fix the DNS timeout`).
-- **Opis pull requesta** ma trzy części: `## What`, `## Why` i `## Checked`. W „Checked" napisz, co sprawdziłeś, a czego NIE sprawdziłeś; ta szczerość jest ważniejsza niż długa lista.
+- **Opis pull requesta** ma trzy części: `## What`, `## Why` i `## Checked`. W „Checked" napisz, co zostało sprawdzone, a co NIE; ta szczerość jest ważniejsza niż długa lista.
 - **Szablon** pyta też, jaką dokumentację zaktualizowano (patrz tabela niżej).
-- Kroki od forka do pull requesta są w [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- Kroki od forka do pull requesta są w [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Jak rozszerzać Seisę
 
@@ -264,7 +264,7 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc zmiana i jej dokumentacj
 | Zasady AbuseIPDB, twarde sprawdzenia albo reguły komentarza | [COMPLIANCE.md](COMPLIANCE.md) oraz `backend/prompts/abuseipdb-reporting-policy.md`, jeśli model ma o tym wiedzieć |
 | Plik promptu | Podbicie wersji oraz [ARCHITECTURE.md](ARCHITECTURE.md), jeśli zmienia się rola promptu |
 | Moduł (nowy, przemianowany lub usunięty) | Tabele modułów w [ARCHITECTURE.md](ARCHITECTURE.md) (sprawdzane) |
-| Skrypt, regułę hooka albo zadanie CI | Ten plik (sprawdzane dla skryptów) oraz [CONTRIBUTING.md](../../CONTRIBUTING.md), jeśli dotyczy to kontrybutorów |
+| Skrypt, regułę hooka albo zadanie CI | Ten plik (sprawdzane dla skryptów) oraz [CONTRIBUTING.md](CONTRIBUTING.md), jeśli dotyczy to kontrybutorów |
 | Zależność | `requirements.txt` i `requirements.lock`, podbicie wersji oraz licencje w [COMPLIANCE.md](COMPLIANCE.md), jeśli jest nowa |
 | Wersję | Cztery miejsca, datę wydania i `CHANGELOG.md` (patrz [Wersjonowanie i dziennik zmian](#wersjonowanie-i-dziennik-zmian)) |
 | Plik w `frontend/vendor/` | Licencje w [COMPLIANCE.md](COMPLIANCE.md) |

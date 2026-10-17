@@ -48,7 +48,7 @@ Wewnątrz zakładki powtarza się ten sam układ:
 - **Przycisk „Wyczyść".** Pojawia się tylko wtedy, gdy jest co czyścić (wpisany tekst albo wynik) i przywraca zakładkę do stanu początkowego.
 - **Baner werdyktu.** Kolorowy pasek z ogólnym poziomem: Wysokie, Średnie lub Niskie, albo werdykt dla e-maila.
 - **Kafle.** Rząd małych pól z podsumowaniem pod banerem.
-- **Zwijane karty.** Szczegóły. Każda karta zaczyna zwinięta. Seisa pamięta, które karty otworzyłeś lub zamknąłeś, dopóki nie zamkniesz strony (nic nie jest zapisywane na dysku). Karty z wieloma sekcjami mają „Rozwiń wszystko" i „Zwiń wszystko".
+- **Zwijane karty.** Szczegóły. Każda karta zaczyna zwinięta. Seisa pamięta, które karty zostały otwarte lub zamknięte, dopóki nie zamkniesz strony (nic nie jest zapisywane na dysku). Karty z wieloma sekcjami mają „Rozwiń wszystko" i „Zwiń wszystko".
 - **Wyjaśnienia.** Ostatnia sekcja każdego wyniku, opisana niżej.
 
 Przenoszenie danych między zakładkami robią przyciski takie jak „Zgłoś AbuseIPDB", „Sprawdź w zakładce IP" czy „Skanuj w URLScan". Wypełniają one tylko pole w drugiej zakładce. Niczego nie uruchamiają, więc zachowujesz kontrolę. Jedyny wyjątek to „Powtórz" w Historii (zobacz zakładkę Historia).
@@ -69,7 +69,7 @@ Nic nie opuszcza Twojego komputera, dopóki nie klikniesz przycisku, który to r
 
 | Klikasz | Łączy się z |
 |---|---|
-| „Sprawdź" w zakładce IP | Usługami, które zostawiłeś zaznaczone pod „Usługi" (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS / rDNS i DNS) |
+| „Sprawdź" w zakładce IP | Usługami, które pozostają zaznaczone pod „Usługi" (VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise, WHOIS / rDNS i DNS) |
 | „Skanuj" lub „Historia" w zakładce URLScan | urlscan.io |
 | „geo (RDAP)" w zakładce DMARC | Publiczną bazą rejestracyjną (RDAP) i DNS |
 | „Analizuj" w zakładce Email | OpenRouter (usługa AI), tylko gdy jest ustawiony klucz |
@@ -136,7 +136,7 @@ Seisa odrzuca adresy prywatne, pętli zwrotnej, zarezerwowane i dokumentacyjne (
 
 ### Co jest wysyłane i kiedy
 
-Tylko gdy klikniesz „Sprawdź" (albo „Powtórz" w Historii, albo przycisk IP w innej zakładce, który otwiera tę i ją uruchamia). Adres lub domena trafia do źródeł, które zostawiłeś zaznaczone. Seisa nie trzyma pamięci podręcznej, więc każde „Sprawdź" pyta od nowa i za każdym razem zużywa limity usług. VirusTotal jest przez Seisę ograniczony do 4 zapytań na minutę (nadmiarowe czekają) i 500 na dobę, liczone do 00:00 UTC. Po przekroczeniu limitu dobowego jego karta mówi „limit wyczerpany". Pełna tabela jest w [PRIVACY.md](PRIVACY.md).
+Tylko gdy klikniesz „Sprawdź" (albo „Powtórz" w Historii). Przycisk IP w innej zakładce tylko otwiera tę zakładkę z wpisanym adresem. Adres lub domena trafia do źródeł, które pozostają zaznaczone. Seisa nie trzyma pamięci podręcznej, więc każde „Sprawdź" pyta od nowa i za każdym razem zużywa limity usług. VirusTotal jest przez Seisę ograniczony do 4 zapytań na minutę (nadmiarowe czekają) i 500 na dobę, liczone do 00:00 UTC. Po przekroczeniu limitu dobowego jego karta mówi „limit wyczerpany". Pełna tabela jest w [PRIVACY.md](PRIVACY.md).
 
 ### Jak czytać wynik
 
@@ -157,7 +157,7 @@ Jak powstaje wynik:
 - Cloudflare Radar i WHOIS / rDNS dają kontekst (sieć, właściciel, położenie), a nie werdykt, więc są wymienione pod „Poza wynikiem".
 - Adres znany jako dobry (na białej liście AbuseIPDB, uznany przez GreyNoise za nieszkodliwy/RIOT albo potwierdzony przez OTX) ma wynik ograniczony do 15, chyba że inne źródło zgłasza silny sygnał przeciwny (65 lub więcej).
 - Jeśli jedno źródło zawiedzie, sprawdzanie trwa dalej. Jego karta pokazuje „błąd" z komunikatem usługi (po angielsku), a błąd trafia do zakładki Logi.
-- Jeśli ten sam adres sprawdzałeś wcześniej, raport pokazuje poprzedni wynik, co się zmieniło (źródła, które przesunęły się o 10 punktów lub więcej) i trend z maksymalnie 10 wcześniejszych sprawdzeń. Do tego porównania nic nie jest pytane ponownie.
+- Jeśli ten adres był już sprawdzany, raport pokazuje poprzedni wynik, co się zmieniło (źródła, które przesunęły się o 10 punktów lub więcej) i trend z maksymalnie 10 wcześniejszych sprawdzeń. Do tego porównania nic nie jest pytane ponownie.
 
 Każde sprawdzenie jest automatycznie zapisywane w Historii, bez surowych odpowiedzi usług.
 
@@ -177,7 +177,7 @@ Każde sprawdzenie jest automatycznie zapisywane w Historii, bez surowych odpowi
 
 ![Zakładka URLScan: raport ze skanu ze zrzutem ekranu, kaflami podsumowania i szczegółami strony](../images/urlscan_pl.png)
 
-Zakładka URLScan prosi usługę urlscan.io, żeby otworzyła podejrzany link we własnej przeglądarce i zgłosiła, co znalazła, więc sam nigdy nie otwierasz linku. Dostajesz zrzut ekranu, szczegóły strony i werdykt.
+Zakładka URLScan prosi usługę urlscan.io, żeby otworzyła podejrzany link we własnej przeglądarce i zgłosiła, co znalazła, więc nigdy nie otwierasz linku osobiście. Dostajesz zrzut ekranu, szczegóły strony i werdykt.
 
 ### Czego potrzebuje
 
@@ -185,7 +185,7 @@ Zakładka URLScan prosi usługę urlscan.io, żeby otworzyła podejrzany link we
 
 ### Jak z niej korzystać
 
-1. Wklej link w pole „Adres URL do zeskanowania". Przyjmowane są tylko adresy `http://` i `https://` publicznych stron, do 2048 znaków. Żeby zeskanować kilka, oddziel do 5 adresów spacją lub nową linią.
+1. Wklej link w pole „Adres URL do zeskanowania". Przyjmowane są tylko adresy `http://` i `https://` publicznych stron, do 2 048 znaków. Żeby zeskanować kilka, oddziel do 5 adresów spacją lub nową linią.
 2. Wybierz „Widoczność skanu" (zobacz niżej).
 3. Opcjonalnie otwórz „Opcje zaawansowane (kraj skanu, user agent)".
 4. Kliknij „Skanuj". Seisa zgłasza skan, czeka 12 sekund, a potem sprawdza co 5 sekund. Po 2 minutach przestaje czekać i mówi, żeby sprawdzić ręcznie (skan trwa dalej w urlscan.io). „Anuluj" przerywa czekanie, nie skan.
@@ -326,7 +326,7 @@ Zwykłe przekazanie wiadomości dalej nie zadziała: powstaje nowa wiadomość, 
 
 1. Wklej kod źródłowy do dużego pola tekstowego albo kliknij „Wczytaj plik .eml".
 2. Kliknij „Analizuj", żeby dostać pełną lekcję, albo „Analizuj bez LLM", jeśli chcesz tylko lokalne fakty. „Przerwij" zatrzymuje trwającą analizę.
-3. Jeśli tę samą wiadomość analizowałeś wcześniej, Seisa zanim cokolwiek wyda, proponuje „Otwórz zapisaną analizę" albo „Analizuj ponownie (płatne)".
+3. Jeśli ta wiadomość była już analizowana, Seisa zanim cokolwiek wyda, proponuje „Otwórz zapisaną analizę" albo „Analizuj ponownie (płatne)".
 4. Przeczytaj wynik (niżej). „Pokaż źródło" i „Edytuj źródło" pozwalają obejrzeć lub zmienić wklejony tekst.
 
 ### Co jest wysyłane i kiedy
@@ -344,8 +344,8 @@ Warto wiedzieć:
 - **Rozmiar.** Wklejony kod źródłowy może mieć najwyżej 3 000 000 znaków. Większy zostaje odrzucony z komunikatem.
 - **Czas.** Jeśli OpenRouter przez 120 sekund nic nie wyśle, Seisa się poddaje i pokazuje zwykły komunikat.
 - **Język i koszt.** Lekcja jest pisana w języku interfejsu. Model ustawia `OPENROUTER_MODEL` (domyślnie `anthropic/claude-sonnet-4.5`). Koszt widoczny obok przycisków pochodzi od samego OpenRouter.
-- **Dane innych osób.** E-mail zwykle zawiera dane osobowe innych ludzi. Wysłanie go do OpenRouter to Twoja decyzja. Zobacz [COMPLIANCE.md](../COMPLIANCE.md).
-- **Linki.** Seisa nigdy nie otwiera linków, obrazów ani załączników. Pełna tabela tego, co opuszcza Twój komputer, jest w [PRIVACY.md](../PRIVACY.md).
+- **Dane innych osób.** E-mail zwykle zawiera dane osobowe innych ludzi. Wysłanie go do OpenRouter to Twoja decyzja. Zobacz [COMPLIANCE.md](COMPLIANCE.md).
+- **Linki.** Seisa nigdy nie otwiera linków, obrazów ani załączników. Pełna tabela tego, co opuszcza Twój komputer, jest w [PRIVACY.md](PRIVACY.md).
 
 ### Jak czytać wynik
 
@@ -453,7 +453,7 @@ Kontrole, które rozstrzygają, czy możesz wysłać, wylicza własny kod Seisy.
 | Adres IP źródła, do AbuseIPDB | **Sam z siebie**, bez kliknięcia, gdy tylko w formularzu pojawi się publiczny adres IP i ustawiony jest klucz AbuseIPDB. Wysyłany jest sam adres, nigdy e-mail. Pokazuje, co AbuseIPDB już o nim wie |
 | Zgłoszenie (IP, kategorie, czas, komentarz), do AbuseIPDB | Tylko gdy klikniesz „Wyślij przez AbuseIPDB API". AbuseIPDB pokazuje komentarze publicznie |
 
-Automatyczne sprawdzenie adresu to jedyny wyjątek od zasady „nic bez kliknięcia" w Seisie. Pełna tabela jest w [PRIVACY.md](../PRIVACY.md).
+Automatyczne sprawdzenie adresu to jedyny wyjątek od zasady „nic bez kliknięcia" w Seisie. Pełna tabela jest w [PRIVACY.md](PRIVACY.md).
 
 Wklejony kod źródłowy może mieć najwyżej 3 000 000 znaków. Większy zostaje odrzucony z komunikatem „Źródło jest za duże ({size} znaków, limit {limit})."
 
@@ -466,20 +466,20 @@ Wynik zaczyna się od werdyktu: „E-mail wygląda na kwalifikujący się do zg�
 **Formularz.** „Zgłoszenie" zawiera adres IP, kategorie, timestamp ataku i komentarz:
 
 - Kategorie to chipy. AbuseIPDB ma ich 23, a „7. Phishing" i „11. Email Spam" są typowe dla e-maili.
-- Komentarz jest po angielsku, bo jest publiczny. Możesz go edytować. Może mieć najwyżej 1024 znaki (jest licznik), a przed wysłaniem jest czyszczony do zwykłego ASCII (inne znaki zamieniają się w spacje).
+- Komentarz jest po angielsku, bo jest publiczny. Możesz go edytować. Może mieć najwyżej 1 024 znaki (jest licznik), a przed wysłaniem jest czyszczony do zwykłego ASCII (inne znaki zamieniają się w spacje).
 - Seisa skanuje komentarz pod kątem danych osobowych: Twojego własnego adresu z wiadomości, innych adresów e-mail i wewnętrznych adresów IP. Proponuje „Zamaskuj". Wysyłka z takimi danymi zostawionymi w komentarzu prosi o potwierdzenie.
 
 **Kontrole przed wysyłką.** Trzy grupy:
 
 | Grupa | Co zawiera |
 |---|---|
-| Wymagane (API i backend) | Atak najwyżej 60 dni temu, publiczne IP, co najmniej jedna kategoria, reguła 15 minut dla tego samego IP i kwalifikowalność zgłoszenia. Serwer Seisy sam je powtarza, więc nie da się ich obejść w przeglądarce |
+| Wymagane (API i backend) | Atak najwyżej 60 dni temu, publiczne IP, co najmniej jedna kategoria, reguła 15 minut dla tego samego IP i kwalifikowalność zgłoszenia. Serwer Seisy sam powtarza pierwsze cztery; werdykt kwalifikowalności jest sprawdzany tylko na stronie, bo ma charakter doradczy |
 | Blokujące, oceniane przez AI | „Zweryfikowano z nagłówka Received" i „Źródło jest wiarygodne" |
 | Informacyjne | Spoofing (podszycie się pod nadawcę), kategoria dopasowana do rzeczywistego mechanizmu, brak danych osobowych |
 
 AbuseIPDB przyjmuje ponowne zgłoszenie tego samego IP z jednego konta dopiero po 15 minutach, a Seisa blokuje je wcześniej na podstawie własnego lokalnego dziennika. Wiadomość, która wygląda na test wysłany z Twojego konta do siebie, jest oznaczana jako najprawdopodobniej niekwalifikująca się.
 
-**Bez AI.** Werdykt brzmi wtedy „wątpliwe (nie oceniono)". Sprawdzane są tylko twarde kryteria (publiczne IP, wiek do 60 dni). To nie blokuje wysyłki, bo twarde kontrole nadal działają w kodzie Seisy, ale też nie wystarcza, żeby uznać, że e-mail zasługuje na zgłoszenie. Zdecyduj sam. „Zweryfikowano z Received" jest zielone tylko dla adresu, który Seisa wybrała sama z wysoką pewnością. Jeśli wpiszesz inny adres, kontrola zmienia się w „nie oceniono".
+**Bez AI.** Werdykt brzmi wtedy „wątpliwe (nie oceniono)". Sprawdzane są tylko twarde kryteria (publiczne IP, wiek do 60 dni). To nie blokuje wysyłki, bo twarde kontrole nadal działają w kodzie Seisy, ale też nie wystarcza, żeby uznać, że e-mail zasługuje na zgłoszenie. Decyzja należy do Ciebie. „Zweryfikowano z Received" jest zielone tylko dla adresu, który Seisa wybrała sama z wysoką pewnością. Jeśli wpiszesz inny adres, kontrola zmienia się w „nie oceniono".
 
 **Co AbuseIPDB już wie.** Gdy klucz jest ustawiony, formularz pokazuje zgłoszenia adresu z ostatnich 90 dni. Ostrzega, gdy adres jest na białej liście AbuseIPDB albo był już zgłoszony w wybranych kategoriach w ciągu ostatnich 7 dni.
 
@@ -637,13 +637,13 @@ Wybór jest zapamiętany w tej przeglądarce i stosowany, zanim strona zostanie 
 
 ## 14. Przykład: od podejrzanego e-maila do zgłoszenia
 
-Ten przykład prowadzi przez jeden zmyślony przypadek, od pierwszej wątpliwości do wysłanego zgłoszenia. Wszystkie adresy są fikcyjne: nadawca to `203.0.113.45`, a jego domena to `mail.example`. To zarezerwowane adresy przykładowe, więc zakładka IP w prawdziwym życiu by je odrzuciła (zobacz krok 3). Prawdziwy przypadek ma prawdziwy, publiczny adres.
+Ten przykład prowadzi przez jeden zmyślony przypadek, od pierwszej wątpliwości do wysłanego zgłoszenia. Wszystkie adresy są fikcyjne: nadawca to `203.0.113.45`, a jego domena to `mail.example`. To zarezerwowane adresy przykładowe, więc przy nich przycisk „IP" się nie pojawia i zgłoszenia nie da się wysłać. Z prawdziwym, publicznym adresem każdy krok działa tak, jak opisano.
 
 Dostajesz wiadomość, która podaje się za bank i prosi o „potwierdzenie konta". Coś jest nie tak.
 
 1. **Zdobądź kod źródłowy.** Skopiuj cały kod źródłowy wiadomości (zobacz „Jak zdobyć kod źródłowy e-maila" w sekcji 8). Niczego nie klikaj w samej wiadomości.
 2. **Zrozum ją w zakładce Email.** Wklej kod i kliknij „Analizuj" (albo „Analizuj bez LLM", jeśli nie chcesz wysyłać go do OpenRouter). Przeczytaj werdykt, na przykład „phishing" z pewnością, potem kafel „IP nadawcy" (tutaj `203.0.113.45`) i kafel „Uwierzytelnianie". Panel „Lekcja" tłumaczy krok po kroku, co jest nie tak.
-3. **Opcjonalnie: sprawdź nadawcę.** Kliknij „IP" obok IP nadawcy. Otworzy się zakładka IP z wpisanym adresem. Nic jeszcze nie jest wysyłane: kliknij „Sprawdź", żeby zobaczyć reputację adresu. Dla zarezerwowanego adresu przykładowego, jak nasz, Seisa odpowie, że to nie jest adres publiczny; prawdziwy dostanie wynik.
+3. **Opcjonalnie: sprawdź nadawcę.** Kliknij „IP" obok IP nadawcy. Otworzy się zakładka IP z wpisanym adresem. Nic jeszcze nie jest wysyłane: kliknij „Sprawdź", żeby zobaczyć reputację adresu. Przy zarezerwowanym adresie przykładowym, jak nasz, przycisk „IP" się nie pojawia; prawdziwy, publiczny adres dostanie wynik.
 4. **Przygotuj zgłoszenie.** Otwórz zakładkę AbuseIPDB. Nie ma przycisku, który przenosi e-mail, więc wklej kod ponownie i kliknij „Analizuj". Sprawdź werdykt, „Skąd pochodzi IP", kategorie (w tym przypadku „7. Phishing" i może „11. Email Spam"), czas i komentarz.
 5. **Sprawdź przed wysłaniem.** Otwórz „Kontrole przed wysyłką". Napraw to, co nie przechodzi. Kliknij „Zamaskuj", jeśli pojawi się ostrzeżenie o danych osobowych, a potem zobacz „Co zostanie wysłane do API". Pamiętaj, że komentarz jest publiczny.
 6. **Wyślij.** Kliknij „Wyślij przez AbuseIPDB API". Seisa pokaże nowy wynik adresu i pozostały limit dzienny.
@@ -653,6 +653,6 @@ Jeśli zakładka mówi, że e-mail się nie kwalifikuje (na przykład jest stars
 
 ## 15. Zamykanie Seisy
 
-Gdy skończysz, kliknij „Zamknij Seisę" w stopce albo w zakładce Info, w „Ustawienia". Serwer się zatrzyma, a strona zostanie zastąpiona napisem „Seisa została zatrzymana". Przeglądarka może poprosić, żebyś sam zamknął kartę.
+Gdy skończysz, kliknij „Zamknij Seisę" w stopce albo w zakładce Info, w „Ustawienia". Serwer się zatrzyma, a strona zostanie zastąpiona napisem „Seisa została zatrzymana". Przeglądarka może poprosić o ręczne zamknięcie karty.
 
 Seisa najpierw prosi o potwierdzenie. Zaznacz „Nie pytaj ponownie", żeby przestała pytać, a włączysz pytanie z powrotem przez „Pytaj przed zamknięciem" w Info, w „Ustawienia". Zawsze pyta, gdy praca mogłaby przepaść, na przykład trwająca analiza albo wklejony tekst. Jak uruchomić Seisę ponownie, opisuje [OPERATIONS.md](OPERATIONS.md).

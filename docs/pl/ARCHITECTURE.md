@@ -55,7 +55,7 @@ Seisa używa niewielkiego zestawu znanych narzędzi. Tabela pokazuje je razem z 
 
 ## Droga żądania
 
-Każde żądanie przechodzi przez te same warstwy, zanim trafi do kodu, który wykonuje pracę. Diagram pokazuje drogę sprawdzenia IP.
+Każde żądanie przechodzi przez te same warstwy, zanim trafi do kodu, który wykonuje pracę. Diagram pokazuje drogę sprawdzenia IP, jako przykład.
 
 ```mermaid
 flowchart TD
@@ -64,8 +64,8 @@ flowchart TD
     R --> A[aggregator.run_lookup]
     A --> S[Wybrane usługi równolegle]
     S --> C[scoring, identity, markdown_report]
-    C --> H[Zapis w Historii]
-    H --> B
+    C -->|odpowiedź| B
+    C -.-> H[Zapis w Historii]
 ```
 
 Żądanie przechodzi przez cztery middleware, od zewnętrznego:
@@ -213,7 +213,7 @@ Katalogi: `frontend/i18n/{en,pl}.json` dla interfejsu i `backend/locales/{en,pl}
 Skórka to mały plik JSON w `frontend/themes/`, więc dodanie nowego wyglądu nie wymaga kodu.
 
 - Dostarczane skórki: `light` („Light Washi", domyślna), `sumi-brown` („Brown Sumi"), `blue` („Blue Sumi") i `kohaku` („Red-and-white Kōhaku"). „Systemowy" idzie za systemem operacyjnym (ciemny oznacza Brown Sumi).
-- Plik skórki ma `id` (równe nazwie pliku), `name` (`en` i `pl`), `base` (`dark` albo `light`), opcjonalne `order` od 0 do 1000, opcjonalne `logo` (`badge` albo `mask`) oraz dokładnie znane klucze kolorów w formacie `#rrggbb`.
+- Plik skórki ma `id` (równe nazwie pliku), `name` (`en` i `pl`), `base` (`dark` albo `light`), opcjonalne `order` od 0 do 1 000, opcjonalne `logo` (`badge` albo `mask`) oraz dokładnie znane klucze kolorów w formacie `#rrggbb`.
 - Czytane jest najwyżej 24 pliki po 8 KB. Zły plik jest pomijany i zapisywany w logu.
 - CSS powstaje wyłącznie ze sprawdzonych wartości, więc skórka nie może zawierać `url()`, `@import` ani reguł.
 
@@ -248,7 +248,7 @@ Prawdziwe e-maile nigdy nie trafiają do commitów. Opcjonalny prywatny zbiór m
 
 ## Układ repozytorium
 
-To najwyższy poziom repozytorium, żebyś wiedział, gdzie czego szukać.
+To najwyższy poziom repozytorium, żeby było wiadomo, gdzie czego szukać.
 
 | Ścieżka | Co zawiera |
 |---|---|
@@ -259,4 +259,4 @@ To najwyższy poziom repozytorium, żebyś wiedział, gdzie czego szukać.
 | `docs/` | Dokumentacja, z plikami polskimi w `docs/pl/` i zrzutami w `docs/images/` |
 | `.github/` | Szablony zgłoszeń i pull requestów, CI |
 | `data/`, `logs/` | Dane lokalne, ignorowane przez git poza `.gitkeep` |
-| Pliki w katalogu głównym | `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../../LICENSE), [CHANGELOG.md](../../CHANGELOG.md), [CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md) |
+| Pliki w katalogu głównym | `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../../LICENSE), [CHANGELOG.md](../../CHANGELOG.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |

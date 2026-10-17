@@ -7,7 +7,7 @@
 
 # Seisa
 
-Seisa (精査, „dokładne, szczegółowe zbadanie"; czytaj „sejsa") to narzędzie działające na Twoim własnym komputerze, które pomaga ocenić, czy adresowi IP, linkowi, raportowi DMARC lub e-mailowi można ufać, oraz zgłaszać nadużycia do AbuseIPDB. Nie musisz być informatykiem: każdy wynik ma prosty komentarz.
+Seisa (精査, „dokładne, szczegółowe zbadanie"; czytaj „sejsa") to narzędzie działające na Twoim własnym komputerze, które pomaga ocenić, czy adresowi IP, linkowi, raportowi DMARC (podsumowaniu, które dostawcy poczty wysyłają o poczcie wysłanej w imieniu Twojej domeny) lub e-mailowi można ufać, oraz zgłaszać nadużycia do AbuseIPDB. Nie musisz być informatykiem: każdy wynik ma prosty komentarz.
 
 ## Co robi Seisa
 
@@ -15,7 +15,7 @@ Wybierz zakładkę, która pasuje do tego, co masz w ręku. [docs/pl/USER_GUIDE.
 
 | Zakładka | Co robi | Potrzebny klucz? |
 |---|---|---|
-| IP | Sprawdza adres IP lub domenę w kilku źródłach naraz i łączy wyniki w jedną ocenę ryzyka 0-100 | Każde źródło ma własny klucz (WHOIS, RDAP i DNS nie potrzebują) |
+| IP | Sprawdza adres IP lub domenę w kilku źródłach naraz i łączy wyniki w jedną ocenę ryzyka 0-100 | Każde źródło ma własny klucz (WHOIS, RDAP i DNS, czyli publiczne rejestry mówiące, kto jest właścicielem adresu lub domeny, nie potrzebują) |
 | URLScan | Zleca urlscan.io otwarcie podejrzanego linku za Ciebie i zwraca raport ze zrzutem ekranu | `URLSCAN_API_KEY` |
 | DMARC | Czyta w przeglądarce raporty DMARC Twojej domeny i pokazuje, kto wysyła pocztę w Twoim imieniu | Nie |
 | Email | Wyjaśnia podejrzany e-mail krok po kroku: fakty lokalne i opcjonalna lekcja od modelu językowego | Tylko do lekcji |
@@ -28,7 +28,7 @@ Wybierz zakładkę, która pasuje do tego, co masz w ręku. [docs/pl/USER_GUIDE.
 
 - **Lokalnie.** Seisa nasłuchuje tylko na `127.0.0.1`. Nie ma konta, telemetrii ani sprawdzania aktualizacji.
 - **Nic bez Twojego kliknięcia.** Nic nie trafia do usługi zewnętrznej, dopóki nie klikniesz, z jednym opisanym wyjątkiem (patrz „Co opuszcza Twój komputer").
-- **Fakty pochodzą z kodu.** Fakty bezpieczeństwa (adres nadawcy, trasa poczty, wyniki SPF/DKIM/DMARC) oblicza zwykły kod programu. Model językowy tylko je wyjaśnia i może dać doradczą drugą opinię.
+- **Fakty pochodzą z kodu.** Fakty bezpieczeństwa (adres nadawcy, trasa poczty, wyniki SPF/DKIM/DMARC, które pokazują, czy wiadomość naprawdę pochodzi z domeny, za którą się podaje) oblicza zwykły kod programu. Model językowy tylko je wyjaśnia i może dać doradczą drugą opinię.
 - **Domyślnie nieufnie.** Linki z e-maili i skanowanych stron nigdy nie są klikalne, a niczego z e-maila nie otwiera się ani nie pobiera.
 - **Zgłoszenia ręcznie.** Zgłoszenie trafia do AbuseIPDB dopiero po Twoim kliknięciu i po sprawdzeniach w backendzie.
 
@@ -44,7 +44,7 @@ Wybierz zakładkę, która pasuje do tego, co masz w ręku. [docs/pl/USER_GUIDE.
 
 ## Wymagania
 
-- macOS lub Linux. Skrypty startowe są w Bashu; Windows nie jest obsługiwany bezpośrednio (może działać przez WSL, ale nie testowano).
+- macOS lub Linux. Skrypty startowe są w Bashu; Windows nie jest obsługiwany bezpośrednio (może działać przez WSL, czyli Linuksa wewnątrz Windows, ale nie testowano).
 - Python 3.11 lub nowszy.
 - Przeglądarka. Seisa otwiera się pod adresem `http://127.0.0.1:54321`, więc port 54321 musi być wolny.
 - Do uruchomienia nie jest potrzebny żaden klucz API. Każdy dodany klucz włącza jedną usługę więcej.

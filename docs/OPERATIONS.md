@@ -33,7 +33,7 @@ This guide is for the person who installs Seisa and keeps it running, even if yo
 This section lists what your computer needs before you start. A "terminal" is the text window where you type commands (on macOS the Terminal app, on Linux your terminal program).
 
 - **System:** macOS or Linux. The start scripts are Bash scripts. Windows is not supported directly; it may work through WSL (the Windows Subsystem for Linux, a Linux inside Windows), but this has not been tested.
-- **Python 3.11 or newer.** Seisa is tested on Python 3.11 and on the newest 3.x. Check yours with `python3 --version`.
+- **Python 3.11 or newer.** Seisa is tested on Python 3.11 and on the newest 3.x. Check yours with `python3 --version`. If it is older, install a current Python from python.org (or with your system's package manager) and use that `python3`.
 - **A modern web browser.** The DMARC tab unpacks `.gz` and `.zip` reports with the browser's own built-in tools.
 - **Git (optional).** It is the easiest way to download and later update Seisa. Without it you can download a ZIP file.
 - **Port 54321 free.** Seisa listens on `127.0.0.1` (this computer only), port 54321. The port is fixed in the start scripts.
@@ -358,7 +358,7 @@ Each table below follows the same order: what you see, why it happens, what to d
 |---|---|
 | Does Seisa work without any key? | Yes. Some sources need no key, and "Analyze without LLM" sends nothing off your computer. See [USER_GUIDE.md](USER_GUIDE.md#4-api-keys-what-works-without-them). |
 | Does Seisa update itself? | No. You update it by hand (section 5). |
-| What leaves my computer? | Only what you trigger by a click. The full list is in [PRIVACY.md](PRIVACY.md). |
+| What leaves my computer? | Only what you trigger by a click, with one exception: the AbuseIPDB tab looks up the address in its form by itself. The full list is in [PRIVACY.md](PRIVACY.md). |
 | Can I move Seisa to another computer? | Install it there, then copy your `data/` folder and `.env` file into the new Seisa folder. |
 | Can I change the port? | Not by a setting. The port is written in `seisa.sh` and `seisa-launcher.sh`; changing it means editing both scripts. |
 | I think I found a bug. | Look in the Logs tab and see [CONTRIBUTING.md](../CONTRIBUTING.md). For a security problem use [SECURITY.md](../SECURITY.md). |

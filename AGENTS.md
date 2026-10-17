@@ -57,8 +57,8 @@ Rules for AI coding agents that work on Seisa in a fork or on a pull request. A 
 
 ## Where to look
 
-- `docs/ARCHITECTURE.md`: modules and design decisions.
-- `docs/API.md`: the endpoints.
-- `docs/PRIVACY.md`: what goes out, and the safeguards.
-- `docs/COMPLIANCE.md`: AbuseIPDB reports and the role of the model.
-- `docs/DEVELOPMENT.md`: checks, hooks, CI, versioning, documentation rules.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): modules and design decisions.
+- [docs/API.md](docs/API.md): the endpoints.
+- [docs/PRIVACY.md](docs/PRIVACY.md): what goes out, and the safeguards.
+- [docs/COMPLIANCE.md](docs/COMPLIANCE.md): AbuseIPDB reports and the role of the model.
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md): checks, hooks, CI, versioning, documentation rules.

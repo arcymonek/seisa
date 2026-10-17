@@ -33,7 +33,7 @@ Ten przewodnik jest dla osoby, która instaluje Seisę i dba o to, żeby działa
 Ta część wylicza, czego potrzebuje Twój komputer, zanim zaczniesz. „Terminal" to okno tekstowe, w którym wpisujesz polecenia (na macOS aplikacja Terminal, na Linuksie Twój program terminala).
 
 - **System:** macOS lub Linux. Skrypty startowe są skryptami Bash. Windows nie jest obsługiwany bezpośrednio; może działać przez WSL (Windows Subsystem for Linux, czyli Linux wewnątrz Windowsa), ale nie było to testowane.
-- **Python 3.11 lub nowszy.** Seisa jest testowana na Pythonie 3.11 i na najnowszym 3.x. Swoją wersję sprawdzisz poleceniem `python3 --version`.
+- **Python 3.11 lub nowszy.** Seisa jest testowana na Pythonie 3.11 i na najnowszym 3.x. Swoją wersję sprawdzisz poleceniem `python3 --version`. Jeśli jest starsza, zainstaluj aktualnego Pythona ze strony python.org (albo menedżerem pakietów systemu) i używaj tego `python3`.
 - **Nowoczesna przeglądarka.** Zakładka DMARC rozpakowuje raporty `.gz` i `.zip` wbudowanymi narzędziami przeglądarki.
 - **Git (opcjonalnie).** To najłatwiejszy sposób, żeby pobrać Seisę, a potem ją aktualizować. Bez niego możesz pobrać plik ZIP.
 - **Wolny port 54321.** Seisa nasłuchuje na `127.0.0.1` (tylko ten komputer), port 54321. Port jest wpisany na stałe w skryptach startowych.
@@ -114,7 +114,7 @@ Uruchomienie to wystartowanie jednego skryptu i zostawienie otwartego okna jego 
 ./seisa.sh
 ```
 
-- Skrypt uruchamia serwer i po ok. 1,5 sekundy otwiera `http://127.0.0.1:54321` w przeglądarce (na macOS przez `open`, na Linuksie z pulpitem przez `xdg-open`). Jeśli nie umie otworzyć przeglądarki, wypisuje adres; wpisz go wtedy do przeglądarki sam.
+- Skrypt uruchamia serwer i po ok. 1,5 sekundy otwiera `http://127.0.0.1:54321` w przeglądarce (na macOS przez `open`, na Linuksie z pulpitem przez `xdg-open`). Jeśli nie umie otworzyć przeglądarki, wypisuje adres; wpisz go wtedy ręcznie w przeglądarce.
 - Okno terminala jest zajęte, dopóki Seisa działa. Zamknięcie go albo naciśnięcie w nim Ctrl+C zatrzymuje Seisę.
 - Seisa nie ma logowania, bo dostęp ma tylko Twój własny komputer.
 
@@ -146,7 +146,7 @@ Wiersz w Ustawieniach może pokazać takie stany:
 |---|---|---|
 | nie dodana | Ikony jeszcze nie ma. | Kliknij „Dodaj ikonę", jeśli chcesz ją mieć. |
 | dodana | Ikona istnieje i wskazuje ten folder Seisy. | Nic. |
-| zrobiona dla innego katalogu Seisy albo brakuje jej skryptu startowego | Przeniosłeś lub zmieniłeś nazwę folderu Seisy. | Kliknij „Dodaj ikonę" jeszcze raz. |
+| zrobiona dla innego katalogu Seisy albo brakuje jej skryptu startowego | Folder Seisy został przeniesiony lub zmieniono jego nazwę. | Kliknij „Dodaj ikonę" jeszcze raz. |
 | istnieje już plik o tej nazwie, którego Seisa nie zrobiła | Inny plik zajmuje tę nazwę. | Seisa go nie rusza. Usuń go lub zmień mu nazwę samodzielnie. |
 | niedostępna tutaj | System to nie macOS ani Linux albo brak sesji graficznej. | Uruchamiaj Seisę przez `./seisa.sh`. |
 
@@ -183,7 +183,7 @@ Seisa nie ma automatycznej aktualizacji i nigdy nie sprawdza, czy są nowe wersj
 
 4. Uruchom Seisę ponownie. Zwykłe odświeżenie strony pokaże nowy interfejs, bo Seisa każe przeglądarce nie trzymać starych kopii swoich plików.
 
-Jeśli pobrałeś ZIP, pobierz nowy ZIP, rozpakuj go i skopiuj swój plik `.env` oraz folder `data/` do nowego folderu Seisy. Potem powtórz tam kroki 3 i 4. Jeśli używasz ikony aplikacji, kliknij „Dodaj ikonę" jeszcze raz, bo stara ikona wskazuje stary folder.
+Jeśli Seisa pochodzi z pobranego ZIP-a, pobierz nowy ZIP, rozpakuj go i skopiuj swój plik `.env` oraz folder `data/` do nowego folderu Seisy. Potem powtórz tam kroki 3 i 4. Jeśli używasz ikony aplikacji, kliknij „Dodaj ikonę" jeszcze raz, bo stara ikona wskazuje stary folder.
 
 - Zakładka Info pokazuje wersję, którą uruchamiasz, a w kopii z gita 10 ostatnich wydań w sekcji „Ostatnie zmiany". Po instalacji z ZIP-a ta karta jest pusta: „Lista zmian jest dostępna tylko wtedy, gdy Seisa działa z checkoutu git."
 - Dane ze starszych wersji zostają. Analiza e-maila zapisana przez starszą wersję nadal się otwiera; jeśli dzisiejszy kod odczytuje jej fakty inaczej, zakładka to powie.
@@ -196,15 +196,15 @@ Ta część wylicza limity, które obowiązują podczas pracy. Część to regu�
 |---|---|
 | VirusTotal | Seisa dopuszcza 4 zapytania na minutę (nadmiarowe czekają) i 500 na dobę (doba kończy się o 00:00 UTC). To darmowe limity publiczne. |
 | AbuseIPDB, zgłoszenia | To samo IP można zgłosić ponownie dopiero po 15 minutach. Dzienny limit zgłoszeń pochodzi z AbuseIPDB i pojawia się po pierwszym zgłoszeniu. |
-| AbuseIPDB, treść | Aktywność najwyżej sprzed 60 dni, najwyżej 30 kategorii, komentarz do 1024 znaków. |
-| Pozostałe usługi | Seisa ich nie ogranicza. Zakładka Info porównuje Twoje użycie z założonymi limitami darmowych planów: AbuseIPDB 5000 na dobę, GreyNoise 50 na tydzień, AlienVault OTX 10 000 na godzinę, Cloudflare 1200 na 5 minut. |
+| AbuseIPDB, treść | Aktywność najwyżej sprzed 60 dni, najwyżej 30 kategorii, komentarz do 1 024 znaków. |
+| Pozostałe usługi | Seisa ich nie ogranicza. Zakładka Info porównuje Twoje użycie z założonymi limitami darmowych planów: AbuseIPDB 5 000 na dobę, GreyNoise 50 na tydzień, AlienVault OTX 10 000 na godzinę, Cloudflare 1 200 na 5 minut. |
 | Źródło e-maila | Do 3 000 000 znaków. Model językowy dostaje z nich najwyżej 120 000. |
 | IP lub domena | Do 253 znaków. |
-| Adres URL do skanu | Do 2048 znaków, do 5 adresów naraz, własny user agent do 250 znaków. |
+| Adres URL do skanu | Do 2 048 znaków, do 5 adresów naraz, własny user agent do 250 znaków. |
 | Historia | 100 nieprzypiętych sprawdzeń IP, skanów URL i importów DMARC. Zapisane analizy e-maili i zgłoszenia AbuseIPDB nie są liczone. |
 | Logi | Przechowywane przez 30 dni. |
 
-Zakładka Info pokazuje, ile limitu każdej usługi zużyłeś. VirusTotal, urlscan.io i OpenRouter podają prawdziwy limit po kliknięciu „Odśwież limity". AbuseIPDB i Cloudflare Seisa odczytuje z już otrzymanych odpowiedzi. GreyNoise i AlienVault OTX liczy sama Seisa, więc zapytań wysłanych poza Seisą tam nie widać. Limity darmowych planów mogą się zmienić; liczby dla pozostałych usług traktuj jako założenia Seisy.
+Zakładka Info pokazuje, ile limitu każdej usługi zostało zużyte. VirusTotal, urlscan.io i OpenRouter podają prawdziwy limit po kliknięciu „Odśwież limity". AbuseIPDB i Cloudflare Seisa odczytuje z już otrzymanych odpowiedzi. GreyNoise i AlienVault OTX liczy sama Seisa, więc zapytań wysłanych poza Seisą tam nie widać. Limity darmowych planów mogą się zmienić; liczby dla pozostałych usług traktuj jako założenia Seisy.
 
 Jak długo Seisa czeka:
 
@@ -288,7 +288,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 
 | Co widzisz | Dlaczego | Co zrobić |
 |---|---|---|
-| „Seisa is not installed yet: .venv/ is missing." | Uruchomiłeś Seisę (skryptem lub ikoną) przed instalacją albo z niewłaściwego folderu. | Wykonaj instalację (część 2) w folderze Seisy i uruchom ponownie. |
+| „Seisa is not installed yet: .venv/ is missing." | Seisę uruchomiono (skryptem lub ikoną) przed instalacją albo z niewłaściwego folderu. | Wykonaj instalację (część 2) w folderze Seisy i uruchom ponownie. |
 | Błąd o zajętym adresie (dokładne słowa pochodzą od Uvicorna) | Port 54321 jest zajęty, często dlatego, że Seisa już działa. | Otwórz `http://127.0.0.1:54321`. Jeśli port trzyma inny program, zamknij go. |
 | `./seisa.sh` mówi „permission denied" | Plik stracił znacznik „wykonywalny", np. po pobraniu ZIP-a. | Uruchom `bash seisa.sh`. |
 | Przeglądarka się nie otworzyła | Brak sesji pulpitu albo nie znaleziono narzędzia do otwierania. | Wpisz `http://127.0.0.1:54321` w przeglądarce. |
@@ -298,7 +298,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Co widzisz | Dlaczego | Co zrobić |
 |---|---|---|
 | „brak klucza API" na karcie usługi | W `.env` brakuje klucza tej usługi. | Dopisz klucz i uruchom Seisę ponownie. |
-| „brak klucza API (URLSCAN_API_KEY)" | Kliknąłeś „Skanuj" albo wyszukiwanie w Historii URLScan bez klucza. | Dopisz `URLSCAN_API_KEY` i uruchom Seisę ponownie. |
+| „brak klucza API (URLSCAN_API_KEY)" | Kliknięcie „Skanuj" albo wyszukiwania w Historii URLScan bez klucza. | Dopisz `URLSCAN_API_KEY` i uruchom Seisę ponownie. |
 | „błąd" z „HTTP 401: ..." na karcie usługi | Usługa odrzuciła klucz: jest zły, wygasł albo brakuje mu uprawnienia. Dla Cloudflare Radar sprawdź, czy token może czytać dane Radar (ogólna wiedza o usłudze, Seisa tego nie sprawdza). | Sprawdź klucz w panelu samej usługi. |
 | „przekroczono dzienny limit VirusTotal (500/dzień)" | Wykorzystano 500 zapytań doby UTC. | Poczekaj do 00:00 UTC. Pozostałe źródła działają. |
 | „Limit wyszukiwań GreyNoise w Twoim planie został wyczerpany - odnowi się {date}. Wynik jest liczony bez tego źródła." | Tygodniowy limit GreyNoise jest wyczerpany. | Poczekaj do tej daty. Wynik liczy się bez GreyNoise. |
@@ -309,13 +309,13 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Co widzisz | Dlaczego | Co zrobić |
 |---|---|---|
 | „Wybierz co najmniej jedną usługę." | W zakładce IP wyłączono wszystkie usługi. | Zaznacz co najmniej jedną. |
-| „{indicator} nie jest publicznym adresem IP (zakres prywatny, pętli zwrotnej, zarezerwowany lub dokumentacyjny) - serwisy reputacyjne nic o nim nie wiedzą" | Wpisałeś adres prywatny lub zarezerwowany. | Nic nie jest zepsute: publiczne usługi nic o takich adresach nie wiedzą. |
+| „{indicator} nie jest publicznym adresem IP (zakres prywatny, pętli zwrotnej, zarezerwowany lub dokumentacyjny) - serwisy reputacyjne nic o nim nie wiedzą" | Wpisano adres prywatny lub zarezerwowany. | Nic nie jest zepsute: publiczne usługi nic o takich adresach nie wiedzą. |
 | „to nie jest poprawny adres IP ani nazwa domeny: {indicator}" | Literówka lub niedozwolone znaki. | Popraw wpis. |
 | „skanować można tylko adresy http:// i https://" | Adres zaczyna się od czegoś innego. | Użyj adresu `http://` lub `https://`. |
 | „urlscan.io skanuje tylko publiczne hosty internetowe; "{host}" to adres lokalny lub prywatny" | Adres wskazuje na Twoją sieć. | Skanuj tylko adresy publiczne. |
-| „adres URL jest za długi (limit to {limit} znaków)" | Adres jest dłuższy niż 2048 znaków. | Skróć go. |
+| „adres URL jest za długi (limit to {limit} znaków)" | Adres jest dłuższy niż 2 048 znaków. | Skróć go. |
 | „Skan nadal trwa po {time} - sprawdź ręcznie" | urlscan.io nie skończył w ciągu 2 minut. | Użyj „Otwórz w urlscan.io" albo później „Wczytaj pełny raport". |
-| „ta przeglądarka nie potrafi rozpakować archiwów - rozpakuj plik i wgraj .xml" | Stara przeglądarka nie otwiera `.gz` ani `.zip`. | Rozpakuj plik sam i wczytaj `.xml`. |
+| „ta przeglądarka nie potrafi rozpakować archiwów - rozpakuj plik i wgraj .xml" | Stara przeglądarka nie otwiera `.gz` ani `.zip`. | Rozpakuj plik ręcznie i wczytaj `.xml`. |
 | „rozpakowany raport jest zbyt duży" | Archiwum rozpakowuje się do znacznie więcej niż zwykły raport. | Sprawdź plik. Nie wczytuj plików, którym nie ufasz. |
 | „w archiwum nie ma raportu .xml" | W archiwum nie ma pliku `.xml`. | Sprawdź, czy to raport DMARC. |
 
@@ -345,7 +345,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | „ikona aplikacji działa tylko na macOS i Linuksie" | Inny system. | Uruchamiaj Seisę przez `./seisa.sh`. |
 | „nie znaleziono sesji graficznej (brak DISPLAY / WAYLAND_DISPLAY), więc nie ma menu, do którego można dodać ikonę" | Linux bez sesji pulpitu. | Zrób ikonę z sesji pulpitu albo użyj `./seisa.sh`. |
 | „brakuje narzędzi macOS sips i iconutil, więc nie da się zrobić ikony" | Brakuje narzędzi systemowych. | Użyj `./seisa.sh`. |
-| „{path} już istnieje i nie został utworzony przez Seisę, więc go nie ruszono" | Obcy plik ma tę nazwę. | Usuń go lub zmień mu nazwę sam, potem kliknij „Dodaj ikonę". |
+| „{path} już istnieje i nie został utworzony przez Seisę, więc go nie ruszono" | Obcy plik ma tę nazwę. | Usuń go lub zmień mu nazwę ręcznie, potem kliknij „Dodaj ikonę". |
 | Ostatnie zmiany są puste | Seisa działa z pobranego ZIP-a, nie z gita. | To normalne. |
 | Po aktualizacji brakuje starych wpisów Historii | Migracja `history.json` się nie udała. | Zajrzyj do zakładki Logi, szukaj wpisu „history.json could not be read" (wpisy w Logach są po angielsku). Stary plik `data/history.json` zostaje nietknięty. |
 | Wpisy „OpenRouter", „WHOIS" lub „DNS" w Logach | Usługa zawiodła. | Zwykle przejściowo; spróbuj później. |
@@ -358,7 +358,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 |---|---|
 | Czy Seisa działa bez żadnego klucza? | Tak. Część źródeł nie wymaga klucza, a „Analizuj bez LLM" nic nie wysyła poza Twój komputer. Patrz [USER_GUIDE.md](USER_GUIDE.md#4-klucze-api-co-działa-bez-nich). |
 | Czy Seisa sama się aktualizuje? | Nie. Aktualizujesz ją ręcznie (część 5). |
-| Co opuszcza mój komputer? | Tylko to, co wywołasz kliknięciem. Pełna lista jest w [PRIVACY.md](PRIVACY.md). |
+| Co opuszcza mój komputer? | Tylko to, co wywołasz kliknięciem, z jednym wyjątkiem: zakładka AbuseIPDB sama sprawdza adres w swoim formularzu. Pełna lista jest w [PRIVACY.md](PRIVACY.md). |
 | Czy mogę przenieść Seisę na inny komputer? | Zainstaluj ją tam, a potem skopiuj folder `data/` i plik `.env` do nowego folderu Seisy. |
 | Czy mogę zmienić port? | Nie ustawieniem. Port jest wpisany w `seisa.sh` i `seisa-launcher.sh`; zmiana wymaga edycji obu skryptów. |
 | Chyba znalazłem błąd. | Zajrzyj do zakładki Logi i zobacz [CONTRIBUTING.md](CONTRIBUTING.md). W sprawie bezpieczeństwa użyj [SECURITY.md](SECURITY.md). |

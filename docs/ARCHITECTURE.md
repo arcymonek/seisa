@@ -55,7 +55,7 @@ Seisa uses a small set of well-known tools. This table lists them with the limit
 
 ## How a request travels
 
-Every request goes through the same few layers before it reaches the code that does the work. The diagram shows the path of an IP check.
+Every request goes through the same few layers before it reaches the code that does the work. The diagram shows the path of an IP check, as an example.
 
 ```mermaid
 flowchart TD
@@ -64,8 +64,8 @@ flowchart TD
     R --> A[aggregator.run_lookup]
     A --> S[Selected services in parallel]
     S --> C[scoring, identity, markdown_report]
-    C --> H[Saved to History]
-    H --> B
+    C -->|answer| B
+    C -.-> H[Saved to History]
 ```
 
 A request passes four middlewares, outermost first:
@@ -213,7 +213,7 @@ Catalogs: `frontend/i18n/{en,pl}.json` for the interface and `backend/locales/{e
 A theme is a small JSON file in `frontend/themes/`, so adding a look needs no code.
 
 - Shipped themes: `light` ("Light Washi", the default), `sumi-brown` ("Brown Sumi"), `blue` ("Blue Sumi") and `kohaku` ("Red-and-white Kōhaku"). "System" follows the operating system (dark means Brown Sumi).
-- A theme file has `id` (equal to the file name), `name` (`en` and `pl`), `base` (`dark` or `light`), an optional `order` from 0 to 1000, an optional `logo` (`badge` or `mask`), and exactly the known colour keys as `#rrggbb`.
+- A theme file has `id` (equal to the file name), `name` (`en` and `pl`), `base` (`dark` or `light`), an optional `order` from 0 to 1,000, an optional `logo` (`badge` or `mask`), and exactly the known colour keys as `#rrggbb`.
 - At most 24 files of 8 KB are read. A bad file is skipped and logged.
 - The CSS is generated from validated values only, so a theme cannot carry `url()`, `@import` or rules.
 

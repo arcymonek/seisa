@@ -28,15 +28,16 @@ Te sprawdzenia działają w backendzie przy każdej wysyłce, niezależnie od te
 - **Klucz.** Bez `ABUSEIPDB_API_KEY` zgłoszenie można przygotować, ale nie wysłać.
 - **Czysty komentarz.** Komentarz jest czyszczony tuż przed wysłaniem: zostają tylko drukowalne znaki ASCII, białe znaki są zwijane, początkowy znak `=`, `+`, `-` lub `@` (który arkusz kalkulacyjny mógłby odczytać jak formułę) dostaje przed sobą `'`, a tekst jest obcinany do 1 024 znaków.
 - **Czas osobno.** Czas ataku idzie jako ISO 8601 UTC bez ułamków. Nie jest wpisywany do komentarza.
-- **Log każdej próby.** Każda próba, przyjęta lub odrzucona, trafia do lokalnego logu zgłoszeń `data/report_log.json`.
+- **Log wysyłek.** Każda wysyłka, która dotarła do AbuseIPDB, przyjęta lub odrzucona, trafia do lokalnego logu zgłoszeń `data/report_log.json`; wysyłka zatrzymana przez własne sprawdzenia Seisy do niego nie trafia.
 
 ### Co Seisa sprawdza, ale decydujesz Ty
 
 Te sprawdzenia Ci pomagają, ale ostateczna decyzja należy do Ciebie. Część z nich istnieje tylko na stronie, bo opinia modelu jest pomocnicza.
 
-- **Adres.** Kod wybiera adres do zgłoszenia z łańcucha Received: pierwszy przeskok zapisany przez infrastrukturę odbiorcy. Pozostałe publiczne adresy łańcucha są proponowane jako alternatywy, z oznaczeniem „już zgłoszony", gdy są w Twoim logu.
+- **Adres.** Kod wybiera adres do zgłoszenia z łańcucha Received: pierwszy przeskok zapisany przez infrastrukturę odbiorcy. Pozostałe publiczne adresy łańcucha są proponowane jako alternatywy, z oznaczeniem „zgłoszony przez Ciebie", gdy są w Twoim logu.
 - **„Zweryfikowano z nagłówka Received".** To sprawdzenie jest zielone tylko dla adresu wybranego przez kod, z wysoką pewnością i nie pochodzącego z linii zapisanych przez przekaźnik, albo gdy potwierdził go model. Jeśli zmienisz adres, zmienia się na „nieznane".
 - **Sprawdzenie zakwestionowane.** Jeśli model oznaczy sprawdzenie jako „niezaliczone" (fail), przycisk „Wyślij przez AbuseIPDB API" pozostaje wyłączony. Backend w chwili wysyłki nie zna opinii modelu.
+- **Werdykt negatywny.** Jeśli werdykt mówi, że e-mail się nie kwalifikuje, przycisk „Wyślij przez AbuseIPDB API" pozostaje wyłączony (tylko na stronie).
 - **Dane osobowe.** Komentarz jest skanowany pod kątem Twoich własnych adresów i ich domen (brane z odbiorców, z pominięciem domen poczty darmowej), każdego innego adresu e-mail i prywatnych adresów IPv4. Jeśli coś znajdzie, „Wyślij przez AbuseIPDB API" prosi o potwierdzenie, a jedno kliknięcie zastępuje znaleziska tekstami `[redacted]`, `[email removed]` i `[internal IP]`.
 - **Podgląd.** Przed wysyłką widzisz dokładnie, co trafi do API („Co zostanie wysłane do API").
 - **Co wie AbuseIPDB.** Przed wysyłką Seisa pokazuje, co AbuseIPDB już wie o tym adresie (ostatnie 90 dni) oraz Twoje własne niedawne zgłoszenia tego adresu (7 dni). To sprawdzenie jest automatyczne; zobacz [PRIVACY.md](PRIVACY.md).

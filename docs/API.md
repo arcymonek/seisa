@@ -55,16 +55,16 @@ Size limits:
 | What | Limit |
 |---|---|
 | Lookup indicator | 253 characters |
-| E-mail source (both e-mail tabs) | Refused outright above 6 000 000 characters (HTTP 422). A friendly "too large" message appears above 3 000 000 characters: in the Email tab after normalisation, as an `error` event; in the AbuseIPDB tab as HTTP 413 |
-| History label | 1 000 characters |
+| E-mail source (both e-mail tabs) | Refused outright above 6,000,000 characters (HTTP 422). A friendly "too large" message appears above 3,000,000 characters: in the Email tab after normalisation, as an `error` event; in the AbuseIPDB tab as HTTP 413 |
+| History label | 1,000 characters |
 | History risk summary | 50 characters |
-| History data | 10 000 000 characters as JSON |
-| Report comment | 5 000 accepted, 1 024 sent |
+| History data | 10,000,000 characters as JSON |
+| Report comment | 5,000 accepted, 1,024 sent |
 | Own identifiers of a report | Up to 20, each up to 254 characters |
 
 ## Machine-readable schema
 
-`GET /openapi.json` returns the full machine-readable description of all routes. It is guarded like every other path.
+`GET /openapi.json` returns the full machine-readable description of all routes. Like the static files, it is checked only for the `Host` header, not by the cross-site guard; it describes the routes and holds none of your data.
 
 FastAPI's interactive documentation pages are switched off (they answer 404), because the Content-Security-Policy would block the scripts they load from a CDN. Use the schema with a viewer of your choice.
 
@@ -110,9 +110,9 @@ History endpoints store and read the entries of the IP, DMARC and URLScan tabs. 
 
 | Item | Detail |
 |---|---|
-| Input | JSON `{type, label, risk_summary, data}`. `type` is `lookup`, `dmarc` or `urlscan`. `label` is up to 1 000 characters, `risk_summary` up to 50 or `null`, `data` an object |
+| Input | JSON `{type, label, risk_summary, data}`. `type` is `lookup`, `dmarc` or `urlscan`. `label` is up to 1,000 characters, `risk_summary` up to 50 or `null`, `data` an object |
 | Output | The stored entry |
-| Limits and errors | 400 for an invalid type; 413 when `data` is above 10 000 000 characters as JSON. For `urlscan`, `data.summary` must be an object and `data.thumbnail` only `data:image/jpeg;base64,...` up to 200 000 characters (otherwise 400) |
+| Limits and errors | 400 for an invalid type; 413 when `data` is above 10,000,000 characters as JSON. For `urlscan`, `data.summary` must be an object and `data.thumbnail` only `data:image/jpeg;base64,...` up to 200,000 characters (otherwise 400) |
 | Sends to the internet | No |
 | Called by | `frontend/js/dmarc.js`, `frontend/js/urlscan.js` |
 
@@ -162,9 +162,9 @@ The events are:
 
 | Item | Detail |
 |---|---|
-| Input | JSON `{raw_email, use_llm}`. `raw_email` is up to 6 000 000 characters |
+| Input | JSON `{raw_email, use_llm}`. `raw_email` is up to 6,000,000 characters |
 | Output | `{sha256, matches}`: saved analyses of the same message, each `{id, created_at, verdict, confidence, truncated, lang, cost}` |
-| Limits and errors | 422 above 6 000 000 characters |
+| Limits and errors | 422 above 6,000,000 characters |
 | Sends to the internet | No |
 | Called by | `frontend/js/email.js` |
 
@@ -174,7 +174,7 @@ The events are:
 |---|---|
 | Input | JSON `{raw_email, use_llm}`. `use_llm` defaults to `true` |
 | Output | A stream of events: `facts`, then `delta` (many), then optionally `warning`, then `done`; or `error` |
-| Limits and errors | An empty source, a source above 3 000 000 characters after normalisation, or a parser failure arrive as `error` events. 422 above 6 000 000 characters |
+| Limits and errors | An empty source, a source above 3,000,000 characters after normalisation, or a parser failure arrive as `error` events. 422 above 6,000,000 characters |
 | Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/email.js` |
 
@@ -226,9 +226,9 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 
 | Item | Detail |
 |---|---|
-| Input | JSON `{raw_email, use_llm}`. `raw_email` is up to 6 000 000 characters, `use_llm` defaults to `true` |
+| Input | JSON `{raw_email, use_llm}`. `raw_email` is up to 6,000,000 characters, `use_llm` defaults to `true` |
 | Output | `{facts, ip_candidates, own_terms, local_assessment, categories, llm_configured, llm_analysis, usage, llm_input, report_comment}`. Each candidate is `{ip, role, host, reported}` with `role` one of `boundary`, `hop`, `llm` |
-| Limits and errors | 413 above 3 000 000 characters, with a translated message; 422 above 6 000 000 characters |
+| Limits and errors | 413 above 3,000,000 characters, with a translated message; 422 above 6,000,000 characters |
 | Sends to the internet | Yes, to OpenRouter, only when `use_llm` is true and a key is set (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/report-builder.js` |
 
@@ -246,7 +246,7 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 
 | Item | Detail |
 |---|---|
-| Input | `ReportFields`: `ip`, `categories` (list of numbers), `attack_timestamp` (text or `null`), `comment` (up to 5 000 characters), `own_terms` (up to 20 texts of up to 254 characters) |
+| Input | `ReportFields`: `ip`, `categories` (list of numbers), `attack_timestamp` (text or `null`), `comment` (up to 5,000 characters), `own_terms` (up to 20 texts of up to 254 characters) |
 | Output | `{checks, previous, pii, payload}`. `checks` has `ip_ok`, `ip_reason`, `age_ok`, `age_reason`, `category_ok`, `all_passed`. `previous` has `count`, `last_submitted_at`, `cooldown_left_minutes`. `pii` is a list of `{kind, value}`. `payload` is what would be sent |
 | Limits and errors | none |
 | Sends to the internet | No |
@@ -256,7 +256,7 @@ The AbuseIPDB tab prepares and sends one abuse report. The backend always repeat
 
 | Item | Detail |
 |---|---|
-| Input | JSON `{comment, own_terms}`. `comment` is up to 5 000 characters |
+| Input | JSON `{comment, own_terms}`. `comment` is up to 5,000 characters |
 | Output | `{comment}` with placeholders `[redacted]`, `[email removed]` and `[internal IP]` |
 | Limits and errors | none |
 | Sends to the internet | No |
@@ -302,7 +302,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 |---|---|
 | Input | JSON `{url, visibility, country, useragent}`. `visibility` is `unlisted` (default), `private` or `public`. `country` is one of 12 or `null`. `useragent` is up to 250 printable characters or `null` |
 | Output | `{uuid, url, visibility, result_page_url}` |
-| Limits and errors | 400 for no key, an invalid visibility, country or user agent, or an invalid URL (empty, above 2 048 characters, with whitespace, a non-HTTP scheme, or a private or local host); 502 when urlscan.io refuses |
+| Limits and errors | 400 for no key, an invalid visibility, country or user agent, or an invalid URL (empty, above 2,048 characters, with whitespace, a non-HTTP scheme, or a private or local host); 502 when urlscan.io refuses |
 | Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | `frontend/js/urlscan.js` |
 
@@ -322,7 +322,7 @@ The URLScan tab asks urlscan.io to scan a page. Seisa never loads the scanned pa
 |---|---|
 | Input | `uuid` in the path |
 | Output | A PNG image with `Cache-Control: private, max-age=3600` and `nosniff` |
-| Limits and errors | 400 for an invalid uuid; 404 when there is no screenshot yet; 502 on failure, also when the file is not a PNG or is larger than 6 000 000 bytes |
+| Limits and errors | 400 for an invalid uuid; 404 when there is no screenshot yet; 502 on failure, also when the file is not a PNG or is larger than 6,000,000 bytes |
 | Sends to the internet | Yes, to urlscan.io (see [PRIVACY.md](PRIVACY.md)) |
 | Called by | An `<img>` element in `frontend/js/urlscan.js` |
 
