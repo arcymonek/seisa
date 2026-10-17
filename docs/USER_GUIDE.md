@@ -15,10 +15,14 @@ This guide is for people who use Seisa, not for programmers. In one sentence: it
 - [5. IP tab](#5-ip-tab)
 - [6. URLScan tab](#6-urlscan-tab)
 - [7. DMARC tab](#7-dmarc-tab)
+- [8. Email tab](#8-email-tab)
+- [9. AbuseIPDB tab](#9-abuseipdb-tab)
 - [10. History tab](#10-history-tab)
 - [11. Logs tab](#11-logs-tab)
 - [12. Info tab](#12-info-tab)
 - [13. Language and colour themes](#13-language-and-colour-themes)
+- [14. Example: from a suspicious e-mail to a report](#14-example-from-a-suspicious-e-mail-to-a-report)
+- [15. Shutting Seisa down](#15-shutting-seisa-down)
 
 ## 1. Before you start
 
@@ -110,6 +114,8 @@ An API key is a long code from a service, like a membership card: it tells the s
 
 ### What it is for
 
+![The IP tab: a risk verdict, summary tiles and one card per source](images/ip_en.png)
+
 The IP tab checks the reputation of one IP address or one domain in several independent sources at once, and combines the answers into a single risk score from 0 to 100. An IP address is the number that identifies a computer on the internet (for example `203.0.113.7`). A domain is the name of a website (for example `example.org`).
 
 - For an IP address it asks VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise and WHOIS / rDNS.
@@ -168,6 +174,8 @@ Every check is saved in History automatically, without the raw service answers.
 ## 6. URLScan tab
 
 ### What it is for
+
+![The URLScan tab: a scan report with a screenshot, summary tiles and page details](images/urlscan_en.png)
 
 The URLScan tab asks the service urlscan.io to open a suspicious link in its own browser and to report what it finds, so you never open the link yourself. You get a screenshot, the page's details and a verdict.
 
@@ -231,6 +239,8 @@ Every finished scan is saved in History with a small thumbnail of the screenshot
 
 ### What it is for
 
+![The DMARC tab: a report summary with the list of IP sources and their risk](images/dmarc_en.png)
+
 The DMARC tab reads the reports that mail providers send to the owner of a domain and shows which servers send mail as your domain, and whether those messages pass the checks. DMARC is a rule a domain owner publishes that tells receivers what to do with mail that fails two checks: SPF (a list of servers allowed to send mail for the domain) and DKIM (a digital signature on each message). These reports are called aggregate reports.
 
 ### What you need
@@ -283,6 +293,212 @@ Each import is saved in History. The next import of the same domain is compared 
 | Check in the IP tab | Fills the IP tab with the address (nothing is sent) |
 | Report to AbuseIPDB | Fills the AbuseIPDB tab with the address (nothing is sent) |
 | Save .md / Copy Markdown | Saves or copies the result as Markdown |
+
+## 8. Email tab
+
+### What it is for
+
+![The Email tab with a finished analysis: verdict, summary tiles and the Overview, Facts and Lesson panes](images/email_en.png)
+
+The Email tab teaches you to read a suspicious e-mail. You paste its full source or load an `.eml` file, and Seisa shows what it finds and explains it step by step. The source is the whole message as the mail system sees it: the headers (the technical lines at the top, like the postmarks and the envelope of a paper letter) and the body (the letter itself).
+
+**Nothing is reported from this tab. It only explains.** To report a sender, use the AbuseIPDB tab (section 9). It is a different tool with a different job.
+
+### What you need
+
+No key for the local facts. An `OPENROUTER_API_KEY` is needed only for the step-by-step lesson written by the AI. Without it, "Analyze" shows the local analysis and a note that the key is missing, and that analysis is not saved.
+
+### How to get the source of an e-mail
+
+Seisa needs the whole source, not just what you see on screen. Where to find it depends on your mail program. The menu names below are typical and may differ in your version or language:
+
+| Program | Typical way |
+|---|---|
+| Gmail (in the browser) | Open the message, click the three-dot menu next to "Reply", choose "Show original", then copy the text (or download the original as an `.eml` file) |
+| Outlook on the web | Open the message, open the three-dot menu, then "View" and "View message source", and copy the text |
+| Outlook for desktop | It shows only the headers (File, then Properties), which is not enough. Open the message in Outlook on the web instead |
+| Thunderbird | Select the message, then "View" and "Message Source", and copy the text. "File", then "Save As" saves an `.eml` file |
+| Apple Mail | Select the message, then "View", "Message" and "Raw Source", and copy the text. "File", then "Save As" with the format "Raw Message Source" saves a file |
+
+Forwarding a message in the usual way does not work: it creates a new message and loses the original headers.
+
+### How to use it
+
+1. Paste the source into the large text field, or click "Load .eml file".
+2. Click "Analyze" for the full lesson, or "Analyze without LLM" if you only want the local facts. "Cancel" stops a running analysis.
+3. If you analysed the same message before, Seisa offers "Open the saved analysis" or "Analyze again (paid)" before spending anything.
+4. Read the result (below). "Show source" and "Edit source" let you look at or change the pasted text.
+
+### What is sent and when
+
+Only your click on "Analyze" sends anything. Without a click, and with "Analyze without LLM", the message stays on your computer.
+
+| You click | What happens |
+|---|---|
+| Analyze | Seisa first computes the facts locally. Then the whole message, headers and body, goes to OpenRouter (the AI service) for the lesson. The banner above the buttons says so |
+| Analyze without LLM | Only the local facts are computed. Nothing is sent off your computer |
+
+Good to know:
+
+- **Attachments.** Binary attachments are not sent. Seisa replaces each with its size and its SHA-256 fingerprint (a short code that identifies a file). Text parts are decoded. The model gets at most 120,000 characters of the source.
+- **Size.** The pasted source may have at most 3,000,000 characters. A larger one is refused with a message.
+- **Time.** If OpenRouter sends nothing for 120 seconds, Seisa gives up with a plain message.
+- **Language and cost.** The lesson is written in the interface language. The model is set by `OPENROUTER_MODEL` (default `anthropic/claude-sonnet-4.5`). The cost shown next to the buttons comes from OpenRouter itself.
+- **Other people's data.** An e-mail usually contains personal data of other people. Sending it to OpenRouter is your decision. See [COMPLIANCE.md](COMPLIANCE.md).
+- **Links.** Seisa never opens links, images or attachments. The full table of what leaves your computer is in [PRIVACY.md](PRIVACY.md).
+
+### Reading the result
+
+The result opens with a verdict (legitimate, phishing, spam, scam, malware or inconclusive) with a confidence, then these tiles:
+
+| Tile | What it tells you |
+|---|---|
+| Warnings | How many findings Seisa detected automatically, and how many are only informational |
+| Authentication | Whether the message passed the sender checks (SPF, DKIM, DMARC, ARC), and who wrote that result |
+| Sender identity | Whether the sender's domains match the address in "From" |
+| Sender IP | The address the message really came from, and the "trust boundary" it was found at |
+| Content | Number of links and attachments, hidden content and forms |
+| Recipient's filter | What the recipient's anti-spam filter decided (for example "Junk folder"). Shown only when the headers contain it |
+| Delivery time | How long the message travelled, and whether the timestamps are in the wrong order |
+
+Below the tiles there are three panes:
+
+- **Overview.** A summary.
+- **Facts.** What Seisa computed with its own code, no AI involved: the route of the message, authentication, domain match, the recipient's filter, timeline, structure, attachments (including double and risky file extensions), HTML content (links, hidden content, forms) and other observations.
+- **Lesson.** The AI's step-by-step analysis, split into cards with a table of contents. Quotes from the message link to the "Message source" drawer, which highlights the quoted lines.
+
+A few terms you will meet in the Facts pane, each in one sentence:
+
+| Term | In plain words |
+|---|---|
+| Received headers | Every mail server that handles a message stamps it, like a post office stamping a letter. The stamps show the route, and the newest is on top |
+| Trust boundary | The stamp written by the recipient's own server. Everything above it you can trust. Everything below it was written by others and may be forged |
+| SPF | A list of the servers that may send mail for a domain |
+| DKIM | A digital signature that shows a message was not changed on the way |
+| DMARC | A rule that tells receivers what to do when SPF and DKIM do not match the sender's domain |
+| ARC | A seal that forwarding servers add so that the original checks are not lost |
+
+Two rules decide what counts as proof:
+
+- Only an "Authentication-Results" header written by the recipient's own server counts. A result written by anyone else is just a claim.
+- For Microsoft 365, where the header carries no server name, the result counts when it stands right next to the recipient's own Received line (the tile says "next to the recipient's own Received line").
+
+The sender IP tile and the route use the same method as the AbuseIPDB tab. They come from Seisa's code, not from the AI.
+
+Links in the results cannot be clicked. Next to an address you get "IP" (fills the IP tab) or "URLScan" (fills the URLScan tab). Nothing is checked until you click there.
+
+A free local "citation check" confirms that the IP addresses, quoted headers and identifiers in the lesson really appear in the message, and marks those that do not. A mismatch is not always a mistake: it may be an example or a paraphrase.
+
+If the lesson was cut off by the length limit, a banner says so and "Finish the analysis" asks the model for the missing parts (paid). A message with more than 100 Received headers gets a warning that only the newest 100 were analysed.
+
+#### Saved analyses
+
+Every finished AI analysis is saved automatically, together with the raw e-mail, in `data/analyses/`. "Analyze without LLM" and an analysis stopped with "Cancel" are not saved. The "Saved analyses" list lets you:
+
+- open an analysis;
+- delete it (click twice; this deletes the analysis and the saved e-mail);
+- tick two and click "Compare selected (2)" to see shared IP addresses, domains, link hosts and attachments (same campaign? same infrastructure?).
+
+A saved analysis written in the other language shows a notice, and "Analyze again in {language} (paid)" makes a new one. An analysis saved by an older Seisa version may show a banner when today's code reads the facts differently. You can switch between "Show the facts from the day of saving" and "Show the current facts". The saved file is not changed.
+
+### Buttons
+
+| Button | What it does |
+|---|---|
+| Analyze | Local facts, then the AI lesson (sends the message to OpenRouter) |
+| Analyze without LLM | Local facts only (sends nothing) |
+| Load .eml file | Reads an `.eml` file into the field |
+| Cancel | Stops a running analysis (it is not saved) |
+| Clear | Empties the tab |
+| Show source / Edit source / Collapse source | Shows, edits or hides the pasted text |
+| Save .md / Copy Markdown / Save .html | Saves or copies the result |
+| IP / URLScan | Next to an address: fills the other tab (nothing is sent) |
+| Open the saved analysis / Analyze again (paid) | Offered when the same message was analysed before |
+| Finish the analysis | Asks the model for the missing parts of a cut-off lesson (paid) |
+| Open / Delete / Compare selected (2) | In "Saved analyses" |
+
+## 9. AbuseIPDB tab
+
+### What it is for
+
+![The AbuseIPDB tab with a prepared report: verdict, summary tiles and the Received chain](images/abuseipdb_en.png)
+
+AbuseIPDB is a public database where people report IP addresses that send spam, phishing and other abuse. This tab prepares such a report from a spam or phishing e-mail, checks it, and, after your click, sends it.
+
+It is a different tool from the Email tab. Email teaches you to read a message and reports nothing. AbuseIPDB prepares a public report. Both can use the AI on the same e-mail, but they do not share anything: you paste the source in each.
+
+The checks that decide whether you may send are worked out by Seisa's own code. The AI only gives an opinion and drafts the comment. Whatever you send, you are responsible for it, and the tab says so above the field.
+
+### What you need
+
+- Nothing, to prepare a report from the facts and a comment built from them.
+- `OPENROUTER_API_KEY` for the AI assessment.
+- `ABUSEIPDB_API_KEY` for what AbuseIPDB already knows about the address, and for sending.
+
+### How to use it
+
+1. Get the source of the e-mail (see "How to get the source of an e-mail" in section 8) and paste it into "E-mail source (with headers)", or click "Load .eml file".
+2. Click "Analyze", or "Analyze without LLM".
+3. Read the verdict, the tiles and "Where the IP comes from". If Seisa picked the wrong address, click "Use this address" on the right line.
+4. In the "Report" form, check the IP address, the categories, the attack timestamp and the comment.
+5. Open "Checks before sending" and fix what fails. If the personal-data warning appears, click "Mask them".
+6. Look at "What will be sent to the API". It shows exactly what goes out.
+7. Click "Send via AbuseIPDB API". The button stays disabled while a required check fails.
+
+### What is sent and when
+
+| What | When |
+|---|---|
+| The whole message, to OpenRouter | Only when you click "Analyze" and a key is set. "Analyze without LLM" sends nothing |
+| The source IP address, to AbuseIPDB | **By itself**, without a click, as soon as a public IP address is in the form and an AbuseIPDB key is set. Only the address is sent, never the e-mail. It shows what AbuseIPDB already knows about it |
+| The report (IP, categories, time, comment), to AbuseIPDB | Only when you click "Send via AbuseIPDB API". AbuseIPDB shows comments publicly |
+
+The automatic address lookup is the one exception to "nothing without a click" in Seisa. The complete table is in [PRIVACY.md](PRIVACY.md).
+
+The pasted source may have at most 3,000,000 characters. A larger one is refused with "The source is too large ({size} characters, limit {limit})."
+
+### Reading the result
+
+The result starts with a verdict: "The e-mail looks eligible for a report." or "This e-mail most likely does NOT qualify for a report." Then come the tiles "Source IP", "Age", "Authentication", "Attachments" and "AbuseIPDB score".
+
+**Where the IP comes from.** The source IP is the one at the trust boundary of the Received chain (see section 8): the stamp written by your own provider's server, recording who connected to it. Stamps below it could be forged. Seisa's code finds this address. If the AI suggests a different one, Seisa shows both and never swaps them by itself: you choose with "Use this address".
+
+**The form.** "Report" holds the IP address, the categories, the attack timestamp and the comment:
+
+- Categories are chips. AbuseIPDB has 23, and "7. Phishing" and "11. Email Spam" are typical for e-mail.
+- The comment is in English, because it is public. You can edit it. It may have at most 1024 characters (a counter is shown), and before sending it is cleaned to plain ASCII (other characters become spaces).
+- Seisa scans the comment for personal data: your own address from the message, other e-mail addresses and internal IP addresses. It offers "Mask them". Sending with such data left in asks for confirmation.
+
+**Checks before sending.** Three groups:
+
+| Group | What it holds |
+|---|---|
+| Required (API and backend) | Attack at most 60 days old, public IP, at least one category, the 15-minute rule for the same IP, and report eligibility. Seisa's server repeats these itself, so they cannot be bypassed in the browser |
+| Blocking, judged by the AI | "Verified from the Received header" and "The source is trustworthy" |
+| Informational | Spoofing (forged sender), category matches the real mechanism, no personal data |
+
+AbuseIPDB accepts a repeat report of the same IP from one account only after 15 minutes, and Seisa blocks it earlier using its own local log. A message that looks like a test sent from your own account to yourself is marked as most likely not qualifying.
+
+**Without the AI.** The verdict is then "in doubt (not assessed)". Only the hard criteria are checked (public IP, age up to 60 days). That does not block sending, because the hard checks still run in Seisa's code, but it is also not enough to say the e-mail deserves a report. Decide yourself. "Received verified" is green only for an address Seisa picked itself with high confidence. If you type another address, it becomes "not assessed".
+
+**What AbuseIPDB already knows.** With a key set, the form shows the reports of the last 90 days for the address. It warns when the address is on the AbuseIPDB whitelist or was already reported in the chosen categories in the last 7 days.
+
+**After sending.** Seisa shows the address's new AbuseIPDB score, the daily limit left and buttons to report other addresses from the same e-mail. Errors from AbuseIPDB are explained: daily limit used up (with the reset time), repeat of the same IP, rejected data and rejected key.
+
+**Your reports.** Lists the last 100 attempts from the local log, accepted and failed, with the tiles "Sent today" (counted by UTC day), "Daily limit left" and "Accepted". Accepted reports also appear in the History tab.
+
+### Buttons
+
+| Button | What it does |
+|---|---|
+| Analyze / Analyze without LLM | Prepares the report (the first sends the message to OpenRouter) |
+| Load .eml file / Clear | Loads a file / empties the tab |
+| Use this address | Takes another address from the Received chain as the source IP |
+| Mask them | Masks personal data in the comment |
+| Copy comment / Save .md | Copies the comment / saves the prepared report |
+| Send via AbuseIPDB API | Sends the report to AbuseIPDB |
+| Use as draft | In "Your reports": loads an earlier attempt into the form |
+| Check | In "Your reports": opens the address's public AbuseIPDB page in a new tab (your browser contacts abuseipdb.com) |
 
 ## 10. History tab
 
@@ -418,3 +634,25 @@ Service messages and AI analyses follow the interface language. The comments you
 | System | Follows the light/dark setting of your computer (Light Washi or Brown Sumi) |
 
 The choice is stored in this browser and applied before the page is drawn. The traditional Japanese colours behind each theme are explained in Info under "About the colours".
+
+## 14. Example: from a suspicious e-mail to a report
+
+This walk-through follows one made-up case from the first doubt to a sent report. All addresses are fictional: the sender is `203.0.113.45` and its domain is `mail.example`. These are reserved example addresses, so the IP tab would refuse them in real life (see step 3). A real case has a real public address.
+
+You get a message that claims to be from your bank and asks you to "confirm your account". Something is off.
+
+1. **Get the source.** Copy the whole source of the message (see "How to get the source of an e-mail" in section 8). Do not click anything in the message itself.
+2. **Understand it in the Email tab.** Paste the source and click "Analyze" (or "Analyze without LLM" if you do not want to send it to OpenRouter). Read the verdict, for example "phishing" with a confidence, then the "Sender IP" tile (here `203.0.113.45`) and the "Authentication" tile. The "Lesson" pane explains what is wrong, step by step.
+3. **Optional: check the sender.** Click "IP" next to the sender IP. The IP tab opens with the address filled in. Nothing is sent yet: click "Check" to see the address's reputation. For a reserved example address like ours, Seisa answers that it is not a public address; a real one gets a score.
+4. **Prepare the report.** Open the AbuseIPDB tab. There is no button that moves the e-mail across, so paste the source again and click "Analyze". Check the verdict, "Where the IP comes from", the categories (for this case "7. Phishing" and perhaps "11. Email Spam"), the time and the comment.
+5. **Check before you send.** Open "Checks before sending". Fix what fails. Click "Mask them" if the personal-data warning appears, then look at "What will be sent to the API". Remember that the comment is public.
+6. **Send.** Click "Send via AbuseIPDB API". Seisa shows the address's new score and the daily limit left.
+7. **Find it again.** The report appears in "Your reports" in the same tab and in the History tab.
+
+If the tab says the e-mail does not qualify (for example, it is older than 60 days), do not send it. AbuseIPDB would refuse it or it would only add noise.
+
+## 15. Shutting Seisa down
+
+When you are done, click "Shut down Seisa" in the footer, or in the Info tab under "Settings". The server stops and the page is replaced by "Seisa has been stopped". Your browser may ask you to close the tab yourself.
+
+Seisa asks for confirmation first. Tick "Do not ask again" to stop the question, and switch it back on with "Ask before shutting down" in Info, under "Settings". It always asks when work would be lost, for example a running analysis or pasted text. To start Seisa again, see OPERATIONS.md.

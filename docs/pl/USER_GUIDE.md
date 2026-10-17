@@ -15,10 +15,14 @@ Ten podręcznik jest dla osób, które korzystają z Seisy, a nie dla programist
 - [5. Zakładka IP](#5-zakładka-ip)
 - [6. Zakładka URLScan](#6-zakładka-urlscan)
 - [7. Zakładka DMARC](#7-zakładka-dmarc)
+- [8. Zakładka Email](#8-zakładka-email)
+- [9. Zakładka AbuseIPDB](#9-zakładka-abuseipdb)
 - [10. Zakładka Historia](#10-zakładka-historia)
 - [11. Zakładka Logi](#11-zakładka-logi)
 - [12. Zakładka Info](#12-zakładka-info)
 - [13. Język i skórki kolorystyczne](#13-język-i-skórki-kolorystyczne)
+- [14. Przykład: od podejrzanego e-maila do zgłoszenia](#14-przykład-od-podejrzanego-e-maila-do-zgłoszenia)
+- [15. Zamykanie Seisy](#15-zamykanie-seisy)
 
 ## 1. Zanim zaczniesz
 
@@ -110,6 +114,8 @@ Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto p
 
 ### Do czego służy
 
+![Zakładka IP: werdykt ryzyka, kafle podsumowania i jedna karta na źródło](../images/ip_pl.png)
+
 Zakładka IP sprawdza reputację jednego adresu IP albo jednej domeny jednocześnie w kilku niezależnych źródłach i łączy odpowiedzi w jeden wynik ryzyka od 0 do 100. Adres IP to numer, który identyfikuje komputer w internecie (na przykład `203.0.113.7`). Domena to nazwa strony internetowej (na przykład `example.org`).
 
 - Dla adresu IP pyta VirusTotal, AlienVault OTX, Cloudflare Radar, AbuseIPDB, GreyNoise i WHOIS / rDNS.
@@ -168,6 +174,8 @@ Każde sprawdzenie jest automatycznie zapisywane w Historii, bez surowych odpowi
 ## 6. Zakładka URLScan
 
 ### Do czego służy
+
+![Zakładka URLScan: raport ze skanu ze zrzutem ekranu, kaflami podsumowania i szczegółami strony](../images/urlscan_pl.png)
 
 Zakładka URLScan prosi usługę urlscan.io, żeby otworzyła podejrzany link we własnej przeglądarce i zgłosiła, co znalazła, więc sam nigdy nie otwierasz linku. Dostajesz zrzut ekranu, szczegóły strony i werdykt.
 
@@ -231,6 +239,8 @@ Każdy skończony skan jest zapisywany w Historii z małą miniaturą zrzutu ekr
 
 ### Do czego służy
 
+![Zakładka DMARC: podsumowanie raportu z listą źródeł IP i ich ryzykiem](../images/dmarc_pl.png)
+
 Zakładka DMARC czyta raporty, które dostawcy poczty wysyłają właścicielowi domeny, i pokazuje, które serwery wysyłają pocztę w imieniu Twojej domeny oraz czy te wiadomości przechodzą kontrole. DMARC to reguła publikowana przez właściciela domeny, która mówi odbiorcom, co zrobić z pocztą niespełniającą dwóch kontroli: SPF (lista serwerów uprawnionych do wysyłania poczty domeny) i DKIM (cyfrowy podpis każdej wiadomości). Takie raporty nazywa się raportami zbiorczymi.
 
 ### Czego potrzebuje
@@ -283,6 +293,212 @@ Każdy import jest zapisywany w Historii. Następny import tej samej domeny jest
 | Sprawdź w zakładce IP | Wpisuje adres w zakładkę IP (nic nie jest wysyłane) |
 | Zgłoś AbuseIPDB | Wpisuje adres w zakładkę AbuseIPDB (nic nie jest wysyłane) |
 | Zapisz .md / Kopiuj Markdown | Zapisuje lub kopiuje wynik jako Markdown |
+
+## 8. Zakładka Email
+
+### Do czego służy
+
+![Zakładka Email z gotową analizą: werdykt, kafle podsumowania i panele Przegląd, Fakty i Lekcja](../images/email_pl.png)
+
+Zakładka Email uczy czytać podejrzane e-maile. Wklejasz cały kod źródłowy wiadomości albo wczytujesz plik `.eml`, a Seisa pokazuje, co znalazła, i tłumaczy to krok po kroku. Kod źródłowy to cała wiadomość tak, jak widzi ją system pocztowy: nagłówki (techniczne linie na początku, jak stemple pocztowe i koperta zwykłego listu) oraz treść (sam list).
+
+**Z tej zakładki nic się nie zgłasza. Ona tylko tłumaczy.** Żeby zgłosić nadawcę, użyj zakładki AbuseIPDB (sekcja 9). To inne narzędzie z innym zadaniem.
+
+### Czego potrzebuje
+
+Do lokalnych faktów nie potrzeba klucza. `OPENROUTER_API_KEY` jest potrzebny tylko do lekcji krok po kroku napisanej przez AI. Bez niego „Analizuj" pokazuje analizę lokalną i uwagę o braku klucza, a taka analiza nie jest zapisywana.
+
+### Jak zdobyć kod źródłowy e-maila
+
+Seisa potrzebuje całego kodu źródłowego, a nie tylko tego, co widać na ekranie. Gdzie go znaleźć, zależy od programu pocztowego. Podane niżej nazwy menu są typowe i w Twojej wersji lub języku mogą się różnić:
+
+| Program | Typowy sposób |
+|---|---|
+| Gmail (w przeglądarce) | Otwórz wiadomość, kliknij menu z trzema kropkami obok „Odpowiedz", wybierz „Pokaż oryginał", a potem skopiuj tekst (albo pobierz oryginał jako plik `.eml`) |
+| Outlook w przeglądarce | Otwórz wiadomość, otwórz menu z trzema kropkami, potem „Widok" i „Wyświetl źródło wiadomości" i skopiuj tekst |
+| Outlook na komputer | Pokazuje tylko nagłówki (Plik, potem Właściwości), co nie wystarcza. Otwórz wiadomość w Outlooku w przeglądarce |
+| Thunderbird | Zaznacz wiadomość, potem „Widok" i „Źródło wiadomości" i skopiuj tekst. „Plik", potem „Zapisz jako" zapisuje plik `.eml` |
+| Apple Mail | Zaznacz wiadomość, potem „Widok", „Wiadomość" i „Surowe źródło" i skopiuj tekst. „Plik", potem „Zapisz jako" z formatem „Surowe źródło wiadomości" zapisuje plik |
+
+Zwykłe przekazanie wiadomości dalej nie zadziała: powstaje nowa wiadomość, a oryginalne nagłówki giną.
+
+### Jak z niej korzystać
+
+1. Wklej kod źródłowy do dużego pola tekstowego albo kliknij „Wczytaj plik .eml".
+2. Kliknij „Analizuj", żeby dostać pełną lekcję, albo „Analizuj bez LLM", jeśli chcesz tylko lokalne fakty. „Przerwij" zatrzymuje trwającą analizę.
+3. Jeśli tę samą wiadomość analizowałeś wcześniej, Seisa zanim cokolwiek wyda, proponuje „Otwórz zapisaną analizę" albo „Analizuj ponownie (płatne)".
+4. Przeczytaj wynik (niżej). „Pokaż źródło" i „Edytuj źródło" pozwalają obejrzeć lub zmienić wklejony tekst.
+
+### Co jest wysyłane i kiedy
+
+Cokolwiek jest wysyłane, wysyła tylko Twoje kliknięcie „Analizuj". Bez kliknięcia oraz przy „Analizuj bez LLM" wiadomość zostaje na Twoim komputerze.
+
+| Klikasz | Co się dzieje |
+|---|---|
+| Analizuj | Seisa najpierw liczy fakty lokalnie. Potem cała wiadomość, nagłówki i treść, trafia do OpenRouter (usługi AI) na lekcję. Mówi o tym baner nad przyciskami |
+| Analizuj bez LLM | Liczone są tylko fakty lokalne. Nic nie opuszcza Twojego komputera |
+
+Warto wiedzieć:
+
+- **Załączniki.** Załączniki binarne nie są wysyłane. Seisa zastępuje każdy jego rozmiarem i odciskiem SHA-256 (krótkim kodem, który identyfikuje plik). Części tekstowe są dekodowane. Model dostaje najwyżej 120 000 znaków kodu źródłowego.
+- **Rozmiar.** Wklejony kod źródłowy może mieć najwyżej 3 000 000 znaków. Większy zostaje odrzucony z komunikatem.
+- **Czas.** Jeśli OpenRouter przez 120 sekund nic nie wyśle, Seisa się poddaje i pokazuje zwykły komunikat.
+- **Język i koszt.** Lekcja jest pisana w języku interfejsu. Model ustawia `OPENROUTER_MODEL` (domyślnie `anthropic/claude-sonnet-4.5`). Koszt widoczny obok przycisków pochodzi od samego OpenRouter.
+- **Dane innych osób.** E-mail zwykle zawiera dane osobowe innych ludzi. Wysłanie go do OpenRouter to Twoja decyzja. Zobacz [COMPLIANCE.md](../COMPLIANCE.md).
+- **Linki.** Seisa nigdy nie otwiera linków, obrazów ani załączników. Pełna tabela tego, co opuszcza Twój komputer, jest w [PRIVACY.md](../PRIVACY.md).
+
+### Jak czytać wynik
+
+Wynik zaczyna się od werdyktu (legalna, phishing, spam, oszustwo, malware lub niejednoznaczna) z pewnością, a potem są kafle:
+
+| Kafel | Co mówi |
+|---|---|
+| Ostrzeżenia | Ile uwag Seisa wykryła automatycznie i ile z nich jest tylko informacyjnych |
+| Uwierzytelnianie | Czy wiadomość przeszła kontrole nadawcy (SPF, DKIM, DMARC, ARC) i kto zapisał ten wynik |
+| Tożsamość nadawcy | Czy domeny nadawcy zgadzają się z adresem w „From" |
+| IP nadawcy | Adres, z którego wiadomość naprawdę przyszła, i „granica zaufania", na której go znaleziono |
+| Treść | Liczba linków i załączników, ukryta treść i formularze |
+| Filtr odbiorcy | Co zdecydował filtr antyspamowy odbiorcy (na przykład „Folder Spam"). Pokazywany tylko wtedy, gdy nagłówki go zawierają |
+| Czas doręczenia | Jak długo wiadomość była w drodze i czy znaczniki czasu są w złej kolejności |
+
+Pod kaflami są trzy panele:
+
+- **Przegląd.** Podsumowanie.
+- **Fakty.** To, co Seisa wyliczyła własnym kodem, bez udziału AI: trasa wiadomości, uwierzytelnianie, zgodność domen, filtr odbiorcy, oś czasu, struktura, załączniki (także podwójne i ryzykowne rozszerzenia plików), treść HTML (linki, ukryta treść, formularze) i inne obserwacje.
+- **Lekcja.** Analiza AI krok po kroku, podzielona na karty ze spisem treści. Cytaty z wiadomości prowadzą do szuflady „Źródło wiadomości", która podświetla cytowane linie.
+
+Kilka terminów, które spotkasz w panelu Fakty, każdy w jednym zdaniu:
+
+| Termin | Prostymi słowami |
+|---|---|
+| Nagłówki Received | Każdy serwer pocztowy, który obsługuje wiadomość, stempluje ją jak poczta list. Stemple pokazują trasę, a najnowszy jest na górze |
+| Granica zaufania | Stempel zapisany przez serwer samego odbiorcy. Wszystkiemu nad nim możesz ufać. Wszystko pod nim zapisali inni i może być sfałszowane |
+| SPF | Lista serwerów, które mogą wysyłać pocztę w imieniu domeny |
+| DKIM | Cyfrowy podpis, który pokazuje, że wiadomość nie została zmieniona w drodze |
+| DMARC | Reguła, która mówi odbiorcom, co zrobić, gdy SPF i DKIM nie zgadzają się z domeną nadawcy |
+| ARC | Pieczęć, którą dodają serwery przekazujące pocztę, żeby pierwotne kontrole nie zginęły |
+
+Dwie reguły rozstrzygają, co jest dowodem:
+
+- Liczy się tylko nagłówek „Authentication-Results" zapisany przez serwer samego odbiorcy. Wynik zapisany przez kogokolwiek innego to tylko twierdzenie.
+- Dla Microsoft 365, gdzie nagłówek nie zawiera nazwy serwera, wynik się liczy, gdy stoi tuż obok linii Received odbiorcy (kafel mówi „obok linii Received odbiorcy (bez nazwy serwera)").
+
+Kafel IP nadawcy i trasa używają tej samej metody co zakładka AbuseIPDB. Pochodzą z kodu Seisy, nie od AI.
+
+Linków w wynikach nie da się kliknąć. Obok adresu masz „IP" (wpisuje go w zakładkę IP) albo „URLScan" (wpisuje go w zakładkę URLScan). Nic nie jest sprawdzane, dopóki tam nie klikniesz.
+
+Darmowa, lokalna „Kontrola cytatów" potwierdza, że adresy IP, cytowane nagłówki i identyfikatory z lekcji naprawdę występują w wiadomości, i zaznacza te, które nie występują. Niezgodność nie zawsze jest błędem: może to być przykład albo parafraza.
+
+Jeśli lekcja została ucięta przez limit długości, baner o tym mówi, a „Dokończ analizę" prosi model o brakujące części (płatne). Wiadomość z ponad 100 nagłówkami Received dostaje ostrzeżenie, że przeanalizowano tylko najnowsze 100.
+
+#### Zapisane analizy
+
+Każda skończona analiza AI jest zapisywana automatycznie, razem z surowym e-mailem, w `data/analyses/`. „Analizuj bez LLM" i analiza zatrzymana przyciskiem „Przerwij" nie są zapisywane. Lista „Zapisane analizy" pozwala:
+
+- otworzyć analizę;
+- usunąć ją (kliknij dwa razy; usuwa to analizę i zapisany e-mail);
+- zaznaczyć dwie i kliknąć „Porównaj zaznaczone (2)", żeby zobaczyć wspólne adresy IP, domeny, hosty linków i załączniki (ta sama kampania? ta sama infrastruktura?).
+
+Zapisana analiza napisana w drugim języku pokazuje uwagę, a „Analizuj ponownie w języku: {język} (płatne)" robi nową. Analiza zapisana przez starszą wersję Seisy może pokazać baner, gdy dzisiejszy kod czyta fakty inaczej. Możesz przełączać „Pokaż fakty z dnia zapisu" i „Pokaż aktualne fakty". Zapisany plik się nie zmienia.
+
+### Przyciski
+
+| Przycisk | Co robi |
+|---|---|
+| Analizuj | Fakty lokalne, potem lekcja AI (wysyła wiadomość do OpenRouter) |
+| Analizuj bez LLM | Tylko fakty lokalne (nic nie wysyła) |
+| Wczytaj plik .eml | Wczytuje plik `.eml` do pola |
+| Przerwij | Zatrzymuje trwającą analizę (nie jest zapisywana) |
+| Wyczyść | Czyści zakładkę |
+| Pokaż źródło / Edytuj źródło / Zwiń źródło | Pokazuje, edytuje lub chowa wklejony tekst |
+| Zapisz .md / Kopiuj Markdown / Zapisz .html | Zapisuje lub kopiuje wynik |
+| IP / URLScan | Obok adresu: wpisuje go w drugą zakładkę (nic nie jest wysyłane) |
+| Otwórz zapisaną analizę / Analizuj ponownie (płatne) | Proponowane, gdy tę samą wiadomość analizowano wcześniej |
+| Dokończ analizę | Prosi model o brakujące części uciętej lekcji (płatne) |
+| Otwórz / Usuń / Porównaj zaznaczone (2) | Na liście „Zapisane analizy" |
+
+## 9. Zakładka AbuseIPDB
+
+### Do czego służy
+
+![Zakładka AbuseIPDB z przygotowanym zgłoszeniem: werdykt, kafle podsumowania i łańcuch Received](../images/abuseipdb_pl.png)
+
+AbuseIPDB to publiczna baza, w której ludzie zgłaszają adresy IP rozsyłające spam, phishing i inne nadużycia. Ta zakładka przygotowuje takie zgłoszenie na podstawie e-maila ze spamem lub phishingiem, sprawdza je i, po Twoim kliknięciu, wysyła.
+
+To inne narzędzie niż zakładka Email. Email uczy czytać wiadomość i niczego nie zgłasza. AbuseIPDB przygotowuje publiczne zgłoszenie. Obie mogą użyć AI na tym samym e-mailu, ale niczego nie współdzielą: kod źródłowy wklejasz w każdej z nich osobno.
+
+Kontrole, które rozstrzygają, czy możesz wysłać, wylicza własny kod Seisy. AI tylko wyraża opinię i pisze szkic komentarza. Za wszystko, co wyślesz, odpowiadasz Ty, i zakładka mówi o tym nad polem.
+
+### Czego potrzebuje
+
+- Niczego, żeby przygotować zgłoszenie z faktów i komentarza zbudowanego z nich.
+- `OPENROUTER_API_KEY` do oceny AI.
+- `ABUSEIPDB_API_KEY` do tego, co AbuseIPDB już wie o adresie, i do wysyłki.
+
+### Jak z niej korzystać
+
+1. Zdobądź kod źródłowy e-maila (zobacz „Jak zdobyć kod źródłowy e-maila" w sekcji 8) i wklej go w „Kod źródłowy e-maila (z nagłówkami)" albo kliknij „Wczytaj plik .eml".
+2. Kliknij „Analizuj" albo „Analizuj bez LLM".
+3. Przeczytaj werdykt, kafle i „Skąd pochodzi IP". Jeśli Seisa wskazała zły adres, kliknij „Użyj tego adresu" w odpowiedniej linii.
+4. W formularzu „Zgłoszenie" sprawdź adres IP, kategorie, timestamp ataku i komentarz.
+5. Otwórz „Kontrole przed wysyłką" i napraw to, co nie przechodzi. Jeśli pojawi się ostrzeżenie o danych osobowych, kliknij „Zamaskuj".
+6. Zobacz „Co zostanie wysłane do API". Pokazuje dokładnie to, co wyjdzie.
+7. Kliknij „Wyślij przez AbuseIPDB API". Przycisk jest wyłączony, dopóki któraś wymagana kontrola nie przechodzi.
+
+### Co jest wysyłane i kiedy
+
+| Co | Kiedy |
+|---|---|
+| Cała wiadomość, do OpenRouter | Tylko gdy klikniesz „Analizuj" i jest ustawiony klucz. „Analizuj bez LLM" nic nie wysyła |
+| Adres IP źródła, do AbuseIPDB | **Sam z siebie**, bez kliknięcia, gdy tylko w formularzu pojawi się publiczny adres IP i ustawiony jest klucz AbuseIPDB. Wysyłany jest sam adres, nigdy e-mail. Pokazuje, co AbuseIPDB już o nim wie |
+| Zgłoszenie (IP, kategorie, czas, komentarz), do AbuseIPDB | Tylko gdy klikniesz „Wyślij przez AbuseIPDB API". AbuseIPDB pokazuje komentarze publicznie |
+
+Automatyczne sprawdzenie adresu to jedyny wyjątek od zasady „nic bez kliknięcia" w Seisie. Pełna tabela jest w [PRIVACY.md](../PRIVACY.md).
+
+Wklejony kod źródłowy może mieć najwyżej 3 000 000 znaków. Większy zostaje odrzucony z komunikatem „Źródło jest za duże ({size} znaków, limit {limit})."
+
+### Jak czytać wynik
+
+Wynik zaczyna się od werdyktu: „E-mail wygląda na kwalifikujący się do zgłoszenia." albo „Ten e-mail najprawdopodobniej NIE kwalifikuje się do zgłoszenia." Potem są kafle „IP źródłowe", „Wiek", „Uwierzytelnianie", „Załączniki" i „Wynik AbuseIPDB".
+
+**Skąd pochodzi IP.** IP źródłowe to adres na granicy zaufania w łańcuchu Received (zobacz sekcję 8): stempel zapisany przez serwer Twojego własnego dostawcy, który zapisuje, kto się z nim połączył. Stemple pod nim mogły zostać sfałszowane. Ten adres znajduje kod Seisy. Jeśli AI zasugeruje inny, Seisa pokaże oba i nigdy sama ich nie zamieni: wybierasz „Użyj tego adresu".
+
+**Formularz.** „Zgłoszenie" zawiera adres IP, kategorie, timestamp ataku i komentarz:
+
+- Kategorie to chipy. AbuseIPDB ma ich 23, a „7. Phishing" i „11. Email Spam" są typowe dla e-maili.
+- Komentarz jest po angielsku, bo jest publiczny. Możesz go edytować. Może mieć najwyżej 1024 znaki (jest licznik), a przed wysłaniem jest czyszczony do zwykłego ASCII (inne znaki zamieniają się w spacje).
+- Seisa skanuje komentarz pod kątem danych osobowych: Twojego własnego adresu z wiadomości, innych adresów e-mail i wewnętrznych adresów IP. Proponuje „Zamaskuj". Wysyłka z takimi danymi zostawionymi w komentarzu prosi o potwierdzenie.
+
+**Kontrole przed wysyłką.** Trzy grupy:
+
+| Grupa | Co zawiera |
+|---|---|
+| Wymagane (API i backend) | Atak najwyżej 60 dni temu, publiczne IP, co najmniej jedna kategoria, reguła 15 minut dla tego samego IP i kwalifikowalność zgłoszenia. Serwer Seisy sam je powtarza, więc nie da się ich obejść w przeglądarce |
+| Blokujące, oceniane przez AI | „Zweryfikowano z nagłówka Received" i „Źródło jest wiarygodne" |
+| Informacyjne | Spoofing (podszycie się pod nadawcę), kategoria dopasowana do rzeczywistego mechanizmu, brak danych osobowych |
+
+AbuseIPDB przyjmuje ponowne zgłoszenie tego samego IP z jednego konta dopiero po 15 minutach, a Seisa blokuje je wcześniej na podstawie własnego lokalnego dziennika. Wiadomość, która wygląda na test wysłany z Twojego konta do siebie, jest oznaczana jako najprawdopodobniej niekwalifikująca się.
+
+**Bez AI.** Werdykt brzmi wtedy „wątpliwe (nie oceniono)". Sprawdzane są tylko twarde kryteria (publiczne IP, wiek do 60 dni). To nie blokuje wysyłki, bo twarde kontrole nadal działają w kodzie Seisy, ale też nie wystarcza, żeby uznać, że e-mail zasługuje na zgłoszenie. Zdecyduj sam. „Zweryfikowano z Received" jest zielone tylko dla adresu, który Seisa wybrała sama z wysoką pewnością. Jeśli wpiszesz inny adres, kontrola zmienia się w „nie oceniono".
+
+**Co AbuseIPDB już wie.** Gdy klucz jest ustawiony, formularz pokazuje zgłoszenia adresu z ostatnich 90 dni. Ostrzega, gdy adres jest na białej liście AbuseIPDB albo był już zgłoszony w wybranych kategoriach w ciągu ostatnich 7 dni.
+
+**Po wysłaniu.** Seisa pokazuje nowy wynik adresu w AbuseIPDB, pozostały limit dzienny i przyciski do zgłoszenia innych adresów z tego samego e-maila. Błędy z AbuseIPDB są wyjaśniane: wyczerpany limit dzienny (z czasem resetu), powtórzenie tego samego IP, odrzucone dane i odrzucony klucz.
+
+**Twoje zgłoszenia.** Lista ostatnich 100 prób z lokalnego dziennika, przyjętych i nieudanych, z kaflami „Wysłane dziś" (liczone według doby UTC), „Pozostały limit dzienny" i „Przyjęte". Przyjęte zgłoszenia pojawiają się też w zakładce Historia.
+
+### Przyciski
+
+| Przycisk | Co robi |
+|---|---|
+| Analizuj / Analizuj bez LLM | Przygotowuje zgłoszenie (pierwszy wysyła wiadomość do OpenRouter) |
+| Wczytaj plik .eml / Wyczyść | Wczytuje plik / czyści zakładkę |
+| Użyj tego adresu | Bierze inny adres z łańcucha Received jako IP źródłowe |
+| Zamaskuj | Maskuje dane osobowe w komentarzu |
+| Kopiuj komentarz / Zapisz .md | Kopiuje komentarz / zapisuje przygotowane zgłoszenie |
+| Wyślij przez AbuseIPDB API | Wysyła zgłoszenie do AbuseIPDB |
+| Użyj jako szkic | W „Twoje zgłoszenia": wczytuje wcześniejszą próbę do formularza |
+| Sprawdź | W „Twoje zgłoszenia": otwiera publiczną stronę adresu w AbuseIPDB w nowej karcie (Twoja przeglądarka łączy się z abuseipdb.com) |
 
 ## 10. Zakładka Historia
 
@@ -418,3 +634,25 @@ Komunikaty usług i analizy AI idą za językiem interfejsu. Komentarze wysyłan
 | Systemowy | Idzie za ustawieniem jasny/ciemny Twojego komputera (Jasny Washi albo Brązowy Sumi) |
 
 Wybór jest zapamiętany w tej przeglądarce i stosowany, zanim strona zostanie narysowana. Tradycyjne japońskie kolory każdej skórki wyjaśnia Info w „O kolorach".
+
+## 14. Przykład: od podejrzanego e-maila do zgłoszenia
+
+Ten przykład prowadzi przez jeden zmyślony przypadek, od pierwszej wątpliwości do wysłanego zgłoszenia. Wszystkie adresy są fikcyjne: nadawca to `203.0.113.45`, a jego domena to `mail.example`. To zarezerwowane adresy przykładowe, więc zakładka IP w prawdziwym życiu by je odrzuciła (zobacz krok 3). Prawdziwy przypadek ma prawdziwy, publiczny adres.
+
+Dostajesz wiadomość, która podaje się za bank i prosi o „potwierdzenie konta". Coś jest nie tak.
+
+1. **Zdobądź kod źródłowy.** Skopiuj cały kod źródłowy wiadomości (zobacz „Jak zdobyć kod źródłowy e-maila" w sekcji 8). Niczego nie klikaj w samej wiadomości.
+2. **Zrozum ją w zakładce Email.** Wklej kod i kliknij „Analizuj" (albo „Analizuj bez LLM", jeśli nie chcesz wysyłać go do OpenRouter). Przeczytaj werdykt, na przykład „phishing" z pewnością, potem kafel „IP nadawcy" (tutaj `203.0.113.45`) i kafel „Uwierzytelnianie". Panel „Lekcja" tłumaczy krok po kroku, co jest nie tak.
+3. **Opcjonalnie: sprawdź nadawcę.** Kliknij „IP" obok IP nadawcy. Otworzy się zakładka IP z wpisanym adresem. Nic jeszcze nie jest wysyłane: kliknij „Sprawdź", żeby zobaczyć reputację adresu. Dla zarezerwowanego adresu przykładowego, jak nasz, Seisa odpowie, że to nie jest adres publiczny; prawdziwy dostanie wynik.
+4. **Przygotuj zgłoszenie.** Otwórz zakładkę AbuseIPDB. Nie ma przycisku, który przenosi e-mail, więc wklej kod ponownie i kliknij „Analizuj". Sprawdź werdykt, „Skąd pochodzi IP", kategorie (w tym przypadku „7. Phishing" i może „11. Email Spam"), czas i komentarz.
+5. **Sprawdź przed wysłaniem.** Otwórz „Kontrole przed wysyłką". Napraw to, co nie przechodzi. Kliknij „Zamaskuj", jeśli pojawi się ostrzeżenie o danych osobowych, a potem zobacz „Co zostanie wysłane do API". Pamiętaj, że komentarz jest publiczny.
+6. **Wyślij.** Kliknij „Wyślij przez AbuseIPDB API". Seisa pokaże nowy wynik adresu i pozostały limit dzienny.
+7. **Znajdź je potem.** Zgłoszenie pojawia się w „Twoje zgłoszenia" w tej samej zakładce i w zakładce Historia.
+
+Jeśli zakładka mówi, że e-mail się nie kwalifikuje (na przykład jest starszy niż 60 dni), nie wysyłaj go. AbuseIPDB by go odrzuciło albo byłby tylko szumem.
+
+## 15. Zamykanie Seisy
+
+Gdy skończysz, kliknij „Zamknij Seisę" w stopce albo w zakładce Info, w „Ustawienia". Serwer się zatrzyma, a strona zostanie zastąpiona napisem „Seisa została zatrzymana". Przeglądarka może poprosić, żebyś sam zamknął kartę.
+
+Seisa najpierw prosi o potwierdzenie. Zaznacz „Nie pytaj ponownie", żeby przestała pytać, a włączysz pytanie z powrotem przez „Pytaj przed zamknięciem" w Info, w „Ustawienia". Zawsze pyta, gdy praca mogłaby przepaść, na przykład trwająca analiza albo wklejony tekst. Jak uruchomić Seisę ponownie, opisuje OPERATIONS.md.
