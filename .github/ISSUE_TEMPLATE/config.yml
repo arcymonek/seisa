@@ -2,4 +2,4 @@ blank_issues_enabled: true
 contact_links:
   - name: Security vulnerability
     url: https://github.com/arcymonek/seisa/security/advisories/new
-    about: Please report vulnerabilities privately (see SECURITY.md), not as a public issue.
+    about: Please report vulnerabilities privately (see https://github.com/arcymonek/seisa/blob/main/SECURITY.md), not as a public issue.
