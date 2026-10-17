@@ -625,12 +625,44 @@ def check_readability(root: Path, rep: Report, md_files: list[str]) -> None:
             rep.warnings.append(f"{rel}: {lines} lines and no table of contents")
 
 
+# Rule 15: hosts that are examples, not links to visit. Loopback and this computer, the names reserved for examples and
+# tests (RFC 2606, RFC 6761), the mDNS suffix .local and the placeholder suffix .tld used in examples.
+EXAMPLE_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "example.org", "example.com", "example.net"})
+EXAMPLE_HOST_SUFFIXES = (".local", ".localhost", ".tld", ".example", ".test", ".invalid", ".example.org", ".example.com", ".example.net")
+# A URL ends at white space, quotes, angle or square brackets (a reference link `[text][label]`), a closing parenthesis
+# or a backtick; trailing sentence punctuation is not part of it.
+_URL = re.compile(r"https?://[^\s()\[\]<>\"'`{}|\\]+")
+_TRAILING = ".,;:!?*_"
+
+
+def external_urls(text: str) -> set[str]:
+    """The URLs worth visiting in a Markdown text.
+
+    Skipped: everything in fenced code blocks and `code spans` (commands and sample output, not links); example hosts
+    (EXAMPLE_HOSTS, EXAMPLE_HOST_SUFFIXES); and templates, i.e. a URL followed directly by a placeholder such as
+    `https://urlscan.io/result/<uuid>` or `.../check/{ip}`. A template is not a page: its stem alone (".../result/")
+    usually answers 404, which would be a false alarm, and the real page needs a value only the reader has."""
+    found = set()
+    for _, line in strip_code(text):
+        line = re.sub(r"`[^`]*`", " ", line)
+        for m in _URL.finditer(line):
+            url = m[0].rstrip(_TRAILING)
+            following = line[m.start() + len(url):m.start() + len(url) + 1]
+            if following in ("<", "{"):
+                continue
+            host = (re.match(r"https?://([^/:?#]+)", url) or [None, ""])[1].lower()
+            if not host or host in EXAMPLE_HOSTS or host.endswith(EXAMPLE_HOST_SUFFIXES):
+                continue
+            found.add(url)
+    return found
+
+
 def check_external(root: Path, rep: Report, md_files: list[str]) -> None:
-    """Rule 15 (only with --external): every https:// link of the documentation answers."""
+    """Rule 15 (only with --external): every external link of the documentation answers."""
     import urllib.error
     import urllib.request
 
-    urls = sorted({u.rstrip(".,") for rel in md_files for u in re.findall(r"https?://[^\s)\"'<>`]+", (root / rel).read_text(encoding="utf-8"))})
+    urls = sorted({u for rel in md_files for u in external_urls((root / rel).read_text(encoding="utf-8"))})
     for url in urls:
         req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "seisa-check-docs"})
         try:

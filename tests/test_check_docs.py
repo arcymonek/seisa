@@ -473,7 +473,7 @@ def test_rule14_a_long_file_needs_a_table_of_contents(proj):
 # --- rule 15: external links (only with --external) -----------------------------------------------------------------------
 
 def test_rule15_external_links_only_on_request(proj, monkeypatch):
-    add(proj, "AGENTS.md", "\n[a](https://example.org/gone) [b](https://example.org/ok)\n")
+    add(proj, "AGENTS.md", "\n[a](https://www.virustotal.com/gone) [b](https://www.virustotal.com/ok)\n")
     calls = []
 
     class Answer:
@@ -494,7 +494,24 @@ def test_rule15_external_links_only_on_request(proj, monkeypatch):
     monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
     assert errors(proj) == [] and calls == []    # never without the switch
     rep = run(proj, external=True)
-    assert rep.errors == ["external link https://example.org/gone: HTTP 404"]
+    assert rep.errors == ["external link https://www.virustotal.com/gone: HTTP 404"]
+
+
+@pytest.mark.parametrize(("text", "expected"), [
+    ("See https://example.org/x.", set()),                                        # reserved example domain
+    ("Open http://127.0.0.1:54321 or http://localhost:9999/api.", set()),          # this computer
+    ("A host like https://host.tld/ or https://seisa.local or https://a.test/x", set()),
+    ("Template https://urlscan.io/result/<uuid>/ and https://www.abuseipdb.com/check/{ip}", set()),
+    ("In code `https://www.virustotal.com/x` only", set()),
+    ("```\ncurl https://www.virustotal.com/api\n```\n", set()),
+    ("Read https://www.abuseipdb.com/reporting-policy; then report.", {"https://www.abuseipdb.com/reporting-policy"}),
+    ("[FAQ][FAQ]\n\n[FAQ]: https://www.contributor-covenant.org/faq", {"https://www.contributor-covenant.org/faq"}),
+    ("[https://www.virustotal.com][vt] in a reference link", {"https://www.virustotal.com"}),
+    ("Link [x](https://seisa.eu) and <https://openrouter.ai>.", {"https://seisa.eu", "https://openrouter.ai"}),
+    ("A stem without a placeholder https://www.abuseipdb.com/check/ counts", {"https://www.abuseipdb.com/check/"}),
+])
+def test_rule15_which_addresses_are_visited(text, expected):
+    assert cd.external_urls(text) == expected
 
 
 # --- the command line -------------------------------------------------------------------------------------------------
