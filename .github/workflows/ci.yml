@@ -1,4 +1,4 @@
-name: ci
+name: Continuous Integration
 
 # Pull requests from forks run here with read-only rights and no secrets. Never switch to `pull_request_target`:
 # it runs with write rights and secrets, and checking out the fork's code in it would hand both to that code.
@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   check:
+    name: Python ${{ matrix.python-version }}
     # Pinned, not "ubuntu-latest": GitHub moves that label to Ubuntu 26.04 from 2026-10-19, and the tools the checks use
     # should change when we decide, not on GitHub's schedule.
     runs-on: ubuntu-24.04
@@ -31,54 +32,61 @@ jobs:
         python-version: ["3.11", "3.x"]
     steps:
       # Actions are pinned to a full commit SHA (the tag is only a label that can be moved); both run on Node 24.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: Download the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           fetch-depth: 0   # the version rule below compares the pull request with the merge-base on main
           persist-credentials: false   # no step pushes; the token is not left in .git/config for the code under test
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             requirements.lock
             requirements-dev.txt
-      - run: pip install -r requirements.lock -r requirements-dev.txt
-      - run: ruff check backend scripts tests
+      - name: Install the libraries (requirements.lock)
+        run: pip install -r requirements.lock -r requirements-dev.txt
+      - name: Code style and common mistakes (ruff)
+        run: ruff check backend scripts tests
       # The whole suite, including the golden pattern of the e-mail facts (tests/test_dump_facts_golden.py, which runs
       # scripts/dump_facts.py in both languages and compares it with tests/golden/).
-      - run: python -m pytest -q
-      - run: python scripts/api_harness.py
-      - run: python scripts/check_i18n.py --strict
+      - name: Unit tests (pytest)
+        run: python -m pytest -q
+      - name: Whole app with fake services (API harness)
+        run: python scripts/api_harness.py
+      - name: Texts in Polish and English match (check_i18n)
+        run: python scripts/check_i18n.py --strict
       # The documentation: language pairs, links, and agreement with the code (routes, .env keys, tabs, modules, limits).
       # For a pull request from a fork (same condition as --no-version-rule below) the agreement with the code and the
       # other language only get listed for the maintainer, who updates the documentation; links and form still fail.
-      - name: Documentation (check_docs.py)
+      - name: Documentation matches the code (check_docs)
         env:
           CONTRIBUTOR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && '--contributor' || '' }}
         run: python scripts/check_docs.py $CONTRIBUTOR
       # Syntax of the frontend modules (there is no build step and no JS test runner). `node --check` treats a .js file
       # as CommonJS, so each module is copied to a .mjs name first, as the local checklist does. Node is preinstalled
       # on the ubuntu-24.04 runner.
-      - name: Syntax check of frontend/js/*.js
+      - name: JavaScript files have valid syntax (node --check)
         run: |
           for f in frontend/js/*.js; do
             cp "$f" "$RUNNER_TEMP/x.mjs" && node --check "$RUNNER_TEMP/x.mjs" || { echo "SYNTAX ERROR in $f"; exit 1; }
           done
       # Informational coverage report (no threshold, it cannot fail the run for being low): fast tests plus the harness.
-      - name: Coverage report (informational)
+      - name: How much code the tests touch (report only, cannot fail)
         run: |
           coverage run -p -m pytest -q -m "not slow"
           coverage run -p scripts/api_harness.py
           coverage combine
           coverage report
-      - name: Version rule and added-line rules for the whole branch (own pull requests)
+      - name: Version bump, changelog and forbidden content in the whole branch (own pull requests)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
           BASE_REF: ${{ github.base_ref }}
         run: python scripts/hooks/pre-commit --range "origin/$BASE_REF"
       # A contributor does not bump the version (CONTRIBUTING.md): the maintainer adds it after review and runs the
       # full --range then. The added lines (long dash, privacy scan) are checked here, a fork has no hooks.
-      - name: Added-line rules for the whole branch (pull requests from forks)
+      - name: Forbidden content in the whole branch (pull requests from forks)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
         env:
           BASE_REF: ${{ github.base_ref }}
@@ -91,28 +99,32 @@ jobs:
   #   - pip-licenses names a package whose licence is not on the allowed list: read the licence first (it must stay
   #     compatible with GPL-3.0-or-later), and only then extend the list below, in the same pull request, with a reason.
   dependencies:
+    name: Dependencies
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+      - name: Download the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
+      - name: Install Python 3.x
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7
         with:
           python-version: "3.x"
           cache: pip
           cache-dependency-path: |
             requirements.lock
             requirements-dev.txt
-      - run: pip install -r requirements.lock -r requirements-dev.txt
+      - name: Install the libraries (requirements.lock)
+        run: pip install -r requirements.lock -r requirements-dev.txt
       # Known vulnerabilities (PyPI/OSV database) of the exact versions Seisa is tested with. The lock file pins every
       # package, so pip-audit needs no dependency resolution.
-      - name: Known vulnerabilities in requirements.lock
+      - name: Libraries have no known security holes (pip-audit)
         run: pip-audit -r requirements.lock --no-deps --disable-pip
       # Licences of the packages of requirements.lock only (the development tools are not shipped). The list is matched
       # as text parts: "BSD" covers "BSD License" and "BSD-3-Clause", "MIT" covers "MIT License". "GPL" is deliberately
       # not on the list, so nothing licensed (L)GPL passes by accident.
-      - name: Licences of requirements.lock
+      - name: Library licences are compatible with GPL (pip-licenses)
         run: |
           packages=$(grep -E '^[A-Za-z0-9_.-]+==' requirements.lock | cut -d= -f1 | tr '\n' ' ')
           pip-licenses --packages $packages --partial-match \
