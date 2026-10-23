@@ -98,7 +98,7 @@ Zacznij od tego, co masz w ręku:
 
 ## 4. Klucze API: co działa bez nich
 
-Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto pyta, żeby mogła liczyć Twoje zapytania. Klucze wpisujesz do pliku `.env`. Tabela wszystkich kluczy i sposób ich zdobycia są w [README](../../README.pl.md). Ta tabela mówi tylko, co się dzieje, gdy klucza brakuje.
+Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto pyta, żeby mogła liczyć Twoje zapytania. Klucze wpisujesz w zakładce Info, w karcie „Klucze API" (albo wklejasz je sam do pliku `.env`). Tabela wszystkich kluczy i sposób ich zdobycia są w [README](../../README.pl.md). Ta tabela mówi tylko, co się dzieje, gdy klucza brakuje.
 
 | Zakładka lub funkcja | Potrzebny klucz | Bez klucza |
 |---|---|---|
@@ -593,6 +593,8 @@ Otwarcie zakładki nic nie wysyła. „Odśwież limity" to jedyna akcja, która
 ### Jak czytać wynik
 
 **Ustawienia.** Język, skórka kolorystyczna, „Ikona aplikacji" (z „Dodaj ikonę" i „Usuń ikonę") oraz „Serwer": „Zamknij Seisę" i „Pytaj przed zamknięciem". Ikonę wyjaśnia [OPERATIONS.md](OPERATIONS.md).
+
+**Klucze API.** Osobna karta nad „Statusem i limitami API", domyślnie zwinięta. Jeden wiersz na usługę; przycisk „Otwórz <nazwa usługi>" otwiera stronę główną usługi w nowej karcie, gdzie założysz konto i wygenerujesz klucz. Każdy wiersz pokazuje stan: „ustawiony", „nie ustawiony" albo „ustawiony zmienną środowiskową" (wtedy zmień go tam, gdzie jest eksportowany; plik go nie nadpisze). Wklej klucz do pola i kliknij „Zapisz klucze"; puste pole zostawia obecną wartość, „Usuń" kasuje jeden klucz, a „Usuń wszystkie" (kliknij dwa razy, żeby potwierdzić) kasuje od razu wszystkie, poza ustawionymi zmienną środowiskową. Klucze trafiają do pliku `.env` w folderze Seisy, który może czytać tylko właściciel konta, i działają od razu, bez restartu. Pola są puste celowo: Seisa nigdy nie pokazuje klucza ponownie. Klucz może zawierać tylko litery, cyfry i znaki `. _ ~ + / = : -`. Wiersz „Model OpenRouter" to jedyne ustawienie, które jest pokazywane, bo nie jest tajne. Po zapisie „Odśwież limity" sprawdzi klucze VirusTotal, URLScan i OpenRouter.
 
 **Status i limity API.** „Środowisko" (adres, czy „Plik .env" jest, system, wersje Pythona i FastAPI) oraz jedna karta na usługę ze statusem klucza i zużyciem względem limitów darmowego planu. Gdy usługa odpowie „limit wyczerpany" (HTTP 429), jej karta dostaje taką odznakę aż do następnej udanej odpowiedzi.
 

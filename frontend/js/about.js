@@ -7,6 +7,7 @@ import { serviceTitle } from "./services.js";
 import { t, tn, getLocale, fmtDate, fmtDateTime, mountLangSwitch } from "./i18n.js";
 import { mountShutdown, mountShutdownAsk } from "./shutdown.js";
 import { mountThemeSwitch } from "./theme.js";
+import { mountKeys, renderKeys } from "./about-keys.js";
 import { escapeHtml as e, fmtRelative, withBusy } from "./util.js";
 import { errorBanner, kpiTile, textBanner } from "./ui.js";
 
@@ -75,6 +76,7 @@ export function initAbout(container) {
         <label><input type="checkbox" id="ab-shutdown-ask"> ${e(t("about.shutdown_ask"))}</label></div>
       <div class="muted settings-row">${e(t("about.shutdown_hint")).replace(/\n/g, "<br>")}</div>
       ${block(t("about.colors_title"), colourExplanation())}`, { open: true, id: "ab-settings-card" })}
+    ${block(t("about.keys_title"), '<div id="ab-keys"></div>', { id: "ab-keys-card" })}
     ${block(t("about.status_limits_title"), `
       <div class="action-row"><button class="secondary" id="ab-limits-refresh" type="button">${e(t("about.limits_refresh"))}</button><span class="action-info" id="ab-limits-info"></span></div>
       <div id="ab-limits-errors"></div>
@@ -85,6 +87,7 @@ export function initAbout(container) {
     <p class="muted about-made">${e(t("about.made_with"))}</p>`;
   mountLangSwitch(root.querySelector("#ab-lang-switch"));
   mountThemeSwitch(root.querySelector("#ab-theme-switch"));
+  mountKeys(root.querySelector("#ab-keys"), refreshAbout);
   root.querySelector("#ab-limits-refresh").addEventListener("click", refreshLimits);
   mountShutdown(root.querySelector("#ab-shutdown"));
   mountShutdownAsk(root.querySelector("#ab-shutdown-ask"));
@@ -233,6 +236,7 @@ export async function refreshAbout() {
     return; // the static part of the tab is still useful without the live status
   }
   refreshIcon();
+  renderKeys(info.keys);
   const keyed = info.services.filter((s) => s.configured !== null);
   const set = keyed.filter((s) => s.configured).length;
   root.querySelector("#ab-tiles").innerHTML = `<div class="kpi-row">

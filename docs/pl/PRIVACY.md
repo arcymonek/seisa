@@ -113,7 +113,7 @@ Ta tabela wylicza każde miejsce, w którym Seisa coś zapisuje. Pliki z danymi 
 | `logs/launcher.log` | Wszystko, co wypisuje uvicorn, gdy Seisa jest uruchamiana z ikony na pulpicie, także wiersze żądań | 0600 | Nadpisywany przy każdym starcie z ikony; „Wyczyść logi" ani reguła 30 dni go nie usuwają |
 | `localStorage` przeglądarki | `seisa.lang`, `seisa.theme`, `seisa.shutdownAsk`, `seisa.urlscan.options` (widoczność, kraj, user agent), `seisa.em.pane` i `seisa.em.cards` (które karty lekcji są otwarte). Bez treści e-maili i wyników | W Twojej przeglądarce | Dopóki nie wyczyścisz danych witryny |
 | `~/Applications/Seisa.app` (macOS) lub `~/.local/share/applications/seisa.desktop` (Linux) | Ikona na pulpicie. Zapisywana tylko po „Dodaj ikonę"; zastępowana lub usuwana tylko wtedy, gdy nosi znacznik Seisy | Skrypt startowy ma 0755 | Do „Usuń ikonę" |
-| `.env` | Twoje klucze API. Czytany przy starcie i nigdy nie pokazywany: Info pokazuje tylko „ustawiony" albo „brak" | Tak, jak go utworzysz (git go ignoruje) | - |
+| `.env` | Twoje klucze API. Czytany przy starcie i nigdy nie pokazywany: Info pokazuje tylko „ustawiony" albo „nie ustawiony". „Zapisz klucze" i „Usuń" w Info przepisują go lokalnie; nic przy tym nigdzie nie jest wysyłane | 0600 (git go ignoruje) | Do usunięcia klucza lub pliku |
 
 Kilka szczegółów do tej tabeli:
 

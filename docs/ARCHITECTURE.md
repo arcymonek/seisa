@@ -47,7 +47,7 @@ Seisa uses a small set of well-known tools. This table lists them with the limit
 |---|---|
 | Language | Python 3.11 or newer (CI tests 3.11 and the latest 3.x) |
 | Libraries | FastAPI, uvicorn, pydantic, pydantic-settings, httpx, python-whois, dnspython (minimum versions in `requirements.txt`, tested versions in `requirements.lock`) |
-| Settings and keys | Read from `.env` by pydantic-settings at start-up |
+| Settings and keys | Read from `.env` by pydantic-settings at start-up; the Info tab can rewrite the file and the running settings |
 | Outgoing HTTP | `httpx.AsyncClient`: 20 s limit for most services, 30 s for an AbuseIPDB report, 30 s to connect and 120 s of silence for OpenRouter |
 | DNS and WHOIS | dnspython with a 5 s limit; WHOIS has a 15 s limit |
 | Frontend | One `index.html`, ES modules in `frontend/js/`, one stylesheet `frontend/css/style.css`, the generated `/api/themes.css`, catalogs in `frontend/i18n/` |
@@ -110,7 +110,7 @@ The backend lives in `backend/`. Each module has one job; look at this list befo
 | `backend/routers/abuseipdb_report.py` | AbuseIPDB tab: analysis of the e-mail, preview with hard checks and PII scan, redaction, sending, report log |
 | `backend/routers/history.py` | History tab: stored entries plus saved analyses and accepted reports as one list |
 | `backend/routers/logs.py` | Logs tab: reads and clears the daily log files |
-| `backend/routers/about.py` | Info tab: configured keys (never their values), environment, API limits, recent releases from `git log`, desktop icon, shutdown |
+| `backend/routers/about.py` | Info tab: configured keys (never their values), editing the keys, environment, API limits, recent releases from `git log`, desktop icon, shutdown |
 | `backend/routers/themes.py` | Theme list and generated CSS |
 | `backend/routers/__init__.py` | Package marker |
 
@@ -167,6 +167,7 @@ The six intelligence clients (VirusTotal, OTX, AbuseIPDB, GreyNoise, Cloudflare 
 | `backend/logging_config.py` | Daily JSON-lines log of warnings and errors, owner-only, 30-day retention |
 | `backend/i18n.py` | Backend translations with the request language in a context variable; plural forms |
 | `backend/themes.py` | Validates theme JSON files and generates CSS from them |
+| `backend/env_file.py` | Edits the API keys in `.env` from the Info tab: the editable fields, the allowed characters, an atomic 0600 rewrite that keeps the other lines, and the update of the running settings |
 | `backend/desktop_icon.py` | Desktop icon for macOS and Linux, from the Info button or `python -m backend.desktop_icon` |
 | `backend/__init__.py` | Package marker |
 
@@ -182,7 +183,7 @@ The frontend lives in `frontend/js/`. Larger tabs are split into `<tab>-<role>.j
 | DMARC | `frontend/js/dmarc.js`, `frontend/js/dmarc-data.js` (parse and aggregate, no HTML), `frontend/js/dmarc-export.js`, `frontend/js/archive.js` (gzip and zip in the browser) |
 | Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/email-glossary.js`, `frontend/js/markdown-render.js` |
 | AbuseIPDB | `frontend/js/report-builder.js` (state, events, send), `frontend/js/report-result.js`, `frontend/js/report-checks.js` (pure functions, tested), `frontend/js/report-history.js`, `frontend/js/report-export.js` |
-| History, Logs, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js` |
+| History, Logs, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (the API keys part of Info) |
 | Shared | `frontend/js/ui.js` (HTML blocks), `frontend/js/util.js` (`escapeHtml`, copy, timers, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/glossary.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (display names) |
 
 ## Data files

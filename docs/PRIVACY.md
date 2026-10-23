@@ -113,7 +113,7 @@ This table lists every place where Seisa keeps something. Data files are plain J
 | `logs/launcher.log` | Everything uvicorn prints when Seisa is started from the desktop icon, including request lines | 0600 | Overwritten at every start from the icon; "Clear logs" and the 30-day rule do not remove it |
 | Browser `localStorage` | `seisa.lang`, `seisa.theme`, `seisa.shutdownAsk`, `seisa.urlscan.options` (visibility, country, user agent), `seisa.em.pane` and `seisa.em.cards` (which lesson cards are open). No e-mail contents or results | In your browser | Until you clear site data |
 | `~/Applications/Seisa.app` (macOS) or `~/.local/share/applications/seisa.desktop` (Linux) | The desktop icon. Written only on "Add icon"; replaced or removed only if it carries Seisa's marker | The launcher script is 0755 | Until "Remove icon" |
-| `.env` | Your API keys. Read at start and never shown: Info shows only "set" or "missing" | As you create it (git ignores it) | - |
+| `.env` | Your API keys. Read at start and never shown: Info shows only "set" or "not set". "Save keys" and "Remove" in Info rewrite it locally; nothing is sent anywhere by that | 0600 (git ignores it) | Until you remove a key or the file |
 
 Some details about this table:
 

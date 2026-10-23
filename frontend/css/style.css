@@ -82,6 +82,7 @@ footer .lang-btn.on { color: var(--text); border-color: var(--text); cursor: def
 .settings-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 12px 14px 0; }
 .settings-row > span:first-child { min-width: 150px; color: var(--muted); }
 .settings-row .action-info { margin-top: 0; }
+.settings-row .keys-input { width: 16rem; max-width: 100%; }
 .settings-row button.secondary { margin: 0; }
 .settings-row .lang-switch { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .settings-row .lang-btn { background: none; border: 1px solid var(--hair); color: var(--text); font: inherit; padding: 4px 12px; border-radius: 6px; cursor: pointer; }

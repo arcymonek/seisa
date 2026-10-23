@@ -383,10 +383,40 @@ The Info tab shows what is configured, the API limits and the desktop icon, and 
 | Item | Detail |
 |---|---|
 | Input | none |
-| Output | `{services, llm, limits, changes, environment}`. `services` is a list of `{id, configured}` (never the key values). `llm` is `{configured, model}`. `changes` is a list of `{version, summary}`. `environment` is `{host, port, dotenv, os, python, fastapi}` |
+| Output | `{services, llm, keys, limits, changes, environment}`. `services` is a list of `{id, configured}` (never the key values). `llm` is `{configured, model}`. `keys` is a list of `{field, env_name, secret, set, from_env}` for the settings the Info tab can edit; only the model name also carries its `value`, a key never does. `changes` is a list of `{version, summary}`. `environment` is `{host, port, dotenv, os, python, fastapi}` |
 | Limits and errors | `changes` is empty when git is not available |
 | Sends to the internet | No (it runs `git log` locally) |
 | Called by | `frontend/js/about.js` |
+
+### `PUT /api/about/keys`
+
+| Item | Detail |
+|---|---|
+| Input | A JSON object `{field: value}`, for example `{"otx_api_key": "..."}`. The fields are the ones in `keys` of `GET /api/about`. An empty value means "no change" |
+| Output | `{keys}`, the new status list (never a value) |
+| Limits and errors | 415 when the request is not `application/json`. 400, with a translated text that never repeats the value, for a body that is not an object of texts, an unknown field, a field that an environment variable provides (it wins over the file), a value with anything but letters, digits and `. _ ~ + / = : -` or longer than 512 characters, a `.env` that is a symbolic link, or a file that cannot be written. One refused value changes nothing |
+| Sends to the internet | No (it rewrites `.env` in the Seisa folder, mode 0600, and the running settings) |
+| Called by | `frontend/js/about-keys.js` |
+
+### `DELETE /api/about/keys/{field}`
+
+| Item | Detail |
+|---|---|
+| Input | The field in the path. The request must be `application/json` |
+| Output | `{keys}`, the new status list |
+| Limits and errors | As for `PUT`. The model name goes back to its default; the stored usage figures of the service are forgotten |
+| Sends to the internet | No |
+| Called by | `frontend/js/about-keys.js` |
+
+### `DELETE /api/about/keys`
+
+| Item | Detail |
+|---|---|
+| Input | none; the request must be `application/json` |
+| Output | `{keys}`, the new status list |
+| Limits and errors | As for `PUT`. Removes every API key that is set in the file. Keys that an environment variable provides, and the model name, are left alone. Nothing to remove is not an error |
+| Sends to the internet | No |
+| Called by | `frontend/js/about-keys.js` |
 
 ### `GET /api/about/icon`
 

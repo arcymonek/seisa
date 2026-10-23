@@ -13,6 +13,7 @@ fails the run (`pytest_sessionfinish`), so an isolation leak cannot go unnoticed
 """
 from __future__ import annotations
 
+import hashlib
 import shutil
 import tempfile
 from pathlib import Path
@@ -23,6 +24,7 @@ import backend.config as cfg
 from backend.i18n import reset_lang, set_lang
 
 _REAL_DIRS = (cfg.DATA_DIR, cfg.LOGS_DIR)
+_REAL_ENV = cfg.ENV_FILE
 _TMP = Path(tempfile.mkdtemp(prefix="seisa-tests-"))
 
 
@@ -37,6 +39,17 @@ def _snapshot(dirs) -> list[tuple[str, int, int]]:
 
 
 _BEFORE = _snapshot(_REAL_DIRS)
+
+
+def _env_digest() -> str | None:
+    """SHA-256 of the real .env (never its content in a message), None when there is none."""
+    try:
+        return hashlib.sha256(_REAL_ENV.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+_ENV_BEFORE = _env_digest()
 REAL_DATA_DIR = cfg.DATA_DIR
 
 cfg.DATA_DIR = _TMP / "data"
@@ -49,6 +62,7 @@ cfg.REPORT_LOG_FILE = cfg.DATA_DIR / "report_log.json"
 cfg.API_USAGE_FILE = cfg.DATA_DIR / "api_usage.json"
 cfg.ANALYSES_DIR = cfg.DATA_DIR / "analyses"
 cfg.LOGS_DIR = _TMP / "logs"
+cfg.ENV_FILE = _TMP / ".env"  # the panel that edits the API keys must never touch the real .env
 
 
 @pytest.fixture(autouse=True)
@@ -69,4 +83,7 @@ def pytest_sessionfinish(session, exitstatus):
     shutil.rmtree(_TMP, ignore_errors=True)
     if _snapshot(_REAL_DIRS) != _BEFORE:
         print("\nISOLATION LEAK: the real data/ or logs/ directory changed during the test run")
+        session.exitstatus = 1
+    if _env_digest() != _ENV_BEFORE:
+        print("\nISOLATION LEAK: the real .env changed during the test run")
         session.exitstatus = 1

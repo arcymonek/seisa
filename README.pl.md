@@ -22,7 +22,7 @@ Wybierz zakładkę, która pasuje do tego, co masz w ręku. [docs/pl/USER_GUIDE.
 | AbuseIPDB | Przygotowuje, sprawdza i, po Twoim kliknięciu, wysyła zgłoszenie nadużycia nadawcy e-maila | Do wysyłki |
 | Historia | Twoje ostatnie sprawdzenia, skany, importy, analizy i zgłoszenia w jednym miejscu | Nie |
 | Logi | Błędy i ostrzeżenia usług | Nie |
-| Info | Wersja, status kluczy, limity, język, skórka i ikona aplikacji | Nie |
+| Info | Wersja, klucze API (tu je wpiszesz), limity, język, skórka i ikona aplikacji | Nie |
 
 ## Zasady
 
@@ -63,9 +63,13 @@ bash install.sh
 
 Instalator przygotowuje prywatne środowisko Pythona, instaluje biblioteki i tworzy plik ustawień `.env`. Potrzebuje Pythona 3.11 lub nowszego i połączenia z internetem, a gdy Pythona brakuje, mówi, co zainstalować. Ostatnie polecenie uruchamia Seisę i otwiera przeglądarkę. Trzymaj okno terminala otwarte, dopóki z niej korzystasz; zamknięcie go zatrzymuje Seisę. Szczegóły (pobranie ZIP-a, ikona aplikacji, aktualizacja, te same kroki ręcznie, rozwiązywanie problemów) są w [docs/pl/OPERATIONS.md](docs/pl/OPERATIONS.md).
 
+**Potem wpisz klucze API:** otwórz zakładkę Info (ikona suwaków na prawym końcu paska zakładek) i jej kartę „Klucze API" (opis niżej).
+
 ### Klucze API (.env)
 
-Klucz API to długi kod, który daje Ci usługa, żeby wiedziała, kto pyta. Załóż konto w usłudze, wklej klucz do pliku `.env` po znaku `=` i uruchom Seisę ponownie. Usługa bez klucza jest po prostu pomijana.
+Klucz API to długi kod, który daje Ci usługa, żeby wiedziała, kto pyta. Załóż konto w usłudze (przycisk „Otwórz ..." obok każdego klucza w zakładce Info zaprowadzi Cię na jej stronę), potem wklej klucz w zakładce Info, w karcie „Klucze API", i kliknij „Zapisz klucze". Seisa sama zapisze go w pliku `.env` i od razu go użyje.
+
+Plik `.env` możesz też edytować ręcznie: wklej klucz po znaku `=` i uruchom Seisę ponownie. Usługa bez klucza jest po prostu pomijana.
 
 | Klucz | Usługa | Co włącza | Gdzie go zdobyć |
 |---|---|---|---|
@@ -78,7 +82,7 @@ Klucz API to długi kod, który daje Ci usługa, żeby wiedziała, kto pyta. Za�
 | `OPENROUTER_API_KEY` | OpenRouter | Model językowy: lekcję w zakładce Email oraz ocenę i szkic komentarza w zakładce AbuseIPDB (płatne za użycie) | [openrouter.ai](https://openrouter.ai) |
 | `OPENROUTER_MODEL` | OpenRouter | Którego modelu użyć (domyślnie `anthropic/claude-sonnet-4.5`) | - |
 
-Sprawdzenia WHOIS, RDAP i DNS nie potrzebują klucza i są zawsze włączone. Zakładka Info pokazuje, czy każdy klucz jest „ustawiony" czy ma „brak", ale nigdy samego klucza. Strony kont i ceny należą do usług i mogą się zmienić; sprawdź je u źródła.
+Sprawdzenia WHOIS, RDAP i DNS nie potrzebują klucza i są zawsze włączone. Zakładka Info pokazuje, czy każdy klucz jest „ustawiony" czy „nie ustawiony", ale nigdy samego klucza. Strony kont i ceny należą do usług i mogą się zmienić; sprawdź je u źródła.
 
 ## Co opuszcza Twój komputer
 

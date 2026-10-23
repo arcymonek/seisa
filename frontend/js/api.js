@@ -58,6 +58,9 @@ export const api = {
   aboutIcon: () => request("/about/icon"),
   aboutIconInstall: () => request("/about/icon", { method: "POST" }),
   aboutIconRemove: () => request("/about/icon", { method: "DELETE" }),
+  aboutKeysSave: (body) => request("/about/keys", { method: "PUT", body: JSON.stringify(body) }),
+  aboutKeysRemoveAll: () => request("/about/keys", { method: "DELETE" }),
+  aboutKeyRemove: (field) => request(`/about/keys/${encodeURIComponent(field)}`, { method: "DELETE" }),
   aboutLimitsRefresh: () => request("/about/limits/refresh", { method: "POST" }),
   logsClear: () => request("/logs", { method: "DELETE" }),
 

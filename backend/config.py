@@ -11,6 +11,7 @@ DATA_DIR = BASE_DIR / "data"
 FRONTEND_DIR = BASE_DIR / "frontend"
 PROMPTS_DIR = BASE_DIR / "backend" / "prompts"  # LLM prompt context in English: part of the program, not documentation
 LOGS_DIR = BASE_DIR / "logs"
+ENV_FILE = BASE_DIR / ".env"  # the gitignored file with the API keys; the Info tab can edit it (backend/env_file.py)
 ANALYSES_DIR = DATA_DIR / "analyses"
 
 HISTORY_FILE = DATA_DIR / "history.json"  # the single-file history of versions before 2.4.25, read only to migrate it
@@ -32,7 +33,7 @@ MAX_HISTORY_DATA_CHARS = 10_000_000
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")
 
     urlscan_api_key: str = ""
     virustotal_api_key: str = ""

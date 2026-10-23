@@ -303,5 +303,12 @@
   "icon.files_missing": "seisa-launcher.sh or frontend/app-icon.png is missing from the Seisa folder",
   "icon.bad_path": "the Seisa folder path contains a control character, an icon cannot be made for it",
   "icon.foreign": "{path} already exists and was not made by Seisa, so it was left untouched",
-  "icon.build_failed": "making the icon failed ({tool} returned an error)"
+  "icon.build_failed": "making the icon failed ({tool} returned an error)",
+  "settings.unknown_field": "unknown setting",
+  "settings.from_environment": "{name} is set by an environment variable, which wins over the .env file; change it where it is exported",
+  "settings.bad_value": "{name}: only letters, digits and . _ ~ + / = : - are allowed (1 to 512 characters, no spaces)",
+  "settings.symlink": ".env is a symbolic link; Seisa will not replace it",
+  "settings.write_failed": "could not write the .env file ({error})",
+  "settings.json_required": "the request must be JSON",
+  "settings.bad_body": "expected a JSON object with text values"
 }

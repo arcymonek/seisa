@@ -24,7 +24,7 @@ Rules for AI coding agents that work on Seisa in a fork or on a pull request. A 
 
 - Never call a real AbuseIPDB report endpoint, even "to test": it publishes data and uses the daily quota. Use the harness (`--serve PORT`).
 - Never call real outside services from tests or checks. Tests run without network.
-- Never print, log or commit values from `.env`. Tests and docs use fake keys.
+- Never print, log or commit values from `.env`. Tests and docs use fake keys. The Info tab can write keys into `.env` (`backend/env_file.py`): a key is never sent back or put in an error text, the file stays 0600, values are limited to letters, digits and `. _ ~ + / = : -`, the body must be JSON, and tests and the harness point `cfg.ENV_FILE` at a temporary file, never the real one.
 - Never put real host names, domains, your own IP addresses, home folder paths or real e-mail addresses in code, tests, fixtures, docs or commits. Use `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org`, `.example` and `.test`. The project's own public contact data (`seisa.eu`, `contact@seisa.eu`, the GitHub repository) is the only exception.
 - Never commit `data/`, `logs/`, `.env`, `tests/private/` or `reports/`.
 - Never use the long dash (U+2014); use `-`.

@@ -88,6 +88,8 @@ The installer does these things:
 
 It is safe to run again: it keeps your `.env` and `data/` and brings the libraries up to date.
 
+After the first start, enter your API keys in the Info tab, in the "API keys" card (see [API keys](#api-keys)).
+
 ### By hand
 
 These are the steps that the installer performs. Use them if you want to see each step yourself, or if the installer does not work on your computer. Run each command in the terminal, one at a time, and wait for it to finish before you type the next one.
@@ -149,8 +151,10 @@ The `.env` file, the `data/` folder and the `logs/` folder are excluded from git
 
 An API key is a long password that a service gives you so it knows who is asking. Seisa works without any key, but each key switches on one more source. The full table of keys (name, where to get it, what it enables) is in the [README](../README.md); what works without which key is in [USER_GUIDE.md](USER_GUIDE.md#4-api-keys-what-works-without-them).
 
-- Open the `.env` file in any text editor and paste each value after the `=` sign. Leave a key empty if you do not use that service.
-- Seisa reads `.env` once, when it starts. After you change a key, stop Seisa and start it again.
+- The easiest way: start Seisa, open the Info tab and paste each key in the "API keys" card, then click "Save keys". Seisa writes the keys into `.env` for you (readable only by your user account) and uses them at once. A key can also be removed there.
+- Or open the `.env` file in any text editor and paste each value after the `=` sign. Leave a key empty if you do not use that service.
+- Seisa reads `.env` when it starts. After you change the file by hand, stop Seisa and start it again. Changes made in the Info tab need no restart.
+- A setting that is also exported in your shell (for example `export OTX_API_KEY=...`) wins over the file; the Info tab then says so and does not change it.
 - Without a `.env` file Seisa still starts. The Info tab then shows ".env file: missing (integrations with keys are off)".
 - `OPENROUTER_MODEL` chooses the language model (the default is `anthropic/claude-sonnet-4.5`). Seisa does not check the model name; OpenRouter does.
 
@@ -350,8 +354,8 @@ Each table below follows the same order: what you see, why it happens, what to d
 
 | What you see | Why | What to do |
 |---|---|---|
-| "no API key" on a service card | The key for that service is missing in `.env`. | Add the key and restart Seisa. |
-| "no API key (URLSCAN_API_KEY)" | You clicked "Scan" or the History search in URLScan without a key. | Add `URLSCAN_API_KEY` and restart Seisa. |
+| "no API key" on a service card | The key for that service is missing. | Add the key in the Info tab ("API keys") or in `.env`; after a change in `.env` restart Seisa. |
+| "no API key (URLSCAN_API_KEY)" | You clicked "Scan" or the History search in URLScan without a key. | Add `URLSCAN_API_KEY` in the Info tab or in `.env` (restart Seisa after a change in the file). |
 | "error" with "HTTP 401: ..." on a service card | The service refused the key: it is wrong, expired, or lacks permission. For Cloudflare Radar, check that the token may read Radar data (general knowledge about the service, not checked by Seisa). | Check the key in the service's own dashboard. |
 | "VirusTotal daily limit exceeded (500/day)" | The 500 requests of the UTC day are used. | Wait until 00:00 UTC. The other sources keep working. |
 | "GreyNoise search limit of your plan is used up - it resets on {date}. The score is computed without this source." | The weekly GreyNoise limit is used. | Wait for the date. The result is computed without GreyNoise. |
@@ -376,7 +380,7 @@ Each table below follows the same order: what you see, why it happens, what to d
 
 | What you see | Why | What to do |
 |---|---|---|
-| "No OpenRouter key (OPENROUTER_API_KEY in .env) - showing the deterministic analysis only." | There is no OpenRouter key. | Add the key and restart Seisa, or use the analysis without the model. |
+| "No OpenRouter key (OPENROUTER_API_KEY in .env) - showing the deterministic analysis only." | There is no OpenRouter key. | Add the key in the Info tab or in `.env` (restart Seisa after a change in the file), or use the analysis without the model. |
 | "invalid OpenRouter API key" | OpenRouter refused the key (HTTP 401). | Check the key. |
 | "insufficient OpenRouter credits or the credit limit was exceeded" | The OpenRouter account has no credit (HTTP 402). | Top up the credit. |
 | "rate limit reached" | OpenRouter limits you (HTTP 429). | Wait and try again. |
@@ -387,7 +391,7 @@ Each table below follows the same order: what you see, why it happens, what to d
 | "The source is too large ({size} characters, limit {limit})." | The e-mail is over 3,000,000 characters, in the Email or AbuseIPDB tab. | Remove large attachments from the source. |
 | "the AbuseIPDB daily report limit ({limit}) is used up - reports are accepted again from {when}" | The daily limit of reports is used. | Wait until the given time. |
 | "this IP was reported less than {limit} minutes ago ..." or "AbuseIPDB refused the report: the same IP can be reported by one account only once in {limit} minutes ..." | The 15-minute rule. | Wait. |
-| "AbuseIPDB rejected the API key (missing, wrong or without the right to report) - check ABUSEIPDB_API_KEY in .env" | The key is wrong or may not report. | Correct the key and restart Seisa. |
+| "AbuseIPDB rejected the API key (missing, wrong or without the right to report) - check ABUSEIPDB_API_KEY in .env" | The key is wrong or may not report. | Correct the key in the Info tab or in `.env` (restart Seisa after a change in the file). |
 | "AbuseIPDB rejected the report data: {message}" | AbuseIPDB refused the content (HTTP 422). | Read the message and fix the form. |
 | "the attack is {days} days old (limit 60)" or "the attack date is in the future" | The attack time is outside the allowed range. | A report older than 60 days is impossible; otherwise correct the date. |
 

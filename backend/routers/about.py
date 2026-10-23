@@ -14,9 +14,10 @@ import time
 import fastapi
 from fastapi import APIRouter, HTTPException, Request
 
-from backend import desktop_icon
+from backend import desktop_icon, env_file
 from backend.api_limits import limits_snapshot, refresh_live
 from backend.config import BASE_DIR, settings
+from backend.i18n import t
 
 router = APIRouter()
 
@@ -65,10 +66,56 @@ def about(request: Request):
         "services": [{"id": name, "configured": bool(key)} for name, key in keyed.items()]
         + [{"id": "whois_rdns", "configured": None}],
         "llm": {"configured": llm_on, "model": settings.openrouter_model if llm_on else None},
+        "keys": env_file.keys_status(),
         "limits": limits_snapshot(),
         "changes": _recent_changes(),
         "environment": _environment(request),
     }
+
+
+def _require_json(request: Request) -> None:
+    """415 unless the body type is JSON. A page on another site cannot send that type without a CORS preflight, which
+    Seisa never approves - together with the Origin guard this keeps other pages from touching the keys."""
+    if request.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+        raise HTTPException(status_code=415, detail=t("settings.json_required"))
+
+
+def _change_keys(updates: dict[str, str | None]) -> dict:
+    try:
+        env_file.write(updates)
+    except env_file.EnvFileError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+    return {"keys": env_file.keys_status()}
+
+
+@router.put("/about/keys")
+async def keys_save(request: Request):
+    """Sets API keys (and the model name) in the .env file. The body is checked by hand, not by a Pydantic model:
+    FastAPI's default validation error would send the refused value back. An empty value means "no change"."""
+    _require_json(request)
+    try:
+        body = await request.json()
+    except ValueError:
+        body = None
+    if not isinstance(body, dict) or not all(isinstance(v, str) for v in body.values()):
+        raise HTTPException(status_code=400, detail=t("settings.bad_body"))
+    return _change_keys({field: value for field, value in body.items() if value})
+
+
+@router.delete("/about/keys")
+def keys_remove_all(request: Request):
+    """Removes every API key that is set in the .env file. Keys that an environment variable provides cannot be
+    changed here and are left alone, and so is the model name (it is not a key)."""
+    _require_json(request)
+    rows = env_file.keys_status()
+    return _change_keys({r["field"]: None for r in rows if r["secret"] and r["set"] and not r["from_env"]})
+
+
+@router.delete("/about/keys/{field}")
+def key_remove(field: str, request: Request):
+    """Removes one key from the .env file (the model name goes back to its default)."""
+    _require_json(request)
+    return _change_keys({field: None})
 
 
 @router.get("/about/icon")

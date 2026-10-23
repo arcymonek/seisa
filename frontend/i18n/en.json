@@ -1245,5 +1245,21 @@
   "urlscan.cmp.legend": "Unchanged rows are dimmed. The saved scan data is compared; nothing is scanned again.",
   "usr.check_domain": "Check domain",
   "urlscan.existing_tip": "Earlier scans of this domain at urlscan.io",
-  "urlscan.compare_tip": "Compare with the previous scan of this domain"
+  "urlscan.compare_tip": "Compare with the previous scan of this domain",
+  "about.keys_title": "API keys",
+  "about.keys_intro": "Keys are saved in the .env file in the Seisa folder on this computer, readable only by you.",
+  "about.keys_model": "OpenRouter model",
+  "about.keys_save": "Save keys",
+  "about.keys_remove": "Remove",
+  "about.keys_set": "set",
+  "about.keys_unset": "not set",
+  "about.keys_from_env": "set by an environment variable - change it where it is exported",
+  "about.keys_saved": "Saved.",
+  "about.keys_removed": "Removed.",
+  "about.keys_nothing": "Nothing to save - fill in at least one field.",
+  "about.keys_after": "Use \"Refresh limits\" below to check the keys of VirusTotal, URLScan and OpenRouter.",
+  "about.keys_remove_all": "Remove all",
+  "about.keys_remove_all_confirm": "Click again to remove all keys",
+  "about.keys_removed_all": "All keys removed (except those set by an environment variable).",
+  "about.keys_open": "Open {service}"
 }

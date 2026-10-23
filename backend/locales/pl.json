@@ -303,5 +303,12 @@
   "icon.files_missing": "w katalogu Seisy brakuje seisa-launcher.sh lub frontend/app-icon.png",
   "icon.bad_path": "ścieżka katalogu Seisy zawiera znak sterujący, nie da się dla niej zrobić ikony",
   "icon.foreign": "{path} już istnieje i nie został utworzony przez Seisę, więc go nie ruszono",
-  "icon.build_failed": "zrobienie ikony się nie udało ({tool} zwrócił błąd)"
+  "icon.build_failed": "zrobienie ikony się nie udało ({tool} zwrócił błąd)",
+  "settings.unknown_field": "nieznane ustawienie",
+  "settings.from_environment": "{name} jest ustawione zmienną środowiskową, która ma pierwszeństwo przed plikiem .env; zmień ją tam, gdzie jest eksportowana",
+  "settings.bad_value": "{name}: dozwolone są tylko litery, cyfry i znaki . _ ~ + / = : - (od 1 do 512 znaków, bez spacji)",
+  "settings.symlink": ".env jest dowiązaniem symbolicznym; Seisa go nie zastąpi",
+  "settings.write_failed": "nie udało się zapisać pliku .env ({error})",
+  "settings.json_required": "żądanie musi mieć format JSON",
+  "settings.bad_body": "oczekiwano obiektu JSON z wartościami tekstowymi"
 }

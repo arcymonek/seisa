@@ -98,7 +98,7 @@ Start from what you have in your hand:
 
 ## 4. API keys: what works without them
 
-An API key is a long code from a service, like a membership card: it tells the service who is asking, so it can count your requests. You put your keys in the `.env` file. The table of all keys and how to get them is in the [README](../README.md). This table only says what happens when a key is missing.
+An API key is a long code from a service, like a membership card: it tells the service who is asking, so it can count your requests. You enter your keys in Info, in the "API keys" card (or paste them into the `.env` file yourself). The table of all keys and how to get them is in the [README](../README.md). This table only says what happens when a key is missing.
 
 | Tab or function | Key it needs | Without the key |
 |---|---|---|
@@ -593,6 +593,8 @@ Opening the tab sends nothing. "Refresh limits" is the only action that contacts
 ### Reading the result
 
 **Settings.** The language, the colour theme, the "Application icon" (with "Add icon" and "Remove icon"), and the "Server": "Shut down Seisa" and "Ask before shutting down". The icon is explained in [OPERATIONS.md](OPERATIONS.md).
+
+**API keys.** A separate card above "Status and API limits", closed until you open it. One row per service; the "Open <service>" button opens the service's home page in a new tab, where you can create an account and generate a key. Each row shows its state: "set", "not set" or "set by an environment variable" (then change it where it is exported; the file cannot override it). Paste a key into the field and click "Save keys"; an empty field keeps what is set, "Remove" deletes one key and "Remove all" (click twice to confirm) deletes every key at once, except those set by an environment variable. The keys go into the `.env` file in the Seisa folder, readable only by you, and take effect at once without a restart. The fields stay empty on purpose: Seisa never shows a key again. A key may contain only letters, digits and `. _ ~ + / = : -`. The "OpenRouter model" row is the one setting that is shown, because it is not a secret. After saving, "Refresh limits" checks the VirusTotal, URLScan and OpenRouter keys.
 
 **Status and API limits.** The "Environment" (address, whether the ".env file" is present, system, Python and FastAPI versions), and one card per service with the key status and usage against the free-plan limits. When a service answers "limit exceeded" (HTTP 429), its card gets that badge until the next successful answer.
 

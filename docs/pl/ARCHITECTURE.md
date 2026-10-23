@@ -47,7 +47,7 @@ Seisa używa niewielkiego zestawu znanych narzędzi. Tabela pokazuje je razem z 
 |---|---|
 | Język | Python 3.11 lub nowszy (CI testuje 3.11 i najnowszy 3.x) |
 | Biblioteki | FastAPI, uvicorn, pydantic, pydantic-settings, httpx, python-whois, dnspython (wersje minimalne w `requirements.txt`, przetestowane w `requirements.lock`) |
-| Ustawienia i klucze | Czytane z `.env` przez pydantic-settings przy starcie |
+| Ustawienia i klucze | Czytane z `.env` przez pydantic-settings przy starcie; zakładka Info może przepisać plik i działające ustawienia |
 | Wychodzące HTTP | `httpx.AsyncClient`: limit 20 s dla większości usług, 30 s dla zgłoszenia do AbuseIPDB, 30 s na połączenie i 120 s ciszy dla OpenRouter |
 | DNS i WHOIS | dnspython z limitem 5 s; WHOIS ma limit 15 s |
 | Frontend | Jeden `index.html`, moduły ES w `frontend/js/`, jeden arkusz stylów `frontend/css/style.css`, generowany `/api/themes.css`, katalogi w `frontend/i18n/` |
@@ -110,7 +110,7 @@ Backend leży w `backend/`. Każdy moduł ma jedno zadanie; zajrzyj do tej listy
 | `backend/routers/abuseipdb_report.py` | Zakładka AbuseIPDB: analiza e-maila, podgląd z twardymi sprawdzeniami i skanem danych osobowych, zamazywanie, wysyłka, dziennik zgłoszeń |
 | `backend/routers/history.py` | Zakładka Historia: zapisane wpisy oraz zapisane analizy i przyjęte zgłoszenia jako jedna lista |
 | `backend/routers/logs.py` | Zakładka Logi: czyta i czyści dzienne pliki logów |
-| `backend/routers/about.py` | Zakładka Info: skonfigurowane klucze (nigdy ich wartości), środowisko, limity API, ostatnie wydania z `git log`, ikona na pulpicie, zamknięcie |
+| `backend/routers/about.py` | Zakładka Info: skonfigurowane klucze (nigdy ich wartości), edycja kluczy, środowisko, limity API, ostatnie wydania z `git log`, ikona na pulpicie, zamknięcie |
 | `backend/routers/themes.py` | Lista skórek i wygenerowany CSS |
 | `backend/routers/__init__.py` | Znacznik pakietu |
 
@@ -167,6 +167,7 @@ Sześciu klientów źródeł informacji (VirusTotal, OTX, AbuseIPDB, GreyNoise, 
 | `backend/logging_config.py` | Dzienny log ostrzeżeń i błędów w formacie JSON-lines, tylko dla właściciela, retencja 30 dni |
 | `backend/i18n.py` | Tłumaczenia backendu z językiem żądania w zmiennej kontekstowej; formy liczby mnogiej |
 | `backend/themes.py` | Sprawdza pliki JSON skórek i generuje z nich CSS |
+| `backend/env_file.py` | Edycja kluczy API w `.env` z zakładki Info: pola do zmiany, dozwolone znaki, atomowy zapis 0600 zachowujący pozostałe linie i aktualizacja działających ustawień |
 | `backend/desktop_icon.py` | Ikona na pulpicie dla macOS i Linuksa, z przycisku w Info lub `python -m backend.desktop_icon` |
 | `backend/__init__.py` | Znacznik pakietu |
 
@@ -182,7 +183,7 @@ Frontend leży w `frontend/js/`. Większe zakładki są podzielone na moduły `<
 | DMARC | `frontend/js/dmarc.js`, `frontend/js/dmarc-data.js` (parsowanie i agregacja, bez HTML), `frontend/js/dmarc-export.js`, `frontend/js/archive.js` (gzip i zip w przeglądarce) |
 | Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/email-glossary.js`, `frontend/js/markdown-render.js` |
 | AbuseIPDB | `frontend/js/report-builder.js` (stan, zdarzenia, wysyłka), `frontend/js/report-result.js`, `frontend/js/report-checks.js` (czyste funkcje, testowane), `frontend/js/report-history.js`, `frontend/js/report-export.js` |
-| Historia, Logi, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js` |
+| Historia, Logi, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (część Info z kluczami API) |
 | Wspólne | `frontend/js/ui.js` (bloki HTML), `frontend/js/util.js` (`escapeHtml`, kopiowanie, liczniki czasu, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/glossary.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (nazwy wyświetlane) |
 
 ## Pliki danych

@@ -1285,5 +1285,21 @@
   "urlscan.cmp.legend": "Wiersze bez zmian są przyciemnione. Porównywane są zapisane dane skanów; nic nie jest skanowane ponownie.",
   "usr.check_domain": "Sprawdź domenę",
   "urlscan.existing_tip": "Wcześniejsze skany tej domeny w urlscan.io",
-  "urlscan.compare_tip": "Porównaj z poprzednim skanem tej domeny"
+  "urlscan.compare_tip": "Porównaj z poprzednim skanem tej domeny",
+  "about.keys_title": "Klucze API",
+  "about.keys_intro": "Klucze są zapisywane w pliku .env w folderze Seisy na tym komputerze, odczytać je może tylko właściciel konta.",
+  "about.keys_model": "Model OpenRouter",
+  "about.keys_save": "Zapisz klucze",
+  "about.keys_remove": "Usuń",
+  "about.keys_set": "ustawiony",
+  "about.keys_unset": "nie ustawiony",
+  "about.keys_from_env": "ustawiony zmienną środowiskową - zmień go tam, gdzie jest eksportowany",
+  "about.keys_saved": "Zapisano.",
+  "about.keys_removed": "Usunięto.",
+  "about.keys_nothing": "Nie ma czego zapisać - wypełnij co najmniej jedno pole.",
+  "about.keys_after": "Przyciskiem \"Odśwież limity\" poniżej sprawdzisz klucze VirusTotal, URLScan i OpenRouter.",
+  "about.keys_remove_all": "Usuń wszystkie",
+  "about.keys_remove_all_confirm": "Kliknij ponownie, aby usunąć wszystkie klucze",
+  "about.keys_removed_all": "Usunięto wszystkie klucze (poza ustawionymi zmienną środowiskową).",
+  "about.keys_open": "Otwórz {service}"
 }

@@ -20,6 +20,7 @@ an older checkout (`git archive`) and `diff`: refactors must not change the answ
 """
 import argparse
 import atexit
+import hashlib
 import json
 import os
 import re
@@ -287,6 +288,19 @@ os.environ["DISPLAY"] = ":0"
 os.environ.pop("WAYLAND_DISPLAY", None)
 import backend.config as cfg  # noqa: E402
 
+_REAL_ENV = getattr(cfg, "ENV_FILE", ROOT / ".env")  # older checkouts (--root) have no ENV_FILE
+
+
+def _env_digest():
+    """SHA-256 of the real .env (never its content in a message), None when there is none or it cannot be read."""
+    try:
+        return hashlib.sha256(_REAL_ENV.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+_ENV_BEFORE = _env_digest()
+cfg.ENV_FILE = TMP / ".env"  # the keys panel writes here, never into the real .env
 cfg.DATA_DIR = TMP / "data"
 cfg.HISTORY_FILE = cfg.DATA_DIR / "history.json"
 cfg.HISTORY_DIR = cfg.DATA_DIR / "history"
@@ -341,6 +355,11 @@ except ImportError:
 
 if _args.serve:
     import uvicorn
+
+    # One key stays unset so that the "API keys" panel in Info can be tried by hand (the others come from the environment,
+    # which the panel refuses to change); it writes into the temporary .env of this run, never the real one.
+    os.environ.pop("GREYNOISE_API_KEY", None)
+    cfg.settings.greynoise_api_key = ""
 
     print(f"Seisa with mocked services on http://127.0.0.1:{_args.serve} (data in {TMP})")
     uvicorn.run(main.app, host="127.0.0.1", port=_args.serve, log_level="warning")
@@ -856,6 +875,95 @@ if not _streams or not all("# E-mail source analysis guide" in text for text in 
     failures.append(f"the Email analysis prompt lacks the guide from backend/prompts/ ({len(_streams)} streamed call(s))")
 if not _assessments or not all("# AbuseIPDB reporting rules" in text for text in _assessments):
     failures.append(f"the AbuseIPDB prompt lacks the policy from backend/prompts/ ({len(_assessments)} assessment call(s))")
+
+# The keys panel (PUT /api/about/keys, DELETE /api/about/keys/<field>) edits the .env file and handles secrets: no answer
+# may echo a value, the file must be 0600, other sites and other content types are refused, a value that could add a
+# variable is refused, and the real .env stays untouched. One key leaves the environment for the test (it would win).
+if hasattr(cfg, "ENV_FILE") and hasattr(main, "app") and client.get("/api/about").json().get("keys") is not None:
+    _KEY = "SECRET-PANEL-KEY-0123"
+    _ENV = cfg.ENV_FILE
+    _saved_env = os.environ.pop("GREYNOISE_API_KEY")
+    main_settings = cfg.settings
+    _saved_value = main_settings.greynoise_api_key
+    _put = lambda body, **kw: client.put("/api/about/keys", json=body, **kw)  # noqa: E731
+    _JSON = {"Content-Type": "application/json"}  # what the frontend always sends, also on a DELETE without a body
+
+    def _env_text():
+        return _ENV.read_text() if _ENV.exists() else ""
+
+    _r = _put({"greynoise_api_key": _KEY})
+    probes["keys PUT ok"] = _r.status_code
+    if _r.status_code != 200 or _KEY in _r.text or _KEY in json.dumps(client.get("/api/about").json()):
+        failures.append(f"keys panel: a saved key is refused or sent back ({_r.status_code})")
+    if f"GREYNOISE_API_KEY={_KEY}" not in _env_text() or (_ENV.stat().st_mode & 0o777) != 0o600:
+        failures.append("keys panel: the key is not in the .env file, or the file is not 0600")
+    if main_settings.greynoise_api_key != _KEY:
+        failures.append("keys panel: the running settings were not updated")
+    _before = _env_text()
+    for _name, _field, _value in (("newline", "greynoise_api_key", "abc\nVIRUSTOTAL_API_KEY=x"), ("space", "greynoise_api_key", "a b"),
+                                  ("dollar", "greynoise_api_key", "a${HOME}"), ("quote", "greynoise_api_key", 'a"b'),
+                                  ("unknown", "nope", "abcdef"), ("env wins", "virustotal_api_key", "abcdef")):
+        _r = _put({_field: _value})
+        probes[f"keys PUT {_name}"] = _r.status_code
+        if _r.status_code != 400 or any(part in _r.text for part in (_value, "abcdef", "HOME", "a b")):
+            failures.append(f"keys panel: '{_name}' was not refused with a plain 400 that leaves the value out: {_r.status_code}")
+    if _env_text() != _before or main_settings.greynoise_api_key != _KEY:
+        failures.append("keys panel: a refused value reached the .env file or the running settings")
+    _r = client.put("/api/about/keys", content=json.dumps({"greynoise_api_key": "other"}), headers={"Content-Type": "text/plain"})
+    probes["keys PUT not json"] = _r.status_code
+    if _r.status_code != 415 or "GREYNOISE_API_KEY=other" in _env_text():
+        failures.append(f"keys panel: a request that is not JSON was accepted: {_r.status_code}")
+    _r = client.put("/api/about/keys", json=["x"])
+    probes["keys PUT array"] = _r.status_code
+    if _r.status_code != 400:
+        failures.append(f"keys panel: a body that is not an object was not refused with 400: {_r.status_code}")
+    _before = _env_text()
+    _r = _put({"greynoise_api_key": "crosssite"}, headers=_XS)
+    probes["keys PUT cross-site"] = _r.status_code
+    if _r.status_code != 403 or _env_text() != _before:
+        failures.append(f"keys panel: a cross-site PUT got through: {_r.status_code}")
+    _r = client.delete("/api/about/keys/greynoise_api_key", headers=_XS)
+    probes["keys DELETE cross-site"] = _r.status_code
+    if _r.status_code != 403 or _env_text() != _before or main_settings.greynoise_api_key != _KEY:
+        failures.append(f"keys panel: a cross-site DELETE got through: {_r.status_code}")
+    _r = client.delete("/api/about/keys/greynoise_api_key")
+    probes["keys DELETE not json"] = _r.status_code
+    if _r.status_code != 415 or main_settings.greynoise_api_key != _KEY:
+        failures.append(f"keys panel: a DELETE that is not JSON was accepted: {_r.status_code}")
+    _r = client.delete("/api/about/keys/nope", headers=_JSON)
+    probes["keys DELETE unknown"] = _r.status_code
+    if _r.status_code != 400:
+        failures.append(f"keys panel: an unknown field was not refused: {_r.status_code}")
+    _r = client.delete("/api/about/keys/virustotal_api_key", headers=_JSON)
+    probes["keys DELETE env wins"] = _r.status_code
+    if _r.status_code != 400:
+        failures.append(f"keys panel: a key provided by the environment could be deleted: {_r.status_code}")
+    _r = client.delete("/api/about/keys/greynoise_api_key", headers=_JSON)
+    probes["keys DELETE ok"] = _r.status_code
+    if _r.status_code != 200 or _KEY in _env_text() or main_settings.greynoise_api_key != "" or "GREYNOISE_API_KEY=" not in _env_text():
+        failures.append(f"keys panel: the key was not removed: {_r.status_code}")
+    _put({"greynoise_api_key": _KEY})
+    _r = client.delete("/api/about/keys", headers=_JSON)
+    probes["keys DELETE all"] = _r.status_code
+    if _r.status_code != 200 or _KEY in _env_text() or main_settings.greynoise_api_key != "" or main_settings.virustotal_api_key != "FAKE-VIRUSTOTAL":
+        failures.append(f"keys panel: 'remove all' failed or touched a key from the environment: {_r.status_code}")
+    _put({"greynoise_api_key": _KEY})
+    _before = _env_text()
+    _r = client.delete("/api/about/keys", headers=_XS | _JSON)
+    probes["keys DELETE all cross-site"] = _r.status_code
+    if _r.status_code != 403 or _env_text() != _before:
+        failures.append(f"keys panel: a cross-site 'remove all' got through: {_r.status_code}")
+    _r = client.delete("/api/about/keys")
+    probes["keys DELETE all not json"] = _r.status_code
+    if _r.status_code != 415 or _env_text() != _before:
+        failures.append(f"keys panel: a 'remove all' that is not JSON was accepted: {_r.status_code}")
+    client.delete("/api/about/keys", headers=_JSON)
+    os.environ["GREYNOISE_API_KEY"] = _saved_env
+    main_settings.greynoise_api_key = _saved_value
+else:
+    probes["keys panel"] = "not in this checkout"
+if _env_digest() != _ENV_BEFORE:
+    failures.append("ISOLATION LEAK: the real .env changed during the harness run")
 
 # Markdown reports (IP and URLScan tabs) hold hostile third-party text (the XSS payload sits in OTX pulses, the page title,
 # link texts ...): outside code it must never be live markup. The raw API response in the collapsible block is code.

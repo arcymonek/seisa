@@ -383,10 +383,40 @@ Zakładka Info pokazuje, co jest skonfigurowane, limity API i ikonę na pulpicie
 | Pozycja | Szczegóły |
 |---|---|
 | Wejście | brak |
-| Wyjście | `{services, llm, limits, changes, environment}`. `services` to lista `{id, configured}` (nigdy wartości kluczy). `llm` to `{configured, model}`. `changes` to lista `{version, summary}`. `environment` to `{host, port, dotenv, os, python, fastapi}` |
+| Wyjście | `{services, llm, keys, limits, changes, environment}`. `services` to lista `{id, configured}` (nigdy wartości kluczy). `llm` to `{configured, model}`. `keys` to lista `{field, env_name, secret, set, from_env}` dla ustawień, które można zmienić w zakładce Info; tylko nazwa modelu ma też `value`, klucz nigdy. `changes` to lista `{version, summary}`. `environment` to `{host, port, dotenv, os, python, fastapi}` |
 | Limity i błędy | `changes` jest puste, gdy git jest niedostępny |
 | Wysyła do internetu | Nie (lokalnie uruchamia `git log`) |
 | Woła | `frontend/js/about.js` |
+
+### `PUT /api/about/keys`
+
+| Pozycja | Szczegóły |
+|---|---|
+| Wejście | Obiekt JSON `{pole: wartość}`, na przykład `{"otx_api_key": "..."}`. Pola są te z `keys` w `GET /api/about`. Pusta wartość oznacza „bez zmian" |
+| Wyjście | `{keys}`, nowa lista stanów (nigdy wartość) |
+| Limity i błędy | 415, gdy żądanie nie jest `application/json`. 400, z przetłumaczonym tekstem, który nigdy nie powtarza wartości, dla treści, która nie jest obiektem tekstów, nieznanego pola, pola ustawionego zmienną środowiskową (ma pierwszeństwo przed plikiem), wartości z czymkolwiek poza literami, cyframi i znakami `. _ ~ + / = : -` albo dłuższej niż 512 znaków, pliku `.env` będącego dowiązaniem symbolicznym lub pliku, którego nie da się zapisać. Jedna odrzucona wartość nie zmienia niczego |
+| Wysyła do internetu | Nie (przepisuje `.env` w folderze Seisy, tryb 0600, oraz działające ustawienia) |
+| Woła | `frontend/js/about-keys.js` |
+
+### `DELETE /api/about/keys/{field}`
+
+| Pozycja | Szczegóły |
+|---|---|
+| Wejście | Pole w ścieżce. Żądanie musi być `application/json` |
+| Wyjście | `{keys}`, nowa lista stanów |
+| Limity i błędy | Jak dla `PUT`. Nazwa modelu wraca do domyślnej; zapisane dane o zużyciu tej usługi są zapominane |
+| Wysyła do internetu | Nie |
+| Woła | `frontend/js/about-keys.js` |
+
+### `DELETE /api/about/keys`
+
+| Pozycja | Szczegóły |
+|---|---|
+| Wejście | brak; żądanie musi być `application/json` |
+| Wyjście | `{keys}`, nowa lista stanów |
+| Limity i błędy | Jak dla `PUT`. Usuwa każdy klucz API ustawiony w pliku. Klucze ustawione zmienną środowiskową i nazwa modelu zostają. Brak czegokolwiek do usunięcia nie jest błędem |
+| Wysyła do internetu | Nie |
+| Woła | `frontend/js/about-keys.js` |
 
 ### `GET /api/about/icon`
 

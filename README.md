@@ -22,7 +22,7 @@ Pick the tab that matches what you have in your hand. [docs/USER_GUIDE.md](docs/
 | AbuseIPDB | Prepares, checks and, on your click, sends an abuse report about the sender of an e-mail | To send |
 | History | Your recent checks, scans, imports, analyses and reports in one place | No |
 | Logs | Errors and warnings of the services | No |
-| Info | Version, key status, limits, language, theme and the application icon | No |
+| Info | Version, API keys (enter them here), limits, language, theme and the application icon | No |
 
 ## Principles
 
@@ -63,9 +63,13 @@ bash install.sh
 
 The installer sets up a private Python environment, installs the libraries and creates your `.env` settings file. It needs Python 3.11 or newer and an internet connection, and it tells you what to install if Python is missing. The last command starts Seisa and opens your browser. Keep the terminal window open while you use it; closing it stops Seisa. For the details (a ZIP download, the application icon, updating, the same steps by hand, troubleshooting), see [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
+**Next, enter your API keys:** open the Info tab (the slider icon at the right end of the tab bar) and its "API keys" card (see below).
+
 ### API keys (.env)
 
-An API key is a long code that a service gives you so it knows who is asking. Create an account with the service, copy your key into the `.env` file after the `=` sign, and restart Seisa. A service without a key is simply skipped.
+An API key is a long code that a service gives you so it knows who is asking. Create an account with the service (the "Open ..." button next to each key in the Info tab takes you to its site), then paste the key in the Info tab, in the "API keys" card, and click "Save keys". Seisa writes it into the `.env` file for you and uses it at once.
+
+You can also edit `.env` by hand: paste the key after the `=` sign and restart Seisa. A service without a key is simply skipped.
 
 | Key | Service | What it switches on | Where to get it |
 |---|---|---|---|
@@ -78,7 +82,7 @@ An API key is a long code that a service gives you so it knows who is asking. Cr
 | `OPENROUTER_API_KEY` | OpenRouter | The language model: the Email lesson and the AbuseIPDB assessment and draft comment (paid by use) | [openrouter.ai](https://openrouter.ai) |
 | `OPENROUTER_MODEL` | OpenRouter | Which model to use (the default is `anthropic/claude-sonnet-4.5`) | - |
 
-WHOIS, RDAP and DNS lookups need no key and are always on. The Info tab shows whether each key is "set" or "missing", never the key itself. The account pages and prices belong to the services and may change; check them there.
+WHOIS, RDAP and DNS lookups need no key and are always on. The Info tab shows whether each key is "set" or "not set", never the key itself. The account pages and prices belong to the services and may change; check them there.
 
 ## What leaves your computer
 

@@ -88,6 +88,8 @@ Instalator robi te rzeczy:
 
 Można go bezpiecznie uruchomić ponownie: zostawia Twój `.env` i `data/` oraz aktualizuje biblioteki.
 
+Po pierwszym uruchomieniu wpisz klucze API w zakładce Info, w karcie „Klucze API" (zobacz [Klucze API](#klucze-api)).
+
 ### Ręcznie
 
 To są kroki, które wykonuje instalator. Użyj ich, jeśli chcesz zobaczyć każdy krok sam albo jeśli instalator nie działa na Twoim komputerze. Każde polecenie wpisz w terminalu, po jednym, i poczekaj, aż się skończy, zanim wpiszesz następne.
@@ -149,8 +151,10 @@ Plik `.env` oraz foldery `data/` i `logs/` są wyłączone z gita, więc Twoje k
 
 Klucz API to długie hasło, które usługa wydaje Ci po to, żeby wiedzieć, kto pyta. Seisa działa bez żadnego klucza, ale każdy klucz włącza jedno dodatkowe źródło. Pełna tabela kluczy (nazwa, skąd go wziąć, co włącza) jest w [README](../../README.pl.md), a to, co działa bez którego klucza, w [USER_GUIDE.md](USER_GUIDE.md#4-klucze-api-co-działa-bez-nich).
 
-- Otwórz plik `.env` w dowolnym edytorze tekstu i wklej każdą wartość po znaku `=`. Klucz usługi, której nie używasz, zostaw pusty.
-- Seisa czyta `.env` raz, przy starcie. Po zmianie klucza zatrzymaj Seisę i uruchom ją ponownie.
+- Najłatwiej: uruchom Seisę, otwórz zakładkę Info i wklej każdy klucz w karcie „Klucze API", po czym kliknij „Zapisz klucze". Seisa sama zapisze klucze w `.env` (czytelnym tylko dla Twojego konta) i od razu z nich korzysta. Klucz można tam też usunąć.
+- Albo otwórz plik `.env` w dowolnym edytorze tekstu i wklej każdą wartość po znaku `=`. Klucz usługi, której nie używasz, zostaw pusty.
+- Seisa czyta `.env` przy starcie. Po ręcznej zmianie pliku zatrzymaj Seisę i uruchom ją ponownie. Zmiany z zakładki Info nie wymagają restartu.
+- Ustawienie wyeksportowane też w powłoce (na przykład `export OTX_API_KEY=...`) ma pierwszeństwo przed plikiem; zakładka Info mówi wtedy o tym i niczego nie zmienia.
 - Bez pliku `.env` Seisa też się uruchomi. Zakładka Info pokaże wtedy „Plik .env: brak (integracje z kluczami wyłączone)".
 - `OPENROUTER_MODEL` wybiera model językowy (domyślnie `anthropic/claude-sonnet-4.5`). Seisa nie sprawdza nazwy modelu; robi to OpenRouter.
 
@@ -350,8 +354,8 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 
 | Co widzisz | Dlaczego | Co zrobić |
 |---|---|---|
-| „brak klucza API" na karcie usługi | W `.env` brakuje klucza tej usługi. | Dopisz klucz i uruchom Seisę ponownie. |
-| „brak klucza API (URLSCAN_API_KEY)" | Kliknięcie „Skanuj" albo wyszukiwania w Historii URLScan bez klucza. | Dopisz `URLSCAN_API_KEY` i uruchom Seisę ponownie. |
+| „brak klucza API" na karcie usługi | Brakuje klucza tej usługi. | Dodaj klucz w zakładce Info („Klucze API") albo w `.env`; po zmianie w `.env` uruchom Seisę ponownie. |
+| „brak klucza API (URLSCAN_API_KEY)" | Kliknięcie „Skanuj" albo wyszukiwania w Historii URLScan bez klucza. | Dodaj `URLSCAN_API_KEY` w zakładce Info albo w `.env` (po zmianie pliku uruchom Seisę ponownie). |
 | „błąd" z „HTTP 401: ..." na karcie usługi | Usługa odrzuciła klucz: jest zły, wygasł albo brakuje mu uprawnienia. Dla Cloudflare Radar sprawdź, czy token może czytać dane Radar (ogólna wiedza o usłudze, Seisa tego nie sprawdza). | Sprawdź klucz w panelu samej usługi. |
 | „przekroczono dzienny limit VirusTotal (500/dzień)" | Wykorzystano 500 zapytań doby UTC. | Poczekaj do 00:00 UTC. Pozostałe źródła działają. |
 | „Limit wyszukiwań GreyNoise w Twoim planie został wyczerpany - odnowi się {date}. Wynik jest liczony bez tego źródła." | Tygodniowy limit GreyNoise jest wyczerpany. | Poczekaj do tej daty. Wynik liczy się bez GreyNoise. |
@@ -376,7 +380,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 
 | Co widzisz | Dlaczego | Co zrobić |
 |---|---|---|
-| „Brak klucza OpenRouter (OPENROUTER_API_KEY w .env) - pokazuję tylko analizę deterministyczną." | Nie ma klucza OpenRouter. | Dopisz klucz i uruchom Seisę ponownie albo użyj analizy bez modelu. |
+| „Brak klucza OpenRouter (OPENROUTER_API_KEY w .env) - pokazuję tylko analizę deterministyczną." | Nie ma klucza OpenRouter. | Dodaj klucz w zakładce Info albo w `.env` (po zmianie pliku uruchom Seisę ponownie) albo użyj analizy bez modelu. |
 | „nieprawidłowy klucz API OpenRouter" | OpenRouter odrzucił klucz (HTTP 401). | Sprawdź klucz. |
 | „brak środków na koncie OpenRouter lub przekroczony limit kredytów" | Konto OpenRouter nie ma środków (HTTP 402). | Doładuj konto. |
 | „osiągnięty limit zapytań (rate limit)" | OpenRouter Cię ogranicza (HTTP 429). | Poczekaj i spróbuj ponownie. |
@@ -387,7 +391,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | „Źródło jest za duże ({size} znaków, limit {limit})." | E-mail ma ponad 3 000 000 znaków, w zakładce Email lub AbuseIPDB. | Usuń duże załączniki ze źródła. |
 | „dzienny limit zgłoszeń AbuseIPDB ({limit}) jest wyczerpany - zgłoszenia będą znów przyjmowane od {when}" | Dzienny limit zgłoszeń jest wykorzystany. | Poczekaj do podanej godziny. |
 | „ten adres IP był zgłoszony mniej niż {limit} minut temu ..." albo „AbuseIPDB odrzuciło zgłoszenie: to samo IP można zgłosić z jednego konta tylko raz na {limit} minut ..." | Reguła 15 minut. | Poczekaj. |
-| „AbuseIPDB odrzuciło klucz API (brak, błędny lub bez prawa zgłaszania) - sprawdź ABUSEIPDB_API_KEY w .env" | Klucz jest zły albo nie ma prawa zgłaszać. | Popraw klucz i uruchom Seisę ponownie. |
+| „AbuseIPDB odrzuciło klucz API (brak, błędny lub bez prawa zgłaszania) - sprawdź ABUSEIPDB_API_KEY w .env" | Klucz jest zły albo nie ma prawa zgłaszać. | Popraw klucz w zakładce Info albo w `.env` (po zmianie pliku uruchom Seisę ponownie). |
 | „AbuseIPDB odrzuciło dane zgłoszenia: {message}" | AbuseIPDB odrzuciło treść (HTTP 422). | Przeczytaj komunikat i popraw formularz. |
 | „atak ma {days} dni (limit 60)" albo „data ataku jest z przyszłości" | Czas ataku jest poza dozwolonym zakresem. | Zgłoszenie starsze niż 60 dni jest niemożliwe; w innym wypadku popraw datę. |
 
