@@ -24,6 +24,9 @@ Version 2.0.0 is the first release under the name Seisa. The 1.x releases came b
 - 2026-10-04: `scripts/api_harness.py --out` no longer crashes after writing the answers (the `.meta.json` file now serialises the raw bytes of the screenshot probe), so the command exits with 0 on success. No change to the program.
 - 2026-10-04: `requirements-dev.txt` now also installs `ruff`, pinned to the 0.16 series, so a new ruff release cannot start reporting new findings in unchanged code. No change to the program.
 
+## 2.4.31 - 2026-10-23
+- **certifi 2026.10.19:** the pinned `certifi` in `requirements.lock` moves from 2026.7.22 to 2026.10.19. The older bundle still trusted emSign root certificates whose intermediate keys were compromised (PYSEC-2026-4320, GHSA-6q48-6c7w-9gw2), so a forged certificate could have passed for one of the services Seisa connects to over HTTPS. Update with `pip install -r requirements.lock`.
+
 ## 2.4.30 - 2026-10-16
 - **Origin check with the port:** an `/api/` request whose `Origin` names another port or scheme on this machine (another local application) is now refused (HTTP 403) even when the browser sends no `Sec-Fetch-Site`. Before, only the host name of the Origin was compared, so `http://localhost:9999` passed in browsers without fetch metadata.
 - **Carrier-grade NAT addresses:** `100.64.0.0/10` (RFC 6598 shared address space) counts as a special address everywhere: the AbuseIPDB tab no longer offers or accepts it for a report, and the e-mail analysis treats such a Received hop as internal. Before, the IP tab refused it but the AbuseIPDB tab accepted it.
