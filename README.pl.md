@@ -57,14 +57,11 @@ Wybierz zakładkę, która pasuje do tego, co masz w ręku. [docs/pl/USER_GUIDE.
 ```bash
 git clone https://github.com/arcymonek/seisa.git
 cd seisa
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cp .env.example .env
-chmod 600 .env
+bash install.sh
 ./seisa.sh
 ```
 
-Ostatnie polecenie uruchamia Seisę i otwiera przeglądarkę. Trzymaj okno terminala otwarte, dopóki z niej korzystasz; zamknięcie go zatrzymuje Seisę. Szczegóły (pobranie ZIP-a, ikona aplikacji, aktualizacja, rozwiązywanie problemów) są w [docs/pl/OPERATIONS.md](docs/pl/OPERATIONS.md).
+Instalator przygotowuje prywatne środowisko Pythona, instaluje biblioteki i tworzy plik ustawień `.env`. Potrzebuje Pythona 3.11 lub nowszego i połączenia z internetem, a gdy Pythona brakuje, mówi, co zainstalować. Ostatnie polecenie uruchamia Seisę i otwiera przeglądarkę. Trzymaj okno terminala otwarte, dopóki z niej korzystasz; zamknięcie go zatrzymuje Seisę. Szczegóły (pobranie ZIP-a, ikona aplikacji, aktualizacja, te same kroki ręcznie, rozwiązywanie problemów) są w [docs/pl/OPERATIONS.md](docs/pl/OPERATIONS.md).
 
 ### Klucze API (.env)
 

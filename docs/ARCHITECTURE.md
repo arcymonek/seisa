@@ -259,4 +259,4 @@ This is the top level of the repository, so you know where to look.
 | `docs/` | Documentation, with Polish files in `docs/pl/` and screenshots in `docs/images/` |
 | `.github/` | Issue and pull request templates, CI |
 | `data/`, `logs/` | Local data, ignored by git except for `.gitkeep` |
-| Top-level files | `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../LICENSE), [CHANGELOG.md](../CHANGELOG.md), [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) |
+| Top-level files | `install.sh`, `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../LICENSE), [CHANGELOG.md](../CHANGELOG.md), [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) |

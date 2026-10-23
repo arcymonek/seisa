@@ -145,14 +145,16 @@ The `commit-msg` hook (`scripts/hooks/commit-msg`) checks the message: no long d
 - **Whole branches.** `python3 scripts/hooks/pre-commit --range main` checks a whole branch, as CI does. Git does not run hooks on rebase and merge, so this command covers them. With `--no-version-rule` it checks only the added lines (CI uses that for pull requests from forks).
 - **No off switch.** The hooks fail towards blocking, and there is deliberately no switch that turns all of them off. `git commit --no-verify` does, so do not use it: fix the cause instead.
 - **Testing the hooks.** `tests/test_pre_commit_hook.py` tests them (slow). The variables `SEISA_HOOK_UNDER_TEST` and `SEISA_COMMITMSG_UNDER_TEST` point the tests at a modified copy of a hook, which is how you mutation-check a hook rule.
+- **Testing the installer.** `tests/test_install_script.py` runs `install.sh` in a temporary folder, offline, with a hand-made package instead of PyPI (slow). The `install` job in CI runs it for real.
 
 ## Continuous integration
 
 CI is GitHub Actions in `.github/workflows/ci.yml`. It runs on pushes to `main` and on pull requests, with read-only permissions and no secrets. `pull_request_target` is deliberately not used, because it would give a fork's code write rights.
 
-There are two jobs:
+There are three jobs:
 
 - **`check`** runs on Ubuntu 24.04 with Python 3.11 and the latest 3.x, with a 15-minute limit. Steps: ruff, pytest, the harness, `check_i18n --strict`, `check_docs`, the frontend syntax check, an informational coverage report (it has no threshold), and the branch rules of the hook.
+- **`install`** runs `install.sh` as a new user would, on Ubuntu 24.04 and macOS 15, with the real libraries from PyPI. Then it starts the installed Seisa and waits for it to answer on `127.0.0.1:54321`. This is the job that proves that `requirements.lock` installs on both systems.
 - **`dependencies`** runs `pip-audit` on `requirements.lock` and checks the licences of the runtime packages against an allow-list (MIT, BSD, Apache, ISC, MPL-2.0 and PSF). If it turns red without a change in the code, the world changed: update the vulnerable library in its own branch, or read the new licence first (it must stay compatible with GPL-3.0-or-later) before extending the list.
 
 The branch rules differ by origin:
@@ -171,7 +173,7 @@ Other facts:
 The version answers one question: did the program change? It rises only when the program changes, not with every change in the repository.
 
 - **Program files** (a change raises the version): everything in `backend/` (the prompt files in `backend/prompts/` included) and `frontend/` (the catalogs included), `requirements.txt`, `requirements.lock`, `seisa.sh` and `seisa-launcher.sh`.
-- **Not program** (no new version): `README.md`, `README.pl.md`, `docs/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `scripts/`, `tests/`, `.github/`, and changes that touch only comments in the code.
+- **Not program** (no new version): `README.md`, `README.pl.md`, `docs/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `install.sh`, `scripts/`, `tests/`, `.github/`, and changes that touch only comments in the code.
 
 The version has the form `X.Y.Z`:
 
@@ -273,6 +275,7 @@ Documentation that is out of date is worse than none, so the maintainer keeps a 
 | A file in `frontend/vendor/` | The licences in [COMPLIANCE.md](COMPLIANCE.md) |
 | A language or a theme | The recipes in [How to extend Seisa](#how-to-extend-seisa), and the settings in [USER_GUIDE.md](USER_GUIDE.md) |
 | The start-up messages in `seisa.sh` | The "Install and run" heading in the [README](../README.md), which `seisa.sh` points to |
+| The messages or steps of `install.sh` | Section 2 and the "Starting" table in [OPERATIONS.md](OPERATIONS.md#starting), and the quick start in the [README](../README.md) |
 
 The maintainer makes every documentation change in both languages, in the same commit. A contributor who edits a document is welcome to change one language only; the maintainer completes the twin.
 

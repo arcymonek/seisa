@@ -214,6 +214,7 @@ def test_language_twin(path, twin):
     ("backend/prompts/abuseipdb-reporting-policy.md", True),    # prompt context: a change alters the app
     ("backend/prompts/email-analysis-guide.md", True),
     ("seisa.sh", True),
+    ("install.sh", False),                                      # sets Seisa up, is not part of the running program
     ("docs/abuseipdb-reporting-policy.md", False),              # the old place is documentation now
     ("README.md", False),
 ])

@@ -57,14 +57,11 @@ Pick the tab that matches what you have in your hand. [docs/USER_GUIDE.md](docs/
 ```bash
 git clone https://github.com/arcymonek/seisa.git
 cd seisa
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cp .env.example .env
-chmod 600 .env
+bash install.sh
 ./seisa.sh
 ```
 
-The last command starts Seisa and opens your browser. Keep the terminal window open while you use it; closing it stops Seisa. For the details (a ZIP download, the application icon, updating, troubleshooting), see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+The installer sets up a private Python environment, installs the libraries and creates your `.env` settings file. It needs Python 3.11 or newer and an internet connection, and it tells you what to install if Python is missing. The last command starts Seisa and opens your browser. Keep the terminal window open while you use it; closing it stops Seisa. For the details (a ZIP download, the application icon, updating, the same steps by hand, troubleshooting), see [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ### API keys (.env)
 

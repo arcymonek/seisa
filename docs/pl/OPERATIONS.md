@@ -8,6 +8,8 @@ Ten przewodnik jest dla osoby, która instaluje Seisę i dba o to, żeby działa
 
 - [1. Wymagania](#1-wymagania)
 - [2. Instalacja krok po kroku](#2-instalacja-krok-po-kroku)
+  - [Z instalatorem](#z-instalatorem)
+  - [Ręcznie](#ręcznie)
   - [Dokładnie przetestowane wersje](#dokładnie-przetestowane-wersje)
   - [Klucze API](#klucze-api)
 - [3. Uruchamianie Seisy](#3-uruchamianie-seisy)
@@ -33,7 +35,7 @@ Ten przewodnik jest dla osoby, która instaluje Seisę i dba o to, żeby działa
 Ta część wylicza, czego potrzebuje Twój komputer, zanim zaczniesz. „Terminal" to okno tekstowe, w którym wpisujesz polecenia (na macOS aplikacja Terminal, na Linuksie Twój program terminala).
 
 - **System:** macOS lub Linux. Skrypty startowe są skryptami Bash. Windows nie jest obsługiwany bezpośrednio; może działać przez WSL (Windows Subsystem for Linux, czyli Linux wewnątrz Windowsa), ale nie było to testowane.
-- **Python 3.11 lub nowszy.** Seisa jest testowana na Pythonie 3.11 i na najnowszym 3.x. Swoją wersję sprawdzisz poleceniem `python3 --version`. Jeśli jest starsza, zainstaluj aktualnego Pythona ze strony python.org (albo menedżerem pakietów systemu) i używaj tego `python3`.
+- **Python 3.11 lub nowszy.** Seisa jest testowana na Pythonie 3.11 i na najnowszym 3.x. Swoją wersję sprawdzisz poleceniem `python3 --version`. Jeśli jest starsza albo go nie ma, zainstaluj aktualnego Pythona: na macOS instalatorem ze strony python.org (Python dołączany do narzędzi deweloperskich Apple to dotąd wersja 3.9, czyli za stara), na Linuksie menedżerem pakietów systemu. Debian 12 i Ubuntu 24.04 mają już wystarczająco nowego; Ubuntu 22.04 ma 3.10, czyli za starego. Na Debianie i Ubuntu potrzebny jest też pakiet `python3-venv`. Instalator z części 2 zatrzymuje się z tą wskazówką, gdy nie znajdzie odpowiedniego Pythona.
 - **Nowoczesna przeglądarka.** Zakładka DMARC rozpakowuje raporty `.gz` i `.zip` wbudowanymi narzędziami przeglądarki.
 - **Git (opcjonalnie).** To najłatwiejszy sposób, żeby pobrać Seisę, a potem ją aktualizować. Bez niego możesz pobrać plik ZIP.
 - **Wolny port 54321.** Seisa nasłuchuje na `127.0.0.1` (tylko ten komputer), port 54321. Port jest wpisany na stałe w skryptach startowych.
@@ -42,7 +44,53 @@ Seisa nie potrzebuje serwera, bazy danych ani konta. Jej pakiety Pythona to Fast
 
 ## 2. Instalacja krok po kroku
 
-Instalację robisz raz. Każde polecenie wpisz w terminalu, po jednym, i poczekaj, aż się skończy, zanim wpiszesz następne.
+Instalację robisz raz. Są dwa sposoby: instalator, który robi wszystkie kroki za Ciebie (zalecany), i te same kroki ręcznie.
+
+### Z instalatorem
+
+Każde polecenie wpisz w terminalu, po jednym, i poczekaj, aż się skończy, zanim wpiszesz następne.
+
+1. Pobierz Seisę. To kopiuje projekt do nowego folderu o nazwie `seisa`:
+
+   ```bash
+   git clone https://github.com/arcymonek/seisa.git
+   ```
+
+   Bez Gita pobierz plik ZIP z tej samej strony na GitHubie i rozpakuj go.
+
+2. Wejdź do folderu Seisy (przy ZIP-ie do rozpakowanego folderu). Wszystkie kolejne polecenia uruchamiasz stąd:
+
+   ```bash
+   cd seisa
+   ```
+
+3. Uruchom instalator:
+
+   ```bash
+   bash install.sh
+   ```
+
+4. Uruchom Seisę (patrz [3. Uruchamianie Seisy](#3-uruchamianie-seisy)):
+
+   ```bash
+   ./seisa.sh
+   ```
+
+Jeśli w kroku 4 pojawi się „permission denied" (plik ze ZIP-a może stracić znacznik „wykonywalny"), uruchom ją przez `bash seisa.sh`.
+
+Instalator robi te rzeczy:
+
+- Szuka Pythona 3.11 lub nowszego w Twoim `PATH` (liście folderów, w których terminal szuka programów), wybierając najpierw wersje, które biblioteki obsługują najlepiej (3.13 i 3.12). Jeśli żadnego nie znajdzie, niczego nie zmienia i mówi, co zainstalować. Zainstaluj go, otwórz nowe okno terminala i uruchom instalator ponownie. Żeby użyć Pythona spoza `PATH`, uruchom `SEISA_PYTHON=/ścieżka/do/python3 bash install.sh`.
+- Tworzy folder `.venv` i instaluje do niego `requirements.lock`. Jeśli ten dokładny zestaw się nie zainstaluje, próbuje `requirements.txt`.
+- Tworzy `.env` z szablonu, dostępny tylko dla Twojego konta, albo zostawia `.env`, który już masz.
+- Pyta, czy dodać ikonę aplikacji (patrz [Ikona aplikacji](#ikona-aplikacji)), ale tylko w terminalu, w którym możesz odpowiedzieć. `--icon` odpowiada „tak", a `--no-icon` „nie", bez pytania.
+- Nigdy nie używa `sudo`, odmawia działania z nim (wszystko, co tworzy, ma należeć do Ciebie) i nie pobiera niczego poza bibliotekami, które `pip` bierze z Python Package Index (PyPI).
+
+Można go bezpiecznie uruchomić ponownie: zostawia Twój `.env` i `data/` oraz aktualizuje biblioteki.
+
+### Ręcznie
+
+To są kroki, które wykonuje instalator. Użyj ich, jeśli chcesz zobaczyć każdy krok sam albo jeśli instalator nie działa na Twoim komputerze. Każde polecenie wpisz w terminalu, po jednym, i poczekaj, aż się skończy, zanim wpiszesz następne.
 
 1. Pobierz Seisę. To kopiuje projekt do nowego folderu o nazwie `seisa`:
 
@@ -91,7 +139,7 @@ Plik `.env` oraz foldery `data/` i `logs/` są wyłączone z gita, więc Twoje k
 
 ### Dokładnie przetestowane wersje
 
-`requirements.txt` podaje tylko minimalne wersje pakietów. `requirements.lock` to dokładny zestaw, z którym wydanie było testowane. Jeśli przy zwykłej instalacji coś nie działa, zainstaluj ten dokładny zestaw:
+`requirements.txt` podaje tylko minimalne wersje pakietów. `requirements.lock` to dokładny zestaw, z którym wydanie było testowane. Instalator próbuje go najpierw i dopiero potem sięga po `requirements.txt`. Ręcznie zwykłym wyborem jest `requirements.txt`; jeśli coś z nim nie działa, zainstaluj ten dokładny zestaw:
 
 ```bash
 .venv/bin/pip install -r requirements.lock
@@ -175,15 +223,15 @@ Seisa nie ma automatycznej aktualizacji i nigdy nie sprawdza, czy są nowe wersj
    git pull
    ```
 
-3. Zainstaluj pakiety nowej wersji:
+3. Uruchom instalator ponownie. Zostawia Twój `.env` i `data/` oraz instaluje pakiety nowej wersji (`--no-icon` pomija pytanie o ikonę):
 
    ```bash
-   .venv/bin/pip install -r requirements.lock
+   bash install.sh --no-icon
    ```
 
 4. Uruchom Seisę ponownie. Zwykłe odświeżenie strony pokaże nowy interfejs, bo Seisa każe przeglądarce nie trzymać starych kopii swoich plików.
 
-Jeśli Seisa pochodzi z pobranego ZIP-a, pobierz nowy ZIP, rozpakuj go i skopiuj swój plik `.env` oraz folder `data/` do nowego folderu Seisy. Potem powtórz tam kroki 3 i 4. Jeśli używasz ikony aplikacji, kliknij „Dodaj ikonę" jeszcze raz, bo stara ikona wskazuje stary folder.
+Jeśli Seisa pochodzi z pobranego ZIP-a, pobierz nowy ZIP, rozpakuj go i skopiuj swój plik `.env` oraz folder `data/` do nowego folderu Seisy. Potem powtórz tam kroki 3 i 4; instalator zbuduje nowy `.venv` dla nowego folderu. Jeśli używasz ikony aplikacji, kliknij „Dodaj ikonę" jeszcze raz, bo stara ikona wskazuje stary folder.
 
 - Zakładka Info pokazuje wersję, którą uruchamiasz, a w kopii z gita 10 ostatnich wydań w sekcji „Ostatnie zmiany". Po instalacji z ZIP-a ta karta jest pusta: „Lista zmian jest dostępna tylko wtedy, gdy Seisa działa z checkoutu git."
 - Dane ze starszych wersji zostają. Analiza e-maila zapisana przez starszą wersję nadal się otwiera; jeśli dzisiejszy kod odczytuje jej fakty inaczej, zakładka to powie.
@@ -282,7 +330,7 @@ Usunięcie Seisy to skasowanie jej folderu, ale ikona leży poza nim, więc zabi
 
 ## 9. Rozwiązywanie problemów i pytania
 
-Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co zrobić. Komunikaty są podane tak, jak Seisa pokazuje je w polskim interfejsie; wyjątek to komunikaty skryptu startowego, które są tylko po angielsku. `{x}` oznacza wartość, którą Seisa wstawia sama (w komunikatach o limitach {limit} to liczba, np. 15). Błędy usług pojawiają się też w zakładce Logi.
+Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co zrobić. Komunikaty są podane tak, jak Seisa pokazuje je w polskim interfejsie; wyjątek to komunikaty skryptu startowego i instalatora, które są tylko po angielsku. `{x}` oznacza wartość, którą Seisa wstawia sama (w komunikatach o limitach {limit} to liczba, np. 15). Błędy usług pojawiają się też w zakładce Logi.
 
 ### Uruchamianie
 
@@ -292,6 +340,11 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Błąd o zajętym adresie (dokładne słowa pochodzą od Uvicorna) | Port 54321 jest zajęty, często dlatego, że Seisa już działa. | Otwórz `http://127.0.0.1:54321`. Jeśli port trzyma inny program, zamknij go. |
 | `./seisa.sh` mówi „permission denied" | Plik stracił znacznik „wykonywalny", np. po pobraniu ZIP-a. | Uruchom `bash seisa.sh`. |
 | Przeglądarka się nie otworzyła | Brak sesji pulpitu albo nie znaleziono narzędzia do otwierania. | Wpisz `http://127.0.0.1:54321` w przeglądarce. |
+| Instalator mówi „It needs Python 3.11 or newer, and none was found on this computer." | W Twoim `PATH` nie ma Pythona albo jest tylko starszy. | Zainstaluj Pythona, jak podaje komunikat, otwórz nowe okno terminala i uruchom `bash install.sh` ponownie. Dla Pythona spoza `PATH`: `SEISA_PYTHON=/ścieżka/do/python3 bash install.sh`. |
+| Instalator mówi „Do not run the installer with sudo or as root." | Uruchomiono go przez `sudo` albo jako użytkownik root. | Uruchom `bash install.sh` jako własny użytkownik, bez `sudo`. |
+| Instalator mówi „could not create a virtual environment" | Na Debianie i Ubuntu zwykle brakuje pakietu `python3-venv`. | Uruchom `sudo apt install python3-venv`, a potem znowu `bash install.sh`. |
+| Instalator mówi „.venv exists but holds no working Python 3.11 or newer." | Stary albo uszkodzony `.venv`, np. po aktualizacji Pythona. | Zmień nazwę folderu `.venv` albo go usuń i uruchom `bash install.sh` ponownie. Twój `.env` i `data/` nie są ruszane. |
+| Instalator mówi „The libraries could not be installed." | Brak połączenia z internetem, proxy lub zapora blokuje PyPI albo Twój Python jest tak nowy, że biblioteki nie mają dla niego jeszcze gotowych plików (komunikaty wspominają wtedy o kompilowaniu). | Sprawdź połączenie i uruchom `bash install.sh` ponownie. Przy zbyt nowym Pythonie usuń folder `.venv` i użyj starszego: `SEISA_PYTHON=/ścieżka/do/python3.12 bash install.sh`. |
 
 ### Klucze i usługi
 

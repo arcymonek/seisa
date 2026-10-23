@@ -92,6 +92,32 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: python scripts/hooks/pre-commit --range "origin/$BASE_REF" --no-version-rule
 
+  # The installer (install.sh) as a new user runs it, on both systems Seisa supports, with the real libraries from PyPI.
+  # The unit tests of the installer (tests/test_install_script.py) work offline with a fake package; this job is the
+  # one that proves that requirements.lock installs and that the installed Seisa starts and answers.
+  # The macOS label is pinned like the Ubuntu one above, so the system changes when we decide.
+  install:
+    name: Installer on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    steps:
+      - name: Download the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
+        with:
+          persist-credentials: false
+      - name: Install Seisa (install.sh)
+        run: bash install.sh --no-icon
+      - name: The installed Seisa starts and answers on 127.0.0.1:54321
+        run: |
+          .venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 54321 &
+          server=$!
+          trap 'kill "$server"' EXIT
+          curl --fail --silent --show-error --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:54321/api/about > /dev/null
+
   # A separate job, so that a new vulnerability or a new licence never hides the results of the tests above (and the
   # tests never hide it). When this job turns red WITHOUT a change in the code, the world changed, not the repository:
   #   - pip-audit names a package with a newly published vulnerability: update that library in its own branch
