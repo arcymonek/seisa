@@ -1,0 +1,96 @@
+name: Bug report
+description: Something in Seisa does not work as described
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. This issue will be public, so please read this first.
+
+        - **Never paste API keys**, the contents of `.env`, raw e-mails or files from `data/`. Replace real data with examples.
+        - **A security problem does not belong here.** Report it privately, see
+          [SECURITY.md](https://github.com/arcymonek/seisa/blob/main/SECURITY.md).
+        - A question ("how do I...?") is better asked in
+          [Discussions](https://github.com/arcymonek/seisa/discussions/categories/q-a).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: In one simple sentence first, then the details. What did you do, and what did you see?
+    validations:
+      required: true
+  - type: textarea
+    id: what-expected
+    attributes:
+      label: What you expected
+      description: What should have happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps that lead to the problem, if you know them.
+      placeholder: |
+        1. Open the DMARC tab
+        2. ...
+  - type: input
+    id: version
+    attributes:
+      label: Seisa version
+      description: Shown in the Info tab of Seisa.
+      placeholder: "2.4.30"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Seisa is affected?
+      options:
+        - IP
+        - URLScan
+        - DMARC
+        - Email
+        - AbuseIPDB
+        - History
+        - Logs
+        - Info
+        - Installation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: For example macOS 15, Windows 11 or Debian 12.
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: "Output of `python3 --version`."
+      placeholder: "Python 3.12.4"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Excerpt from the Logs tab
+      description: |
+        Optional. Paste only a few relevant lines.
+        **Warning:** logs can contain IP addresses and domains you checked. Remove anything private before pasting.
+        **Never paste API keys.**
+      render: shell
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed API keys, real e-mail contents and personal data from everything above.
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://github.com/arcymonek/seisa/blob/main/CODE_OF_CONDUCT.md).
+          required: true

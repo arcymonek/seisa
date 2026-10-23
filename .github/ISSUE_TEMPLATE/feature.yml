@@ -1,0 +1,74 @@
+name: Feature idea
+description: Suggest a change or a new feature
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the idea. This issue will be public, so please read this first.
+
+        - **Never paste API keys**, the contents of `.env`, raw e-mails or files from `data/`. Replace real data with examples.
+        - Pull requests are welcome, see
+          [CONTRIBUTING.md](https://github.com/arcymonek/seisa/blob/main/CONTRIBUTING.md). For anything bigger than a
+          small fix, this issue is the place to agree on the approach first.
+        - Not sure yet? Talk it through in
+          [Discussions](https://github.com/arcymonek/seisa/discussions/categories/ideas).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve
+      description: In one simple sentence first, then the details. Describe the situation, not the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like Seisa to do
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of Seisa does the idea concern?
+      options:
+        - IP
+        - URLScan
+        - DMARC
+        - Email
+        - AbuseIPDB
+        - History
+        - Logs
+        - Info
+        - Installation
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Seisa version
+      description: Shown in the Info tab of Seisa. Optional.
+      placeholder: "2.4.30"
+  - type: dropdown
+    id: implement
+    attributes:
+      label: Would you like to implement it yourself
+      options:
+        - "No"
+        - "Yes, I would like to try"
+        - "Maybe, I need guidance"
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you submit
+      options:
+        - label: I removed API keys, real e-mail contents and personal data from everything above.
+          required: true
+        - label: I agree to follow the [Code of Conduct](https://github.com/arcymonek/seisa/blob/main/CODE_OF_CONDUCT.md).
+          required: true

@@ -1,5 +1,11 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
-  - name: Security vulnerability
+  - name: Report a vulnerability privately
     url: https://github.com/arcymonek/seisa/security/advisories/new
-    about: Please report vulnerabilities privately (see https://github.com/arcymonek/seisa/blob/main/SECURITY.md), not as a public issue.
+    about: Security problems must not be posted as a public issue. Use private vulnerability reporting (see SECURITY.md).
+  - name: Ask a question
+    url: https://github.com/arcymonek/seisa/discussions/categories/q-a
+    about: Ask how something works or how to use Seisa. Use an issue only for a bug or a feature idea.
+  - name: Discuss an idea
+    url: https://github.com/arcymonek/seisa/discussions/categories/ideas
+    about: Talk through an idea that is not yet concrete enough for a feature issue.
