@@ -133,6 +133,9 @@ Hook `pre-commit` (`scripts/hooks/pre-commit`) sprawdza to, co jest w indeksie, 
 2. **Brak długiej pauzy (U+2014)** w dodawanych liniach, poza `frontend/vendor/`.
 3. **Pary językowe.** Dokument i jego bliźniak (na przykład `README.md` i `README.pl.md` albo `docs/X.md` i `docs/pl/X.md`) muszą trafić do indeksu razem. `SEISA_ONE_LANG=1 git commit ...` pomija tylko tę regułę, dla literówki poprawionej w jednym języku.
 4. **`check_i18n.py --strict` i `check_docs.py`**, uruchamiane na eksporcie indeksu.
+
+**Tryb kontrybutora.** Kontrybutor nie musi aktualizować dokumentacji; robi to opiekun. Po `git config seisa.contributor true` hook pomija regułę 3 i uruchamia `check_docs.py --contributor` (patrz [Jak działają testy dokumentacji](#jak-działają-testy-dokumentacji)): to, co uzupełnia tylko opiekun, jest wypisywane jako lista i nie zatrzymuje commita. Pozostałe reguły zostają, w tym `check_i18n.py --strict` (teksty interfejsu nadal potrzebują wpisu angielskiego i polskiego; tłumaczenie maszynowe polskiego jest w porządku) oraz krok wersji. Hook czyta ustawienie przez `git config --bool seisa.contributor` i w razie wątpliwości przyjmuje tryb ścisły: wszystko poza czystym `true` (brak ustawienia, `false`, wartość, której git nie umie odczytać) oznacza tryb ścisły. Opiekun zostawia to ustawienie wyłączone.
+
 5. **Krok wersji** (patrz [Wersjonowanie i dziennik zmian](#wersjonowanie-i-dziennik-zmian)).
 6. **Skan prywatności dodawanych linii.** Ciągi podobne do kluczy (długie ciągi szesnastkowe, `sk-or-v1-...`, nazwy typu key, token lub secret z długą wartością, `Bearer`), ścieżki katalogu domowego (`/Users/name/`, `/home/name/`) i Twoje własne nazwy hostów.
 
@@ -190,8 +193,8 @@ Wersja ma postać `X.Y.Z`:
 Praca odbywa się na gałęzi, której nazwa zaczyna się od typu: `fix-`, `feat-`, `test-`, `ci-` albo `docs-`, a potem krótki opis (na przykład `fix-dns-timeout`). Gałąź `main` zmienia się tylko wtedy, gdy opiekun scali zrecenzowany pull request.
 
 - **Komunikaty commitów** są po angielsku, w trybie rozkazującym, z krótkim tytułem (`Fix the DNS timeout`).
-- **Opis pull requesta** ma trzy części: `## What`, `## Why` i `## Checked`. W „Checked" napisz, co zostało sprawdzone, a co NIE; ta szczerość jest ważniejsza niż długa lista.
-- **Szablon** pyta też, jaką dokumentację zaktualizowano (patrz tabela niżej).
+- **Opis pull requesta** ma cztery części: `## What`, `## Why`, `## What changes for users` i `## Checked`. W „Checked" napisz, co zostało sprawdzone, a co NIE; ta szczerość jest ważniejsza niż długa lista.
+- **Szablon** pyta, co zmienia się dla użytkowników. Kontrybutor nie aktualizuje dokumentacji; na podstawie tej odpowiedzi robi to opiekun (patrz tabela niżej).
 - Kroki od forka do pull requesta są w [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Jak rozszerzać Seisę
@@ -250,7 +253,7 @@ Pliki w `backend/prompts/` są plikami programu: zmiana wymaga podbicia wersji. 
 
 ## Gdy zmieniasz X, zaktualizuj Y
 
-Nieaktualna dokumentacja jest gorsza niż żadna, więc zmiana i jej dokumentacja idą razem. Ta tabela pokazuje, który dokument należy do jakiego rodzaju zmiany. `check_docs.py` wymusza wiersze oznaczone „sprawdzane".
+Nieaktualna dokumentacja jest gorsza niż żadna, więc opiekun dba o to, żeby zmiana i jej dokumentacja szły razem. Ta tabela to mapa opiekuna (i jego agenta): pokazuje, który dokument należy do jakiego rodzaju zmiany. Kontrybutor nie musi się do niej stosować. `check_docs.py` wymusza wiersze oznaczone „sprawdzane" dla opiekuna; w pull requestach z forków te same ustalenia są tylko wypisywane (`--contributor`).
 
 | Gdy zmieniasz... | Zaktualizuj |
 |---|---|
@@ -271,7 +274,7 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc zmiana i jej dokumentacj
 | Język albo skórka | Przepisy w [Jak rozszerzać Seisę](#jak-rozszerzać-seisę) i ustawienia w [USER_GUIDE.md](USER_GUIDE.md) |
 | Komunikaty startowe w `seisa.sh` | Nagłówek „Install and run" w [README](../../README.pl.md), do którego odsyła `seisa.sh` |
 
-Każda zmiana dokumentacji jest robiona w obu językach, w tym samym commicie.
+Opiekun robi każdą zmianę dokumentacji w obu językach, w tym samym commicie. Kontrybutor, który poprawia dokument, może zmienić tylko jeden język; bliźniak uzupełnia opiekun.
 
 ## Pisanie dokumentacji
 
@@ -292,6 +295,8 @@ Ta sekcja jest dla każdego, kto pisze lub poprawia dokumenty projektu. Tekst an
 ### Jak działają testy dokumentacji
 
 `python3 scripts/check_docs.py` czyta dokumentację i kod i porównuje je ze sobą. Używa tylko biblioteki standardowej i czyta kod bez jego uruchamiania, więc hook git może go uruchomić z dowolnym Pythonem. Działa w `check_all.py`, w hooku pre-commit i w CI. Błędy blokują, ostrzeżenia tylko informują.
+
+Z flagą `--contributor` (CI dla pull requestów z forków; hook, gdy `seisa.contributor` ma wartość `true`) kontrole porównujące dokumentację z kodem albo z jej bliźniakiem (Pary, Znane pliki, Trasy, Klucze, Zakładki, Moduły, Liczby) nie kończą się błędem. Ich ustalenia są wypisywane pod nagłówkiem „To be completed by the maintainer", a przebieg kończy się kodem 0. Kontrole formy (Linki, Obrazki, Forma, Adresy, Obecność) nadal blokują. Bez flagi nic się nie zmienia.
 
 | Kontrola | Czego wymaga | Rodzaj |
 |---|---|---|

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the documentation is complete, well-formed and agrees with the code (standard library only).
 
-Usage: python3 scripts/check_docs.py [--external]
+Usage: python3 scripts/check_docs.py [--external] [--contributor]
 
 The documentation is English first: a file in the project root or in docs/, with its Polish twin in docs/pl/ under the
 same name (README.md has README.pl.md next to it). AGENTS.md and CHANGELOG.md have no twin. The lists below
@@ -30,6 +30,14 @@ Warnings (never fail the run):
   14. a file longer than 150 lines without a table of contents
 Manual only (never in CI or the hook):
   15. --external: every external https:// link answers (needs the network)
+
+--contributor (pull requests from forks in CI; the hook when `git config seisa.contributor true`): an outside contributor
+does not have to update the documentation, the maintainer does (docs/DEVELOPMENT.md). The rules that compare the
+documentation with the code or with its twin (1, 2, 5-9) then report what they find as "To be completed by the
+maintainer" and do not fail the run. The rules about the FORM of what the contributor wrote (3, 4, 10-12: links,
+anchors, alt texts, long dash, version numbers, the language switch line, e-mail addresses, required files) still fail.
+No git range is needed: which rule decides, not which file changed, so a contributor's change to a document is held to
+the form rules like any other and is never held to the maintainer's completeness rules.
 
 Rules that read the CONTENT of a document (5-9, 13, 14) skip a file while it is on the PENDING list: a session that
 writes a file removes it from PENDING in the same commit, and from then on the file is checked in full. How to add a
@@ -154,6 +162,7 @@ class Report:
     def __init__(self) -> None:
         self.errors: list[str] = []
         self.warnings: list[str] = []
+        self.maintainer: list[str] = []   # --contributor only: consistency findings that do not fail the run
 
 
 # --- reading Markdown --------------------------------------------------------------------------------------------
@@ -677,18 +686,29 @@ def check_external(root: Path, rep: Report, md_files: list[str]) -> None:
             rep.errors.append(f"external link {url}: HTTP {status}")
 
 
-def run(root: Path = ROOT, external: bool = False) -> Report:
+def run(root: Path = ROOT, external: bool = False, contributor: bool = False) -> Report:
     rep = Report()
     md_files = markdown_files(root)
-    check_pairs(root, rep)
-    check_unpaired(root, rep, md_files)
+
+    def consistency(check, *args) -> None:
+        """A rule that compares the documentation with the code or with its twin: the maintainer's job (rules 1, 2,
+        5-9). In contributor mode its errors and warnings go to the maintainer's list; otherwise straight to `rep`."""
+        if not contributor:
+            check(root, rep, *args)
+            return
+        scratch = Report()
+        check(root, scratch, *args)
+        rep.maintainer += scratch.errors + scratch.warnings
+
+    consistency(check_pairs)
+    consistency(check_unpaired, md_files)
     check_links(root, rep, md_files)
     check_images(root, rep, md_files)
-    check_api(root, rep)
-    check_env_keys(root, rep)
-    check_tabs(root, rep)
-    check_modules(root, rep)
-    check_facts(root, rep)
+    consistency(check_api)
+    consistency(check_env_keys)
+    consistency(check_tabs)
+    consistency(check_modules)
+    consistency(check_facts)
     check_form(root, rep, md_files)
     check_emails(root, rep, md_files)
     check_required(root, rep)
@@ -698,14 +718,22 @@ def run(root: Path = ROOT, external: bool = False) -> Report:
     return rep
 
 
+# The heading scripts/hooks/pre-commit looks for to show the list to a contributor.
+MAINTAINER_HEADING = "To be completed by the maintainer (not blocking in --contributor mode):"
+
+
 def main(argv: list[str]) -> int:
-    unknown = [a for a in argv if a != "--external"]
+    unknown = [a for a in argv if a not in ("--external", "--contributor")]
     if unknown:
-        print("usage: check_docs.py [--external]", file=sys.stderr)
+        print("usage: check_docs.py [--external] [--contributor]", file=sys.stderr)
         return 2
-    rep = run(ROOT, external="--external" in argv)
+    rep = run(ROOT, external="--external" in argv, contributor="--contributor" in argv)
     for w in rep.warnings:
         print("warning:", w)
+    if rep.maintainer:
+        print(MAINTAINER_HEADING)
+        for m in rep.maintainer:
+            print("  -", m)
     for e in rep.errors:
         print("ERROR:", e)
     pending = sorted(f for f in PENDING if f in REQUIRED_DOCS)

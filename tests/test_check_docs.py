@@ -519,7 +519,7 @@ def test_rule15_which_addresses_are_visited(text, expected):
 def test_the_command_line(monkeypatch, capsys):
     assert cd.main(["--nope"]) == 2
     rep = cd.Report()
-    monkeypatch.setattr(cd, "run", lambda root, external=False: rep)
+    monkeypatch.setattr(cd, "run", lambda root, external=False, contributor=False: rep)
     assert cd.main([]) == 0
     rep.errors.append("x")
     assert cd.main([]) == 1
@@ -573,3 +573,115 @@ def test_this_repository_passes():
 def test_the_hook_and_this_script_agree_on_the_pairs():
     hook = (ROOT / "scripts" / "hooks" / "pre-commit").read_text(encoding="utf-8")
     assert "DOC_PAIRS" in hook and not re.search(r"docs/\(en\|pl\)", hook)
+
+
+# --- --contributor: the maintainer's rules become a list, the form rules still fail -----------------------------------
+# Expected values come from the rules in the module docstring of scripts/check_docs.py, not from a run of the script.
+
+HEADING = "To be completed by the maintainer"
+
+
+def contributor_run(root: Path):
+    return cd.run(root, contributor=True)
+
+
+def test_contributor_default_mode_is_unchanged_by_the_new_field(proj):
+    (proj / "docs" / "pl" / "SECURITY.md").unlink()
+    rep = run(proj)
+    assert rep.maintainer == []
+    assert "docs/pl/SECURITY.md is missing (SECURITY.md exists): a document and its twin come together" in rep.errors
+
+
+def test_contributor_a_clean_project_stays_clean(proj):
+    rep = contributor_run(proj)
+    assert rep.errors == [] and rep.warnings == [] and rep.maintainer == []
+
+
+@pytest.mark.parametrize("breakage", ["pair", "unpaired", "route", "env", "tab", "module", "fact"])
+def test_contributor_consistency_problems_are_listed_not_failed(proj, breakage):
+    if breakage == "pair":
+        add(proj, "CONTRIBUTING.md", "\n## Extra\n")
+        expected = "heading structure"
+    elif breakage == "unpaired":
+        w(proj, "docs/NOTES.md", "# x\n")
+        expected = "docs/NOTES.md is not in DOC_PAIRS"
+    elif breakage == "route":
+        add(proj, "backend/routers/items.py", '\n@router.delete("/items")\ndef gone():\n    return None\n')
+        expected = "DELETE /api/items"
+    elif breakage == "env":
+        add(proj, ".env.example", "ZZ_NEW=1\n")
+        expected = "ZZ_NEW"
+    elif breakage == "tab":
+        add(proj, "frontend/index.html", '<button data-tab="logs">Logs</button>\n')
+        expected = "logs"
+    elif breakage == "module":
+        w(proj, "scripts/new_tool.py", "print(2)\n")
+        expected = "scripts/new_tool.py is not named"
+    else:
+        w(proj, "backend/config.py", (proj / "backend/config.py").read_text(encoding="utf-8").replace("= 100", "= 250"))
+        expected = "History size"
+    assert errors(proj), "the strict mode must fail on this breakage"      # the same breakage fails by default ...
+    rep = contributor_run(proj)
+    assert rep.errors == [], rep.errors                                    # ... and only gets listed for a contributor
+    assert any(expected in m for m in rep.maintainer), rep.maintainer
+
+
+@pytest.mark.parametrize("breakage", ["dead_link", "dead_anchor", "long_dash", "alt", "version", "switch", "email", "required"])
+def test_contributor_form_errors_still_fail(proj, breakage):
+    if breakage == "dead_link":
+        both(proj, "CONTRIBUTING.md", "\nSee [x](nowhere.md).\n")
+        expected = "dead link nowhere.md"
+    elif breakage == "dead_anchor":
+        both(proj, "CONTRIBUTING.md", "\nSee [x](#nothing-here).\n")
+        expected = "dead anchor #nothing-here"
+    elif breakage == "long_dash":
+        add(proj, "CONTRIBUTING.md", "\none \u2014 two\n")
+        expected = "long dash (U+2014)"
+    elif breakage == "alt":
+        both(proj, "CONTRIBUTING.md", "\n![](docs/images/ip_en.png)\n")
+        expected = "has no alt text"
+    elif breakage == "version":
+        both(proj, "docs/API.md", "\nSeisa 9.9.9 does this.\n")
+        expected = "contains a version number"
+    elif breakage == "switch":
+        t = (proj / "SECURITY.md").read_text(encoding="utf-8")
+        w(proj, "SECURITY.md", t.replace(cd.switch_line("SECURITY.md"), "English"))
+        expected = "the first line must be the language switch"
+    elif breakage == "email":
+        both(proj, "CONTRIBUTING.md", "\nWrite to someone@gmail.com.\n")
+        expected = "e-mail address not on ALLOWED_EMAILS"
+    else:
+        (proj / "CHANGELOG.md").unlink()
+        expected = "CHANGELOG.md is missing (REQUIRED_DOCS)"
+    rep = contributor_run(proj)
+    assert any(expected in e for e in rep.errors), (rep.errors, rep.maintainer)
+
+
+def test_contributor_form_errors_fail_next_to_listed_consistency_problems(proj):
+    add(proj, "CONTRIBUTING.md", "\n## Extra\n")                  # the maintainer's: listed
+    both(proj, "README.md", "\nSee [x](nowhere.md).\n", "\nZob. [x](nowhere.md).\n")   # form: fails
+    rep = contributor_run(proj)
+    assert [e for e in rep.errors if "dead link" in e] and not [e for e in rep.errors if "heading structure" in e]
+    assert any("heading structure" in m for m in rep.maintainer)
+
+
+def test_contributor_cli_prints_the_heading_and_exits_zero_or_one(proj, tmp_path):
+    # the script locates the project from its own path, so a copy of it goes into the made-up project
+    shutil_copy = proj / "scripts" / "check_docs.py"
+    shutil_copy.write_text(SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+    add(proj, "docs/ARCHITECTURE.md", "\n`scripts/check_docs.py`\n")
+    add(proj, "docs/pl/ARCHITECTURE.md", "\n`scripts/check_docs.py`\n")
+    add(proj, "CONTRIBUTING.md", "\n## Extra\n")
+    strict = subprocess.run(["python3", str(shutil_copy)], capture_output=True, text=True)
+    assert strict.returncode == 1 and HEADING not in strict.stdout
+    soft = subprocess.run(["python3", str(shutil_copy), "--contributor"], capture_output=True, text=True)
+    assert soft.returncode == 0, soft.stdout
+    assert HEADING in soft.stdout and "heading structure" in soft.stdout and "ERROR:" not in soft.stdout
+    both(proj, "README.md", "\nSee [x](nowhere.md).\n")
+    hard = subprocess.run(["python3", str(shutil_copy), "--contributor"], capture_output=True, text=True)
+    assert hard.returncode == 1 and "ERROR:" in hard.stdout and "dead link" in hard.stdout
+
+
+def test_contributor_unknown_flag_is_a_usage_error():
+    p = subprocess.run(["python3", str(SCRIPT), "--contributer"], capture_output=True, text=True)
+    assert p.returncode == 2 and "usage:" in p.stderr

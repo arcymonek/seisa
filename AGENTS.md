@@ -39,7 +39,7 @@ Rules for AI coding agents that work on Seisa in a fork or on a pull request. A 
 - Tests: `python3 -m pytest -q` (`-m "not slow"` while iterating).
 - End to end on fakes: `python3 scripts/api_harness.py [--out FILE] [--root DIR] [--serve PORT]`.
 - Catalogs and version: `python3 scripts/check_i18n.py --strict`.
-- Documentation: `python3 scripts/check_docs.py`.
+- Documentation: `python3 scripts/check_docs.py` (`--contributor` lists the maintainer's part instead of failing on it).
 - Golden facts: `python3 scripts/dump_facts.py --lang pl`. The output must stay identical unless you change it on purpose.
 - Branch rules: `python3 scripts/hooks/pre-commit --range main`.
 
@@ -52,7 +52,8 @@ Rules for AI coding agents that work on Seisa in a fork or on a pull request. A 
 - New synthetic e-mails for unit tests go to `tests/fixtures/unit/`. The flat `tests/fixtures/*.eml` files feed the golden patterns.
 - The files in `backend/prompts/` are program files: changing one changes behaviour.
 - A test that exposes a real bug is marked `xfail(strict=True)` and reported. Do not fix production code without agreement.
-- Update the documentation in both languages together with the change (the table "If you change X, update Y" in `docs/DEVELOPMENT.md`).
+- If you are an agent working for a contributor: documentation is optional. Do not write it unasked; help your human describe in the pull request what changes for users, and tell them to run `git config seisa.contributor true` (the hook then only lists what the maintainer completes). Fix every form error the checks report (links, long dash, alt text).
+- If you are an agent working for the maintainer: update the documentation in both languages together with the change (the table "If you change X, update Y" in `docs/DEVELOPMENT.md`). Do not set `seisa.contributor`.
 - Write interface explanations for non-specialists: one plain sentence first (an everyday comparison helps), then the details with abbreviations expanded.
 
 ## Where to look

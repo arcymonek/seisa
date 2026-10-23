@@ -34,15 +34,15 @@ Zmiana niezgodna z tymi zasadami nie zostanie scalona, nawet jeśli wszystkie ko
 ## Wysyłanie zmiany krok po kroku
 
 1. **Zrób fork i sklonuj** repozytorium.
-2. **Przygotuj środowisko:** wirtualne środowisko, instalacja `requirements-dev.txt` i włączenie hooków git (`git config core.hooksPath scripts/hooks`). Dokładne polecenia są w [DEVELOPMENT.md](DEVELOPMENT.md).
+2. **Przygotuj środowisko:** wirtualne środowisko, instalacja `requirements-dev.txt` i włączenie hooków git (`git config core.hooksPath scripts/hooks`). Dodaj też `git config seisa.contributor true`: to mówi hookowi, że dokumentację uzupełnia opiekun, a nie Ty, więc brak wpisu w dokumentacji albo polskiego bliźniaka nie zatrzyma commita (zostanie tylko wypisany). Pozostałe kontrole działają bez zmian. Dokładne polecenia są w [DEVELOPMENT.md](DEVELOPMENT.md).
 3. **Utwórz gałąź**, której nazwa zaczyna się od typu: `fix-`, `feat-`, `test-`, `ci-` albo `docs-`.
 4. **Wprowadź zmianę** i dopisz do niej testy.
 5. **Uruchom kontrole:** `python3 scripts/check_all.py` (w trakcie pracy dodaj `--fast`, pełny zestaw uruchom przed wysłaniem).
 6. **Po zmianie interfejsu wypróbuj go w przeglądarce** na sztucznych danych: `python3 scripts/api_harness.py --serve 8765` uruchamia Seisę z udawanymi usługami. Otwórz ją z `/?lang=qa` i sprawdź oba języki.
-7. **Zaktualizuj dokumentację**, której dotyczy zmiana, w obu językach (patrz tabela „Gdy zmieniasz X, zaktualizuj Y" w [DEVELOPMENT.md](DEVELOPMENT.md)).
-8. **Wypchnij gałąź i otwórz pull request** z szablonem: `What`, `Why` i `Checked`.
+7. **Dokumentacja jest dobrowolna.** Aktualizuje ją opiekun, w obu językach. Jeśli się da, napisz w pull requeście, co zmienia się dla użytkowników (pole „What changes for users" w szablonie). Poprawienie zdania w dokumencie jest mile widziane; wtedy zepsute linki i podobne usterki formy trzeba jednak naprawić.
+8. **Wypchnij gałąź i otwórz pull request** z szablonem: `What`, `Why`, `What changes for users` i `Checked`.
 
-Hooki nie wymagają niczego poza krokiem 2. Opcjonalny plik `~/.config/seisa/privacy-markers.txt` pozwala hookowi pilnować też, żeby Twoje własne nazwy hostów nie trafiły do commitów; bez niego kontrole ogólne nadal działają.
+Hooki nie wymagają niczego poza krokiem 2. Pull requesty z forków dostają w CI to samo traktowanie: kontrole zgodności kodu z dokumentacją tylko wypisują, co zostaje dla opiekuna, a kontrole formy (linki, długa pauza, prywatność) nadal muszą przejść. Opcjonalny plik `~/.config/seisa/privacy-markers.txt` pozwala hookowi pilnować też, żeby Twoje własne nazwy hostów nie trafiły do commitów; bez niego kontrole ogólne nadal działają.
 
 ## Czego oczekujemy w pull requeście
 

@@ -947,3 +947,96 @@ def test_range_judges_the_branch_not_what_main_gained_since_it_was_cut(repo):
     r = run_hook(repo, "--range", "main")    # the branch is behind main: only its own changes count
     assert r.returncode == 0, r.stdout + r.stderr
     assert "program files changed: 0" in r.stdout
+
+
+# --- contributor mode: `git config seisa.contributor true` -----------------------------------------------------------
+# Expected values come from the rules (docs/DEVELOPMENT.md): a contributor need not update the documentation, so the
+# language-pair rule and the code-vs-documentation consistency do not stop the commit; every other rule still does,
+# and anything but a clean `true` in the config means the strict mode.
+
+def _doc_only_in_english(repo: Path) -> None:
+    append(repo, "README.md", "\n## An extra heading\n")
+    stage(repo, "README.md")
+
+
+def test_without_the_setting_the_hook_is_strict(repo):
+    _doc_only_in_english(repo)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "LANGUAGE PAIR: README.md is staged but README.pl.md is not" in r.stdout and "heading structure" in r.stdout
+
+
+def test_contributor_mode_lets_a_documentation_gap_through_and_lists_it(repo):
+    git(repo, "config", "seisa.contributor", "true")
+    _doc_only_in_english(repo)
+    r = run_hook(repo)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "To be completed by the maintainer" in r.stdout and "heading structure" in r.stdout
+    assert "LANGUAGE PAIR" not in r.stdout
+
+
+def test_contributor_mode_lets_an_undocumented_setting_through(repo):
+    git(repo, "config", "seisa.contributor", "true")
+    append(repo, ".env.example", "ZZ_NEW_KEY=\n")
+    stage(repo, ".env.example")
+    r = run_hook(repo)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "ZZ_NEW_KEY" in r.stdout
+    git(repo, "config", "seisa.contributor", "false")
+    r = run_hook(repo)
+    assert r.returncode == 1 and "CHECK_DOCS failed" in r.stdout and "ZZ_NEW_KEY" in r.stdout
+
+
+# "yes please" and "TRUE-ish" are values `git config --bool` cannot read (it exits with an error): unreadable = strict
+@pytest.mark.parametrize("value", ["false", "yes please", "TRUE-ish", ""])
+def test_anything_but_true_is_the_strict_mode(repo, value):
+    git(repo, "config", "seisa.contributor", value)
+    _doc_only_in_english(repo)
+    r = run_hook(repo)
+    assert r.returncode == 1, r.stdout
+    assert "LANGUAGE PAIR" in r.stdout
+
+
+def test_contributor_mode_unit(monkeypatch):
+    def fake(returncode: int, out: str):
+        return lambda *a, **k: subprocess.CompletedProcess(a, returncode, out, "")
+
+    monkeypatch.setattr(hook_mod.subprocess, "run", fake(0, "true\n"))
+    assert hook_mod.contributor_mode() is True
+    for rc, out in ((0, "false\n"), (0, ""), (1, ""), (128, "true\n"), (0, "truee\n")):
+        monkeypatch.setattr(hook_mod.subprocess, "run", fake(rc, out))
+        assert hook_mod.contributor_mode() is False, (rc, out)
+
+    def boom(*a, **k):
+        raise FileNotFoundError("git")
+
+    monkeypatch.setattr(hook_mod.subprocess, "run", boom)
+    assert hook_mod.contributor_mode() is False
+
+
+def test_contributor_mode_keeps_every_other_rule(repo):
+    git(repo, "config", "seisa.contributor", "true")
+    write(repo, ".env", "x\n")
+    append(repo, "backend/config.py", "\n# one \u2014 two\n")
+    append(repo, "README.md", "\nSee [x](nowhere.md).\n")
+    stage(repo, "backend/config.py", "README.md")
+    stage(repo, ".env", force=True)
+    r = run_hook(repo)
+    assert r.returncode == 1
+    assert "FORBIDDEN FILE: .env" in r.stdout
+    assert "LONG DASH (U+2014) at backend/config.py:" in r.stdout
+    assert "dead link nowhere.md" in r.stdout
+
+
+def test_contributor_mode_keeps_the_i18n_and_version_rules(repo):
+    git(repo, "config", "seisa.contributor", "true")
+    cat = repo / "frontend" / "i18n" / "en.json"
+    write(repo, "frontend/i18n/en.json", cat.read_text(encoding="utf-8").replace("{\n", '{\n  "zz.only_in_english": "x",\n', 1))
+    stage(repo, "frontend/i18n/en.json")
+    r = run_hook(repo)
+    assert r.returncode == 1 and "CHECK_I18N failed" in r.stdout and "zz.only_in_english" in r.stdout
+    git(repo, "reset", "-q", "--hard")
+    set_version(repo, step(current_version(repo), "skip"))
+    stage(repo, *_PLACES)
+    r = run_hook(repo)
+    assert r.returncode == 1 and "VERSION STEP" in r.stdout

@@ -110,6 +110,10 @@ To skrócona wersja pełnej tabeli w [docs/pl/PRIVACY.md](docs/pl/PRIVACY.md), k
 - [CONTRIBUTING.md](docs/pl/CONTRIBUTING.md), [SECURITY.md](docs/pl/SECURITY.md), [CODE_OF_CONDUCT.md](docs/pl/CODE_OF_CONDUCT.md), [CHANGELOG.md](CHANGELOG.md) (po angielsku).
 - [AGENTS.md](AGENTS.md): zasady dla agentów AI (po angielsku).
 
+## Stan projektu
+
+Seisę rozwija jedna osoba, to projekt hobbystyczny, a nie produkt z obsługą klienta. Odpowiedź na zgłoszenie albo pull request może potrwać kilka dni. Poprawki trafiają tylko do gałęzi `main`, starsze wersje ich nie dostają. Jeśli zgłoszenie na jakiś czas cichnie, nie zostało zapomniane.
+
 ## Współpraca
 
 Zgłoszenia błędów, pomysły i pull requesty są mile widziane, a żeby pomóc, nie trzeba być programistą. Zacznij od [CONTRIBUTING.md](docs/pl/CONTRIBUTING.md); przygotowanie środowiska deweloperskiego jest w [docs/pl/DEVELOPMENT.md](docs/pl/DEVELOPMENT.md). Problemy z bezpieczeństwem zgłaszaj prywatnie, jak opisuje [SECURITY.md](docs/pl/SECURITY.md). Od wszystkich uczestników oczekujemy przestrzegania [Kodeksu postępowania](docs/pl/CODE_OF_CONDUCT.md).

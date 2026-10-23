@@ -13,6 +13,10 @@ What it checks, always on what is STAGED (the index), not on the working tree:
   3. Language pairs: a document and its twin (DOC_PAIRS in scripts/check_docs.py, for example README.md <->
      README.pl.md or docs/X.md <-> docs/pl/X.md) must be staged together. `SEISA_ONE_LANG=1 git commit ...` skips ONLY
      this rule (a typo fixed in one language); everything else still runs, scripts/check_docs.py included.
+     Contributor mode: after `git config seisa.contributor true` (CONTRIBUTING.md) this rule is skipped and
+     check_docs.py runs with --contributor: what only the maintainer completes (routes, keys, tabs, modules, numbers,
+     the other language) is printed as a list and does not stop the commit. Every other rule stays. Anything but a
+     clean `true` (no setting, `false`, a value git cannot read, git failing) means the strict mode.
   4. scripts/check_i18n.py --strict and scripts/check_docs.py, run on an export of the index: catalogs, the same
      version in all four places, and the documentation (pairs, headings, links, agreement with the code).
   5. Version step: if the version differs from the one on `main`, the difference must be exactly one allowed step:
@@ -372,9 +376,25 @@ def check_version_step(ci, base: str | None) -> list[str]:
     return problems
 
 
+def contributor_mode() -> bool:
+    """True only when `git config --bool seisa.contributor` prints exactly `true`. Fails closed: any other answer (no
+    setting, a value that is not a boolean, git failing or missing) is the strict mode."""
+    try:
+        p = subprocess.run(["git", "config", "--bool", "seisa.contributor"], capture_output=True, text=True)
+    except Exception:
+        return False
+    return p.returncode == 0 and p.stdout.strip() == "true"
+
+
 def run_check(root: Path, script: str, *args: str) -> list[str]:
     p = subprocess.run([sys.executable, str(root / "scripts" / script), *args], cwd=root, capture_output=True, text=True)
     if p.returncode == 0:
+        if "--contributor" in args:  # show the maintainer's list to the contributor (it does not stop the commit)
+            lines = p.stdout.splitlines()
+            start = next((i for i, ln in enumerate(lines) if ln.startswith("To be completed by the maintainer")), None)
+            if start is not None:
+                print("note: the commit is allowed; for the maintainer to complete, not you:")
+                print("\n".join(ln for ln in lines[start:] if ln.startswith(("To be", "  -"))))
         return []
     label = Path(script).stem.upper()
     return [f"{label} failed:", *("    " + ln for ln in (p.stdout + p.stderr).splitlines() if ln.strip() and not ln.startswith("warning:"))]
@@ -386,13 +406,15 @@ def pre_commit() -> int:
     staged = [f for f in git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0") if f]
     added = added_lines()
     problems = check_forbidden(staged) + added_line_problems(added)
+    contributor = contributor_mode()
     with tempfile.TemporaryDirectory(prefix="seisa-precommit-") as tmp:
         git("checkout-index", "-a", f"--prefix={tmp}/")
         root = Path(tmp)
         # failing open here would let a commit that deletes a check switch the check off
         if (root / "scripts" / "check_docs.py").exists():
-            problems += check_pairs(staged, load_check_docs(root).DOC_PAIRS)
-            problems += run_check(root, "check_docs.py")
+            if not contributor:
+                problems += check_pairs(staged, load_check_docs(root).DOC_PAIRS)
+            problems += run_check(root, "check_docs.py", *(["--contributor"] if contributor else []))
         else:
             problems.append("MISSING CHECK: scripts/check_docs.py is not in the index (the documentation and language-pair checks need it)")
         if (root / "scripts" / "check_i18n.py").exists():

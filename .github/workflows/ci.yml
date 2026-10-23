@@ -50,7 +50,12 @@ jobs:
       - run: python scripts/api_harness.py
       - run: python scripts/check_i18n.py --strict
       # The documentation: language pairs, links, and agreement with the code (routes, .env keys, tabs, modules, limits).
-      - run: python scripts/check_docs.py
+      # For a pull request from a fork (same condition as --no-version-rule below) the agreement with the code and the
+      # other language only get listed for the maintainer, who updates the documentation; links and form still fail.
+      - name: Documentation (check_docs.py)
+        env:
+          CONTRIBUTOR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && '--contributor' || '' }}
+        run: python scripts/check_docs.py $CONTRIBUTOR
       # Syntax of the frontend modules (there is no build step and no JS test runner). `node --check` treats a .js file
       # as CommonJS, so each module is copied to a .mjs name first, as the local checklist does. Node is preinstalled
       # on the ubuntu-24.04 runner.

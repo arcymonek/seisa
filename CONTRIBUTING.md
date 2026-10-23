@@ -34,15 +34,15 @@ A change that does not fit these principles will not be merged even if all check
 ## Sending a change, step by step
 
 1. **Fork and clone** the repository.
-2. **Set up** a virtual environment, install `requirements-dev.txt` and enable the git hooks (`git config core.hooksPath scripts/hooks`). The exact commands are in [DEVELOPMENT.md](docs/DEVELOPMENT.md).
+2. **Set up** a virtual environment, install `requirements-dev.txt` and enable the git hooks (`git config core.hooksPath scripts/hooks`). Also run `git config seisa.contributor true`: it tells the hook that the maintainer, not you, brings the documentation up to date, so a missing documentation entry or Polish twin does not stop your commit (it is only listed). Every other check stays on. The exact commands are in [DEVELOPMENT.md](docs/DEVELOPMENT.md).
 3. **Create a branch** whose name starts with its type: `fix-`, `feat-`, `test-`, `ci-` or `docs-`.
 4. **Make your change** and add tests for it.
 5. **Run the checks:** `python3 scripts/check_all.py` (add `--fast` while you work, run the full set before you push).
 6. **After a change to the interface, try it in the browser** on fake data: `python3 scripts/api_harness.py --serve 8765` starts Seisa with faked services. Open it with `/?lang=qa` and try both languages.
-7. **Update the documentation** your change affects, in both languages (see the table "If you change X, update Y" in [DEVELOPMENT.md](docs/DEVELOPMENT.md)).
-8. **Push your branch and open a pull request** with the template: `What`, `Why` and `Checked`.
+7. **Documentation is optional.** The maintainer updates it, in both languages. If you can, say in the pull request what changes for users (the "What changes for users" field of the template). Fixing a sentence in a document is welcome, and then broken links and the like must still be fixed.
+8. **Push your branch and open a pull request** with the template: `What`, `Why`, `What changes for users` and `Checked`.
 
-The hooks need no setup beyond step 2. An optional file `~/.config/seisa/privacy-markers.txt` lets the hook also keep your own host names out of commits; without it, the generic checks still run.
+The hooks need no setup beyond step 2. Pull requests from forks get the same treatment in CI: the code-versus-documentation checks only list what is left for the maintainer, while the form checks (links, long dash, privacy) still must pass. An optional file `~/.config/seisa/privacy-markers.txt` lets the hook also keep your own host names out of commits; without it, the generic checks still run.
 
 ## What we expect in a pull request
 

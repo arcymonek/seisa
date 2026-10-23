@@ -110,6 +110,10 @@ This is a short version of the full table in [docs/PRIVACY.md](docs/PRIVACY.md),
 - [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), [CHANGELOG.md](CHANGELOG.md).
 - [AGENTS.md](AGENTS.md): rules for AI coding agents.
 
+## Project status
+
+Seisa has one maintainer, and it is a hobby project, not a product with support. Replies to issues and pull requests can take a few days. Only the `main` branch receives fixes; older versions do not. If a report goes quiet for a while, it has not been forgotten.
+
 ## Contributing
 
 Bug reports, ideas and pull requests are welcome, and you do not have to be a programmer to help. Start with [CONTRIBUTING.md](CONTRIBUTING.md); the developer set-up is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Please report security problems privately, as described in [SECURITY.md](SECURITY.md). Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

@@ -133,6 +133,9 @@ The `pre-commit` hook (`scripts/hooks/pre-commit`) checks what is staged, not th
 2. **No long dash (U+2014)** in added lines, except in `frontend/vendor/`.
 3. **Language pairs.** A document and its twin (for example `README.md` and `README.pl.md`, or `docs/X.md` and `docs/pl/X.md`) must be staged together. `SEISA_ONE_LANG=1 git commit ...` skips only this rule, for a typo fixed in one language.
 4. **`check_i18n.py --strict` and `check_docs.py`**, run on an export of the index.
+
+**Contributor mode.** A contributor does not have to update the documentation; the maintainer does. After `git config seisa.contributor true` the hook skips rule 3 and runs `check_docs.py --contributor` (see [How the documentation checks work](#how-the-documentation-checks-work)): what only the maintainer completes is printed as a list and does not stop the commit. Every other rule stays, including `check_i18n.py --strict` (the interface texts still need an English and a Polish entry; a machine translation of the Polish is fine) and the version step. The hook reads the setting with `git config --bool seisa.contributor` and fails closed: anything but a clean `true` (no setting, `false`, a value git cannot read) means the strict mode. The maintainer leaves the setting off.
+
 5. **The version step** (see [Versioning and changelog](#versioning-and-changelog)).
 6. **Privacy scan of added lines.** Strings that look like keys (long hex strings, `sk-or-v1-...`, names such as key, token or secret with a long value, `Bearer`), home folder paths (`/Users/name/`, `/home/name/`) and your own host names.
 
@@ -190,8 +193,8 @@ The version has the form `X.Y.Z`:
 Work happens on a branch whose name starts with its type: `fix-`, `feat-`, `test-`, `ci-` or `docs-`, then a short description (for example `fix-dns-timeout`). The `main` branch changes only when the maintainer merges a reviewed pull request.
 
 - **Commit messages** are in English, in the imperative mood, with a short title (`Fix the DNS timeout`).
-- **The pull request description** has three parts: `## What`, `## Why` and `## Checked`. In "Checked", say what you checked and what you did NOT check; that honesty is more useful than a long list.
-- **The template** also asks which documentation you updated (see the table below).
+- **The pull request description** has four parts: `## What`, `## Why`, `## What changes for users` and `## Checked`. In "Checked", say what you checked and what you did NOT check; that honesty is more useful than a long list.
+- **The template** asks what changes for users. A contributor does not update the documentation; the maintainer does, from that answer (see the table below).
 - The steps from fork to pull request are in [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## How to extend Seisa
@@ -250,7 +253,7 @@ The files in `backend/prompts/` are program files: a change needs a version bump
 
 ## If you change X, update Y
 
-Documentation that is out of date is worse than none, so a change and its documentation travel together. This table shows which document belongs to which kind of change. `check_docs.py` enforces the rows marked "checked".
+Documentation that is out of date is worse than none, so the maintainer keeps a change and its documentation together. This table is the maintainer's map (and the map of the maintainer's agent): it shows which document belongs to which kind of change. A contributor need not follow it. `check_docs.py` enforces the rows marked "checked" for the maintainer; for pull requests from forks the same findings are only listed (`--contributor`).
 
 | When you change... | Update |
 |---|---|
@@ -271,7 +274,7 @@ Documentation that is out of date is worse than none, so a change and its docume
 | A language or a theme | The recipes in [How to extend Seisa](#how-to-extend-seisa), and the settings in [USER_GUIDE.md](USER_GUIDE.md) |
 | The start-up messages in `seisa.sh` | The "Install and run" heading in the [README](../README.md), which `seisa.sh` points to |
 
-Every documentation change is made in both languages, in the same commit.
+The maintainer makes every documentation change in both languages, in the same commit. A contributor who edits a document is welcome to change one language only; the maintainer completes the twin.
 
 ## Writing documentation
 
@@ -292,6 +295,8 @@ This section is for everyone who writes or edits the documents of the project. T
 ### How the documentation checks work
 
 `python3 scripts/check_docs.py` reads the documentation and the code and compares them. It uses only the standard library and reads the code without running it, so the git hook can run it with any Python. It runs in `check_all.py`, in the pre-commit hook and in CI. Errors block; warnings only inform.
+
+With `--contributor` (CI for pull requests from forks; the hook when `seisa.contributor` is `true`) the checks that compare the documentation with the code or with its twin (Pairs, Known files, Routes, Keys, Tabs, Modules, Numbers) do not fail. Their findings are printed under "To be completed by the maintainer", and the run still ends with exit code 0. The checks of form (Links, Images, Form, Addresses, Presence) still block. Without the flag nothing changes.
 
 | Check | What it requires | Kind |
 |---|---|---|
