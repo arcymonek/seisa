@@ -4,7 +4,7 @@
 Usage: python3 scripts/check_i18n.py [--strict]
 
 Checks: key parity pl/en, {placeholder} parity, plural-suffix completeness, forbidden characters (HTML, U+2014),
-keys used in code but missing from the catalog, unused keys, the same version in all four places and (with --strict)
+keys used in code but missing from the catalog, unused keys, the same version in both places of index.html and (with --strict)
 user-facing literals with Polish diacritics that bypass t(). Exit code 1 on errors. Warnings never fail the run.
 The documentation (language pairs, headings, links, anchors, agreement with the code) is checked by scripts/check_docs.py.
 """
@@ -163,18 +163,16 @@ def check_hardcoded_js() -> None:
                 errors.append(f"[strict] Polish text in {f.relative_to(ROOT)}:{n}: {line.strip()[:70]}")
 
 
-# The four places that carry the version: (label, file relative to the project root, regex with the version as group 1).
+# The places that carry the version: (label, file relative to the project root, regex with the version as group 1).
 # scripts/hooks/pre-commit reuses this table, so the hook and this check cannot disagree about where the version lives.
 VERSION_PLACES = (
     ("index.html <title>", "frontend/index.html", r"<title>Seisa ([\d.]+)</title>"),
     ("index.html footer", "frontend/index.html", r"<footer>Seisa ([\d.]+)"),
-    ("README.md", "README.md", r"<b>Seisa ([\d.]+)</b>"),
-    ("README.pl.md", "README.pl.md", r"<b>Seisa ([\d.]+)</b>"),
 )
 
 
 def read_versions(read: Callable[[str], str]) -> dict[str, str]:
-    """The version found in each of the four places ('?' where the pattern does not match); `read` returns a file's text by relative path."""
+    """The version found in each place ('?' where the pattern does not match); `read` returns a file's text by relative path."""
     found: dict[str, str] = {}
     for label, rel, pattern in VERSION_PLACES:
         m = re.search(pattern, read(rel))
@@ -183,7 +181,7 @@ def read_versions(read: Callable[[str], str]) -> dict[str, str]:
 
 
 def check_versions() -> None:
-    """The visible version must be identical everywhere: 2x index.html (title, footer) + 2x README."""
+    """The visible version must be identical everywhere: index.html title and footer."""
     html = (ROOT / "frontend" / "index.html").read_text(encoding="utf-8")
     found = read_versions(lambda rel: (ROOT / rel).read_text(encoding="utf-8"))
     if len(set(found.values())) != 1:

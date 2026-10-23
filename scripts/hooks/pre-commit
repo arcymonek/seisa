@@ -18,7 +18,7 @@ What it checks, always on what is STAGED (the index), not on the working tree:
      the other language) is printed as a list and does not stop the commit. Every other rule stays. Anything but a
      clean `true` (no setting, `false`, a value git cannot read, git failing) means the strict mode.
   4. scripts/check_i18n.py --strict and scripts/check_docs.py, run on an export of the index: catalogs, the same
-     version in all four places, and the documentation (pairs, headings, links, agreement with the code).
+     version in both places of index.html, and the documentation (pairs, headings, links, agreement with the code).
   5. Version step: if the version differs from the one on `main`, the difference must be exactly one allowed step:
      Z+1, or Y+1 with Z=0, or X+1 with Y=Z=0. A branch therefore cannot bump twice. `main` is the newest of the
      merge-bases with main, origin/main and github/main, so a local `main` that was not updated does not count. A bump must come
@@ -344,7 +344,7 @@ def base_commit() -> str | None:
 
 
 def versions_at(ci, revs: list[str]) -> list[dict[str, str]]:
-    """The version in each of the four places at each rev (empty rev = the index), all files read in one git call."""
+    """The version in each place at each rev (empty rev = the index), all files read in one git call."""
     files = sorted({rel for _, rel, _ in ci.VERSION_PLACES})
     blobs = show_many([f"{rev}:{rel}" for rev in revs for rel in files])
     result = []

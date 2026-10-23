@@ -1,6 +1,6 @@
 <p align="center">
   <img src="frontend/logo.png" alt="Seisa logo" width="160"><br>
-  <b>Seisa 2.4.31</b>
+  <b>Seisa</b>
 </p>
 
 **English** | [Polski](README.pl.md)

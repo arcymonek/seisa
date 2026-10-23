@@ -55,7 +55,7 @@ python3 scripts/check_all.py
 | `ruff` | Style and common mistakes in `backend`, `scripts` and `tests` (configuration in `pyproject.toml`: line length 140, Python 3.11 target, the git hooks included) |
 | `pytest` | All tests, including the slow ones |
 | `api_harness` | Every endpoint, end to end, with the outside services faked (see [End-to-end harness](#end-to-end-harness)) |
-| `check_i18n --strict` | The language catalogs, and the same version in all four places |
+| `check_i18n --strict` | The language catalogs, and the same version in the title and the footer |
 | `check_docs` | The documentation (see [Writing documentation](#writing-documentation)) |
 | `dump_facts` | That the facts of the synthetic e-mails can still be computed (see [Golden patterns](#golden-patterns)) |
 | `frontend syntax (node --check)` | The syntax of every module in `frontend/js/` |
@@ -69,7 +69,7 @@ python3 scripts/check_all.py
 - key and `{placeholder}` parity between the English and Polish catalogs (frontend and backend);
 - the right plural forms, no HTML and no long dash (U+2014) in the catalogs;
 - keys used in code but missing from a catalog, and the other way round;
-- the same version in all four places;
+- the same version in the title and the footer;
 - with `--strict`, Polish text in code that bypasses `t()`.
 
 `scripts/make_app_icon.py` is not part of the checklist: it is a helper that builds `frontend/app-icon.png` from the logo, and it needs Pillow, which is not a dependency of Seisa.
@@ -181,7 +181,7 @@ The version has the form `X.Y.Z`:
 | `Y` | A new feature, tab, outside service or `.env` key. `Z` goes back to 0. |
 | `X` | Only by the maintainer's decision. |
 
-- **Four places.** The version stands in `<title>` and the footer of `frontend/index.html`, and as `<b>Seisa X.Y.Z</b>` in `README.md` and `README.pl.md`. `check_i18n.py` checks that all four match. The release date is the `seisa-release-date` meta tag in `frontend/index.html`.
+- **Two places.** The version stands in `<title>` and in the footer of `frontend/index.html`. `check_i18n.py` checks that both match. The READMEs carry no version number: the current one is the top entry of `CHANGELOG.md`. The release date is the `seisa-release-date` meta tag in `frontend/index.html`.
 - **One bump per branch**, in its last commit, together with a `## X.Y.Z - YYYY-MM-DD` entry at the top of `CHANGELOG.md` whose date equals the meta tag. The hook enforces both.
 - **No bump needed?** A change to the program that really needs none (comments only) says so with a `No-version-bump: <reason>` line in one commit message of the branch.
 - **Development notes.** A change without a bump that matters to maintainers (a new check, a new script) gets one dated line under `## Development` at the top of `CHANGELOG.md`.
@@ -269,7 +269,7 @@ Documentation that is out of date is worse than none, so the maintainer keeps a 
 | A module (new, renamed or removed) | The module tables in [ARCHITECTURE.md](ARCHITECTURE.md) (checked) |
 | A script, a hook rule or a CI job | This file (checked for scripts), and [CONTRIBUTING.md](../CONTRIBUTING.md) if contributors are affected |
 | A dependency | `requirements.txt` and `requirements.lock`, a version bump, and the licences in [COMPLIANCE.md](COMPLIANCE.md) if it is new |
-| The version | The four places, the release date and `CHANGELOG.md` (see [Versioning and changelog](#versioning-and-changelog)) |
+| The version | The title and the footer of `frontend/index.html`, the release date and `CHANGELOG.md` (see [Versioning and changelog](#versioning-and-changelog)) |
 | A file in `frontend/vendor/` | The licences in [COMPLIANCE.md](COMPLIANCE.md) |
 | A language or a theme | The recipes in [How to extend Seisa](#how-to-extend-seisa), and the settings in [USER_GUIDE.md](USER_GUIDE.md) |
 | The start-up messages in `seisa.sh` | The "Install and run" heading in the [README](../README.md), which `seisa.sh` points to |

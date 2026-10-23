@@ -55,7 +55,7 @@ python3 scripts/check_all.py
 | `ruff` | Styl i typowe pomyłki w `backend`, `scripts` i `tests` (konfiguracja w `pyproject.toml`: długość linii 140, cel Python 3.11, razem z hookami git) |
 | `pytest` | Wszystkie testy, także wolne |
 | `api_harness` | Każdy endpoint od początku do końca, z udawanymi usługami zewnętrznymi (patrz [Test end-to-end](#test-end-to-end)) |
-| `check_i18n --strict` | Katalogi językowe i tę samą wersję we wszystkich czterech miejscach |
+| `check_i18n --strict` | Katalogi językowe i tę samą wersję w tytule i stopce |
 | `check_docs` | Dokumentację (patrz [Pisanie dokumentacji](#pisanie-dokumentacji)) |
 | `dump_facts` | Czy fakty syntetycznych e-maili nadal da się obliczyć (patrz [Złote wzorce](#złote-wzorce)) |
 | `frontend syntax (node --check)` | Składnię każdego modułu w `frontend/js/` |
@@ -69,7 +69,7 @@ python3 scripts/check_all.py
 - zgodność kluczy i `{placeholderów}` między katalogami angielskim i polskim (frontend i backend);
 - poprawne formy liczby mnogiej, brak HTML i długiej pauzy (U+2014) w katalogach;
 - klucze użyte w kodzie, ale brakujące w katalogu, i na odwrót;
-- tę samą wersję we wszystkich czterech miejscach;
+- tę samą wersję w tytule i stopce;
 - z `--strict` także polski tekst w kodzie, który omija `t()`.
 
 `scripts/make_app_icon.py` nie należy do zestawu: to pomocnik, który buduje `frontend/app-icon.png` z logo i wymaga Pillow, którego Seisa nie ma wśród swoich zależności.
@@ -181,7 +181,7 @@ Wersja ma postać `X.Y.Z`:
 | `Y` | Nowa funkcja, zakładka, usługa zewnętrzna lub klucz `.env`. `Z` wraca do 0. |
 | `X` | Wyłącznie z decyzji opiekuna. |
 
-- **Cztery miejsca.** Wersja stoi w `<title>` i stopce `frontend/index.html` oraz jako `<b>Seisa X.Y.Z</b>` w `README.md` i `README.pl.md`. `check_i18n.py` sprawdza, że wszystkie cztery się zgadzają. Data wydania to znacznik meta `seisa-release-date` w `frontend/index.html`.
+- **Dwa miejsca.** Wersja stoi w `<title>` i w stopce `frontend/index.html`. `check_i18n.py` sprawdza, że oba się zgadzają. README nie podaje numeru wersji: aktualny jest na górze `CHANGELOG.md`. Data wydania to znacznik meta `seisa-release-date` w `frontend/index.html`.
 - **Jedno podbicie na gałąź**, w jej ostatnim commicie, razem z wpisem `## X.Y.Z - RRRR-MM-DD` na górze `CHANGELOG.md`, którego data równa się znacznikowi meta. Hook pilnuje obu rzeczy.
 - **Podbicie niepotrzebne?** Zmiana programu, która naprawdę go nie wymaga (same komentarze), zaznacza to linią `No-version-bump: <powód>` w jednym z komunikatów commitów gałęzi.
 - **Notatki rozwojowe.** Zmiana bez podbicia, ważna dla opiekunów (nowa kontrola, nowy skrypt), dostaje jedną linię z datą w sekcji `## Development` na górze `CHANGELOG.md`.
@@ -269,7 +269,7 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc opiekun dba o to, żeby 
 | Moduł (nowy, przemianowany lub usunięty) | Tabele modułów w [ARCHITECTURE.md](ARCHITECTURE.md) (sprawdzane) |
 | Skrypt, regułę hooka albo zadanie CI | Ten plik (sprawdzane dla skryptów) oraz [CONTRIBUTING.md](CONTRIBUTING.md), jeśli dotyczy to kontrybutorów |
 | Zależność | `requirements.txt` i `requirements.lock`, podbicie wersji oraz licencje w [COMPLIANCE.md](COMPLIANCE.md), jeśli jest nowa |
-| Wersję | Cztery miejsca, datę wydania i `CHANGELOG.md` (patrz [Wersjonowanie i dziennik zmian](#wersjonowanie-i-dziennik-zmian)) |
+| Wersję | Tytuł i stopkę `frontend/index.html`, datę wydania i `CHANGELOG.md` (patrz [Wersjonowanie i dziennik zmian](#wersjonowanie-i-dziennik-zmian)) |
 | Plik w `frontend/vendor/` | Licencje w [COMPLIANCE.md](COMPLIANCE.md) |
 | Język albo skórka | Przepisy w [Jak rozszerzać Seisę](#jak-rozszerzać-seisę) i ustawienia w [USER_GUIDE.md](USER_GUIDE.md) |
 | Komunikaty startowe w `seisa.sh` | Nagłówek „Install and run" w [README](../../README.pl.md), do którego odsyła `seisa.sh` |
