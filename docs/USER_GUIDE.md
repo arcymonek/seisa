@@ -76,6 +76,7 @@ Nothing leaves your computer until you click a button that does it. The short ve
 | "Analyze" in the AbuseIPDB tab | OpenRouter, only if a key is set |
 | "Send via AbuseIPDB API" | AbuseIPDB |
 | "Refresh limits" in the Info tab | VirusTotal, urlscan.io and OpenRouter |
+| "Search models" in the Info tab | OpenRouter (the public model list, no key needed) |
 
 The tabs History, Logs and the rest of Info only read from Seisa's own files, and loading a DMARC file only happens in your browser.
 
@@ -588,13 +589,13 @@ Open the tab and read. Change the language, the colour theme, the application ic
 
 ### What is sent and when
 
-Opening the tab sends nothing. "Refresh limits" is the only action that contacts services: it asks VirusTotal, urlscan.io and OpenRouter for their quotas. These requests do not use up quota.
+Opening the tab sends nothing. Two buttons contact services. "Refresh limits" asks VirusTotal, urlscan.io and OpenRouter for their quotas; these requests do not use up quota. "Search models" (in the API keys card) asks OpenRouter for its public model list.
 
 ### Reading the result
 
 **Settings.** The language, the colour theme, the "Application icon" (with "Add icon" and "Remove icon"), and the "Server": "Shut down Seisa" and "Ask before shutting down". The icon is explained in [OPERATIONS.md](OPERATIONS.md).
 
-**API keys.** A separate card above "Status and API limits", closed until you open it. One row per service; the "Open <service>" button opens the service's home page in a new tab, where you can create an account and generate a key. Each row shows its state: "set", "not set" or "set by an environment variable" (then change it where it is exported; the file cannot override it). Paste a key into the field and click "Save keys"; an empty field keeps what is set, "Remove" deletes one key and "Remove all" (click twice to confirm) deletes every key at once, except those set by an environment variable. The keys go into the `.env` file in the Seisa folder, readable only by you, and take effect at once without a restart. The fields stay empty on purpose: Seisa never shows a key again. A key may contain only letters, digits and `. _ ~ + / = : -`. The "OpenRouter model" row is the one setting that is shown, because it is not a secret. After saving, "Refresh limits" checks the VirusTotal, URLScan and OpenRouter keys.
+**API keys.** A separate card above "Status and API limits", closed until you open it. One row per service; the "Open <service>" button opens the service's home page in a new tab, where you can create an account and generate a key. Each row shows its state: "set", "not set" or "set by an environment variable" (then change it where it is exported; the file cannot override it). Paste a key into the field and click "Save keys"; an empty field keeps what is set, "Remove" deletes one key and "Remove all" (click twice to confirm) deletes every key at once, except those set by an environment variable. The keys go into the `.env` file in the Seisa folder, readable only by you, and take effect at once without a restart. The fields stay empty on purpose: Seisa never shows a key again. A key may contain only letters, digits and `. _ ~ + / = : -`. The "OpenRouter model" row is the one setting that is shown, because it is not a secret. "Search models" next to it fetches the list of OpenRouter models (no key needed, one request per click); type in the filter to narrow it down and click a model to put it in the field, then "Save keys". Each entry shows the price per million tokens and the context size, with a warning when the model's output limit is below what the Email analysis asks for, or when it has no JSON mode (the AbuseIPDB assessment needs it). The warnings come from the OpenRouter list itself; Seisa does not guess. After saving, "Refresh limits" checks the VirusTotal, URLScan and OpenRouter keys.
 
 **Status and API limits.** The "Environment" (address, whether the ".env file" is present, system, Python and FastAPI versions), and one card per service with the key status and usage against the free-plan limits. When a service answers "limit exceeded" (HTTP 429), its card gets that badge until the next successful answer.
 
@@ -612,6 +613,7 @@ Opening the tab sends nothing. "Refresh limits" is the only action that contacts
 | Add icon / Remove icon | Adds or removes the desktop icon |
 | Shut down Seisa | Stops Seisa |
 | Refresh limits | Asks the services for their current quotas |
+| Search models | Fetches the public OpenRouter model list for the model field in the API keys card |
 
 ## 13. Language and colour themes
 

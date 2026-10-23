@@ -18,6 +18,7 @@ from backend import desktop_icon, env_file
 from backend.api_limits import limits_snapshot, refresh_live
 from backend.config import BASE_DIR, settings
 from backend.i18n import t
+from backend.services import openrouter_models
 
 router = APIRouter()
 
@@ -168,3 +169,13 @@ async def refresh_limits():
     """Asks the services that report their quota (VirusTotal, urlscan, OpenRouter) - only on an explicit click."""
     errors = await refresh_live()
     return {"limits": limits_snapshot(), "errors": errors}
+
+
+@router.post("/about/models")
+async def search_models():
+    """The model search in the settings: fetches the public OpenRouter model list (no key is sent) on an explicit
+    click. Nothing is stored; the page filters the answer itself."""
+    try:
+        return await openrouter_models.fetch_models()
+    except openrouter_models.ModelsError as exc:
+        raise HTTPException(status_code=502, detail=t("models.fetch_failed", message=exc.message)) from exc

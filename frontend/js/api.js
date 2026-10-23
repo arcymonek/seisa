@@ -61,6 +61,7 @@ export const api = {
   aboutKeysSave: (body) => request("/about/keys", { method: "PUT", body: JSON.stringify(body) }),
   aboutKeysRemoveAll: () => request("/about/keys", { method: "DELETE" }),
   aboutKeyRemove: (field) => request(`/about/keys/${encodeURIComponent(field)}`, { method: "DELETE" }),
+  aboutModels: () => request("/about/models", { method: "POST" }),
   aboutLimitsRefresh: () => request("/about/limits/refresh", { method: "POST" }),
   logsClear: () => request("/logs", { method: "DELETE" }),
 

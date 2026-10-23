@@ -98,6 +98,7 @@ To skrócona wersja pełnej tabeli w [docs/pl/PRIVACY.md](docs/pl/PRIVACY.md), k
 | AbuseIPDB: adres w formularzu | Adres IP, sprawdzany **automatycznie** (jedyne połączenie bez własnego kliknięcia, i tylko z kluczem) | AbuseIPDB |
 | AbuseIPDB: „Wyślij przez AbuseIPDB API" | Publiczne zgłoszenie: IP, kategorie, czas i komentarz | AbuseIPDB |
 | Info: „Odśwież limity" | Zapytania o limity | VirusTotal, urlscan.io, OpenRouter |
+| Info: „Szukaj modeli" | Zapytanie o publiczną listę modeli (bez klucza i bez Twoich danych) | OpenRouter |
 
 ## Dokumentacja
 

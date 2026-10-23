@@ -20,7 +20,7 @@ This page is for careful users and reviewers. In one sentence: Seisa runs on you
 ## In short
 
 - Seisa listens only on `127.0.0.1` (port 54321), so other computers on your network cannot reach it.
-- Nothing is sent to an outside service until you click a button that does it (Check, Scan, Analyze, Send via AbuseIPDB API, geo (RDAP), Refresh limits).
+- Nothing is sent to an outside service until you click a button that does it (Check, Scan, Analyze, Send via AbuseIPDB API, geo (RDAP), Refresh limits, Search models).
 - There is one exception: the AbuseIPDB tab looks the address up in AbuseIPDB by itself as soon as an IP is in its form (see the table below).
 - Your browser talks only to Seisa. The page is not allowed to contact any other server.
 - E-mail contents go to a language model only when you click "Analyze" (not "Analyze without LLM") and only if an OpenRouter key is set.
@@ -64,6 +64,7 @@ Two things apply to the whole table:
 | Info, "Refresh limits" | A quota query. The VirusTotal key is part of the address (`/api/v3/users/{key}/overall_quotas`), as VirusTotal requires | www.virustotal.com | Click only | `VIRUSTOTAL_API_KEY` |
 | Info, "Refresh limits" | A quota query (`/user/quotas/`) | urlscan.io | Click only | `URLSCAN_API_KEY` |
 | Info, "Refresh limits" | A key status query (`/api/v1/key`) | openrouter.ai | Click only | `OPENROUTER_API_KEY` |
+| Info, API keys, "Search models" | A request for the public model list (`GET /api/v1/models`). No key and no data of yours are sent, only the two attribution headers described below. The answer (about 0.8 MB) is reduced by Seisa and filtered in your browser | openrouter.ai | Click only | none (works without a key) |
 | Info, "Add icon" and "Remove icon" | Nothing leaves the computer. Seisa writes files in your home folder and runs local tools (`sips`, `iconutil`, `update-desktop-database`) | Nobody | Click only | none |
 | Starting from the desktop icon | A local check `curl http://127.0.0.1:54321/api/about` | Your own computer | When you start Seisa from the icon | none |
 | Opening Info, History or Logs; parsing an e-mail; loading a DMARC file | Nothing leaves the computer. Parsing, scoring and the local `git log` for Recent changes all run locally | Nobody | - | none |

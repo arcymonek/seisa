@@ -133,6 +133,8 @@ def _sse(chunks, finish, usage):
 
 
 STREAM_COUNT = {"n": 0}
+MODEL_LIST_REQUESTS: list[dict] = []  # what the mocked OpenRouter model list received
+MODEL_LIST_FAIL = {"on": False}
 LLM_PROMPTS: list[tuple[bool, str]] = []  # (streamed?, the text of all messages) of every OpenRouter call
 
 
@@ -231,6 +233,16 @@ def handler(request: httpx.Request) -> httpx.Response:
                                                                 "response": {"dataLength": 2048}}],
                                                   "cookies": [{"name": "a"}],
                                                   "links": [{"href": "https://x.example/", "text": "click " + XSS}]}})
+    if host == "openrouter.ai" and path == "/api/v1/models":
+        MODEL_LIST_REQUESTS.append({"auth": request.headers.get("Authorization"), "method": request.method})
+        if MODEL_LIST_FAIL["on"]:
+            return httpx.Response(500, text="upstream error " + XSS)
+        good = {"id": "vendor/model:free", "name": "Vendor: Model " + XSS, "pricing": {"prompt": "0.000003", "completion": "0.000015"},
+                "context_length": 200000, "architecture": {"output_modalities": ["text"]},
+                "top_provider": {"max_completion_tokens": 8192}, "supported_parameters": ["max_tokens"]}
+        return httpx.Response(200, json={"data": [good,
+            {**good, "id": "bad id$(x)\nVIRUSTOTAL_API_KEY=x"},
+            {**good, "id": "vendor/image", "architecture": {"output_modalities": ["image", "text"]}}]})
     if host == "openrouter.ai":
         payload = json.loads(request.content)
         LLM_PROMPTS.append((bool(payload.get("stream")), "\n".join(m["content"] for m in payload["messages"])))
@@ -962,6 +974,34 @@ if hasattr(cfg, "ENV_FILE") and hasattr(main, "app") and client.get("/api/about"
     main_settings.greynoise_api_key = _saved_value
 else:
     probes["keys panel"] = "not in this checkout"
+# The model search (POST /api/about/models) fetches the public OpenRouter list on a click. The request must carry no key
+# (the OpenRouter key is set in this run), ids that could not be saved in the .env file are dropped, the answer holds
+# only text models, another site cannot trigger it, and a failing upstream gives a plain 502 without its body.
+if client.post("/api/about/models").status_code != 404:
+    _calls_before = len(MODEL_LIST_REQUESTS)
+    _r = client.post("/api/about/models")
+    probes["models search"] = _r.status_code
+    _models = _r.json().get("models", []) if _r.status_code == 200 else []
+    if _r.status_code != 200 or [m["id"] for m in _models] != ["vendor/model:free"]:
+        failures.append(f"model search: unexpected list ({_r.status_code}): {[m['id'] for m in _models]}")
+    elif _models[0]["prompt_per_million"] != 3.0 or _models[0]["completion_per_million"] != 15.0 or _models[0]["json_mode"] is not False:
+        failures.append(f"model search: prices or json_mode wrong: {_models[0]}")
+    if len(MODEL_LIST_REQUESTS) != _calls_before + 1 or MODEL_LIST_REQUESTS[-1]["auth"] is not None:
+        failures.append("model search: the request carried an Authorization header or was not made exactly once")
+    _before = len(MODEL_LIST_REQUESTS)
+    _r = client.post("/api/about/models", headers=_XS)
+    probes["models search cross-site"] = _r.status_code
+    if _r.status_code != 403 or len(MODEL_LIST_REQUESTS) != _before:
+        failures.append(f"model search: a cross-site request got through: {_r.status_code}")
+    MODEL_LIST_FAIL["on"] = True
+    _r = client.post("/api/about/models")
+    MODEL_LIST_FAIL["on"] = False
+    probes["models search upstream error"] = _r.status_code
+    if _r.status_code != 502 or "upstream error" in _r.text or "onerror" in _r.text:
+        failures.append(f"model search: an upstream error was not a plain 502: {_r.status_code}")
+else:
+    probes["models search"] = "not in this checkout"
+
 if _env_digest() != _ENV_BEFORE:
     failures.append("ISOLATION LEAK: the real .env changed during the harness run")
 

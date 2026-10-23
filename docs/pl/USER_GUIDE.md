@@ -76,6 +76,7 @@ Nic nie opuszcza Twojego komputera, dopóki nie klikniesz przycisku, który to r
 | „Analizuj" w zakładce AbuseIPDB | OpenRouter, tylko gdy jest ustawiony klucz |
 | „Wyślij przez AbuseIPDB API" | AbuseIPDB |
 | „Odśwież limity" w zakładce Info | VirusTotal, urlscan.io i OpenRouter |
+| „Szukaj modeli" w zakładce Info | OpenRouter (publiczna lista modeli, klucz niepotrzebny) |
 
 Zakładki Historia, Logi i reszta Info tylko czytają własne pliki Seisy, a wczytanie pliku DMARC dzieje się wyłącznie w Twojej przeglądarce.
 
@@ -588,13 +589,13 @@ Otwórz zakładkę i czytaj. Język, skórkę kolorystyczną, ikonę aplikacji i
 
 ### Co jest wysyłane i kiedy
 
-Otwarcie zakładki nic nie wysyła. „Odśwież limity" to jedyna akcja, która łączy się z usługami: pyta VirusTotal, urlscan.io i OpenRouter o ich limity. Te zapytania nie zużywają limitu.
+Otwarcie zakładki nic nie wysyła. Z usługami łączą się dwa przyciski. „Odśwież limity" pyta VirusTotal, urlscan.io i OpenRouter o ich limity; te zapytania nie zużywają limitu. „Szukaj modeli" (w karcie Klucze API) pyta OpenRouter o publiczną listę modeli.
 
 ### Jak czytać wynik
 
 **Ustawienia.** Język, skórka kolorystyczna, „Ikona aplikacji" (z „Dodaj ikonę" i „Usuń ikonę") oraz „Serwer": „Zamknij Seisę" i „Pytaj przed zamknięciem". Ikonę wyjaśnia [OPERATIONS.md](OPERATIONS.md).
 
-**Klucze API.** Osobna karta nad „Statusem i limitami API", domyślnie zwinięta. Jeden wiersz na usługę; przycisk „Otwórz <nazwa usługi>" otwiera stronę główną usługi w nowej karcie, gdzie założysz konto i wygenerujesz klucz. Każdy wiersz pokazuje stan: „ustawiony", „nie ustawiony" albo „ustawiony zmienną środowiskową" (wtedy zmień go tam, gdzie jest eksportowany; plik go nie nadpisze). Wklej klucz do pola i kliknij „Zapisz klucze"; puste pole zostawia obecną wartość, „Usuń" kasuje jeden klucz, a „Usuń wszystkie" (kliknij dwa razy, żeby potwierdzić) kasuje od razu wszystkie, poza ustawionymi zmienną środowiskową. Klucze trafiają do pliku `.env` w folderze Seisy, który może czytać tylko właściciel konta, i działają od razu, bez restartu. Pola są puste celowo: Seisa nigdy nie pokazuje klucza ponownie. Klucz może zawierać tylko litery, cyfry i znaki `. _ ~ + / = : -`. Wiersz „Model OpenRouter" to jedyne ustawienie, które jest pokazywane, bo nie jest tajne. Po zapisie „Odśwież limity" sprawdzi klucze VirusTotal, URLScan i OpenRouter.
+**Klucze API.** Osobna karta nad „Statusem i limitami API", domyślnie zwinięta. Jeden wiersz na usługę; przycisk „Otwórz <nazwa usługi>" otwiera stronę główną usługi w nowej karcie, gdzie założysz konto i wygenerujesz klucz. Każdy wiersz pokazuje stan: „ustawiony", „nie ustawiony" albo „ustawiony zmienną środowiskową" (wtedy zmień go tam, gdzie jest eksportowany; plik go nie nadpisze). Wklej klucz do pola i kliknij „Zapisz klucze"; puste pole zostawia obecną wartość, „Usuń" kasuje jeden klucz, a „Usuń wszystkie" (kliknij dwa razy, żeby potwierdzić) kasuje od razu wszystkie, poza ustawionymi zmienną środowiskową. Klucze trafiają do pliku `.env` w folderze Seisy, który może czytać tylko właściciel konta, i działają od razu, bez restartu. Pola są puste celowo: Seisa nigdy nie pokazuje klucza ponownie. Klucz może zawierać tylko litery, cyfry i znaki `. _ ~ + / = : -`. Wiersz „Model OpenRouter" to jedyne ustawienie, które jest pokazywane, bo nie jest tajne. „Szukaj modeli" obok niego pobiera listę modeli OpenRouter (klucz niepotrzebny, jedno zapytanie na kliknięcie); wpisz coś w filtrze, żeby zawęzić listę, i kliknij model, aby wstawić go do pola, potem „Zapisz klucze". Każda pozycja pokazuje cenę za milion tokenów i rozmiar kontekstu, z ostrzeżeniem, gdy limit odpowiedzi modelu jest niższy niż potrzebuje analiza Email albo gdy model nie ma trybu JSON (potrzebuje go ocena AbuseIPDB). Ostrzeżenia pochodzą z samej listy OpenRouter; Seisa niczego nie zgaduje. Po zapisie „Odśwież limity" sprawdzi klucze VirusTotal, URLScan i OpenRouter.
 
 **Status i limity API.** „Środowisko" (adres, czy „Plik .env" jest, system, wersje Pythona i FastAPI) oraz jedna karta na usługę ze statusem klucza i zużyciem względem limitów darmowego planu. Gdy usługa odpowie „limit wyczerpany" (HTTP 429), jej karta dostaje taką odznakę aż do następnej udanej odpowiedzi.
 
@@ -612,6 +613,7 @@ Otwarcie zakładki nic nie wysyła. „Odśwież limity" to jedyna akcja, która
 | Dodaj ikonę / Usuń ikonę | Dodaje lub usuwa ikonę na pulpicie |
 | Zamknij Seisę | Zatrzymuje Seisę |
 | Odśwież limity | Pyta usługi o aktualne limity |
+| Szukaj modeli | Pobiera publiczną listę modeli OpenRouter do pola modelu w karcie Klucze API |
 
 ## 13. Język i skórki kolorystyczne
 

@@ -17,11 +17,12 @@ from backend.env_file import EnvFileError
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
-    """A private .env path, no key in the process environment, and every setting restored after the test."""
+    """A private .env path, no key in the process environment, every setting at its default (the developer's own .env,
+    which `settings` read at import, must not decide what a test sees) and every setting restored after the test."""
     monkeypatch.setattr(cfg, "ENV_FILE", tmp_path / ".env")
-    for field in Settings.model_fields:
+    for field, info in Settings.model_fields.items():
         monkeypatch.delenv(field.upper(), raising=False)
-        monkeypatch.setattr(settings, field, getattr(settings, field))
+        monkeypatch.setattr(settings, field, info.default)
     return tmp_path / ".env"
 
 

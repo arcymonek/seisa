@@ -537,3 +537,10 @@ button.kpi { font: inherit; color: inherit; text-align: left; }
 .spark { display: flex; gap: 2px; align-items: flex-end; height: 28px; }
 .spark-col { flex: 0 0 6px; height: 100%; display: flex; align-items: flex-end; }
 .spark-bar { display: flex; flex-direction: column-reverse; width: 100%; min-height: 2px; background: var(--pass); }
+.model-search { display: block; }
+.model-search .keys-input { margin-right: 14px; }
+.model-list { list-style: none; margin: 8px 0; padding: 0; max-height: 22rem; overflow-y: auto; border: 1px solid var(--hair); border-radius: 6px; }
+.model-list li + li { border-top: 1px solid var(--hair); }
+.model-pick { display: block; width: 100%; margin: 0; padding: 6px 10px; text-align: left; font: inherit; background: none; color: var(--text); border: 0; cursor: pointer; }
+.model-pick:hover, .model-pick:focus-visible { background: var(--warn-bg); }
+.model-warn { color: var(--warn); font-size: 13px; }

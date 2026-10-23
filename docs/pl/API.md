@@ -458,6 +458,16 @@ Zakładka Info pokazuje, co jest skonfigurowane, limity API i ikonę na pulpicie
 | Wysyła do internetu | Nie |
 | Woła | `frontend/js/shutdown.js` |
 
+### `POST /api/about/models`
+
+| Pozycja | Szczegóły |
+|---|---|
+| Wejście | brak |
+| Wyjście | `{models, email_max_tokens, fetched_at}`. Każdy model ma `id`, `name`, `prompt_per_million` i `completion_per_million` (USD za milion tokenów, `null`, gdy cena zależy od routingu), `context_length`, `max_completion_tokens` (oba `null`, gdy nieznane) oraz `json_mode`. Na liście są tylko modele wyłącznie tekstowe, których identyfikator da się zapisać w `.env`. `email_max_tokens` to limit odpowiedzi, o który prosi analiza Email |
+| Limity i błędy | 502 z przetłumaczonym tekstem, gdy nie ma połączenia z OpenRouter, odpowiedź ma status błędu, nie jest listą albo przekracza 5 MB. Tekst nigdy nie zawiera treści odpowiedzi |
+| Wysyła do internetu | Tak, `GET` publicznej listy modeli w openrouter.ai, bez żadnego klucza (patrz [PRIVACY.md](PRIVACY.md)). Nic nie jest zapisywane |
+| Woła | `frontend/js/about-models.js` |
+
 ### `POST /api/about/limits/refresh`
 
 | Pozycja | Szczegóły |

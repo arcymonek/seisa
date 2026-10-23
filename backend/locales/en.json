@@ -310,5 +310,8 @@
   "settings.symlink": ".env is a symbolic link; Seisa will not replace it",
   "settings.write_failed": "could not write the .env file ({error})",
   "settings.json_required": "the request must be JSON",
-  "settings.bad_body": "expected a JSON object with text values"
+  "settings.bad_body": "expected a JSON object with text values",
+  "models.fetch_failed": "could not fetch the model list from OpenRouter ({message})",
+  "models.too_large": "the model list is larger than expected, so it was not read",
+  "models.bad_answer": "the model list has an unexpected format"
 }

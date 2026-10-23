@@ -4,6 +4,7 @@
 import { api } from "./api.js";
 import { serviceTitle } from "./services.js";
 import { t } from "./i18n.js";
+import { attachModelSearch } from "./about-models.js";
 import { armedConfirm, escapeHtml as e } from "./util.js";
 
 let box = null;
@@ -51,6 +52,7 @@ function build(keys) {
     const remove = holder.querySelector(`[data-remove="${k.field}"]`);
     remove.addEventListener("click", () => removeKey(k.field));
     holder.querySelector(`[data-open="${k.field}"]`)?.addEventListener("click", () => window.open(SERVICE_SITES[serviceId(k)], "_blank", "noopener,noreferrer"));
+    if (!k.secret) attachModelSearch(input.closest(".settings-row"), input);
     rows.set(k.field, { input, remove, state: holder.querySelector(`[data-state="${k.field}"]`), secret: k.secret });
   }
 }
@@ -107,7 +109,7 @@ async function call(fn, doneKey) {
     for (const row of rows.values()) row.input.value = "";
     renderKeys(res.keys);
     if (onChange) await onChange();
-    info.textContent = `${t(doneKey)} ${t("about.keys_after")}`;
+    info.textContent = t(doneKey);
   } catch (err) {
     info.className = "action-info bad";
     info.textContent = t("common.error", { message: err.message });

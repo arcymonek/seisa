@@ -1257,9 +1257,21 @@
   "about.keys_saved": "Saved.",
   "about.keys_removed": "Removed.",
   "about.keys_nothing": "Nothing to save - fill in at least one field.",
-  "about.keys_after": "Use \"Refresh limits\" below to check the keys of VirusTotal, URLScan and OpenRouter.",
   "about.keys_remove_all": "Remove all",
   "about.keys_remove_all_confirm": "Click again to remove all keys",
   "about.keys_removed_all": "All keys removed (except those set by an environment variable).",
-  "about.keys_open": "Open {service}"
+  "about.keys_open": "Open {service}",
+  "about.models_search": "Search models",
+  "about.models_loading": "Fetching the model list from OpenRouter...",
+  "about.models_found_one": "{n} model",
+  "about.models_found_other": "{n} models",
+  "about.models_shown": "Showing the first {shown} of {total} - type more to narrow it down",
+  "about.models_time": "{time} s",
+  "about.models_filter": "Filter by name or id",
+  "about.models_note": "Click a model to put it in the field, then \"Save keys\". Prices are from the OpenRouter list; the real cost of an analysis is shown from OpenRouter's own answer afterwards.",
+  "about.models_price": "${input} in / ${output} out per million tokens",
+  "about.models_price_varies": "price depends on the routing",
+  "about.models_context": "context {n} tokens",
+  "about.models_warn_output": "Output limit {limit} tokens, below the {needed} that the Email analysis asks for - a long analysis may be cut off.",
+  "about.models_warn_json": "No JSON mode - the AbuseIPDB assessment may fail with this model."
 }

@@ -20,7 +20,7 @@ Ta strona jest dla ostrożnych użytkowników i recenzentów. W jednym zdaniu: S
 ## W skrócie
 
 - Seisa nasłuchuje wyłącznie na `127.0.0.1` (port 54321), więc inne komputery w Twojej sieci jej nie widzą.
-- Nic nie jest wysyłane do usługi zewnętrznej, dopóki nie klikniesz przycisku, który to robi (Sprawdź, Skanuj, Analizuj, Wyślij przez AbuseIPDB API, geo (RDAP), Odśwież limity).
+- Nic nie jest wysyłane do usługi zewnętrznej, dopóki nie klikniesz przycisku, który to robi (Sprawdź, Skanuj, Analizuj, Wyślij przez AbuseIPDB API, geo (RDAP), Odśwież limity, Szukaj modeli).
 - Jest jeden wyjątek: zakładka AbuseIPDB sama sprawdza adres w AbuseIPDB, gdy tylko w jej formularzu pojawi się adres IP (zobacz tabelę poniżej).
 - Twoja przeglądarka rozmawia tylko z Seisą. Strona nie ma prawa łączyć się z żadnym innym serwerem.
 - Treść e-maila trafia do modelu językowego tylko po kliknięciu „Analizuj" (nie „Analizuj bez LLM") i tylko wtedy, gdy ustawiono klucz OpenRouter.
@@ -64,6 +64,7 @@ Dwie rzeczy dotyczą całej tabeli:
 | Info, „Odśwież limity" | Zapytanie o limity. Klucz VirusTotal jest częścią adresu (`/api/v3/users/{key}/overall_quotas`), bo tak wymaga VirusTotal | www.virustotal.com | Tylko po kliknięciu | `VIRUSTOTAL_API_KEY` |
 | Info, „Odśwież limity" | Zapytanie o limity (`/user/quotas/`) | urlscan.io | Tylko po kliknięciu | `URLSCAN_API_KEY` |
 | Info, „Odśwież limity" | Zapytanie o stan klucza (`/api/v1/key`) | openrouter.ai | Tylko po kliknięciu | `OPENROUTER_API_KEY` |
+| Info, Klucze API, „Szukaj modeli" | Zapytanie o publiczną listę modeli (`GET /api/v1/models`). Nie wysyła klucza ani Twoich danych, tylko dwa nagłówki atrybucji opisane niżej. Odpowiedź (ok. 0,8 MB) jest skracana przez Seisę, a filtrowana w Twojej przeglądarce | openrouter.ai | Tylko po kliknięciu | brak (działa bez klucza) |
 | Info, „Dodaj ikonę" i „Usuń ikonę" | Nic nie opuszcza komputera. Seisa zapisuje pliki w Twoim katalogu domowym i uruchamia lokalne narzędzia (`sips`, `iconutil`, `update-desktop-database`) | Nikt | Tylko po kliknięciu | brak |
 | Uruchomienie z ikony na pulpicie | Lokalne sprawdzenie `curl http://127.0.0.1:54321/api/about` | Twój własny komputer | Gdy uruchamiasz Seisę z ikony | brak |
 | Otwarcie Info, Historii lub Logów; parsowanie e-maila; wczytanie pliku DMARC | Nic nie opuszcza komputera. Parsowanie, ocena i lokalne `git log` dla Ostatnich zmian działają lokalnie | Nikt | - | brak |

@@ -310,5 +310,8 @@
   "settings.symlink": ".env jest dowiązaniem symbolicznym; Seisa go nie zastąpi",
   "settings.write_failed": "nie udało się zapisać pliku .env ({error})",
   "settings.json_required": "żądanie musi mieć format JSON",
-  "settings.bad_body": "oczekiwano obiektu JSON z wartościami tekstowymi"
+  "settings.bad_body": "oczekiwano obiektu JSON z wartościami tekstowymi",
+  "models.fetch_failed": "nie udało się pobrać listy modeli z OpenRouter ({message})",
+  "models.too_large": "lista modeli jest większa niż oczekiwano, więc jej nie wczytano",
+  "models.bad_answer": "lista modeli ma nieoczekiwany format"
 }

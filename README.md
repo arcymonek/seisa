@@ -98,6 +98,7 @@ This is a short version of the full table in [docs/PRIVACY.md](docs/PRIVACY.md),
 | AbuseIPDB: address in the form | The IP, looked up **automatically** (the only call without a click of its own, and only with a key) | AbuseIPDB |
 | AbuseIPDB: "Send via AbuseIPDB API" | The public report: IP, categories, time and comment | AbuseIPDB |
 | Info: "Refresh limits" | Quota queries | VirusTotal, urlscan.io, OpenRouter |
+| Info: "Search models" | A request for the public model list (no key, none of your data) | OpenRouter |
 
 ## Documentation
 

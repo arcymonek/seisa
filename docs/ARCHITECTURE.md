@@ -128,6 +128,7 @@ The backend lives in `backend/`. Each module has one job; look at this list befo
 | `backend/services/dns_records.py` | DNS records of a domain and reverse lookups through the system resolver |
 | `backend/services/urlscan.py` | urlscan.io client as plain functions (a scan is asynchronous and returns files) |
 | `backend/services/llm_analyzer.py` | OpenRouter client: the AbuseIPDB JSON assessment (builds that prompt) and the streamed Email analysis |
+| `backend/services/openrouter_models.py` | The public OpenRouter model list for the model search: one request without a key, reduced to the fields the page shows |
 | `backend/services/__init__.py` | Package marker |
 
 The six intelligence clients (VirusTotal, OTX, AbuseIPDB, GreyNoise, Cloudflare Radar, WHOIS) are registered in `aggregator.SERVICE_REGISTRY`.
@@ -183,7 +184,7 @@ The frontend lives in `frontend/js/`. Larger tabs are split into `<tab>-<role>.j
 | DMARC | `frontend/js/dmarc.js`, `frontend/js/dmarc-data.js` (parse and aggregate, no HTML), `frontend/js/dmarc-export.js`, `frontend/js/archive.js` (gzip and zip in the browser) |
 | Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/email-glossary.js`, `frontend/js/markdown-render.js` |
 | AbuseIPDB | `frontend/js/report-builder.js` (state, events, send), `frontend/js/report-result.js`, `frontend/js/report-checks.js` (pure functions, tested), `frontend/js/report-history.js`, `frontend/js/report-export.js` |
-| History, Logs, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (the API keys part of Info) |
+| History, Logs, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (the API keys part of Info), `frontend/js/about-models.js` (the model search next to the model field) |
 | Shared | `frontend/js/ui.js` (HTML blocks), `frontend/js/util.js` (`escapeHtml`, copy, timers, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/glossary.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (display names) |
 
 ## Data files
