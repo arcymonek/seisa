@@ -7,6 +7,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="Licencja: GPL-3.0-or-later"></a>
   <a href="https://github.com/arcymonek/seisa/actions/workflows/ci.yml"><img src="https://github.com/arcymonek/seisa/actions/workflows/ci.yml/badge.svg" alt="Stan CI"></a>
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey" alt="Platforma: macOS i Linux">
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11 lub nowszy">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen" alt="Pull requesty mile widziane"></a>
 </p>
 
 [English](README.md) | **Polski**
