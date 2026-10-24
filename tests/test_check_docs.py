@@ -425,7 +425,7 @@ def test_rule11_a_private_address(proj):
 
 
 def test_rule11_the_contact_and_example_addresses_are_fine(proj):
-    add(proj, "AGENTS.md", "\ngithub@arkadiuszpolak.pl, user@example.org, a@mail.example, b@host.test\n")
+    add(proj, "AGENTS.md", "\n github@arkadiuszpolak.pl, user@example.org, a@mail.example, b@host.test\n")
     assert errors(proj) == []
 
 
