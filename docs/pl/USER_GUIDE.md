@@ -603,7 +603,7 @@ Otwarcie zakładki nic nie wysyła. Z usługami łączą się dwa przyciski. „
 
 **Nazwa** i **O kolorach** wyjaśniają, skąd się wzięła nazwa, oraz tradycyjne japońskie kolory każdej skórki.
 
-**Autor i Licencja.** Karta autora linkuje do `contact@seisa.eu`, repozytorium na GitHubie i seisa.eu; otwierają się w nowej karcie przeglądarki.
+**Autor i Licencja.** Karta autora linkuje do `github@arkadiuszpolak.pl`, repozytorium na GitHubie i arkadiuszpolak.pl; otwierają się w nowej karcie przeglądarki.
 
 ### Przyciski
 

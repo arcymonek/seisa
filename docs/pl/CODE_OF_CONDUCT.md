@@ -53,7 +53,7 @@ na wydarzeniu online lub offline.
 ## Egzekwowanie
 
 Przypadki krzywdzącego, nękającego lub w inny sposób niedopuszczalnego zachowania można zgłaszać liderom społeczności
-odpowiedzialnym za egzekwowanie pod adresem <contact@seisa.eu>. Wszystkie skargi zostaną rozpatrzone i zbadane
+odpowiedzialnym za egzekwowanie pod adresem <github@arkadiuszpolak.pl>. Wszystkie skargi zostaną rozpatrzone i zbadane
 niezwłocznie i sprawiedliwie.
 
 Wszyscy liderzy społeczności mają obowiązek szanować prywatność i bezpieczeństwo osoby zgłaszającej jakikolwiek incydent.

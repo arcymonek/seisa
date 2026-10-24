@@ -128,4 +128,4 @@ Kod, testy i dokumentacja Seisy powstają z pomocą Claude Code, asystenta progr
 
 Copyright (c) 2026 Arkadiusz Polak. Seisa to wolne oprogramowanie na licencji GPL-3.0-or-later: możesz z niej korzystać, ją badać, zmieniać i udostępniać, także komercyjnie, a przekazywana dalej zmodyfikowana wersja musi pozostać na tej samej licencji, razem ze źródłami. Pełny tekst jest w [LICENSE](LICENSE). Dołączona biblioteka `marked` (MIT) renderuje Markdown; logo i ikony są dziełem autora na licencji projektu.
 
-Strona: [seisa.eu](https://seisa.eu). Repozytorium: [github.com/arcymonek/seisa](https://github.com/arcymonek/seisa). Kontakt: `contact@seisa.eu`.
+Strona: [arkadiuszpolak.pl](https://arkadiuszpolak.pl). Repozytorium: [github.com/arcymonek/seisa](https://github.com/arcymonek/seisa). Kontakt: `github@arkadiuszpolak.pl`.

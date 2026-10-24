@@ -290,7 +290,7 @@ Ta sekcja jest dla każdego, kto pisze lub poprawia dokumenty projektu. Tekst an
 3. **Nazwy z interfejsu dosłownie.** Używaj nazw dokładnie tak, jak zapisują je katalogi (`frontend/i18n/en.json` i `pl.json`).
 4. **Tylko prawdziwe twierdzenia.** Każde twierdzenie musi być prawdziwe w kodzie. Liczba pochodzi z jednego miejsca w kodzie. W razie wątpliwości sprawdź w kodzie albo zapytaj; nie zgaduj.
 5. **Jeden dom dla faktu.** Każdy fakt ma jeden dokument, w którym jest wyjaśniony w całości; inne dokumenty do niego linkują. Dwa celowe wyjątki: skrócona tabela „co opuszcza Twój komputer" i tabela zakładek w [README](../../README.pl.md).
-6. **Prywatne rzeczy zostają poza dokumentacją.** Bez numerów wersji w `docs/`, bez długiej pauzy (U+2014), bez prawdziwych nazw hostów, adresów IP i ścieżek katalogu domowego. Przykłady używają `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` i `.example`. Jedyny adres e-mail to `contact@seisa.eu`.
+6. **Prywatne rzeczy zostają poza dokumentacją.** Bez numerów wersji w `docs/`, bez długiej pauzy (U+2014), bez prawdziwych nazw hostów, adresów IP i ścieżek katalogu domowego. Przykłady używają `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` i `.example`. Jedyny adres e-mail to `github@arkadiuszpolak.pl`.
 7. **Góra pliku z bliźniakiem:** linia przełącznika języka, tytuł i jedno lub dwa zdania mówiące, dla kogo jest plik i po co istnieje.
 8. **Naturalny polski.** Tłumacz sens, a nie słowa; używaj terminów z polskiego katalogu. Nagłówki, tabele, bloki kodu i obrazki są takie same w obu językach.
 9. **Zachęcająco, ale rzeczowo.** Bez marketingu i bez obietnic, których kod nie spełnia. Mów też, czego Seisa nie robi.
@@ -313,7 +313,7 @@ Z flagą `--contributor` (CI dla pull requestów z forków; hook, gdy `seisa.con
 | Moduły | Każdy plik z `backend/`, `frontend/js/` i `scripts/` jest wymieniony w `docs/ARCHITECTURE.md` albo w tym pliku | Błąd |
 | Liczby | Limity z kodu (z listy `FACTS` w `check_docs.py`) występują w dokumencie, który je posiada, w obu językach | Błąd |
 | Forma | Bez numeru wersji w `docs/`, bez U+2014, linia przełącznika języka na górze każdego pliku z bliźniakiem | Błąd |
-| Adresy | Adresy e-mail tylko z listy dozwolonych (`contact@seisa.eu`) | Błąd |
+| Adresy | Adresy e-mail tylko z listy dozwolonych (`github@arkadiuszpolak.pl`) | Błąd |
 | Obecność | Każdy wymagany dokument istnieje | Błąd |
 | Czytelność | Żaden akapit dłuższy niż 6 linii lub 90 słów; żaden plik ponad 150 linii bez spisu treści | Ostrzeżenie |
 | `--external` | Każdy zewnętrzny link odpowiada (uruchamiane ręcznie przed wydaniem; potrzebuje sieci, więc nigdy w CI ani w hooku) | Ręcznie |

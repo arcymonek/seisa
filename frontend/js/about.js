@@ -11,11 +11,11 @@ import { mountKeys, renderKeys } from "./about-keys.js";
 import { escapeHtml as e, fmtRelative, withBusy } from "./util.js";
 import { errorBanner, kpiTile, textBanner } from "./ui.js";
 
-const AUTHOR_EMAIL = "contact@seisa.eu";
+const AUTHOR_EMAIL = "github@arkadiuszpolak.pl";
 const REPO_URL = "https://github.com/arcymonek/seisa";
 const LICENSE_URL = `${REPO_URL}/blob/main/LICENSE`;
 const CONTRIBUTING_URL = `${REPO_URL}/blob/main/CONTRIBUTING.md`;
-const AUTHOR_SITE = "https://seisa.eu";
+const AUTHOR_SITE = "https://arkadiuszpolak.pl";
 
 // An external link that opens in a new tab (text is escaped here).
 const ext = (href, text) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${e(text)}</a>`;
@@ -60,7 +60,7 @@ export function initAbout(container) {
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.author_title"))}</span><strong class="about-name">Arkadiusz Polak</strong>
         <span class="about-small">${e(t("about.email"))}: <a href="mailto:${AUTHOR_EMAIL}" target="_blank" rel="noopener noreferrer">${AUTHOR_EMAIL}</a><br>
         GitHub: <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer">seisa</a><br>
-        ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">seisa.eu</a></span></div>
+        ${e(t("about.website"))}: <a href="${AUTHOR_SITE}" target="_blank" rel="noopener noreferrer">arkadiuszpolak.pl</a></span></div>
       <div class="kpi about-card"><span class="kpi-label">${e(t("about.name_title"))}</span><span class="about-small"><strong>精査</strong> (<em>せいさ</em>, <em>seisa</em>) - ${e(t("about.name_meaning"))}<br>${e(t("about.name_pron"))}</span>
         <span class="about-small">精 (<em>sei</em>) - ${e(t("about.kanji_sei"))}<br>査 (<em>sa</em>) - ${e(t("about.kanji_sa"))}</span></div>
     </div>

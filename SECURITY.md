@@ -9,7 +9,7 @@ If you find a security weakness in Seisa, please tell us privately first, so it 
 Please do not open a public issue for a vulnerability. Use one of these ways instead:
 
 - **GitHub.** Use "Report a vulnerability" on the Security tab of the repository (`https://github.com/arcymonek/seisa/security/advisories/new`). Only you and the maintainer can see the report.
-- **E-mail.** Write to `contact@seisa.eu`.
+- **E-mail.** Write to `github@arkadiuszpolak.pl`.
 
 The issue templates of the repository point security reports to this page.
 

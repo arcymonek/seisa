@@ -128,4 +128,4 @@ Seisa's code, tests and documentation are written with Claude Code, Anthropic's 
 
 Copyright (c) 2026 Arkadiusz Polak. Seisa is free software under GPL-3.0-or-later: you may use, study, change and share it, also commercially, and a modified version you pass on must stay under the same licence, with its source. The full text is in [LICENSE](LICENSE). The bundled `marked` library (MIT) renders Markdown; the logo and icons are the author's work under the project licence.
 
-Website: [seisa.eu](https://seisa.eu). Repository: [github.com/arcymonek/seisa](https://github.com/arcymonek/seisa). Contact: `contact@seisa.eu`.
+Website: [arkadiuszpolak.pl](https://arkadiuszpolak.pl). Repository: [github.com/arcymonek/seisa](https://github.com/arcymonek/seisa). Contact: `github@arkadiuszpolak.pl`.

@@ -603,7 +603,7 @@ Opening the tab sends nothing. Two buttons contact services. "Refresh limits" as
 
 **The name** and **About the colours** explain where the name comes from and the traditional Japanese colours behind each theme.
 
-**Author and License.** The author card links to `contact@seisa.eu`, the GitHub repository and seisa.eu; they open in a new browser tab.
+**Author and License.** The author card links to `github@arkadiuszpolak.pl`, the GitHub repository and arkadiuszpolak.pl; they open in a new browser tab.
 
 ### Buttons
 

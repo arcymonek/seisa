@@ -27,7 +27,7 @@ What it checks, always on what is STAGED (the index), not on the working tree:
   6. Privacy scan of added lines: no API-key-looking strings, no home directory paths (/Users/name/, /home/name/) and none
      of your own host or domain names. The names live in a file OUTSIDE the repository, one per line (`#` comments;
      a line starting with `!` is a string that is allowed, for example the author's public contact data, and is
-     removed before scanning): ~/.config/seisa/privacy-markers.txt, or the file named by SEISA_PRIVACY_MARKERS. Without
+     removed before scanning, but only as a whole name: `sub.<allowed>` and `x@<allowed>` stay in): ~/.config/seisa/privacy-markers.txt, or the file named by SEISA_PRIVACY_MARKERS. Without
      the file only the generic checks run and a note says so. The offending value is never printed.
 
 `pre-commit --commit-msg FILE` (called by the commit-msg hook next to this file) checks the commit message: no long
@@ -251,7 +251,8 @@ def privacy_problems(entries: list[tuple[str, str]], markers: list[str], allowed
     problems = []
     for where, text in entries:
         for a in allowed:
-            text = re.sub(re.escape(a), "", text, flags=re.IGNORECASE)
+            # a whole name only: not the tail of a longer host ("sub.<allowed>") or address ("x@<allowed>"), and not its head
+            text = re.sub(rf"(?<![\w.@-]){re.escape(a)}(?![\w-]|\.\w)", "", text, flags=re.IGNORECASE)
         if any(re.search(pattern, text) for pattern in KEY_PATTERNS):
             problems.append(f"PRIVACY: {where} looks like a real API key")
         if HOME_PATH.search(text):

@@ -290,7 +290,7 @@ This section is for everyone who writes or edits the documents of the project. T
 3. **Interface names literally.** Use the names exactly as the catalogs spell them (`frontend/i18n/en.json` and `pl.json`).
 4. **Only true claims.** Every claim must be true in the code. A number comes from one place in the code. When in doubt, look it up in the code or ask; do not guess.
 5. **One home per fact.** Each fact has one document where it is explained in full; other documents link to it. Two deliberate exceptions: the short "what leaves your computer" table and the tab table in [README](../README.md).
-6. **Keep private things out.** No version numbers in `docs/`, no long dash (U+2014), no real host names, IP addresses or home folder paths. Examples use `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` and `.example`. The only e-mail address is `contact@seisa.eu`.
+6. **Keep private things out.** No version numbers in `docs/`, no long dash (U+2014), no real host names, IP addresses or home folder paths. Examples use `203.0.113.0/24`, `198.51.100.0/24`, `2001:db8::/32`, `example.org` and `.example`. The only e-mail address is `github@arkadiuszpolak.pl`.
 7. **The top of a file with a twin:** the language switch line, the title, and one or two sentences saying for whom the file is and why it exists.
 8. **Natural Polish.** Translate the meaning, not the words; use the terms of the Polish catalog. Headings, tables, code blocks and images are the same in both languages.
 9. **Encouraging, but factual.** No marketing and no promises the code does not keep. Say what Seisa does not do, too.
@@ -313,7 +313,7 @@ With `--contributor` (CI for pull requests from forks; the hook when `seisa.cont
 | Modules | Every file of `backend/`, `frontend/js/` and `scripts/` is named in `docs/ARCHITECTURE.md` or in this file | Error |
 | Numbers | Limits from the code (listed in `FACTS` in `check_docs.py`) appear in the document that owns them, in both languages | Error |
 | Form | No version number in `docs/`, no U+2014, the language switch line on top of every file with a twin | Error |
-| Addresses | E-mail addresses only from an allowed list (`contact@seisa.eu`) | Error |
+| Addresses | E-mail addresses only from an allowed list (`github@arkadiuszpolak.pl`) | Error |
 | Presence | Every required document exists | Error |
 | Readability | No paragraph longer than 6 lines or 90 words; no file over 150 lines without a table of contents | Warning |
 | `--external` | Every external web link answers (run by hand before a release; needs the network, so never in CI or the hook) | Manual |

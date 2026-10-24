@@ -143,7 +143,7 @@ FACTS: tuple[Fact, ...] = (
 )
 
 # Rule 11. Addresses on reserved example domains (RFC 2606, RFC 6761) are allowed in examples.
-ALLOWED_EMAILS = frozenset({"contact@seisa.eu"})
+ALLOWED_EMAILS = frozenset({"github@arkadiuszpolak.pl"})
 EXAMPLE_EMAIL_DOMAIN = re.compile(r"(?:^|\.)(?:example(?:\.(?:org|com|net))?|test|invalid|localhost)$")
 EMAIL_SOURCES = ("frontend/js/about.js",)
 
@@ -602,7 +602,7 @@ def check_emails(root: Path, rep: Report, md_files: list[str]) -> None:
             for m in EMAIL.finditer(line):
                 addr, domain = m[0].lower().rstrip("."), m[1].lower().rstrip(".")
                 if addr not in ALLOWED_EMAILS and not EXAMPLE_EMAIL_DOMAIN.search(domain):
-                    rep.errors.append(f"{rel}:{n}: e-mail address not on ALLOWED_EMAILS (scripts/check_docs.py); the public contact is contact@seisa.eu")
+                    rep.errors.append(f"{rel}:{n}: e-mail address not on ALLOWED_EMAILS (scripts/check_docs.py); the public contact is github@arkadiuszpolak.pl")
 
 
 def check_required(root: Path, rep: Report) -> None:

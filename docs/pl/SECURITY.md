@@ -9,7 +9,7 @@ Jeśli znajdziesz w Seisie słabość związaną z bezpieczeństwem, powiedz o t
 Nie zakładaj publicznego zgłoszenia (issue) z podatnością. Użyj jednego z tych sposobów:
 
 - **GitHub.** Użyj „Report a vulnerability" na karcie Security repozytorium (`https://github.com/arcymonek/seisa/security/advisories/new`). Zgłoszenie widzisz tylko Ty i opiekun projektu.
-- **E-mail.** Napisz na `contact@seisa.eu`.
+- **E-mail.** Napisz na `github@arkadiuszpolak.pl`.
 
 Szablony zgłoszeń w repozytorium odsyłają zgłoszenia dotyczące bezpieczeństwa na tę stronę.
 

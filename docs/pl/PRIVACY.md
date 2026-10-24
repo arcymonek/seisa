@@ -87,7 +87,7 @@ To linki, które po kliknięciu otwierają się w nowej karcie przeglądarki. Sa
 
 | Gdzie | Co otwiera |
 |---|---|
-| Info, karta autora | `github.com/arcymonek/seisa`, `seisa.eu` i `mailto:contact@seisa.eu` |
+| Info, karta autora | `github.com/arcymonek/seisa`, `arkadiuszpolak.pl` i `mailto:github@arkadiuszpolak.pl` |
 | Info, karta licencji | `LICENSE` i `CONTRIBUTING.md` na GitHubie (działają, gdy repozytorium będzie publiczne) |
 | IP, karty źródeł | Strona główna usługi (Cloudflare Radar, AlienVault OTX, AbuseIPDB, VirusTotal, GreyNoise). W linku nie ma nic o sprawdzanym adresie |
 | AbuseIPDB, „Twoje zgłoszenia", „Sprawdź" | `https://www.abuseipdb.com/check/<ip>`. Tutaj to sama przeglądarka podaje AbuseIPDB adres |

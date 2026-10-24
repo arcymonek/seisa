@@ -87,7 +87,7 @@ These are links that open in a new browser tab when you click them. The page its
 
 | Where | What it opens |
 |---|---|
-| Info, author card | `github.com/arcymonek/seisa`, `seisa.eu` and `mailto:contact@seisa.eu` |
+| Info, author card | `github.com/arcymonek/seisa`, `arkadiuszpolak.pl` and `mailto:github@arkadiuszpolak.pl` |
 | Info, license card | `LICENSE` and `CONTRIBUTING.md` on GitHub (they work once the repository is public) |
 | IP, source cards | The home page of the service (Cloudflare Radar, AlienVault OTX, AbuseIPDB, VirusTotal, GreyNoise). Nothing about the checked address is in the link |
 | AbuseIPDB, "Your reports", "Check" | `https://www.abuseipdb.com/check/<ip>`. Here your browser itself tells AbuseIPDB the address |

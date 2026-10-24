@@ -761,6 +761,21 @@ def test_privacy_markers_come_from_a_file_outside_the_repository(base_repo, tmp_
     assert r.returncode == 0, r.stdout + r.stderr
 
 
+def test_an_allowed_string_hides_only_the_whole_name(base_repo, tmp_path):
+    markers = tmp_path / "markers.txt"
+    markers.write_text("own.example\n!own.example\n!me@own.example\n", encoding="utf-8")
+    env = {"SEISA_PRIVACY_MARKERS": str(markers)}
+
+    def verdict(line: str) -> int:
+        return run_hook(base_repo, "--commit-msg", _message(tmp_path, "Fix a thing\n\n" + line), env=env).returncode
+
+    for ok in ("Site: [own.example](https://own.example/).", "Write to `me@own.example`.", "See own.example, or OWN.EXAMPLE."):
+        assert verdict(ok) == 0, ok
+    for leak in ("Host sub.own.example is down", "Write to you@own.example", "Host own.example.net", "Host my-own.example",
+                 "Host own.examples", "Mixed own.example and sub.own.example"):
+        assert verdict(leak) == 1, leak
+
+
 def test_the_commit_msg_wrapper_passes_the_verdict_on(base_repo, tmp_path):
     def wrapper(*args: str) -> subprocess.CompletedProcess:
         return subprocess.run([sys.executable, str(base_repo / "scripts" / "hooks" / "commit-msg"), *args],

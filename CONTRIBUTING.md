@@ -72,7 +72,7 @@ Issues that suit a first contribution carry the `good first issue` label on GitH
 
 ## Code of conduct
 
-Everyone taking part in the project is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Reports go to `contact@seisa.eu`.
+Everyone taking part in the project is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Reports go to `github@arkadiuszpolak.pl`.
 
 ## More
 

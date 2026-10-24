@@ -72,7 +72,7 @@ Zgłoszenia nadające się na pierwszy wkład mają na GitHubie etykietę `good 
 
 ## Kodeks postępowania
 
-Od wszystkich uczestników projektu oczekujemy przestrzegania [Kodeksu postępowania](CODE_OF_CONDUCT.md). Zgłoszenia trafiają na `contact@seisa.eu`.
+Od wszystkich uczestników projektu oczekujemy przestrzegania [Kodeksu postępowania](CODE_OF_CONDUCT.md). Zgłoszenia trafiają na `github@arkadiuszpolak.pl`.
 
 ## Więcej
 

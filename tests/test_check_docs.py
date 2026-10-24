@@ -92,7 +92,7 @@ def proj(tmp_path, monkeypatch) -> Path:
     w(r, "frontend/i18n/en.json", json.dumps({"tab.history": "History"}))
     w(r, "frontend/i18n/pl.json", json.dumps({"tab.history": "Historia"}))
     w(r, "frontend/js/app.js", "export const x = 1;\n")
-    w(r, "frontend/js/about.js", 'const AUTHOR_EMAIL = "contact@seisa.eu";\n')
+    w(r, "frontend/js/about.js", 'const AUTHOR_EMAIL = "github@arkadiuszpolak.pl";\n')
     w(r, "scripts/tool.py", "print(1)\n")
     (r / "docs" / "images").mkdir(parents=True)
     (r / "docs" / "images" / "ip_en.png").write_bytes(TINY_PNG)
@@ -425,7 +425,7 @@ def test_rule11_a_private_address(proj):
 
 
 def test_rule11_the_contact_and_example_addresses_are_fine(proj):
-    add(proj, "AGENTS.md", "\ncontact@seisa.eu, user@example.org, a@mail.example, b@host.test\n")
+    add(proj, "AGENTS.md", "\ngithub@arkadiuszpolak.pl, user@example.org, a@mail.example, b@host.test\n")
     assert errors(proj) == []
 
 
@@ -507,7 +507,7 @@ def test_rule15_external_links_only_on_request(proj, monkeypatch):
     ("Read https://www.abuseipdb.com/reporting-policy; then report.", {"https://www.abuseipdb.com/reporting-policy"}),
     ("[FAQ][FAQ]\n\n[FAQ]: https://www.contributor-covenant.org/faq", {"https://www.contributor-covenant.org/faq"}),
     ("[https://www.virustotal.com][vt] in a reference link", {"https://www.virustotal.com"}),
-    ("Link [x](https://seisa.eu) and <https://openrouter.ai>.", {"https://seisa.eu", "https://openrouter.ai"}),
+    ("Link [x](https://arkadiuszpolak.pl) and <https://openrouter.ai>.", {"https://arkadiuszpolak.pl", "https://openrouter.ai"}),
     ("A stem without a placeholder https://www.abuseipdb.com/check/ counts", {"https://www.abuseipdb.com/check/"}),
 ])
 def test_rule15_which_addresses_are_visited(text, expected):
