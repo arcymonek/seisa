@@ -1,10 +1,9 @@
 // Email tab, "Lesson" pane: the LLM analysis (Markdown) split at its "## " headings into collapsible cards. Quotes of the
-// message become evidence cards that jump to the source drawer, inline code found in the source becomes clickable,
-// technical terms get glossary tooltips and the whole text can be searched. The Markdown is always rendered through
+// message become evidence cards that jump to the source drawer, inline code found in the source becomes clickable and
+// the whole text can be searched. The Markdown is always rendered through
 // renderMarkdownSafe (raw HTML and links of the e-mail are neutralised); everything added here uses DOM APIs.
 import { t } from "./i18n.js";
 import { copyText } from "./util.js";
-import { applyGlossary, releaseTerms } from "./email-glossary.js";
 import { renderMarkdownSafe } from "./markdown-render.js";
 
 // The structure of the answer is fixed by backend/prompts/email-analysis-guide.md: after the title and summary come six parts and
@@ -70,8 +69,6 @@ function checklistNote(md) {
 
 export function createLesson({ pane, viewer, onStructure, onSearch }) {
   const openState = loadOpenState();
-  const owners = new Map(); // glossary: term -> card index (main Lesson cards)
-  const overviewOwners = new Map(); // glossary: term -> section key (Overview panel), tracked apart from the Lesson cards
   const cards = []; // {det, target, md, role}
   const findCache = new Map();
   let programmatic = false;
@@ -163,17 +160,12 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     });
   }
 
-  function renderInto(target, md, { glossaryOwner = null, subsections = false, overview = false } = {}) {
+  function renderInto(target, md, { subsections = false } = {}) {
     const open = Array.from(target.querySelectorAll("details")).map((d) => d.open);
     renderMarkdownSafe(target, md);
     if (subsections) groupSubsections(target);
     wrapQuotes(target);
     markInline(target);
-    if (glossaryOwner !== null) {
-      const scope = overview ? overviewOwners : owners;
-      releaseTerms(scope, glossaryOwner);
-      applyGlossary(target, scope, glossaryOwner);
-    }
     target.querySelectorAll("details").forEach((d, i) => {
       if (open[i]) d.open = true;
     });
@@ -234,7 +226,7 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
         }
         if (c.md !== s.md) {
           c.md = s.md;
-          renderInto(c.target, s.md, { glossaryOwner: i, subsections: c.role === "lines" });
+          renderInto(c.target, s.md, { subsections: c.role === "lines" });
           if (c.role === "checklist") c.note.textContent = checklistNote(s.md);
         }
       });
@@ -349,8 +341,6 @@ export function createLesson({ pane, viewer, onStructure, onSearch }) {
     cardsEl.textContent = "";
     fallbackEl.textContent = "";
     titleEl.textContent = "";
-    owners.clear();
-    overviewOwners.clear();
     findCache.clear();
     structured = false;
     hitIdx = -1;

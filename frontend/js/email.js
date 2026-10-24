@@ -14,7 +14,7 @@ import { compareHtml } from "./email-compare.js";
 import { factCardsHtml, flagsHtml, kpiHtml, routeHtml } from "./email-facts.js";
 import { createLesson } from "./email-lesson.js";
 import { createSourceViewer } from "./email-source.js";
-import { errorBanner, textBanner } from "./ui.js";
+import { errorBanner, legendHtml, textBanner } from "./ui.js";
 
 let root;
 let lesson;
@@ -35,6 +35,9 @@ let S = blankState();
 
 const PANE_KEY = "seisa.em.pane";
 const PANES = ["overview", "facts", "lesson"];
+// Explanations at the bottom of the result, like in the other tabs: em.legend.<id> is the one-sentence lead,
+// em.legend_more.<id> the details folded under it. The texts are constant, so the card is built once.
+const LEGEND = ["envelope", "received", "rdns", "spf", "dkim", "dmarc", "arc", "authresults", "tls", "mime", "messageid", "scl_bcl"];
 
 const timer = createTimer(() => root.querySelector("#em-timer"), elapsedSeconds("em.analysis_time"));
 
@@ -100,6 +103,7 @@ export function initEmail(container) {
           <div class="em-pane" id="em-pane-lesson" role="tabpanel"></div>
         </div>
       </div>
+      ${legendHtml(t("em.h_legend"), LEGEND.map((id) => [t("em.legend_term." + id), t("em.legend." + id), t("em.legend_more." + id), id]))}
     </div>
 
     <details class="fact-block" id="em-saved" style="margin-top:28px">
@@ -609,7 +613,7 @@ function updateOverviewSections(parts, final) {
     if (overviewShown[key] === sig) return;
     overviewShown[key] = sig;
     sec.querySelector("summary span").textContent = s.title;
-    lesson.renderInto(sec.querySelector(".em-flat > div"), s.md, { glossaryOwner: key, overview: true });
+    lesson.renderInto(sec.querySelector(".em-flat > div"), s.md);
   });
 }
 

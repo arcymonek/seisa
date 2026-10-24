@@ -60,7 +60,7 @@ function tilesHtml(summary) {
   if (v.score != null) tiles.push(kpiTile(t("usr.kpi_score"), v.score, v.categories.length ? { sub: v.categories.join(", ") } : { subHtml: "&nbsp;" }));
   if (isSet(page.status)) tiles.push(kpiTile(t("usr.kpi_status"), page.status, { sub: [page.mime_type, page.server].filter(Boolean).join(" - ") }));
   if (page.country) tiles.push(kpiTile(t("usr.kpi_country"), page.country, { sub: countryName(page.country, false) }));
-  if (page.asn) tiles.push(kpiTile("ASN", page.asn, { sub: page.asn_name || "", glKey: "lookup.gl.asn" }));
+  if (page.asn) tiles.push(kpiTile("ASN", page.asn, { sub: page.asn_name || "" }));
   if (isSet(stats.requests)) tiles.push(kpiTile(t("usr.kpi_requests"), stats.requests, { sub: t("usr.kpi_requests_sub", { domains: stats.domains, ips: stats.ips }) }));
   if (tls && isSet(tls.age_days)) {
     const fresh = tls.age_days < NEW_CERT_DAYS ? `<span class="badge sm conflict" title="${e(t("usr.cert_new_title"))}">${e(t("usr.cert_new"))}</span>` : "";
@@ -93,22 +93,22 @@ function redirectsHtml(redirects) {
 function identityHtml(summary) {
   const { page } = summary;
   const rows = [];
-  const add = (label, html, glKey) => html && rows.push([label, html, glKey]);
+  const add = (label, html) => html && rows.push([label, html]);
   add(t("usr.f.submitted"), monoUrl(summary.submitted_url));
   add(t("usr.f.final"), page.final_url && page.final_url !== summary.submitted_url ? monoUrl(page.final_url) : "");
   if (summary.redirects.length) add(t("usr.f.redirects"), redirectsHtml(summary.redirects));
   add(t("usr.f.title"), page.title ? e(page.title) : "");
   add(t("usr.f.domain"), page.domain ? `${mono(page.domain)} <button type="button" class="secondary mini inline" data-domain="${e(page.domain)}">${e(t("usr.check_domain"))}</button>` : "");
-  add(t("usr.f.apex"), page.apex_domain && page.apex_domain !== page.domain ? mono(page.apex_domain) : "", "usr.gl.apex");
+  add(t("usr.f.apex"), page.apex_domain && page.apex_domain !== page.domain ? mono(page.apex_domain) : "");
   if (page.ip)
     add(t("usr.f.ip"), `${mono(page.ip)} <button type="button" class="secondary mini inline" data-ip="${e(page.ip)}">${e(t("usr.check_ip"))}</button>`);
   add(t("usr.f.location"), [page.city, page.country && countryName(page.country)].filter(Boolean).map(e).join(", "));
   add(t("usr.f.ptr"), page.ptr ? mono(page.ptr) : "");
   add(t("usr.f.server"), page.server ? e(page.server) : "");
   add(t("usr.f.mime"), page.mime_type ? mono(page.mime_type) : "");
-  add(t("usr.f.umbrella"), isSet(page.umbrella_rank) ? e(page.umbrella_rank) : "", "usr.gl.umbrella");
+  add(t("usr.f.umbrella"), isSet(page.umbrella_rank) ? e(page.umbrella_rank) : "");
   add(t("usr.f.scanned_at"), summary.scanned_at ? e(fmtDateTime(summary.scanned_at)) : "");
-  add(t("usr.f.visibility"), summary.visibility ? e(t("urlscan.vis." + summary.visibility)) : "", "usr.gl.visibility");
+  add(t("usr.f.visibility"), summary.visibility ? e(t("urlscan.vis." + summary.visibility)) : "");
   return `<h3>${e(t("usr.h_identity"))}</h3><div class="card">${kvHtml(rows)}</div>`;
 }
 
@@ -133,9 +133,9 @@ function verdictCard(summary) {
         .join("<br>"),
     ]);
   if (v.tags.length) rows.push([t("usr.f.tags"), chips(v.tags)]);
-  if (v.engines) rows.push([t("usr.f.engines"), e(`${v.engines.malicious} / ${v.engines.total}`), "usr.gl.engines"]);
-  if (v.community) rows.push([t("usr.f.community"), e(`${v.community.malicious} / ${v.community.total}`), "usr.gl.community"]);
-  if (isSet(v.flagged_requests)) rows.push([t("usr.f.flagged"), e(v.flagged_requests), "usr.gl.flagged"]);
+  if (v.engines) rows.push([t("usr.f.engines"), e(`${v.engines.malicious} / ${v.engines.total}`)]);
+  if (v.community) rows.push([t("usr.f.community"), e(`${v.community.malicious} / ${v.community.total}`)]);
+  if (isSet(v.flagged_requests)) rows.push([t("usr.f.flagged"), e(v.flagged_requests)]);
   return card(t("usr.c_verdict"), {
     key: "verdict",
     badge: ` <span class="badge sm ${v.level === "unknown" ? "single" : v.level}">${e(levelLabel(v.level))}</span>`,

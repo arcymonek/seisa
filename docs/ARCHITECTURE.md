@@ -182,10 +182,10 @@ The frontend lives in `frontend/js/`. Larger tabs are split into `<tab>-<role>.j
 | IP | `frontend/js/lookup.js` (form, run), `frontend/js/lookup-result.js` (report) |
 | URLScan | `frontend/js/urlscan.js` (form, submit, polling, batch, History), `frontend/js/urlscan-result.js`, `frontend/js/urlscan-compare.js` |
 | DMARC | `frontend/js/dmarc.js`, `frontend/js/dmarc-data.js` (parse and aggregate, no HTML), `frontend/js/dmarc-export.js`, `frontend/js/archive.js` (gzip and zip in the browser) |
-| Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/email-glossary.js`, `frontend/js/markdown-render.js` |
+| Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/markdown-render.js` |
 | AbuseIPDB | `frontend/js/report-builder.js` (state, events, send), `frontend/js/report-result.js`, `frontend/js/report-checks.js` (pure functions, tested), `frontend/js/report-history.js`, `frontend/js/report-export.js` |
 | History, Logs, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (the API keys part of Info), `frontend/js/about-models.js` (the model search next to the model field) |
-| Shared | `frontend/js/ui.js` (HTML blocks), `frontend/js/util.js` (`escapeHtml`, copy, timers, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/glossary.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (display names) |
+| Shared | `frontend/js/ui.js` (HTML blocks), `frontend/js/util.js` (`escapeHtml`, copy, timers, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (display names) |
 
 ## Data files
 

@@ -111,7 +111,7 @@ Testy leżą w `tests/`. Uruchom je wszystkie poleceniem `python3 -m pytest -q`.
 - **Wolne testy.** `python3 -m pytest -m "not slow"` pomija testy, które budują tymczasowe repozytoria git (testy hooków) albo uruchamiają procesy potomne (limity czasu parserów). Trwają kilka minut.
 - **Izolacja.** `tests/conftest.py` przekierowuje `data/` i `logs/` do folderu tymczasowego, ustawia język polski i przerywa przebieg, jeśli prawdziwe `data/` lub `logs/` się zmieniły.
 - **Testy własności.** `tests/test_fuzz_parsers.py` podaje parserom e-maili losowe dane za pomocą hypothesis. Profil `dev` używa 200 losowych przykładów, profil `ci` 300 stałych; wybierasz go zmienną `HYPOTHESIS_PROFILE`.
-- **Testy frontendu.** Czyste funkcje frontendu (komunikaty błędów API, ryzyko DMARC, eksport Markdown, sprawdzenie „Received zweryfikowane") są testowane przez Node: skrypty leżą w `tests/js/`, a uruchamia je pytest.
+- **Testy frontendu.** Czyste funkcje frontendu (komunikaty błędów API, ryzyko DMARC, eksport Markdown, sprawdzenie „Received zweryfikowane", escapowanie wspólnych bloków HTML) są testowane przez Node: skrypty leżą w `tests/js/`, a uruchamia je pytest.
 - **Ikona na pulpicie.** Testy ikony podstawiają folder domowy i na macOS potrzebują narzędzia `sips`; jeden test jest pomijany w piaskownicy.
 - **Lustrzane wartości.** Kilka wartości jest celowo powtórzonych we frontendzie (domyślne skórki, limit długości komentarza, kraje URLScan). `tests/test_frontend_mirrors.py` pilnuje, żeby były równe.
 - **Prywatny korpus.** Jeśli trzymasz prawdziwe e-maile do własnych kontroli, połóż je w `tests/private/legit/` i `tests/private/phishing_spam/` (git je ignoruje), z opcjonalnym `<nazwa>.expected.json` obok każdego. Bez takich plików moduł jest pomijany.

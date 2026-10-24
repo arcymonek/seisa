@@ -2,31 +2,28 @@
 // are escaped here; arguments named ...Html are markup the caller has already escaped.
 import { t, getLocale } from "./i18n.js";
 import { escapeHtml as e, copyText } from "./util.js";
-import { glossAbbr } from "./glossary.js";
 
 const classes = (...names) => names.filter(Boolean).join(" ");
 
 // A summary tile: caption, big value, optional muted line under it.
 // - tone: "good" | "warn" | "bad" | "neutral" colours the border
 // - mark: markup shown after the value (an agreement badge, a warning badge)
-// - glKey: glossary tooltip on the caption (glossary.js)
 // - valueClass: extra class on the value (e.g. "kpi-value-sm" for a long text value)
 // - valueHtml / subHtml: already escaped markup instead of the plain value / sub
 // - filter: the tile is a button that filters a list (History tab); `on` marks the active filter
-export function kpiTile(label, value, { sub = "", tone = "", mark = "", glKey = "", valueClass = "", valueHtml, subHtml, filter, on = false } = {}) {
-  const caption = glKey ? glossAbbr(label, glKey) : e(label);
+export function kpiTile(label, value, { sub = "", tone = "", mark = "", valueClass = "", valueHtml, subHtml, filter, on = false } = {}) {
   const valueMarkup = (valueHtml ?? e(value)) + (mark ? ` ${mark}` : "");
   const subMarkup = subHtml ?? (sub ? e(sub) : "");
-  const inner = `<span class="kpi-label">${caption}</span><span class="${classes("kpi-value", valueClass)}">${valueMarkup}</span>${subMarkup ? `<span class="muted">${subMarkup}</span>` : ""}`;
+  const inner = `<span class="kpi-label">${e(label)}</span><span class="${classes("kpi-value", valueClass)}">${valueMarkup}</span>${subMarkup ? `<span class="muted">${subMarkup}</span>` : ""}`;
   if (filter !== undefined) {
     return `<button type="button" class="${classes("kpi", "click", tone, on && "on")}" data-filter="${e(filter)}">${inner}</button>`;
   }
   return `<div class="${classes("kpi", tone)}">${inner}</div>`;
 }
 
-// A definition list: rows are [label, valueHtml, glKey?]; the label is escaped (or gets a glossary tooltip).
+// A definition list: rows are [label, valueHtml]; the label is escaped.
 export function kvHtml(rows, cls = "") {
-  return `<dl class="${classes("kv", cls)}">${rows.map(([label, html, glKey]) => `<dt>${glKey ? glossAbbr(label, glKey) : e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
+  return `<dl class="${classes("kv", cls)}">${rows.map(([label, html]) => `<dt>${e(label)}</dt><dd>${html}</dd>`).join("")}</dl>`;
 }
 
 // The collapsed "Legend" card at the end of a result: rows are [term, explanation], both plain text. The callers build

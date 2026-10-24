@@ -322,8 +322,6 @@ button.linklike { background: none; border: none; padding: 0; font: inherit; cur
 .em-quote pre { margin: 0; border-radius: 0 0 4px 4px; }
 code.em-cite { cursor: pointer; border-bottom: 1px dotted var(--accent); }
 code.em-cite:hover { background: var(--cite-hover-bg); }
-abbr.gl { text-decoration: none; border-bottom: 1px dotted var(--muted); cursor: help; position: relative; }
-abbr.gl:hover::after, abbr.gl:focus::after { content: attr(data-tip); position: absolute; left: 0; bottom: 130%; z-index: 20; width: 320px; max-width: 80vw; background: var(--tooltip-bg); color: var(--text); border: 1px solid var(--accent); border-radius: 6px; padding: 8px 10px; font-size: 13.5px; line-height: 1.4; font-style: normal; font-weight: 400; white-space: normal; box-shadow: 0 6px 20px color-mix(in srgb, var(--shadow) 50%, transparent); }
 mark.em-hit { background: var(--hit-bg); color: var(--text-strong); border-radius: 2px; }
 mark.em-hit.cur { background: var(--warn); color: var(--on-warn); }
 .em-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(600px, 94vw); z-index: 50; display: flex; flex-direction: column; background: var(--bg); border-left: 1px solid var(--accent); box-shadow: -8px 0 30px color-mix(in srgb, var(--shadow) 50%, transparent); }

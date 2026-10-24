@@ -389,13 +389,14 @@ function reportsHtml() {
 }
 
 function reportHtml(m) {
-  const kv = kvHtml(reportFields(m, allRecords).map((f) => [f.label, f.html, f.glKey]));
+  const kv = kvHtml(reportFields(m, allRecords).map((f) => [f.label, f.html]));
   const flag = m.errors.length ? ` · <span class="bad">⚠ ${e(t("dmarc.f_errors"))}</span>` : "";
   return `<details class="fact-block"><summary>${e(m.org)} · ${e(m.domain)} · ${e(fmtDate(m.begin))} - ${e(fmtDate(m.end))}${flag}</summary>${kv}</details>`;
 }
 
 function legendCard() {
   return legendHtml(t("dmarc.h_legend"), [
+    ["DMARC", t("dmarc.legend_dmarc"), t("dmarc.legend_more_dmarc"), "dmarc"],
     ["SPF", t("dmarc.legend_spf"), t("dmarc.legend_more_spf"), "spf"],
     ["DKIM", t("dmarc.legend_dkim"), t("dmarc.legend_more_dkim"), "dkim"],
     [t("dmarc.legend_policy_term"), t("dmarc.legend_policy"), t("dmarc.legend_more_policy"), "policy"],

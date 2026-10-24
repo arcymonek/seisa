@@ -111,7 +111,7 @@ The tests live in `tests/`. Run them all with `python3 -m pytest -q`.
 - **Slow tests.** `python3 -m pytest -m "not slow"` skips the tests that build throw-away git repositories (the hook tests) or start child processes (the parser time limits). They take a few minutes.
 - **Isolation.** `tests/conftest.py` redirects `data/` and `logs/` to a temporary folder, fixes the language to Polish, and fails the run if the real `data/` or `logs/` changed.
 - **Property tests.** `tests/test_fuzz_parsers.py` feeds random input to the e-mail parsers with hypothesis. The `dev` profile uses 200 random examples, the `ci` profile 300 fixed ones; choose with the `HYPOTHESIS_PROFILE` variable.
-- **Frontend tests.** Pure frontend functions (API error messages, DMARC risk, Markdown export, the "Received verified" check) are tested through Node: the scripts are in `tests/js/` and pytest runs them.
+- **Frontend tests.** Pure frontend functions (API error messages, DMARC risk, Markdown export, the "Received verified" check, the escaping of the shared HTML blocks) are tested through Node: the scripts are in `tests/js/` and pytest runs them.
 - **Desktop icon.** The icon tests fake the home folder and need the `sips` tool on macOS; one test is skipped inside a sandbox.
 - **Mirrored values.** A few values are repeated in the frontend on purpose (theme defaults, the comment length limit, the URLScan countries). `tests/test_frontend_mirrors.py` keeps them equal.
 - **Private corpus.** If you keep real e-mails for your own checks, put them in `tests/private/legit/` and `tests/private/phishing_spam/` (git ignores them), with an optional `<name>.expected.json` next to each. Without such files the module is skipped.

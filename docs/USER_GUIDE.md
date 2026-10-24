@@ -8,7 +8,7 @@ This guide is for people who use Seisa, not for programmers. In one sentence: it
 
 - [1. Before you start](#1-before-you-start)
 - [2. The screen at a glance](#2-the-screen-at-a-glance)
-  - [Tooltips and the Explanations section](#tooltips-and-the-explanations-section)
+  - [The Explanations section](#the-explanations-section)
   - [What is sent where, and when](#what-is-sent-where-and-when)
 - [3. Which tab do I need?](#3-which-tab-do-i-need)
 - [4. API keys: what works without them](#4-api-keys-what-works-without-them)
@@ -57,11 +57,11 @@ Results can be saved as a Markdown file ("Save .md") or copied ("Copy Markdown")
 
 If you switch the language or shut Seisa down while an analysis is running or text is typed in, Seisa asks first, because the page reloads and that work would be lost.
 
-### Tooltips and the Explanations section
+### The Explanations section
 
-Technical terms with a dotted underline show a short explanation when you point at them with the mouse or reach them with the keyboard (Tab key). In the Email tab the first use of terms such as SPF, DKIM, DMARC or Received in the AI lesson gets such a tooltip too.
+Each result ends with an "Explanations" section, in the Email tab too. It explains the result and its technical terms (such as SPF, DKIM, DMARC or Received) in plain language, one simple sentence first, and has a "Details" link for more.
 
-Each result also ends with an "Explanations" section. It describes the result in plain language, one simple sentence first, and has a "Details" link for more.
+All explanations are in this section: technical terms elsewhere on the page have no pop-up tooltips.
 
 ### What is sent where, and when
 

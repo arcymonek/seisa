@@ -182,10 +182,10 @@ Frontend leży w `frontend/js/`. Większe zakładki są podzielone na moduły `<
 | IP | `frontend/js/lookup.js` (formularz, uruchomienie), `frontend/js/lookup-result.js` (raport) |
 | URLScan | `frontend/js/urlscan.js` (formularz, wysyłka, odpytywanie, partia, Historia), `frontend/js/urlscan-result.js`, `frontend/js/urlscan-compare.js` |
 | DMARC | `frontend/js/dmarc.js`, `frontend/js/dmarc-data.js` (parsowanie i agregacja, bez HTML), `frontend/js/dmarc-export.js`, `frontend/js/archive.js` (gzip i zip w przeglądarce) |
-| Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/email-glossary.js`, `frontend/js/markdown-render.js` |
+| Email | `frontend/js/email.js`, `frontend/js/email-facts.js`, `frontend/js/email-lesson.js`, `frontend/js/email-source.js`, `frontend/js/email-compare.js`, `frontend/js/email-export.js`, `frontend/js/markdown-render.js` |
 | AbuseIPDB | `frontend/js/report-builder.js` (stan, zdarzenia, wysyłka), `frontend/js/report-result.js`, `frontend/js/report-checks.js` (czyste funkcje, testowane), `frontend/js/report-history.js`, `frontend/js/report-export.js` |
 | Historia, Logi, Info | `frontend/js/history.js`, `frontend/js/history-compare.js`, `frontend/js/logs.js`, `frontend/js/about.js`, `frontend/js/about-keys.js` (część Info z kluczami API), `frontend/js/about-models.js` (wyszukiwarka modeli przy polu modelu) |
-| Wspólne | `frontend/js/ui.js` (bloki HTML), `frontend/js/util.js` (`escapeHtml`, kopiowanie, liczniki czasu, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/glossary.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (nazwy wyświetlane) |
+| Wspólne | `frontend/js/ui.js` (bloki HTML), `frontend/js/util.js` (`escapeHtml`, kopiowanie, liczniki czasu, `formatUsage`), `frontend/js/markdown-export.js`, `frontend/js/fold-state.js`, `frontend/js/clear-button.js`, `frontend/js/services.js` (nazwy wyświetlane) |
 
 ## Pliki danych
 

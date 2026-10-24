@@ -8,7 +8,7 @@ Ten podręcznik jest dla osób, które korzystają z Seisy, a nie dla programist
 
 - [1. Zanim zaczniesz](#1-zanim-zaczniesz)
 - [2. Ekran w skrócie](#2-ekran-w-skrócie)
-  - [Dymki i sekcja Wyjaśnienia](#dymki-i-sekcja-wyjaśnienia)
+  - [Sekcja Wyjaśnienia](#sekcja-wyjaśnienia)
   - [Co jest wysyłane, dokąd i kiedy](#co-jest-wysyłane-dokąd-i-kiedy)
 - [3. Której zakładki potrzebuję?](#3-której-zakładki-potrzebuję)
 - [4. Klucze API: co działa bez nich](#4-klucze-api-co-działa-bez-nich)
@@ -57,11 +57,11 @@ Wyniki możesz zapisać jako plik Markdown („Zapisz .md") albo skopiować („
 
 Jeśli zmieniasz język albo zamykasz Seisę, gdy trwa analiza albo jest wpisany tekst, Seisa najpierw pyta, bo strona się przeładuje i ta praca przepadnie.
 
-### Dymki i sekcja Wyjaśnienia
+### Sekcja Wyjaśnienia
 
-Terminy techniczne z kropkowanym podkreśleniem pokazują krótkie wyjaśnienie, gdy wskażesz je myszą albo dojdziesz do nich klawiaturą (klawisz Tab). W zakładce Email pierwsze użycie takich terminów jak SPF, DKIM, DMARC czy Received w lekcji AI też dostaje taki dymek.
+Każdy wynik kończy się sekcją „Wyjaśnienia", także w zakładce Email. Opisuje wynik i jego terminy techniczne (np. SPF, DKIM, DMARC czy Received) zwykłym językiem, najpierw jednym prostym zdaniem, a dla szczegółów ma link „Szczegóły".
 
-Każdy wynik kończy się też sekcją „Wyjaśnienia". Opisuje wynik zwykłym językiem, najpierw jednym prostym zdaniem, a dla szczegółów ma link „Szczegóły".
+Wszystkie wyjaśnienia są w tej sekcji: terminy techniczne w innych miejscach strony nie mają wyskakujących dymków.
 
 ### Co jest wysyłane, dokąd i kiedy
 

@@ -32,7 +32,7 @@ const tokenText = (x) => `${x.name}=${x.value}${x.def ? ` (${t("dmarc.default")}
 export function reportFields(m, records) {
   const recs = records.filter((r) => r.reportIdx === m.idx);
   const fields = [];
-  const add = (label, html, text, glKey) => fields.push({ label, html, text, glKey });
+  const add = (label, html, text) => fields.push({ label, html, text });
   const plain = (label, value) => add(label, e(value), value);
 
   add(t("dmarc.f_file"), `<span class="mono">${e(m.filename)}</span>`, m.filename);
@@ -44,7 +44,7 @@ export function reportFields(m, records) {
   plain(t("dmarc.f_period"), `${fmtDateTime(m.begin)} - ${fmtDateTime(m.end)}`);
   plain(t("dmarc.f_domain"), m.domain);
   const policy = policyTokens(m);
-  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "), "dmarc.gl.policy");
+  add(t("dmarc.f_policy"), policy.map(tokenHtml).join(" · "), policy.map(tokenText).join(", "));
   const align = [
     { name: "adkim", label: "DKIM", value: m.adkim },
     { name: "aspf", label: "SPF", value: m.aspf },
@@ -54,7 +54,6 @@ export function reportFields(m, records) {
     t("dmarc.f_alignment"),
     align.map((x) => `${e(alignPart(x))}${x.value ? "" : ` <span class="muted">(${e(t("dmarc.default"))})</span>`}`).join(" · "),
     align.map((x) => alignPart(x) + (x.value ? "" : ` (${t("dmarc.default")})`)).join(", "),
-    "dmarc.gl.alignment",
   );
   plain(t("dmarc.f_contents"), `${tn("dmarc.records", recs.length)}, ${tn("dmarc.messages", sumBy(recs, "count"))}`);
   if (m.errors.length) add(t("dmarc.f_errors"), m.errors.map((x) => `<div class="bad">${e(x)}</div>`).join(""), m.errors.join("; "));

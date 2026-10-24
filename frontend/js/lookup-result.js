@@ -6,18 +6,6 @@ import { copyText, escapeHtml as e, handleToggleAll, toggleAllHtml } from "./uti
 import { kpiTile, kvHtml, legendHtml } from "./ui.js";
 import { serviceTitle } from "./services.js";
 
-// Identity field keys that carry enough jargon to deserve a one-sentence glossary tooltip next to their label.
-const GLOSS_FIELD = {
-  asn: "lookup.gl.asn",
-  network: "lookup.gl.network",
-  rdns: "lookup.gl.rdns",
-  nameservers: "lookup.gl.nameservers",
-  mx: "lookup.gl.mx",
-  spf: "lookup.gl.spf_record",
-  dmarc: "lookup.gl.dmarc_record",
-  caa: "lookup.gl.caa",
-};
-
 // Display-only metadata per service (the names are in services.js); the descriptions live in the i18n catalog
 // (md.service.<id>).
 const SERVICES = {
@@ -227,7 +215,7 @@ function tilesHtml(result) {
   const ab = svc("abuseipdb");
   if (ab && ab.abuse_confidence_score != null)
     tiles.push(
-      kpiTile(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, { sub: t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 }), glKey: "lookup.gl.confidence" })
+      kpiTile(t("lookup.kpi_confidence"), `${ab.abuse_confidence_score}%`, { sub: t("lookup.kpi_confidence_sub", { reports: ab.total_reports ?? 0, users: ab.num_distinct_users ?? 0 }) })
     );
   const vt = svc("virustotal");
   if (vt && vt.total_engines)
@@ -242,7 +230,7 @@ function tilesHtml(result) {
   const asn = idf("asn");
   if (asn) {
     const org = idf("organization");
-    tiles.push(kpiTile("ASN", asn.value, { sub: org ? org.value : "", mark: agreementMark(asn), glKey: "lookup.gl.asn" }));
+    tiles.push(kpiTile("ASN", asn.value, { sub: org ? org.value : "", mark: agreementMark(asn) }));
   }
   const usage = idf("usage_type");
   if (usage) tiles.push(kpiTile(t("lookup.kpi_type"), usage.value, { sub: idf("tor") ? t("lookup.tor_node") : "", valueClass: "kpi-value-sm" }));
@@ -316,10 +304,9 @@ function identityValue(field, value) {
 
 function identityRow(field) {
   const label = t("lookup.fi." + field.key);
-  const glKey = GLOSS_FIELD[field.key];
   if (field.key === "addresses") {
     const buttons = field.value.split(", ").map((ip) => `<button type="button" class="tag" data-check-ip="${e(ip)}" title="${e(t("lookup.check_ip"))}">${e(ip)}</button>`);
-    return [label, `<span class="chips">${buttons.join("")}</span>`, glKey];
+    return [label, `<span class="chips">${buttons.join("")}</span>`];
   }
   const badge = `<span class="badge sm ${field.status}" title="${e(t("lookup.agreement_title." + field.status))}">${e(agreementText(field))}</span>`;
   const mono = ["asn", "network", "rdns", "nameservers", "addresses", "mx", "spf", "dmarc", "caa"].includes(field.key);
@@ -328,10 +315,10 @@ function identityRow(field) {
     const list = field.variants
       .map((v) => `<li>${e(identityValue(field, v.value))} <span class="muted">- ${e(v.sources.map(serviceTitle).join(", "))}</span></li>`)
       .join("");
-    return [label, `<details class="ident-var"><summary>${shown} ${badge}</summary><ul>${list}</ul></details>`, glKey];
+    return [label, `<details class="ident-var"><summary>${shown} ${badge}</summary><ul>${list}</ul></details>`];
   }
   const sources = field.status === "single" ? ` <span class="muted">(${e(serviceTitle(field.variants[0].sources[0]))})</span>` : "";
-  return [label, `${shown} ${badge}${sources}`, glKey];
+  return [label, `${shown} ${badge}${sources}`];
 }
 
 function identityHtml(identity, type) {
