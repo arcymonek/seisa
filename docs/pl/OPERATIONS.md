@@ -319,18 +319,35 @@ Starsze wersje trzymały Historię w jednym pliku, `data/history.json`. Przy pie
 
 ## 8. Odinstalowanie
 
-Usunięcie Seisy to skasowanie jej folderu, ale ikona leży poza nim, więc zabierz ją najpierw.
+Odinstalator usuwa to, co Seisa dodała do Twojego komputera, krok po kroku, i pyta przed każdym krokiem. Twoje dane znikają dopiero po wpisaniu słowa potwierdzenia, a sam folder Seisy zostaje, dopóki go nie usuniesz.
 
-1. Usuń ikonę aplikacji: Info, Ustawienia, „Usuń ikonę" (albo `.venv/bin/python -m backend.desktop_icon remove` w folderze Seisy).
-2. Zatrzymaj Seisę (część 4).
-3. Zrób kopię zapasową, jeśli chcesz coś zachować (część 7). Następny krok kasuje program, `.venv`, `.env`, `data/` i `logs/`.
-4. Usuń folder Seisy. Zrób to w menedżerze plików albo z folderu nad nim:
+1. Zatrzymaj Seisę (część 4).
+2. W terminalu, w folderze Seisy, uruchom:
 
    ```bash
-   rm -r seisa
+   bash uninstall.sh
    ```
 
-5. Opcjonalnie wyczyść w przeglądarce dane witryny `127.0.0.1`, żeby usunąć małe ustawienia, które Seisa tam zostawiła.
+3. Odpowiedz na pytania. Enter zawsze oznacza „nie".
+
+| Krok | Co usuwa | Co odpowiadasz |
+|---|---|---|
+| 1. Ikona aplikacji | `~/Applications/Seisa.app` (macOS) albo `~/.local/share/applications/seisa.desktop` (Linux), tylko gdy Seisa zrobiła ją dla tego folderu albo dla folderu, którego już nie ma | `y`, żeby ją usunąć |
+| 2. Prywatne środowisko Pythona | `.venv` i foldery `__pycache__` Pythona; `bash install.sh` może je zbudować ponownie | `y`, żeby je skasować |
+| 3. Twoje dane | `data/` (analizy, historia, zapisane e-maile), `logs/` i `.env` (Twoje klucze API) | najpierw, czy zrobić kopię zapasową, potem słowo `USUŃ` (albo `DELETE`) |
+
+Jak odinstalator Cię chroni:
+
+- **Podgląd.** `bash uninstall.sh --dry-run` tylko pokazuje, co by usunął. Uruchomiony bez terminala (np. z innego programu) robi to samo.
+- **Kopia zapasowa.** Kopia to plik `seisa-backup-<data>-<godzina>.tar.gz` w Twoim folderze domowym, czytelny tylko dla Ciebie. Zawiera Twoje klucze i e-maile, więc trzymaj go w bezpiecznym miejscu. Żeby znów z niego skorzystać, rozpakuj go w nowym folderze Seisy: `tar -xzf ~/seisa-backup-<data>-<godzina>.tar.gz`.
+- **Granice.** Odmawia pracy, gdy Seisa działa, i nigdy nie używa `sudo`. Ikona bez znacznika Seisy, ikona innego folderu Seisy oraz `.venv`, `data` czy `logs` będące odnośnikiem w inne miejsce zostają.
+
+Co zostaje, bo nie należy tylko do Seisy albo usuwa się to ręcznie (odinstalator wypisuje to na końcu):
+
+- **Folder Seisy.** Usuń go w menedżerze plików albo przez `rm -r` z folderu nad nim. Jeśli to klon gita z Twoimi zmianami, one też znikną.
+- **Python i inne pakiety systemowe.** Instalator ich nie instalował, a mogą z nich korzystać inne programy. Na Linuksie nie usuwaj `python3`; `python3-venv`, jeśli dodano go tylko dla Seisy, może zniknąć (`sudo apt remove python3-venv`). Na macOS Pythona zainstalowanego tylko dla Seisy usuniesz przez `brew uninstall python` (Homebrew) albo tak, jak opisuje ReadMe z python.org.
+- **Pamięć podręczna pobrań pip** (`~/Library/Caches/pip` na macOS, `~/.cache/pip` na Linuksie), wspólna dla wszystkich projektów Pythona. Jej skasowanie jest bezpieczne.
+- **To, co ustawiono ręcznie:** przypięcie do Docka lub paska zadań oraz małe ustawienia, które przeglądarka trzyma dla `127.0.0.1` (wyczyść dane tej witryny w przeglądarce).
 
 ## 9. Rozwiązywanie problemów i pytania
 
@@ -349,6 +366,7 @@ Każda tabela poniżej ma ten sam porządek: co widzisz, dlaczego tak jest, co z
 | Instalator mówi „could not create a virtual environment" | Na Debianie i Ubuntu zwykle brakuje pakietu `python3-venv`. | Uruchom `sudo apt install python3-venv`, a potem znowu `bash install.sh`. |
 | Instalator mówi „.venv exists but holds no working Python 3.11 or newer." | Stary albo uszkodzony `.venv`, np. po aktualizacji Pythona. | Zmień nazwę folderu `.venv` albo go usuń i uruchom `bash install.sh` ponownie. Twój `.env` i `data/` nie są ruszane. |
 | Instalator mówi „The libraries could not be installed." | Brak połączenia z internetem, proxy lub zapora blokuje PyPI albo Twój Python jest tak nowy, że biblioteki nie mają dla niego jeszcze gotowych plików (komunikaty wspominają wtedy o kompilowaniu). | Sprawdź połączenie i uruchom `bash install.sh` ponownie. Przy zbyt nowym Pythonie usuń folder `.venv` i użyj starszego: `SEISA_PYTHON=/ścieżka/do/python3.12 bash install.sh`. |
+| Odinstalator mówi „Seisa is running. Stop it first" | Seisa nadal działa, w innym oknie terminala albo uruchomiona z ikony. | Zatrzymaj ją (część 4), a potem znowu uruchom `bash uninstall.sh`. |
 
 ### Klucze i usługi
 

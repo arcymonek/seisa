@@ -34,7 +34,7 @@ Rules for AI coding agents that work on Seisa in a fork or on a pull request. A 
 
 ## Commands
 
-- Install: `bash install.sh` (builds `.venv`, installs `requirements.lock`, creates `.env`).
+- Install: `bash install.sh` (builds `.venv`, installs `requirements.lock`, creates `.env`). Uninstall: `bash uninstall.sh` (asks before each step; `--dry-run` only shows).
 - Start: `./seisa.sh` (serves `127.0.0.1:54321`).
 - All checks: `python3 scripts/check_all.py [--fast]`.
 - Tests: `python3 -m pytest -q` (`-m "not slow"` while iterating).

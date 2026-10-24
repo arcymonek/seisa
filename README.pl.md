@@ -63,6 +63,8 @@ bash install.sh
 
 Instalator przygotowuje prywatne środowisko Pythona, instaluje biblioteki i tworzy plik ustawień `.env`. Potrzebuje Pythona 3.11 lub nowszego i połączenia z internetem, a gdy Pythona brakuje, mówi, co zainstalować. Ostatnie polecenie uruchamia Seisę i otwiera przeglądarkę. Trzymaj okno terminala otwarte, dopóki z niej korzystasz; zamknięcie go zatrzymuje Seisę. Szczegóły (pobranie ZIP-a, ikona aplikacji, aktualizacja, te same kroki ręcznie, rozwiązywanie problemów) są w [docs/pl/OPERATIONS.md](docs/pl/OPERATIONS.md).
 
+Żeby później usunąć Seisę, uruchom `bash uninstall.sh` w tym samym folderze: pyta przed każdym krokiem i zostawia Twoje dane, chyba że to potwierdzisz. Zobacz [Odinstalowanie](docs/pl/OPERATIONS.md#8-odinstalowanie).
+
 **Potem wpisz klucze API:** otwórz zakładkę Info (ikona suwaków na prawym końcu paska zakładek) i jej kartę „Klucze API" (opis niżej).
 
 ### Klucze API (.env)

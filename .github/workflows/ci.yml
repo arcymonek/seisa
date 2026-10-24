@@ -117,6 +117,14 @@ jobs:
           server=$!
           trap 'kill "$server"' EXIT
           curl --fail --silent --show-error --retry 30 --retry-delay 1 --retry-connrefused http://127.0.0.1:54321/api/about > /dev/null
+      # Without a terminal the uninstaller only shows its plan; it must see the fresh .venv and delete nothing.
+      - name: The uninstaller's preview (uninstall.sh) sees the installation and deletes nothing
+        run: |
+          bash uninstall.sh | tee "$RUNNER_TEMP/uninstall.txt"
+          grep -q "Would delete .venv" "$RUNNER_TEMP/uninstall.txt"
+          grep -q "This was a preview; nothing was deleted." "$RUNNER_TEMP/uninstall.txt"
+          test -x .venv/bin/uvicorn
+          test -f .env
 
   # A separate job, so that a new vulnerability or a new licence never hides the results of the tests above (and the
   # tests never hide it). When this job turns red WITHOUT a change in the code, the world changed, not the repository:

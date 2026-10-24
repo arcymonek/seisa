@@ -63,6 +63,8 @@ bash install.sh
 
 The installer sets up a private Python environment, installs the libraries and creates your `.env` settings file. It needs Python 3.11 or newer and an internet connection, and it tells you what to install if Python is missing. The last command starts Seisa and opens your browser. Keep the terminal window open while you use it; closing it stops Seisa. For the details (a ZIP download, the application icon, updating, the same steps by hand, troubleshooting), see [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
+To remove Seisa later, run `bash uninstall.sh` in the same folder: it asks before every step and keeps your data unless you confirm. See [Uninstalling](docs/OPERATIONS.md#8-uninstalling).
+
 **Next, enter your API keys:** open the Info tab (the slider icon at the right end of the tab bar) and its "API keys" card (see below).
 
 ### API keys (.env)

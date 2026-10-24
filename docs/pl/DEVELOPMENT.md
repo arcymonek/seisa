@@ -146,6 +146,7 @@ Hook `commit-msg` (`scripts/hooks/commit-msg`) sprawdza komunikat: brak długiej
 - **Bez wyłącznika.** Hooki zawodzą w stronę blokady i celowo nie ma przełącznika, który wyłącza je wszystkie. Robi to `git commit --no-verify`, więc go nie używaj: napraw przyczynę.
 - **Testowanie hooków.** Testuje je `tests/test_pre_commit_hook.py` (wolny). Zmienne `SEISA_HOOK_UNDER_TEST` i `SEISA_COMMITMSG_UNDER_TEST` kierują testy na zmodyfikowaną kopię hooka, i w ten sposób robisz test mutacyjny reguły hooka.
 - **Testowanie instalatora.** `tests/test_install_script.py` uruchamia `install.sh` w katalogu tymczasowym, bez sieci, z ręcznie zrobionym pakietem zamiast PyPI (wolny). Zadanie `install` w CI uruchamia go naprawdę.
+- **Testowanie odinstalatora.** `tests/test_uninstall_script.py` uruchamia `uninstall.sh` w katalogu tymczasowym, z HOME w katalogu tymczasowym (wolny). Udawane polecenia `uname` i `curl` symulują macOS, Linuksa i działającą Seisę, a pseudoterminal wpisuje odpowiedzi, bo skrypt zadaje pytania tylko w terminalu. Zadanie `install` w CI uruchamia po instalacji jego podgląd.
 
 ## Ciągła integracja
 
@@ -154,7 +155,7 @@ CI to GitHub Actions w `.github/workflows/ci.yml`. Uruchamia się przy pushu do 
 Są trzy zadania:
 
 - **`check`** działa na Ubuntu 24.04 z Pythonem 3.11 i najnowszym 3.x, z limitem 15 minut. Kroki: ruff, pytest, test end-to-end, `check_i18n --strict`, `check_docs`, sprawdzenie składni frontendu, informacyjny raport pokrycia (bez progu) i reguły gałęzi z hooka.
-- **`install`** uruchamia `install.sh` tak, jak zrobiłaby to nowa osoba, na Ubuntu 24.04 i macOS 15, z prawdziwymi bibliotekami z PyPI. Potem startuje zainstalowaną Seisę i czeka, aż odpowie na `127.0.0.1:54321`. To zadanie dowodzi, że `requirements.lock` instaluje się na obu systemach.
+- **`install`** uruchamia `install.sh` tak, jak zrobiłaby to nowa osoba, na Ubuntu 24.04 i macOS 15, z prawdziwymi bibliotekami z PyPI. Potem startuje zainstalowaną Seisę, czeka, aż odpowie na `127.0.0.1:54321`, i uruchamia podgląd `uninstall.sh`. To zadanie dowodzi, że `requirements.lock` instaluje się na obu systemach.
 - **`dependencies`** uruchamia `pip-audit` na `requirements.lock` i sprawdza licencje pakietów potrzebnych do działania z listą dozwolonych (MIT, BSD, Apache, ISC, MPL-2.0 i PSF). Jeśli zadanie robi się czerwone bez zmiany w kodzie, zmienił się świat: zaktualizuj podatną bibliotekę na osobnej gałęzi albo najpierw przeczytaj nową licencję (musi pozostać zgodna z GPL-3.0-or-later), zanim rozszerzysz listę.
 
 Reguły gałęzi zależą od pochodzenia:
@@ -173,7 +174,7 @@ Inne fakty:
 Wersja odpowiada na jedno pytanie: czy program się zmienił? Rośnie tylko wtedy, gdy zmienia się program, a nie przy każdej zmianie w repozytorium.
 
 - **Pliki programu** (zmiana podnosi wersję): wszystko w `backend/` (razem z plikami promptów w `backend/prompts/`) i `frontend/` (razem z katalogami językowymi), `requirements.txt`, `requirements.lock`, `seisa.sh` i `seisa-launcher.sh`.
-- **Nie program** (wersja bez zmian): `README.md`, `README.pl.md`, `docs/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `install.sh`, `scripts/`, `tests/`, `.github/` oraz zmiany dotyczące tylko komentarzy w kodzie.
+- **Nie program** (wersja bez zmian): `README.md`, `README.pl.md`, `docs/`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `install.sh`, `uninstall.sh`, `scripts/`, `tests/`, `.github/` oraz zmiany dotyczące tylko komentarzy w kodzie.
 
 Wersja ma postać `X.Y.Z`:
 
@@ -276,6 +277,7 @@ Nieaktualna dokumentacja jest gorsza niż żadna, więc opiekun dba o to, żeby 
 | Język albo skórka | Przepisy w [Jak rozszerzać Seisę](#jak-rozszerzać-seisę) i ustawienia w [USER_GUIDE.md](USER_GUIDE.md) |
 | Komunikaty startowe w `seisa.sh` | Nagłówek „Install and run" w [README](../../README.pl.md), do którego odsyła `seisa.sh` |
 | Komunikaty lub kroki `install.sh` | Część 2 i tabela „Uruchamianie" w [OPERATIONS.md](OPERATIONS.md#uruchamianie) oraz szybki start w [README](../../README.pl.md) |
+| Komunikaty lub kroki `uninstall.sh` | Część 8 i tabela „Uruchamianie" w [OPERATIONS.md](OPERATIONS.md#8-odinstalowanie) |
 
 Opiekun robi każdą zmianę dokumentacji w obu językach, w tym samym commicie. Kontrybutor, który poprawia dokument, może zmienić tylko jeden język; bliźniak uzupełnia opiekun.
 

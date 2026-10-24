@@ -261,4 +261,4 @@ To najwyższy poziom repozytorium, żeby było wiadomo, gdzie czego szukać.
 | `docs/` | Dokumentacja, z plikami polskimi w `docs/pl/` i zrzutami w `docs/images/` |
 | `.github/` | Szablony zgłoszeń i pull requestów, CI |
 | `data/`, `logs/` | Dane lokalne, ignorowane przez git poza `.gitkeep` |
-| Pliki w katalogu głównym | `install.sh`, `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../../LICENSE), [CHANGELOG.md](../../CHANGELOG.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| Pliki w katalogu głównym | `install.sh`, `uninstall.sh`, `seisa.sh`, `seisa-launcher.sh`, `requirements*.txt`, `requirements.lock`, `pyproject.toml`, `.env.example`, [LICENSE](../../LICENSE), [CHANGELOG.md](../../CHANGELOG.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
