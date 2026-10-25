@@ -17,7 +17,13 @@
 
 Seisa is a tool that runs on your own computer and helps you judge whether an IP address, a web link, a DMARC report or an e-mail can be trusted, and report abuse to AbuseIPDB.
 
-You do not need to be an IT specialist: every result comes with a plain explanation. The name comes from the Japanese 精査, "a careful, detailed examination".
+Right after installation Seisa can already do something useful, but most of its knowledge comes from outside services, and those need API keys.
+
+- **Without any key:** analysis of an e-mail's source without the language model, WHOIS, RDAP and DNS checks in the IP tab, and reading DMARC reports.
+- **With free keys:** reputation of IP addresses, link scans and AbuseIPDB reports. VirusTotal, urlscan, AbuseIPDB, GreyNoise and other services have free plans with limits that are enough to run Seisa.
+- **With an OpenRouter key:** a step-by-step lesson in the Email tab and help with drafting AbuseIPDB reports. OpenRouter charges you for what you actually use.
+
+You do not edit any files: paste each API key in the Info tab.
 
 ## Screenshots
 
