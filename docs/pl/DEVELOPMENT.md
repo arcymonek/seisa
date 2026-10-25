@@ -296,6 +296,7 @@ Ta sekcja jest dla każdego, kto pisze lub poprawia dokumenty projektu. Tekst an
 7. **Góra pliku z bliźniakiem:** linia przełącznika języka, tytuł i jedno lub dwa zdania mówiące, dla kogo jest plik i po co istnieje.
 8. **Naturalny polski.** Tłumacz sens, a nie słowa; używaj terminów z polskiego katalogu. Nagłówki, tabele, bloki kodu i obrazki są takie same w obu językach.
 9. **Zachęcająco, ale rzeczowo.** Bez marketingu i bez obietnic, których kod nie spełnia. Mów też, czego Seisa nie robi.
+10. **Zrzuty ekranu.** Jeden na zakładkę i język, w skórce Niebieski Sumi: cała strona jako `docs/images/<zakładka>_<język>.webp` (szerokość 1602 piksele, bezstratny WebP) i miniatura `<zakładka>_<język>_thumb.webp` (górne 1602 x 1145 pikseli, przeskalowane do 840 x 600). Dokumenty pokazują miniaturę jako link do całej strony.
 
 ### Jak działają testy dokumentacji
 
@@ -308,7 +309,7 @@ Z flagą `--contributor` (CI dla pull requestów z forków; hook, gdy `seisa.con
 | Pary | Każdy plik angielski ma polski bliźniak z tymi samymi nagłówkami (poziomy 1-4), blokami kodu, tabelami, wierszami tabel i obrazkami | Błąd |
 | Znane pliki | Każdy plik Markdown w katalogu głównym, `docs/` i `docs/pl/` jest parą albo znanym wyjątkiem (`AGENTS.md`, `CHANGELOG.md`) | Błąd |
 | Linki | Każdy link względny, `#kotwica` i `src=` obrazka w śledzonym pliku Markdown działa | Błąd |
-| Obrazki | Każdy obrazek ma niepusty tekst `alt`, a każdy obrazek z `docs/images/` jest użyty | Błąd |
+| Obrazki | Każdy obrazek ma niepusty tekst `alt`, a każdy obrazek z `docs/images/` jest użyty (pokazany albo podlinkowany) | Błąd |
 | Trasy | Endpointy aplikacji to dokładnie wpisy `METODA /ścieżka` z `docs/API.md` | Błąd |
 | Klucze | Pola `Settings`, klucze `.env.example` i tabela kluczy w [README](../../README.pl.md) się zgadzają | Błąd |
 | Zakładki | Każda zakładka ma sekcję w `docs/USER_GUIDE.md` i wiersz w tabeli zakładek w [README](../../README.pl.md) | Błąd |

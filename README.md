@@ -25,9 +25,9 @@ Click a picture to see it full size.
 
 | IP | URLScan | DMARC |
 |---|---|---|
-| <a href="docs/images/ip_en.png"><img src="docs/images/ip_en.png" alt="The IP tab" width="280"></a> | <a href="docs/images/urlscan_en.png"><img src="docs/images/urlscan_en.png" alt="The URLScan tab" width="280"></a> | <a href="docs/images/dmarc_en.png"><img src="docs/images/dmarc_en.png" alt="The DMARC tab" width="280"></a> |
-| **Email** | **AbuseIPDB** | |
-| <a href="docs/images/email_en.png"><img src="docs/images/email_en.png" alt="The Email tab" width="280"></a> | <a href="docs/images/abuseipdb_en.png"><img src="docs/images/abuseipdb_en.png" alt="The AbuseIPDB tab" width="280"></a> | |
+| <a href="docs/images/ip_en.webp"><img src="docs/images/ip_en_thumb.webp" alt="The IP tab" width="280" height="200"></a> | <a href="docs/images/urlscan_en.webp"><img src="docs/images/urlscan_en_thumb.webp" alt="The URLScan tab" width="280" height="200"></a> | <a href="docs/images/dmarc_en.webp"><img src="docs/images/dmarc_en_thumb.webp" alt="The DMARC tab" width="280" height="200"></a> |
+| **Email** | **AbuseIPDB** | **Info** |
+| <a href="docs/images/email_en.webp"><img src="docs/images/email_en_thumb.webp" alt="The Email tab" width="280" height="200"></a> | <a href="docs/images/abuseipdb_en.webp"><img src="docs/images/abuseipdb_en_thumb.webp" alt="The AbuseIPDB tab" width="280" height="200"></a> | <a href="docs/images/info_en.webp"><img src="docs/images/info_en_thumb.webp" alt="The Info tab" width="280" height="200"></a> |
 
 ## What Seisa does
 

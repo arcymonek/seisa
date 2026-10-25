@@ -72,12 +72,12 @@ def test_theme_defaults_match_between_theme_init_and_theme_module():
     # repeats the module's defaults; a difference would flash the wrong colours on every load
     init = (JS.parent / "theme-init.js").read_text(encoding="utf-8")
     module = (JS / "theme.js").read_text(encoding="utf-8")
-    assert re.search(r'^const DEFAULT = "light";', module, re.M)
+    assert re.search(r'^const DEFAULT = "blue";', module, re.M)
     assert re.search(r'^const RENAMED = \{ dark: "blue" \};', module, re.M)
-    assert 'var mode = "light"' in init
-    assert 'localStorage.getItem("seisa.theme") || "light"' in init
+    assert 'var mode = "blue"' in init
+    assert 'localStorage.getItem("seisa.theme") || "blue"' in init
     assert 'if (mode === "dark") mode = "blue";' in init
     # the dark default of "system" is the same theme on both sides (and the light one is "light")
-    assert 'first = base === "dark" ? "sumi-brown" : "light"' in module
-    assert '(light ? "light" : "sumi-brown")' in init
+    assert 'first = base === "dark" ? "blue" : "light"' in module
+    assert '(light ? "light" : "blue")' in init
     assert 'const STORAGE_KEY = "seisa.theme"' in module

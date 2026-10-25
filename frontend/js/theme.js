@@ -5,7 +5,7 @@ import { getLang, t } from "./i18n.js";
 // Keep in sync with /theme-init.js (a classic script that cannot import this module): tests/test_frontend_mirrors.py.
 const STORAGE_KEY = "seisa.theme";
 const SYSTEM = "system";
-const DEFAULT = "light";
+const DEFAULT = "blue";
 const RENAMED = { dark: "blue" }; // the id of Blue Sumi before 2.4.19: a stored choice keeps working
 const prefersLight = window.matchMedia("(prefers-color-scheme: light)");
 
@@ -26,7 +26,7 @@ function resolve(choice) {
   const known = (id) => themes.find((th) => th.id === id);
   if (choice !== SYSTEM && known(choice)) return choice;
   const base = choice === SYSTEM && !prefersLight.matches ? "dark" : "light";
-  const first = base === "dark" ? "sumi-brown" : "light"; // the main theme of each kind, not just the first by order
+  const first = base === "dark" ? "blue" : "light"; // the main theme of each kind, not just the first by order
   return (known(first) || themes.find((th) => th.base === base) || themes[0]).id;
 }
 

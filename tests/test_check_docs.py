@@ -246,6 +246,22 @@ def test_rule04_an_unused_image(proj, monkeypatch):
     assert rep.errors == [] and any("old.png" in x for x in rep.warnings)
 
 
+@pytest.mark.parametrize("link", [
+    '\n<a href="docs/images/full.png"><img src="docs/images/ip_en.png" alt="x"></a>\n',   # a thumbnail opening it
+    "\nSee [the full screenshot](docs/images/full.png).\n",
+])
+def test_rule04_an_image_that_is_only_linked_is_used(proj, link):
+    (proj / "docs" / "images" / "full.png").write_bytes(TINY_PNG)
+    add(proj, "AGENTS.md", link)
+    assert errors(proj) == []
+
+
+def test_rule04_a_link_in_a_code_block_does_not_use_an_image(proj):
+    (proj / "docs" / "images" / "full.png").write_bytes(TINY_PNG)
+    add(proj, "AGENTS.md", '\n```\n<a href="docs/images/full.png">x</a>\n```\n\n`[x](docs/images/full.png)`\n')
+    only_error(proj, "docs/images/full.png is not used")
+
+
 # --- rule 5: routes ---------------------------------------------------------------------------------------------------
 
 def test_rule05_a_route_without_documentation(proj):

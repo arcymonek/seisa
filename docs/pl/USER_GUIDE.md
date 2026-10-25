@@ -115,7 +115,7 @@ Klucz API to długi kod z usługi, jak karta członkowska: mówi usłudze, kto p
 
 ### Do czego służy
 
-![Zakładka IP: werdykt ryzyka, kafle podsumowania i jedna karta na źródło](../images/ip_pl.png)
+<a href="../images/ip_pl.webp"><img src="../images/ip_pl_thumb.webp" alt="Zakładka IP: werdykt ryzyka, kafle podsumowania i jedna karta na źródło" width="420" height="300"></a>
 
 Zakładka IP sprawdza reputację jednego adresu IP albo jednej domeny jednocześnie w kilku niezależnych źródłach i łączy odpowiedzi w jeden wynik ryzyka od 0 do 100. Adres IP to numer, który identyfikuje komputer w internecie (na przykład `203.0.113.7`). Domena to nazwa strony internetowej (na przykład `example.org`).
 
@@ -176,7 +176,7 @@ Każde sprawdzenie jest automatycznie zapisywane w Historii, bez surowych odpowi
 
 ### Do czego służy
 
-![Zakładka URLScan: raport ze skanu ze zrzutem ekranu, kaflami podsumowania i szczegółami strony](../images/urlscan_pl.png)
+<a href="../images/urlscan_pl.webp"><img src="../images/urlscan_pl_thumb.webp" alt="Zakładka URLScan: raport ze skanu ze zrzutem ekranu, kaflami podsumowania i szczegółami strony" width="420" height="300"></a>
 
 Zakładka URLScan prosi usługę urlscan.io, żeby otworzyła podejrzany link we własnej przeglądarce i zgłosiła, co znalazła, więc nigdy nie otwierasz linku osobiście. Dostajesz zrzut ekranu, szczegóły strony i werdykt.
 
@@ -240,7 +240,7 @@ Każdy skończony skan jest zapisywany w Historii z małą miniaturą zrzutu ekr
 
 ### Do czego służy
 
-![Zakładka DMARC: podsumowanie raportu z listą źródeł IP i ich ryzykiem](../images/dmarc_pl.png)
+<a href="../images/dmarc_pl.webp"><img src="../images/dmarc_pl_thumb.webp" alt="Zakładka DMARC: podsumowanie raportu z listą źródeł IP i ich ryzykiem" width="420" height="300"></a>
 
 Zakładka DMARC czyta raporty, które dostawcy poczty wysyłają właścicielowi domeny, i pokazuje, które serwery wysyłają pocztę w imieniu Twojej domeny oraz czy te wiadomości przechodzą kontrole. DMARC to reguła publikowana przez właściciela domeny, która mówi odbiorcom, co zrobić z pocztą niespełniającą dwóch kontroli: SPF (lista serwerów uprawnionych do wysyłania poczty domeny) i DKIM (cyfrowy podpis każdej wiadomości). Takie raporty nazywa się raportami zbiorczymi.
 
@@ -299,7 +299,7 @@ Każdy import jest zapisywany w Historii. Następny import tej samej domeny jest
 
 ### Do czego służy
 
-![Zakładka Email z gotową analizą: werdykt, kafle podsumowania i panele Przegląd, Fakty i Lekcja](../images/email_pl.png)
+<a href="../images/email_pl.webp"><img src="../images/email_pl_thumb.webp" alt="Zakładka Email z gotową analizą: werdykt, kafle podsumowania i panele Przegląd, Fakty i Lekcja" width="420" height="300"></a>
 
 Zakładka Email uczy czytać podejrzane e-maile. Wklejasz cały kod źródłowy wiadomości albo wczytujesz plik `.eml`, a Seisa pokazuje, co znalazła, i tłumaczy to krok po kroku. Kod źródłowy to cała wiadomość tak, jak widzi ją system pocztowy: nagłówki (techniczne linie na początku, jak stemple pocztowe i koperta zwykłego listu) oraz treść (sam list).
 
@@ -422,7 +422,7 @@ Zapisana analiza napisana w drugim języku pokazuje uwagę, a „Analizuj ponown
 
 ### Do czego służy
 
-![Zakładka AbuseIPDB z przygotowanym zgłoszeniem: werdykt, kafle podsumowania i łańcuch Received](../images/abuseipdb_pl.png)
+<a href="../images/abuseipdb_pl.webp"><img src="../images/abuseipdb_pl_thumb.webp" alt="Zakładka AbuseIPDB z przygotowanym zgłoszeniem: werdykt, kafle podsumowania i łańcuch Received" width="420" height="300"></a>
 
 AbuseIPDB to publiczna baza, w której ludzie zgłaszają adresy IP rozsyłające spam, phishing i inne nadużycia. Ta zakładka przygotowuje takie zgłoszenie na podstawie e-maila ze spamem lub phishingiem, sprawdza je i, po Twoim kliknięciu, wysyła.
 
@@ -577,6 +577,8 @@ Nazwy usług są takie same jak w innych zakładkach; własne komunikaty Seisy m
 
 ### Do czego służy
 
+<a href="../images/info_pl.webp"><img src="../images/info_pl_thumb.webp" alt="Zakładka Info: kafle wersji, kluczy i modelu, autor oraz ustawienia ze skórkami kolorystycznymi" width="420" height="300"></a>
+
 Info to ikona suwaków po prawej stronie paska zakładek. Pokazuje wersję i datę wydania, ile usług ma klucz, który model LLM jest włączony, autora, znaczenie nazwy, Twoje ustawienia, limity usług, ostatnie zmiany i licencję.
 
 ### Czego potrzebuje
@@ -631,11 +633,11 @@ Komunikaty usług i analizy AI idą za językiem interfejsu. Komentarze wysyłan
 
 | Skórka | Wygląd |
 |---|---|
-| Jasny Washi (domyślna) | Jasna |
+| Jasny Washi | Jasna |
 | Brązowy Sumi | Ciemna, brązowa |
-| Niebieski Sumi | Ciemna, niebieska |
+| Niebieski Sumi (domyślna) | Ciemna, niebieska |
 | Biało-czerwona Kōhaku | Jasna, biało-czerwona |
-| Systemowy | Idzie za ustawieniem jasny/ciemny Twojego komputera (Jasny Washi albo Brązowy Sumi) |
+| Systemowy | Idzie za ustawieniem jasny/ciemny Twojego komputera (Jasny Washi albo Niebieski Sumi) |
 
 Wybór jest zapamiętany w tej przeglądarce i stosowany, zanim strona zostanie narysowana. Tradycyjne japońskie kolory każdej skórki wyjaśnia Info w „O kolorach".
 

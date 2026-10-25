@@ -13,6 +13,7 @@ Errors (exit code 1):
    2. every *.md in the root, docs/ and docs/pl/ is part of a pair or a known exception
    3. relative links, #anchors and src= of images resolve, in every Markdown file of the repository
    4. every image has a non-empty alt text; once nothing is PENDING, every image in docs/images/ is used somewhere
+      (shown as an image or the target of a link, so a thumbnail can open the full screenshot)
    5. the routes of the FastAPI app are exactly the `METHOD /path` entries of docs/API.md (and its twin)
    6. the fields of `Settings` (backend/config.py) are exactly the keys in .env.example and in the key table of both READMEs
    7. every tab (`data-tab` in frontend/index.html) has its section in docs/USER_GUIDE.md and a row in the tab table of
@@ -208,6 +209,8 @@ def table_rows(text: str) -> list[list[str]]:
 
 MD_IMAGE = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)[^)]*\)")
 HTML_IMAGE = re.compile(r"<img\b[^>]*>", re.I)
+MD_LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+SRC_HREF = re.compile(r"""\b(?:src|href)=["']([^"']+)["']""")
 
 
 def images(text: str) -> list[tuple[int, str, str]]:
@@ -293,14 +296,12 @@ def check_unpaired(root: Path, rep: Report, md_files: list[str]) -> None:
 
 def check_links(root: Path, rep: Report, md_files: list[str]) -> None:
     """Rule 3."""
-    link = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
-    src = re.compile(r"""\b(?:src|href)=["']([^"']+)["']""")
     cache: dict[Path, set[str]] = {}
     for rel in md_files:
         f = root / rel
         for n, line in strip_code(f.read_text(encoding="utf-8")):
             line = re.sub(r"`[^`]*`", "", line)
-            for target in link.findall(line) + src.findall(line):
+            for target in MD_LINK.findall(line) + SRC_HREF.findall(line):
                 if re.match(r"[a-z][a-z0-9+.-]*:", target, re.I) or target.startswith("//"):
                     continue
                 path_part, _, frag = target.partition("#")
@@ -325,6 +326,12 @@ def check_images(root: Path, rep: Report, md_files: list[str]) -> None:
                 rep.errors.append(f"{rel}:{n}: image {target} has no alt text (describe what it shows)")
             if target and not re.match(r"[a-z][a-z0-9+.-]*:", target, re.I):
                 used.add((f.parent / unquote(target.partition("#")[0])).resolve())
+        # a link counts too: a thumbnail in <a href="full.webp"> is the only way the full screenshot is reached
+        for _, line in strip_code(f.read_text(encoding="utf-8")):
+            line = re.sub(r"`[^`]*`", "", line)
+            for target in MD_LINK.findall(line) + SRC_HREF.findall(line):
+                if not re.match(r"[a-z][a-z0-9+.-]*:", target, re.I):
+                    used.add((f.parent / unquote(target.partition("#")[0])).resolve())
     img_dir = root / "docs" / "images"
     if not img_dir.is_dir():
         return

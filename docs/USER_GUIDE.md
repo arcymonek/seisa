@@ -115,7 +115,7 @@ An API key is a long code from a service, like a membership card: it tells the s
 
 ### What it is for
 
-![The IP tab: a risk verdict, summary tiles and one card per source](images/ip_en.png)
+<a href="images/ip_en.webp"><img src="images/ip_en_thumb.webp" alt="The IP tab: a risk verdict, summary tiles and one card per source" width="420" height="300"></a>
 
 The IP tab checks the reputation of one IP address or one domain in several independent sources at once, and combines the answers into a single risk score from 0 to 100. An IP address is the number that identifies a computer on the internet (for example `203.0.113.7`). A domain is the name of a website (for example `example.org`).
 
@@ -176,7 +176,7 @@ Every check is saved in History automatically, without the raw service answers.
 
 ### What it is for
 
-![The URLScan tab: a scan report with a screenshot, summary tiles and page details](images/urlscan_en.png)
+<a href="images/urlscan_en.webp"><img src="images/urlscan_en_thumb.webp" alt="The URLScan tab: a scan report with a screenshot, summary tiles and page details" width="420" height="300"></a>
 
 The URLScan tab asks the service urlscan.io to open a suspicious link in its own browser and to report what it finds, so you never open the link yourself. You get a screenshot, the page's details and a verdict.
 
@@ -240,7 +240,7 @@ Every finished scan is saved in History with a small thumbnail of the screenshot
 
 ### What it is for
 
-![The DMARC tab: a report summary with the list of IP sources and their risk](images/dmarc_en.png)
+<a href="images/dmarc_en.webp"><img src="images/dmarc_en_thumb.webp" alt="The DMARC tab: a report summary with the list of IP sources and their risk" width="420" height="300"></a>
 
 The DMARC tab reads the reports that mail providers send to the owner of a domain and shows which servers send mail as your domain, and whether those messages pass the checks. DMARC is a rule a domain owner publishes that tells receivers what to do with mail that fails two checks: SPF (a list of servers allowed to send mail for the domain) and DKIM (a digital signature on each message). These reports are called aggregate reports.
 
@@ -299,7 +299,7 @@ Each import is saved in History. The next import of the same domain is compared 
 
 ### What it is for
 
-![The Email tab with a finished analysis: verdict, summary tiles and the Overview, Facts and Lesson panes](images/email_en.png)
+<a href="images/email_en.webp"><img src="images/email_en_thumb.webp" alt="The Email tab with a finished analysis: verdict, summary tiles and the Overview, Facts and Lesson panes" width="420" height="300"></a>
 
 The Email tab teaches you to read a suspicious e-mail. You paste its full source or load an `.eml` file, and Seisa shows what it finds and explains it step by step. The source is the whole message as the mail system sees it: the headers (the technical lines at the top, like the postmarks and the envelope of a paper letter) and the body (the letter itself).
 
@@ -422,7 +422,7 @@ A saved analysis written in the other language shows a notice, and "Analyze agai
 
 ### What it is for
 
-![The AbuseIPDB tab with a prepared report: verdict, summary tiles and the Received chain](images/abuseipdb_en.png)
+<a href="images/abuseipdb_en.webp"><img src="images/abuseipdb_en_thumb.webp" alt="The AbuseIPDB tab with a prepared report: verdict, summary tiles and the Received chain" width="420" height="300"></a>
 
 AbuseIPDB is a public database where people report IP addresses that send spam, phishing and other abuse. This tab prepares such a report from a spam or phishing e-mail, checks it, and, after your click, sends it.
 
@@ -577,6 +577,8 @@ Service names are the same as in the other tabs; Seisa's own messages are labell
 
 ### What it is for
 
+<a href="images/info_en.webp"><img src="images/info_en_thumb.webp" alt="The Info tab: the version, keys and model tiles, the author, and the settings with the colour themes" width="420" height="300"></a>
+
 Info is the slider icon on the right of the tab bar. It shows the version and release date, how many services have a key, which LLM model is on, the author, the meaning of the name, your settings, the service limits, recent changes and the license.
 
 ### What you need
@@ -631,11 +633,11 @@ Service messages and AI analyses follow the interface language. The comments you
 
 | Theme | Look |
 |---|---|
-| Light Washi (default) | Light |
+| Light Washi | Light |
 | Brown Sumi | Dark, brown |
-| Blue Sumi | Dark, blue |
+| Blue Sumi (default) | Dark, blue |
 | Red-and-white Kōhaku | Light, red and white |
-| System | Follows the light/dark setting of your computer (Light Washi or Brown Sumi) |
+| System | Follows the light/dark setting of your computer (Light Washi or Blue Sumi) |
 
 The choice is stored in this browser and applied before the page is drawn. The traditional Japanese colours behind each theme are explained in Info under "About the colours".
 

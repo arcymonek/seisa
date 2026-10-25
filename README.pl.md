@@ -25,9 +25,9 @@ Kliknij obrazek, żeby zobaczyć go w pełnym rozmiarze.
 
 | IP | URLScan | DMARC |
 |---|---|---|
-| <a href="docs/images/ip_pl.png"><img src="docs/images/ip_pl.png" alt="Zakładka IP" width="280"></a> | <a href="docs/images/urlscan_pl.png"><img src="docs/images/urlscan_pl.png" alt="Zakładka URLScan" width="280"></a> | <a href="docs/images/dmarc_pl.png"><img src="docs/images/dmarc_pl.png" alt="Zakładka DMARC" width="280"></a> |
-| **Email** | **AbuseIPDB** | |
-| <a href="docs/images/email_pl.png"><img src="docs/images/email_pl.png" alt="Zakładka Email" width="280"></a> | <a href="docs/images/abuseipdb_pl.png"><img src="docs/images/abuseipdb_pl.png" alt="Zakładka AbuseIPDB" width="280"></a> | |
+| <a href="docs/images/ip_pl.webp"><img src="docs/images/ip_pl_thumb.webp" alt="Zakładka IP" width="280" height="200"></a> | <a href="docs/images/urlscan_pl.webp"><img src="docs/images/urlscan_pl_thumb.webp" alt="Zakładka URLScan" width="280" height="200"></a> | <a href="docs/images/dmarc_pl.webp"><img src="docs/images/dmarc_pl_thumb.webp" alt="Zakładka DMARC" width="280" height="200"></a> |
+| **Email** | **AbuseIPDB** | **Info** |
+| <a href="docs/images/email_pl.webp"><img src="docs/images/email_pl_thumb.webp" alt="Zakładka Email" width="280" height="200"></a> | <a href="docs/images/abuseipdb_pl.webp"><img src="docs/images/abuseipdb_pl_thumb.webp" alt="Zakładka AbuseIPDB" width="280" height="200"></a> | <a href="docs/images/info_pl.webp"><img src="docs/images/info_pl_thumb.webp" alt="Zakładka Info" width="280" height="200"></a> |
 
 ## Co robi Seisa
 

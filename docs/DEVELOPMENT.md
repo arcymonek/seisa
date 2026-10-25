@@ -296,6 +296,7 @@ This section is for everyone who writes or edits the documents of the project. T
 7. **The top of a file with a twin:** the language switch line, the title, and one or two sentences saying for whom the file is and why it exists.
 8. **Natural Polish.** Translate the meaning, not the words; use the terms of the Polish catalog. Headings, tables, code blocks and images are the same in both languages.
 9. **Encouraging, but factual.** No marketing and no promises the code does not keep. Say what Seisa does not do, too.
+10. **Screenshots.** One per tab and language, in the Blue Sumi theme: the full page as `docs/images/<tab>_<lang>.webp` (1,602 pixels wide, lossless WebP) and a thumbnail `<tab>_<lang>_thumb.webp` (the top 1,602 x 1,145 pixels, scaled to 840 x 600). Documents show the thumbnail as a link to the full page.
 
 ### How the documentation checks work
 
@@ -308,7 +309,7 @@ With `--contributor` (CI for pull requests from forks; the hook when `seisa.cont
 | Pairs | Each English file has its Polish twin with the same headings (levels 1-4), code blocks, tables, table rows and images | Error |
 | Known files | Every Markdown file in the root, `docs/` and `docs/pl/` is a pair or a known exception (`AGENTS.md`, `CHANGELOG.md`) | Error |
 | Links | Every relative link, `#anchor` and image `src=` in a tracked Markdown file works | Error |
-| Images | Every image has a non-empty `alt` text and every image in `docs/images/` is used | Error |
+| Images | Every image has a non-empty `alt` text and every image in `docs/images/` is used (shown, or the target of a link) | Error |
 | Routes | The endpoints of the application are exactly the `METHOD /path` entries of `docs/API.md` | Error |
 | Keys | The fields of `Settings`, the keys of `.env.example` and the [README](../README.md) key table agree | Error |
 | Tabs | Every tab has a section in `docs/USER_GUIDE.md` and a row in the [README](../README.md) tab table | Error |

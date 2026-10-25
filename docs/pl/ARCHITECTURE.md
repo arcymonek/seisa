@@ -214,7 +214,7 @@ Katalogi: `frontend/i18n/{en,pl}.json` dla interfejsu i `backend/locales/{en,pl}
 
 Skórka to mały plik JSON w `frontend/themes/`, więc dodanie nowego wyglądu nie wymaga kodu.
 
-- Dostarczane skórki: `light` („Light Washi", domyślna), `sumi-brown` („Brown Sumi"), `blue` („Blue Sumi") i `kohaku` („Red-and-white Kōhaku"). „Systemowy" idzie za systemem operacyjnym (ciemny oznacza Brown Sumi).
+- Dostarczane skórki: `light` („Light Washi"), `sumi-brown` („Brown Sumi"), `blue` („Blue Sumi", domyślna) i `kohaku` („Red-and-white Kōhaku"). „Systemowy" idzie za systemem operacyjnym (ciemny oznacza Blue Sumi).
 - Plik skórki ma `id` (równe nazwie pliku), `name` (`en` i `pl`), `base` (`dark` albo `light`), opcjonalne `order` od 0 do 1 000, opcjonalne `logo` (`badge` albo `mask`) oraz dokładnie znane klucze kolorów w formacie `#rrggbb`.
 - Czytane jest najwyżej 24 pliki po 8 KB. Zły plik jest pomijany i zapisywany w logu.
 - CSS powstaje wyłącznie ze sprawdzonych wartości, więc skórka nie może zawierać `url()`, `@import` ani reguł.
